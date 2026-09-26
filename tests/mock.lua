@@ -11,8 +11,10 @@ function strsplit(delim, s, limit)
     return table.unpack(result)
 end
 now, questID, soundOK, nextHandle = 0, 179, true, 100
+serverNow = 1800000000
+function GetServerTime() return serverNow end
 messages, plays, stops, frames = {}, {}, {}, {}
-cvars = {Sound_EnableDialog='1', Sound_DialogVolume='0.37', Sound_EnableMusic='1', Sound_MusicVolume='0.25'}
+cvars = {Sound_EnableDialog='1', Sound_DialogVolume='0.37', Sound_EnableMusic='1', Sound_MusicVolume='0.25', Sound_EnableSoundWhenGameIsInBG='1'}
 function GetTime() return now end
 function GetCVar(k) return cvars[k] end
 function SetCVar(k,v) cvars[k]=tostring(v) end
@@ -50,7 +52,7 @@ end
 function event(name)
     local f=frames.WowVoiceFrame
     assert(f.events[name], 'event not registered: '..name)
-    f.scripts.OnEvent(f,name,'WowVoice')
+    f.scripts.OnEvent(f,name,'WowVoiceTalkingHead')
 end
 function tick(t)
     now=t

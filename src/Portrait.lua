@@ -23,160 +23,23 @@ local FALLBACK_ICON = "Interface\\Icons\\INV_Misc_Note_01"
 local DEFAULT_WIDTH, DEFAULT_HEIGHT = 570, 155
 -- Retail TalkingHeadUI.xml fallback; managed layouts place it above action bars.
 local DEFAULT_BOTTOM_OFFSET = 96
-local TALKING_HEAD_TEXTURE = "Interface\\AddOns\\WowVoice\\Media\\TalkingHeads"
+local TALKING_HEAD_TEXTURE = "Interface\\AddOns\\WowVoiceTalkingHead\\Media\\TalkingHeads"
 local CLOSE_UP = "Interface\\Buttons\\UI-Panel-MinimizeButton-Up"
 local CLOSE_DOWN = "Interface\\Buttons\\UI-Panel-MinimizeButton-Down"
-local PRESET_ORDER = { "retail", "classic", "ellesmere" }
-local PRESETS = {
-    retail = {
-        name = "Retail",
-        title = { 1, 0.82, 0.02, 1 }, text = { 1, 1, 1, 1 },
-        edge = { 0.65, 0.53, 0.25, 1 }, accent = { 0.85, 0.68, 0.3, 1 },
-    },
-    classic = {
-        name = "Classic",
-        background = "Interface\\DialogFrame\\UI-DialogBox-Background",
-        border = "Interface\\DialogFrame\\UI-DialogBox-Border", edgeSize = 16,
-        fill = { 1, 1, 1, 1 }, edge = { 1, 1, 1, 1 },
-        title = { 1, 0.82, 0, 1 }, text = { 1, 0.95, 0.82, 1 },
-        accent = { 0.85, 0.68, 0.3, 1 },
-    },
-    ellesmere = {
-        name = "EllesmereUI",
-        background = "Interface\\Buttons\\WHITE8X8",
-        border = "Interface\\Buttons\\WHITE8X8", edgeSize = 1,
-        fill = { 0.06, 0.06, 0.07, 0.95 }, edge = { 0.4, 0.33, 0.19, 1 },
-        title = { 1, 0.82, 0, 1 }, text = { 1, 1, 1, 1 },
-        accent = { 0.85, 0.68, 0.3, 1 },
-    },
-}
-
-function WV:GetHeadPreset()
-    local preset = WowVoiceDB and WowVoiceDB.headPreset
-    return PRESETS[preset] and preset or "retail"
-end
-
-function WV:GetHeadPresets()
-    local choices = {}
-    for _, key in ipairs(PRESET_ORDER) do
-        choices[#choices + 1] = { key = key, name = PRESETS[key].name }
-    end
-    return choices
-end
-
-local function colorValues(color)
-    return color[1], color[2], color[3], color[4]
-end
-
-local function readEllesmereBackground()
-    local eui = _G.EllesmereUI
-    if not eui or _G.EUI_CLIENT_BLOCKED then return end
-    local module = eui._ModuleNS and eui._ModuleNS.EllesmereUIBlizzardSkin
-    local skin = module and module.WSkin
-    if not skin or type(skin.GetStyle) ~= "function" then return end
-    -- Use EllesmereUI's third-party theme resolver, without skinning our frame.
-    local style = skin.GetStyle("tp:WowVoice")
-    if style == "eui" then return style end
-    if style ~= "modern" or type(skin.GetModernBG) ~= "function" then return end
-    local r, g, b, a = skin.GetModernBG()
-    for _, value in ipairs({ r, g, b, a }) do
-        if type(value) ~= "number" or value ~= value or value < 0 or value > 1 then return end
-    end
-    if r == nil or g == nil or b == nil or a == nil then return end
-    return style, r, g, b, a
-end
-
-local function refreshEllesmereBackground(force)
-    if not head then return end
-    local now = GetTime()
-    if not force and now < (head.nextBackgroundCheck or 0) then return end
-    head.nextBackgroundCheck = now + 0.5
-    local style, r, g, b, a
-    if WV:GetHeadPreset() == "ellesmere" then
-        -- Optional integration must never prevent a quest voice line from playing.
-        local ok
-        ok, style, r, g, b, a = pcall(readEllesmereBackground)
-        if not ok then style = nil end
-    end
-    local signature = table.concat({ style or "fallback", tostring(r), tostring(g), tostring(b), tostring(a),
-        tostring(head:GetWidth()), tostring(head:GetHeight()) }, ":")
-    if not force and head.backgroundSignature == signature then return end
-    head.backgroundSignature = signature
-    head.EllesmereBackground:Hide()
-    head.EllesmereShade:Hide()
-    if WV:GetHeadPreset() ~= "ellesmere" then return end
-    head.Background:SetBackdropColor(colorValues(PRESETS.ellesmere.fill))
-    if style == "modern" then
-        head.Background:SetBackdropColor(r, g, b, a)
-    elseif style == "eui" then
-        local texture = head.EllesmereBackground
-        local ok, loaded = pcall(texture.SetTexture, texture, "Interface\\AddOns\\EllesmereUI\\media\\modern_blizz.png")
-        if not ok or not loaded then
-            head.backgroundSignature = nil
-            return
-        end
-        -- Match EllesmereUI's centered cover crop of the background atlas.
-        local aspect, sourceAspect = head:GetWidth() / head:GetHeight(), 561 / 433
-        if aspect > sourceAspect then
-            local trim = (0.75 - 0.75 * sourceAspect / aspect) / 2
-            texture:SetTexCoord(0.25, 1, trim, 0.75 - trim)
-        else
-            local trim = (0.75 - 0.75 * aspect / sourceAspect) / 2
-            texture:SetTexCoord(0.25 + trim, 1 - trim, 0, 0.75)
-        end
-        head.Background:SetBackdropColor(0, 0, 0, 0)
-        texture:Show()
-        head.EllesmereShade:Show()
-    end
-end
-
 local function applyHeadAppearance()
-    local key = WV:GetHeadPreset()
-    local style = PRESETS[key]
-    local retail = key == "retail"
-    if retail then
-        head.Background:SetBackdrop(nil)
-        head.RetailBackground:Show()
-        head.PortraitBackground:Show()
-        head.PortraitOverlay:Show()
-    else
-        local inset = key == "ellesmere" and 0 or 4
-        head.Background:SetBackdrop({ bgFile = style.background, edgeFile = style.border,
-            tile = key ~= "ellesmere", tileSize = 32, edgeSize = style.edgeSize,
-            insets = { left = inset, right = inset, top = inset, bottom = inset } })
-        head.Background:SetBackdropColor(colorValues(style.fill))
-        head.Background:SetBackdropBorderColor(colorValues(style.edge))
-        head.RetailBackground:Hide()
-        head.PortraitBackground:Hide()
-        head.PortraitOverlay:Hide()
-    end
     local close = head.Close
-    close:ClearAllPoints()
-    close.flat = key == "ellesmere"
+    close:SetSize(32, 32)
+    close:SetPoint("TOPRIGHT", head, "TOPRIGHT", -12, -12)
     close.Stock:SetTexture(CLOSE_UP)
     close.Highlight:Hide()
-    close.Glyph:SetPoint("CENTER", close, "CENTER", -2, 0)
-    if close.flat then
-        close:SetSize(24, 24)
-        close:SetPoint("TOPRIGHT", head, "TOPRIGHT", -16, -16)
-        close.Stock:Hide()
-        close.Glyph:SetVertexColor(1, 1, 1, 0.75)
-        close.Glyph:Show()
-    else
-        close:SetSize(32, 32)
-        close:SetPoint("TOPRIGHT", head, "TOPRIGHT", -12, -12)
-        close.Glyph:Hide()
-        close.Stock:Show()
-    end
-    head.Name:SetTextColor(colorValues(style.title))
-    head.Body:SetTextColor(colorValues(style.text))
-    head.IconBorder:SetColorTexture(colorValues(style.edge))
-    head.Progress:SetStatusBarColor(colorValues(style.accent))
-    refreshEllesmereBackground(true)
+    head.Name:SetTextColor(1, 0.82, 0.02, 1)
+    head.Body:SetTextColor(1, 1, 1, 1)
+    head.IconBorder:SetColorTexture(0.65, 0.53, 0.25, 1)
+    head.Progress:SetStatusBarColor(0.85, 0.68, 0.3, 1)
 end
 
 local function message(text)
-    DEFAULT_CHAT_FRAME:AddMessage("|cff66ccffWowVoice|r: " .. text)
+    DEFAULT_CHAT_FRAME:AddMessage("|cff66ccff" .. WV.displayName .. "|r: " .. text)
 end
 
 local function debugLog(text)
@@ -711,7 +574,7 @@ local function layoutHead()
     local height = (WowVoiceDB and WowVoiceDB.headHeight) or DEFAULT_HEIGHT
     local scale = (WowVoiceDB and WowVoiceDB.headScale) or 1
     local textLeft, textRight = 152, 42
-    -- All presets share Retail's composition: portrait on the left, name above
+    -- Retail composition: portrait on the left, name above
     -- the text on the right, and space reserved for the close button.
     head.Name:SetWidth(width - textLeft - textRight)
     head.Name:SetHeight(0)
@@ -726,7 +589,7 @@ local function layoutHead()
     head.Name:SetHeight(nameHeight)
     head:SetSize(width, height)
     head:SetScale(scale)
-    -- Only the panel receives the preset scale; the anchor uses UIParent units.
+    -- Only the panel receives the saved scale; the anchor uses UIParent units.
     anchor:SetSize(width * scale, height * scale)
     local textWidth = width - textLeft - textRight
     -- The portrait camera expects a roughly square viewport. Panel height
@@ -772,7 +635,6 @@ local function layoutHead()
     head.TextScroll:UpdateScrollChildRect()
     head.textRange = math.max(0, textHeight - head.TextScroll:GetHeight())
     buildScrollPlan(lineHeight, visibleLines)
-    refreshEllesmereBackground(true)
     updatePlaybackText()
 end
 
@@ -851,7 +713,7 @@ local function createHead()
     end
     -- Separate visual layers preserve theme opacity and model readiness while
     -- their contents fade together at the end of playback.
-    head.Background = CreateFrame("Frame", nil, head, "BackdropTemplate")
+    head.Background = CreateFrame("Frame", nil, head)
     head.Background:SetAllPoints(head)
     head.Background:SetFrameLevel(head:GetFrameLevel())
     head.Background:EnableMouse(false)
@@ -860,11 +722,6 @@ local function createHead()
     head.Portrait:EnableMouse(false)
     head.RetailBackground = retailTexture(head.Background, "BACKGROUND", 0, 0, 570, 155)
     head.RetailBackground:SetAllPoints(head)
-    head.EllesmereBackground = head.Background:CreateTexture(nil, "BACKGROUND", nil, 0)
-    head.EllesmereBackground:SetAllPoints(head)
-    head.EllesmereShade = head.Background:CreateTexture(nil, "BACKGROUND", nil, 1)
-    head.EllesmereShade:SetColorTexture(0, 0, 0, 0.62)
-    head.EllesmereShade:SetAllPoints(head)
     head.PortraitBackground = retailTexture(head.Portrait, "BACKGROUND", 572, 314, 117, 117)
 
     local border = head.Portrait:CreateTexture(nil, "BACKGROUND")
@@ -946,7 +803,7 @@ local function createHead()
     head.Progress:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
     head.Progress:SetMinMaxValues(0, 1)
 
-    -- Every preset uses the same stop action, with its own close-button style.
+    -- The close button stops playback or closes the silent preview.
     local close = CreateFrame("Button", nil, head)
     -- Own both artwork layers instead of clearing native Button texture slots:
     -- an empty texture path can leave the previous stock artwork on screen.
@@ -957,30 +814,13 @@ local function createHead()
     -- Stock highlight art has a black background and requires additive blending.
     close.Highlight:SetBlendMode("ADD")
     close.Highlight:SetAllPoints(close)
-    -- Match the borderless close glyph used by EllesmereUI's window skins.
-    local cross = close:CreateTexture(nil, "OVERLAY")
-    cross:SetAtlas("uitools-icon-close")
-    cross:SetSize(14, 14)
-    cross:SetPoint("CENTER", close, "CENTER", -2, 0)
-    close.Glyph = cross
-    close:SetScript("OnEnter", function()
-        if close.flat then cross:SetVertexColor(1, 1, 1, 1)
-        else close.Highlight:Show() end
-    end)
+    close:SetScript("OnEnter", function() close.Highlight:Show() end)
     close:SetScript("OnLeave", function()
-        cross:SetVertexColor(1, 1, 1, 0.75)
-        cross:SetPoint("CENTER", close, "CENTER", -2, 0)
         close.Highlight:Hide()
         close.Stock:SetTexture(CLOSE_UP)
     end)
-    close:SetScript("OnMouseDown", function()
-        if close.flat then cross:SetPoint("CENTER", close, "CENTER", -1, -1)
-        else close.Stock:SetTexture(CLOSE_DOWN) end
-    end)
-    close:SetScript("OnMouseUp", function()
-        cross:SetPoint("CENTER", close, "CENTER", -2, 0)
-        close.Stock:SetTexture(CLOSE_UP)
-    end)
+    close:SetScript("OnMouseDown", function() close.Stock:SetTexture(CLOSE_DOWN) end)
+    close:SetScript("OnMouseUp", function() close.Stock:SetTexture(CLOSE_UP) end)
     local function stopPlayback()
         if active and active.preview then WV:StopTalkingHead()
         else WV:Silence("talking head button") end
@@ -993,7 +833,6 @@ local function createHead()
     head:SetScript("OnUpdate", function()
         if not anchor:GetCenter() then restorePosition() end
         tryTalkingModel()
-        refreshEllesmereBackground(false)
         if active and not active.closing then updatePlaybackText() end
         updateHeadTransition()
         syncModelOpacity()
@@ -1039,7 +878,6 @@ function WV:StartTalkingHead(context, endsAt, duration, startedAt, preview)
     if not context then return end
     active = { context = context, startedAt = startedAt or GetTime(), endsAt = endsAt,
         duration = duration, preview = preview }
-    if not preview and WowVoiceDB and WowVoiceDB.headEnabled == false then return end
     createHead()
     head:EnableMouse(true)
     head:SetAlpha(1)
@@ -1093,22 +931,7 @@ function WV:GetHeadSettings()
     createHead()
     local x, y = centerPosition()
     return { width = head:GetWidth(), height = head:GetHeight(), scale = head:GetScale(),
-        x = x, y = y, enabled = WowVoiceDB.headEnabled ~= false, preset = self:GetHeadPreset() }
-end
-
-function WV:SetHeadPreset(preset)
-    if not PRESETS[preset] then return false end
-    createHead()
-    local x, y = centerPosition()
-    local hasSavedPosition = WowVoiceDB.headPosition ~= nil
-    WowVoiceDB.headPreset = preset
-    -- Selecting a preset restores the common geometry without moving the panel.
-    WowVoiceDB.headWidth, WowVoiceDB.headHeight, WowVoiceDB.headScale = nil, nil, nil
-    applyHeadAppearance()
-    layoutHead()
-    if hasSavedPosition then setPosition(x, y) else restorePosition() end
-    if self.RefreshHeadOptions then self:RefreshHeadOptions() end
-    return true
+        x = x, y = y }
 end
 
 function WV:CenterTalkingHead()
@@ -1141,22 +964,7 @@ function WV:ApplyHeadSettings(settings)
     WowVoiceDB.headWidth, WowVoiceDB.headHeight, WowVoiceDB.headScale = settings.width, settings.height, settings.scale
     layoutHead()
     setPosition(settings.x, settings.y)
-    self:SetHeadEnabled(settings.enabled ~= false)
     return true
-end
-
-function WV:SetHeadEnabled(enabled)
-    WowVoiceDB.headEnabled = enabled
-    if self.RefreshStopButton then self:RefreshStopButton() end
-    if active and active.preview then return end
-    if not enabled then
-        if active and active.closing then self:StopTalkingHead()
-        elseif head then head:Hide() end
-    elseif active and head and not head:IsShown() then
-        self:StartTalkingHead(active.context, active.endsAt, active.duration, active.startedAt)
-    elseif active and not head then
-        self:StartTalkingHead(active.context, active.endsAt, active.duration, active.startedAt)
-    end
 end
 
 function WV:ToggleHeadPreview()
@@ -1169,7 +977,6 @@ function WV:ToggleHeadPreview()
             .. "Здесь будет текст задания. Каждый блок остаётся неподвижным, пока идёт его чтение. "
             .. "Затем короткий плавный сдвиг открывает продолжение, сохраняя две строки предыдущего блока. "
             .. "Последний блок раскрывается заранее и стоит на месте до конца реплики.\n\n"
-            .. "На странице настроек можно выбрать оформление Retail, Classic или EllesmereUI. "
             .. "Кнопка центрирования выравнивает окно по горизонтали, сохраняя высоту.\n\n"
             .. "Только во время теста панель можно перемещать мышью. В обычном режиме её положение закреплено. "
             .. "Тест повторяется каждые 30 секунд и прекращается при закрытии настроек." },
@@ -1190,10 +997,7 @@ function WV:ResetHeadSettings()
 end
 
 function WV:HeadCommand(command)
-    if command == "on" or command == "off" then
-        self:SetHeadEnabled(command == "on")
-        message("говорящая голова: " .. (WowVoiceDB.headEnabled and "вкл" or "выкл"))
-    elseif command == "reset" then
+    if command == "reset" then
         self:ResetHeadPosition()
         message("положение говорящей головы сброшено")
     else
@@ -1204,8 +1008,7 @@ end
 function WV:HeadDiagnostics()
     local quests, count = characterQuests(), 0
     if quests then for _ in pairs(quests) do count = count + 1 end end
-    message("Portrait: сохранено квестгиверов=" .. count .. "; показ="
-        .. tostring(not (WowVoiceDB and WowVoiceDB.headEnabled == false)))
+    message("Portrait: сохранено квестгиверов=" .. count)
     if head and active then
         message("Camera: model=" .. tostring(head.Model.cameraFileID)
             .. " profile=" .. tostring(head.Model.cameraProfile))

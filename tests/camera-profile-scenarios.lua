@@ -99,8 +99,7 @@ head.Model.modelFileID=119376
 WV:HideHeadPreview(); WV:ReplayQuest(179)
 assert(head.Model.cameraProfile=='goblin_male' and head.Model.modelPosition[2]<0 and head.Model.modelPosition[3]==.04)
 local sounds=#plays
-for _, style in ipairs({'classic','ellesmere','retail'}) do
-    WV:SetHeadPreset(style)
+do
     assert(head.Model.cameraProfile=='goblin_male' and #plays==sounds)
 end
 local profile,key=WV:GetPortraitCameraProfile({})
@@ -115,21 +114,6 @@ WV.PortraitCameraOverrides[119376]=nil
 command('diag'); assert(has('Camera: model=119376 profile=goblin_male'))
 print('PASS: loaded model selects camera for replay and preview, offsets reset between species, optional API fallback and per-model corrections')
 
--- The legacy button follows the head setting immediately without changing audio.
-local button=frames.WowVoiceStopButton
-WV:SetHeadEnabled(true); command('button always')
-assert(not button.visible)
-WV:RestoreButton(); assert(not button.visible)
-WV:SetHeadEnabled(false); assert(button.visible)
-command('button auto'); assert(button.visible and #plays==sounds)
-WV:SetHeadEnabled(true); assert(not button.visible and #plays==sounds)
-WV:SetHeadEnabled(false); command('button off'); assert(not button.visible)
-command('button auto'); assert(button.visible)
-WV:Silence(); assert(not button.visible)
-command('button always'); assert(button.visible)
-WV:SetHeadEnabled(true); assert(not button.visible)
-WV:SetHeadEnabled(false); assert(button.visible)
-command('button auto'); assert(not button.visible)
-WV:SetHeadEnabled(true)
+WV:Silence()
 restored('1','0.37')
-print('PASS: standalone stop button is suppressed by the head, settings and playback restore auto/always/off without restarting audio')
+assert(frames.WowVoiceStopButton==nil, 'standalone stop control is removed')

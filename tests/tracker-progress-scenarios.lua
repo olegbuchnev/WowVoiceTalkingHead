@@ -224,25 +224,65 @@ assert(not play.ProgressGlow.visible and not other.scripts.OnUpdate, 'portrait c
 assert(not WowVoiceDB.trackerProgressPulse, 'test never changes saved preference')
 print('PASS: options test keeps all active arrows glowing; close, toggle and real playback clean up')
 
--- A real logout/login is a new listening session; reload and zoning are not.
+-- A one-hour wall-clock cooldown survives logout, reload and zoning.
 WV:SetTrackerProgressPulseEnabled(true)
-WowVoiceDB.listenedQuests['Player-2-OTHER']={[192]=true}
+local heardUntil=WowVoiceDB.listenedQuests[playerGUID][179]
+assert(heardUntil==serverNow+3600, 'successful playback stores an absolute one-hour deadline')
+WowVoiceDB.listenedQuests['Player-2-OTHER']={[192]=heardUntil}
+serverNow=heardUntil-3590
+now=0 -- A new client process has a different uptime.
 event('PLAYER_LOGOUT')
 send('PLAYER_LOGIN')
 send('PLAYER_ENTERING_WORLD', true, false)
-assert(not WowVoiceDB.listenedQuests[playerGUID][179], 'real login clears last-session playback marks')
-assert(WowVoiceDB.listenedQuests['Player-2-OTHER'][192], 'login only resets the current character')
+assert(WowVoiceDB.listenedQuests[playerGUID][179]==heardUntil)
+assert(WowVoiceDB.listenedQuests['Player-2-OTHER'][192]==heardUntil)
 assert(not play.ProgressGlow.visible, 'login itself does not start a reminder')
 change(179, 9)
-assert(play.ProgressGlow.visible and play.ProgressAnts.visible,
-    'progress after a new login reminds about a quest played in the previous session')
-assert(WV:ReplayQuest(179))
-frames.WowVoiceTalkingHead.Close.scripts.OnClick()
-assert(not play.ProgressGlow.visible and not play.ProgressAnts.visible, 'playing then closing stops both glow layers')
+assert(not play.ProgressGlow.visible, 'a full restart does not reset the cooldown')
+serverNow=heardUntil-1
 send('PLAYER_ENTERING_WORLD', false, true)
 change(179, 8)
-assert(not play.ProgressGlow.visible, 'reload preserves new-session playback marks')
+assert(not play.ProgressGlow.visible, 'reload preserves the remaining second')
 send('PLAYER_ENTERING_WORLD', false, false)
 change(179, 7)
-assert(not play.ProgressGlow.visible, 'zone transition also preserves playback marks')
-print('PASS: real login resets listening session; reload/zoning preserve marks and other characters remain isolated')
+assert(not play.ProgressGlow.visible, 'zone transitions preserve the cooldown')
+serverNow=heardUntil
+send('QUEST_LOG_UPDATE')
+assert(not play.ProgressGlow.visible, 'expiry alone never lights the button')
+change(179, 6)
+assert(play.ProgressGlow.visible and play.ProgressAnts.visible, 'progress at exactly one hour reminds again')
+assert(not WowVoiceDB.listenedQuests[playerGUID][179], 'expired records are pruned')
+assert(WV:ReplayQuest(179))
+frames.WowVoiceTalkingHead.Close.scripts.OnClick()
+assert(not play.ProgressGlow.visible and not play.ProgressAnts.visible)
+local firstDeadline=WowVoiceDB.listenedQuests[playerGUID][179]
+serverNow=serverNow+1800
+assert(WV:ReplayQuest(179))
+WV:Silence()
+local extended=WowVoiceDB.listenedQuests[playerGUID][179]
+assert(extended==serverNow+3600 and extended==firstDeadline+1800, 'replay starts a fresh hour')
+serverNow=firstDeadline
+change(179, 5)
+assert(not play.ProgressGlow.visible, 'the older deadline cannot end a renewed cooldown')
+-- Failed starts neither create nor extend a cooldown.
+soundOK=false
+assert(not WV:ReplayQuest(179))
+assert(WowVoiceDB.listenedQuests[playerGUID][179]==extended)
+soundOK=true
+WV:SetQuestAudioAvailable(179,true)
+-- Offline time counts; login still establishes a silent baseline.
+event('PLAYER_LOGOUT')
+serverNow=extended+600
+now=0
+send('PLAYER_LOGIN')
+send('PLAYER_ENTERING_WORLD', true, false)
+assert(not play.ProgressGlow.visible and not WowVoiceDB.listenedQuests[playerGUID][179])
+change(179, 4)
+assert(play.ProgressGlow.visible, 'offline expiry allows the next objective change')
+-- Legacy booleans carry no date: do not suppress reminders forever or invent a deadline.
+WowVoiceDB.listenedQuests[playerGUID][179]=true
+send('PLAYER_LOGIN')
+assert(not WowVoiceDB.listenedQuests[playerGUID][179])
+change(179, 3)
+assert(play.ProgressGlow.visible, 'legacy session marks do not prevent future reminders')
+print('PASS: absolute one-hour cooldown, exact expiry, replay renewal, failed starts, restart/reload/zoning, offline time and legacy migration')

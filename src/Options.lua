@@ -2,37 +2,12 @@
 local WV = _G.WowVoice
 local panel, category
 
-local function createRadio(parent)
-    local normalAtlas = "common-dropdown-tickradial"
-    local checkedAtlas = "common-dropdown-icon-radialtick-yellow"
-    local atlasInfo = C_Texture and C_Texture.GetAtlasInfo
-    if not atlasInfo or not atlasInfo(normalAtlas) or not atlasInfo(checkedAtlas) then
-        return CreateFrame("CheckButton", nil, parent, "UIRadioButtonTemplate")
-    end
-    -- Use modern radial artwork without depending on a client-specific template.
-    local button = CreateFrame("CheckButton", nil, parent)
-    local function texture(atlas, layer)
-        local t = button:CreateTexture(nil, layer)
-        t:SetAtlas(atlas, true)
-        t:SetPoint("CENTER", button, "CENTER")
-        return t
-    end
-    button:SetNormalTexture(texture(normalAtlas, "ARTWORK"))
-    button:SetCheckedTexture(texture(checkedAtlas, "OVERLAY"))
-    local highlight = texture(normalAtlas, "HIGHLIGHT")
-    highlight:SetBlendMode("ADD")
-    button:SetHighlightTexture(highlight)
-    return button
-end
-
 local function status(text)
     panel.Status:SetText(text or "")
 end
 
 function WV:RefreshHeadOptions()
     if not panel or not panel:IsShown() then return end
-    local settings = self:GetHeadSettings()
-    panel.Enabled:SetChecked(settings.enabled)
     local trackerEnabled = WowVoiceDB.trackerButtons ~= false
     panel.TrackerButtons:SetChecked(trackerEnabled)
     panel.TrackerProgressPulse:SetChecked(WowVoiceDB.trackerProgressPulse ~= false)
@@ -41,15 +16,12 @@ function WV:RefreshHeadOptions()
     panel.TrackerProgressPulse.Label:SetAlpha(trackerEnabled and 1 or 0.45)
     panel.AutoPlayAccept:SetChecked(WowVoiceDB.autoPlayAccept == true)
     panel.AutoPlayTurnIn:SetChecked(WowVoiceDB.autoPlayTurnIn ~= false)
-    for key, choice in pairs(panel.Presets) do
-        choice:SetChecked(key == settings.preset)
-    end
 end
 
 local function createPanel()
     panel = CreateFrame("Frame", "WowVoiceOptionsPanel")
     panel:Hide()
-    panel.Presets, panel.Buttons = {}, {}
+    panel.Buttons = {}
     local function label(text, font, x, y, width, height)
         local fs = panel:CreateFontString(nil, "ARTWORK", font)
         fs:SetPoint("TOPLEFT", panel, "TOPLEFT", x, y)
@@ -59,39 +31,15 @@ local function createPanel()
         fs:SetText(text)
         return fs
     end
-    label("WowVoice", "GameFontNormalLarge", 16, -16, 560, 28)
-    panel.Enabled = CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate")
-    panel.Enabled:SetPoint("TOPLEFT", panel, "TOPLEFT", 12, -52)
-    panel.Enabled:SetSize(26, 26)
-    label("Показывать говорящую голову", "GameFontHighlight", 44, -59, 420, 22)
-    panel.Enabled:SetScript("OnClick", function(self)
-        WV:SetHeadEnabled(self:GetChecked() == true)
-    end)
-
-    for i, preset in ipairs(WV:GetHeadPresets()) do
-        local key, name = preset.key, preset.name
-        local y = -98 - (i - 1) * 30
-        local text = label(name, "GameFontNormal", 50, y - 2, 490, 0)
-        local choice = createRadio(panel)
-        choice:SetSize(18, 18)
-        -- Lower the label optically while keeping the radio in its original position.
-        choice:SetPoint("CENTER", text, "LEFT", -20, 2)
-        choice.Label = text
-        choice:SetScript("OnClick", function()
-            WV:SetHeadPreset(key)
-            status()
-        end)
-        panel.Presets[key] = choice
-    end
-
-    label("Выберите оформление и нажмите «Тест / переместить».\n"
+    label(WV.displayName, "GameFontNormalLarge", 16, -16, 560, 28)
+    label("Нажмите «Тест / переместить».\n"
         .. "В режиме теста перетащите окно мышью. Положение сохраняется.",
-        "GameFontHighlightSmall", 20, -202, 540, 42)
+        "GameFontHighlightSmall", 20, -52, 540, 42)
 
     local function button(key, text, x, width, callback)
         local b = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
         b:SetSize(width, 26)
-        b:SetPoint("TOPLEFT", panel, "TOPLEFT", x, -258)
+        b:SetPoint("TOPLEFT", panel, "TOPLEFT", x, -108)
         b:SetText(text)
         b:SetScript("OnClick", callback)
         panel.Buttons[key] = b
@@ -108,40 +56,40 @@ local function createPanel()
         WV:ResetHeadPosition()
         status("Положение окна сброшено.")
     end)
-    panel.Status = label("", "GameFontHighlightSmall", 20, -304, 540, 48)
+    panel.Status = label("", "GameFontHighlightSmall", 20, -154, 540, 48)
     panel.TrackerButtons = CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate")
-    panel.TrackerButtons:SetPoint("TOPLEFT", panel, "TOPLEFT", 12, -366)
+    panel.TrackerButtons:SetPoint("TOPLEFT", panel, "TOPLEFT", 12, -216)
     panel.TrackerButtons:SetSize(26, 26)
-    label("Кнопки озвучки в списке заданий на экране", "GameFontHighlight", 44, -373, 510, 22)
+    label("Кнопки озвучки в списке заданий на экране", "GameFontHighlight", 44, -223, 510, 22)
     panel.TrackerButtons:SetScript("OnClick", function(self)
         WV:SetTrackerButtonsEnabled(self:GetChecked() == true)
     end)
     panel.TrackerProgressPulse = CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate")
-    panel.TrackerProgressPulse:SetPoint("TOPLEFT", panel, "TOPLEFT", 38, -400)
+    panel.TrackerProgressPulse:SetPoint("TOPLEFT", panel, "TOPLEFT", 38, -250)
     panel.TrackerProgressPulse:SetSize(26, 26)
     panel.TrackerProgressPulse.Label = label("Подсвечивать озвучку при прогрессе задания",
-        "GameFontHighlight", 70, -407, 484, 22)
+        "GameFontHighlight", 70, -257, 484, 22)
     panel.TrackerProgressPulse:SetScript("OnClick", function(self)
         WV:SetTrackerProgressPulseEnabled(self:GetChecked() == true)
     end)
     panel.AutoPlayAccept = CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate")
-    panel.AutoPlayAccept:SetPoint("TOPLEFT", panel, "TOPLEFT", 12, -450)
+    panel.AutoPlayAccept:SetPoint("TOPLEFT", panel, "TOPLEFT", 12, -300)
     panel.AutoPlayAccept:SetSize(26, 26)
-    label("Озвучивать при получении задания", "GameFontHighlight", 44, -457, 510, 22)
+    label("Озвучивать при получении задания", "GameFontHighlight", 44, -307, 510, 22)
     panel.AutoPlayAccept:SetScript("OnClick", function(self)
         WV:SetAutoPlayAcceptEnabled(self:GetChecked() == true)
     end)
     label("Если выключено, запускайте описание кнопкой в журнале или списке заданий.",
-        "GameFontHighlightSmall", 44, -485, 510, 40)
+        "GameFontHighlightSmall", 44, -335, 510, 40)
     panel.AutoPlayTurnIn = CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate")
-    panel.AutoPlayTurnIn:SetPoint("TOPLEFT", panel, "TOPLEFT", 12, -530)
+    panel.AutoPlayTurnIn:SetPoint("TOPLEFT", panel, "TOPLEFT", 12, -380)
     panel.AutoPlayTurnIn:SetSize(26, 26)
-    label("Озвучивать при сдаче задания", "GameFontHighlight", 44, -537, 510, 22)
+    label("Озвучивать при сдаче задания", "GameFontHighlight", 44, -387, 510, 22)
     panel.AutoPlayTurnIn:SetScript("OnClick", function(self)
         WV:SetAutoPlayTurnInEnabled(self:GetChecked() == true)
     end)
     label("Управляет всеми репликами сдачи: промежуточными и завершающей.",
-        "GameFontHighlightSmall", 44, -565, 510, 40)
+        "GameFontHighlightSmall", 44, -415, 510, 40)
     panel:SetScript("OnShow", function()
         WV:RefreshHeadOptions()
         for _, b in pairs(panel.Buttons) do if WV.StyleButton then WV.StyleButton(b) end end
@@ -154,7 +102,7 @@ local function register()
     if category then return true end
     if not (Settings and Settings.RegisterCanvasLayoutCategory and Settings.RegisterAddOnCategory) then return false end
     createPanel()
-    category = Settings.RegisterCanvasLayoutCategory(panel, "WowVoice")
+    category = Settings.RegisterCanvasLayoutCategory(panel, WV.displayName)
     Settings.RegisterAddOnCategory(category)
     return true
 end
@@ -163,7 +111,7 @@ function WV:OpenOptions()
     if register() and Settings.OpenToCategory then
         Settings.OpenToCategory(category:GetID())
     else
-        DEFAULT_CHAT_FRAME:AddMessage("|cff66ccffWowVoice|r: API страницы модификаций Settings недоступен.")
+        DEFAULT_CHAT_FRAME:AddMessage("|cff66ccff" .. WV.displayName .. "|r: API страницы модификаций Settings недоступен.")
     end
 end
 

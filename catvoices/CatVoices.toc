@@ -1,7 +1,7 @@
 ## Interface: 16001
-## Title: CatVoices (WowVoice supplement)
-## Group: WowVoice
-## IconTexture: Interface\AddOns\WowVoice\Media\VoiceChat-Active.tga
-## Notes: Additional Russian quest audio for WowVoice; quests already in its Classic pack are excluded.
+## Title: CatVoices (Forever quests)
+## Group: WowVoiceTalkingHead
+## IconTexture: Interface\AddOns\WowVoiceTalkingHead\Media\VoiceChat-Active.tga
+## Notes: Russian Forever quest audio for WowVoice TalkingHead; quests already in the Classic pack are excluded.
 ## Author: Cathey (daniilcathey) - t.me/catheyco; WowVoice Forever adaptation
 ## Version: 0.1.0-wowvoice.1

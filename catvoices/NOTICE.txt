@@ -1,4 +1,4 @@
-Supplemental Russian quest audio for WowVoice.
+Russian audio for Forever quests, bundled with WowVoice TalkingHead.
 
 Source: CatQuest and CatQuest_Voices 0.1.0, by Cathey (daniilcathey).
 Author: https://t.me/catheyco

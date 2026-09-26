@@ -1,15 +1,4 @@
---[[ Voice-over Stop button.
-
-When the talking head is disabled, show the button during voice playback.
-The talking head's close button replaces this standalone control when enabled.
-The player can drag it, and its position is saved.
-
-  /wv button auto    - show only during playback (default)
-  /wv button always  - keep visible at all times
-  /wv button off     - hide the button
-  /wv button reset   - return to the default central position
-]]
-
+-- Quest journal replay controls.
 local WV = _G.WowVoice
 if not WV then return end
 
@@ -62,73 +51,6 @@ local function applyEllesmereStyle(btn)
 end
 
 WV.StyleButton = applyEllesmereStyle
-
-local DEFAULT_POINT = { "CENTER", "CENTER", 0, -180 }
-
-local button = CreateFrame("Button", "WowVoiceStopButton", UIParent,
-                           "UIPanelButtonTemplate")
-button:SetWidth(150)
-button:SetHeight(24)
-button:SetText("Остановить реплику")
-button:SetFrameStrata("HIGH")
-button:Hide()
-
-button:SetMovable(true)
-button:EnableMouse(true)
-button:RegisterForDrag("LeftButton")
-
-button:SetScript("OnDragStart", function(self) self:StartMoving() end)
-button:SetScript("OnDragStop", function(self)
-    self:StopMovingOrSizing()
-    local point, _, relPoint, x, y = self:GetPoint()
-    WowVoiceDB.buttonPos = { point, relPoint, x, y }
-end)
-
-button:SetScript("OnClick", function()
-    WV:Silence()
-end)
-
-button:HookScript("OnShow", applyEllesmereStyle)
-applyEllesmereStyle(button)
-
-function WV:RestoreButton()
-    local p = WowVoiceDB and WowVoiceDB.buttonPos
-    -- Invalid or incomplete position data must not move the button offscreen.
-    if not (p and p[1] and p[2] and p[3] and p[4]) then p = DEFAULT_POINT end
-    button:ClearAllPoints()
-    button:SetPoint(p[1], UIParent, p[2], p[3], p[4])
-    self:RefreshStopButton()
-end
-
-function WV:ResetButton()
-    WowVoiceDB.buttonPos = nil
-    self:RestoreButton()
-end
-
-local voicePlaying = false
-function WV:RefreshStopButton()
-    local mode = (WowVoiceDB and WowVoiceDB.button) or "auto"
-    local headEnabled = WowVoiceDB and WowVoiceDB.headEnabled ~= false
-    if headEnabled or mode == "off" then
-        button:Hide()
-    elseif mode == "always" then
-        button:Show()
-    elseif voicePlaying then
-        button:Show()
-    else
-        button:Hide()
-    end
-end
-
-function WV.OnPlaybackChanged(playing)
-    voicePlaying = playing == true
-    WV:RefreshStopButton()
-end
-
-function WV:ButtonMode(mode)
-    WowVoiceDB.button = mode
-    self:RefreshStopButton()
-end
 
 -- Replay descriptions in the modern journal. Buttons belong to pooled rows,
 -- so read their current ID on every click instead of capturing it in a closure.
@@ -233,7 +155,6 @@ function WV:RefreshJournalButtons()
 end
 
 local function setupJournal()
-    applyEllesmereStyle(button)
     -- Blizzard may load the journal after WowVoice. Retry on ADDON_LOADED
     -- to connect it without installing duplicate hooks.
     if type(QuestLogQuests_Update) == "function" and not journalHooks.list then

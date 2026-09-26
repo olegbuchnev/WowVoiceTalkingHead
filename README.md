@@ -1,6 +1,7 @@
-# WowVoice — Forever Beta
+# WowVoice TalkingHead — Forever Beta
 
-This standalone repository keeps the modified WowVoice development sources
+WowVoice TalkingHead is a Forever Beta build based on WowVoice, with talking
+heads and quest playback controls. This repository keeps its development sources
 outside the live World of Warcraft installation. Runtime addon files live under
 `src/`; tests and build tools stay outside that directory and are never deployed.
 The runtime code is based on the Midnight version, while `Index.lua`,
@@ -8,6 +9,11 @@ The runtime code is based on the Midnight version, while `Index.lua`,
 The release also bundles supplemental CatQuest recordings for quests absent from
 that pack. Original WowVoice recordings always take priority.
 This build targets **WoW Forever Beta, Interface 16001**.
+
+The in-game title is **WowVoice TalkingHead**, and its addon ID and folder are
+`WowVoiceTalkingHead`. The command remains `/wv`; audio folders are `WowVoiceSounds`
+and `CatVoices`.
+The cloud sync directory also retains its existing name and shared link.
 
 For installation and in-game usage, see the [user guide in Russian](USER_README.md).
 The release archive includes that guide as plain-text `README.txt` (UTF-8).
@@ -20,19 +26,18 @@ from release archives.
 ## Layout
 
 ```text
-src/                             Runtime files copied to AddOns/WowVoice
+src/                             Runtime files copied to AddOns/WowVoiceTalkingHead
 soundpack/                       Complete Classic audio and two Forever TOCs
 catvoices/                       Filtered CatQuest audio, metadata and attribution
 tests/                           Lua tests with WoW API mocks and pipeline checks
 config/deploy.targets.local.psd1  Local Forever Beta path (gitignored)
 build.ps1 / build.cmd             Validate, test, deploy and package pipeline
 USER_README.md                   Russian user guide; converted to README.txt for packaging
-USER_UPDATE_README.md            Instructions for updating only the addon, without audio
 artifacts/WoWVoice/              Latest full and addon-only ZIPs; stable cloud sync folder (gitignored)
 backups/                         Backups created before deployment (gitignored)
 ```
 
-Edit `src/`, then run Deploy. The installed `AddOns\WowVoice` directory is a
+Edit `src/`, then run Deploy. The installed `AddOns\WowVoiceTalkingHead` directory is a
 deployment destination, not the project's source directory. OGG files are local
 build inputs (gitignored) and are included in the complete release archive.
 Populate them with `tools/import-classic-audio.js <WowVoiceSounds directory>` and
@@ -83,8 +88,8 @@ leaves the previous release in place.
 .\build.cmd -Task PackageAddon
 ```
 
-Creates `artifacts/WoWVoice/WowVoice-<version>-addon-only.zip` containing only
-`WowVoice/` and a plain-text `README.txt` from `USER_UPDATE_README.md`. Use it to
+Creates `artifacts/WoWVoice/WowVoiceTalkingHead-<version>-addon-only.zip` containing only
+`WowVoiceTalkingHead/` and the same plain-text `README.txt` from `USER_README.md` as the full archive. Use it to
 deliver code fixes to users who already have the full sound library installed.
 It includes the entire runtime addon, including textures and audio indexes,
 and can be built without local `soundpack/` or `catvoices/` directories.
@@ -99,7 +104,7 @@ a cloud folder named `WoWVoice`, then share the cloud folder's link. Each Packag
 build updates the local archive; pCloud handles uploading it. Synchronization
 and public sharing are configured separately in pCloud, not by the build script.
 
-Release folder link: [WoWVoice on pCloud](http://e.pc.cd/ju6y6alK).
+Release folder link: [WowVoice TalkingHead on pCloud](http://e.pc.cd/ju6y6alK).
 
 To copy the short link in IntelliJ IDEA, hover over the block below in the
 Markdown preview and click its copy button:
@@ -128,6 +133,25 @@ playback and Dialog restoration, the quest journal, portraits, item speakers,
 persistence across reloads, options and block scrolling. Pipeline checks use an
 isolated temporary directory without deploying to the game. These checks do not
 replace API and visual verification in the Forever client.
+
+## Playback and background sound
+
+The default `/wv channel auto` selects the playback channel for each recording.
+With `Sound_EnableSoundWhenGameIsInBG=1`, it uses Master and leaves zone music
+alone. With background sound disabled, it uses PlayMusic: live Forever testing
+confirmed that the voice becomes silent in the background and returns at the
+current playback position when the game regains focus. The addon never changes
+the background-sound setting. Music playback temporarily enables music and sets
+its volume, replaces zone music, and restores the previous settings on stop,
+completion or logout. NPC Dialog suppression applies to both playback paths,
+unless `/wv duck off` is selected.
+
+Changing the background preference does not restart or move the current voice;
+the next recording uses the new preference. If background sound is disabled
+during a Master recording, minimizing can still interrupt that recording.
+`/wv channel sound` and `/wv channel music` retain their explicit overrides.
+PlayMusic can report less reliable file availability than PlaySoundFile; an
+explicit failure is handled, but a successful return cannot prove audibility.
 
 ## Appearance
 
@@ -161,15 +185,15 @@ Further progress restarts that 10-second window; unchanged quest-log updates,
 accepting a quest and login/reload do not trigger or extend reminders.
 Only quests with description audio get a glow. Hiding the controls or disabling
 the reminder immediately removes the glow. It never starts playback.
-Descriptions that successfully start playing, automatically or manually, are remembered in
-`WowVoiceDB.listenedQuests` by player GUID and quest ID. They no longer trigger
-reminders during the current login session, including after reloads and zone
-transitions, even when closed early or replaced by another recording. A real
-login (`PLAYER_ENTERING_WORLD` with `isInitialLogin`, not `isReloadingUi`) clears
-only the current character's marks. Failed playback and turn-in lines do not
-mark the description as heard. Quests carried over from a previous session are
-eligible again on subsequent progress changes until played in the new session;
-the autoplay preferences do not otherwise affect reminder eligibility.
+Descriptions that successfully start playing, automatically or manually, suppress
+reminders for that character and quest for one hour, even if closed early or
+replaced. `WowVoiceDB.listenedQuests` stores absolute expiry timestamps by player
+GUID and quest ID, using server time (or epoch time on older clients). Reload,
+zoning and full logout/login preserve the deadline; time spent offline counts.
+A successful replay renews the hour. Failed playback and turn-in lines do not
+start or extend it. Expiry alone does not show a glow: the next objective change
+can trigger one. Expired entries and legacy session booleans without timestamps
+are discarded. The autoplay preferences do not otherwise affect eligibility.
 «Тест / переместить» also previews the glow on all active tracker replay buttons,
 including heard quests and with the reminder preference disabled. The same animated
 glow stays visible until preview stops, options close, or real
@@ -183,77 +207,49 @@ assumed available until playback reports failure; the addon does not probe them
 by playing audio in the background. Controls have no tooltips;
 hover highlighting remains. The former `playTooltips` setting is removed.
 
-The options page offers three appearance presets: Retail (selected by default),
-Classic and EllesmereUI. Installing EllesmereUI does not change the default;
-an explicitly saved preset is preserved. All three work without additional addons. Switching
-presets updates the panel without interrupting playback.
+The talking head always uses Retail appearance. The head visibility checkbox,
+Classic/EllesmereUI themes and the standalone Stop button have been removed.
+Loading clears their obsolete saved preferences while preserving panel position,
+custom dimensions, scale and playback options. The options page provides a
+silent player preview for dragging, horizontal centering and a position reset.
 
-All presets appear immediately, with no fades during playback or line changes.
+Retail follows Blizzard's talking-head composition: a soft translucent background,
+a gold portrait frame, the speaker's name above the text on the right, and a close
+button that stops playback. Original TalkingHeads artwork is bundled in
+`src/Media`; attribution is in `src/Media/NOTICE.txt`. It does not require Retail
+atlas entries in the Forever client. Names and dialogue inherit the client's
+localized `QuestTitleFont` and `QuestFont`, including native sizes. Long names
+wrap and move the quest text down to prevent overlap.
+
+The panel appears immediately, with no fades during playback or line changes.
 When audio ends, Dialog is restored immediately and the entire panel, including
 the idle model, fades out together over one second. Model geometry opacity is
 set explicitly with `SetModelAlpha`; its ancestor frames remain opaque so the
 model does not outlast the background or receive a doubled fade.
-The entire talking-head panel uses an independent root frame, so hiding or
-fading `UIParent` leaves the portrait, text and controls visible together.
-The panel uses `FULLSCREEN_DIALOG` at frame level 200 to stay above dialogue
-tutorial banners, with all of its child frames inheriting the same strata.
-This also applies to manual UI hiding and does not depend on Dialogue UI or any
-other addon's frames, files or load order. The anchor still uses UIParent-relative
-coordinates and mirrors its effective scale. Playback completion, manual stop
-and disabling the talking head still hide the panel; late model loads cannot
-reveal a dismissed portrait.
-If the action-bar container has no screen coordinates yet, the default anchor
-falls back to the bottom of the screen. Opening options and switching presets
-also tolerate a pending layout without losing the saved panel position.
+The entire panel uses an independent root frame: hiding or fading `UIParent`
+leaves the portrait, text and controls visible together. It uses
+`FULLSCREEN_DIALOG` at frame level 200 to stay above dialogue/tutorial banners.
+This does not depend on Dialogue UI or any other addon's files or load order.
+The anchor uses UIParent-relative coordinates and mirrors its effective scale.
 The cross, right-click and manual stop dismiss the panel immediately, including
-during fade-out. Replacing a line restores full opacity immediately; there are
-no delayed callbacks that can hide a newer line or preview.
+during fade-out; late model loads cannot reveal a dismissed portrait.
 
-The EllesmereUI preset reads the installed BlizzardSkin module's third-party
-window theme: its textured background or the global Modern color and opacity.
-Changes are detected while the panel is visible. If the module, texture or valid
-settings are unavailable, the preset keeps WowVoice's built-in dark background.
-Only the background is inherited; layout and quest fonts remain owned by WowVoice.
-
-Retail follows Blizzard's talking-head composition: a soft translucent background,
-a gold portrait frame, the speaker's name above the text on the right, and a close
-button that stops playback. It uses the original TalkingHeads artwork bundled in
-`src/Media`; attribution is in `src/Media/NOTICE.txt`. It does not require Retail
-atlas entries in the Forever client.
-
-All presets share the Retail layout: portrait on the left, speaker name above
-the quest text on the right. Switching styles preserves the content geometry.
-All presets inherit the client's localized quest fonts: `QuestTitleFont`
-for speaker names and `QuestFont` for dialogue, including their native sizes
-so they match quest titles and descriptions. Names wrap
-when they exceed the available width, and the text moves down to accommodate them.
-
-Presets share a 570 by 155 panel at 100% scale. Existing custom dimensions are
-preserved until a preset is selected, which restores this common size while
-keeping the panel's position. The options page provides a silent player preview
-for dragging the panel, horizontal centering and a position reset.
-Starting the preview stops current quest playback, restores the NPC Dialog
-settings and opens the draggable player model without sound. A second click
-closes the preview; interrupted playback does not resume automatically.
-
+The default panel is 570 by 155 at 100% scale. Saved custom dimensions remain.
+Starting the preview stops current playback, restores audio settings and opens
+the draggable player model without sound. A second click or closing options
+ends the preview; interrupted playback does not resume automatically.
 The default position is bottom center above the action bars, following Retail's
-`BottomManagedFrameContainer` bottom anchor. WowVoice follows that boundary
-without joining Blizzard's alert stack. If the container is unavailable, it uses
-the `TalkingHeadUI.xml` fallback of 96 UI units above the bottom edge. Saved
-positions take priority; `/wv head reset` restores the default. Previewing or
-switching appearance presets preserves the default anchor until a position is saved.
+`BottomManagedFrameContainer` without joining Blizzard's alert stack. If its
+coordinates are unavailable, the anchor falls back to 96 UI units above the
+bottom edge. Saved positions take priority; `/wv head reset` restores the default.
+Opening an unmoved preview preserves the automatic anchor.
 
-The default geometry follows Blizzard's talking head: a 115 by 115 model at
-(21, -21), the name at (152, -25), a 3-unit gap before dialogue and a 42-unit
-right text inset. The full-width 2-unit progress bar is a WowVoice addition.
-
-Every preset has a close button in the upper-right corner that stops playback.
-Retail and Classic use the stock WoW cross; EllesmereUI uses the borderless
-`uitools-icon-close` glyph with a brighter hover state, matching its options window.
-The heading leaves room for the button. The progress bar
-spans the bottom of the panel with equal side insets, below both portrait and text.
-The close button provides hover and pressed feedback. Other
-WowVoice buttons can still use EllesmereUI styling when it is available.
+The default geometry uses a 115 by 115 model at (21, -21), the name at (152, -25),
+a 3-unit gap before dialogue and a 42-unit right inset reserved for the stock
+WoW close button. The full-width 2-unit progress bar has equal side insets below
+both portrait and text. The close button has hover and pressed feedback.
+Other WowVoice buttons can still match installed EllesmereUI journal/settings
+styling; that integration does not change the talking head's Retail appearance.
 
 ## Portrait camera profiles
 
@@ -279,9 +275,7 @@ Unrecognized models or unavailable APIs keep the original framing.
 Only model identities are derived from that source. Regenerate the table with
 `node tools/build-camera-models.js <community-listfile.csv>` using that release.
 `PortraitCameraOverrides` allows individual model corrections; `/wv diag`
-includes the current model file ID and camera profile. All three styles share
-these settings. The standalone Stop button is hidden whenever the talking head
-is enabled; disabling the head restores the saved auto/always/off button mode.
+includes the current model file ID and camera profile.
 
 ## Quest speaker recovery
 
@@ -359,8 +353,8 @@ location. The destination must exist and end in
 ## Deployment and backups
 
 Before writing any files, Deploy creates `backups/<timestamp-id>/` containing
-the existing `WowVoice` directory and the two sound pack TOC files it will
-replace. It then synchronizes `src/` into `AddOns\WowVoice`, removing old files
+the existing `WowVoiceTalkingHead` directory and the two sound pack TOC files it will
+replace. It then synchronizes `src/` into `AddOns\WowVoiceTalkingHead`, removing old files
 that are no longer present in the source. Existing IDE workspace state under
 the installed addon's `.idea` directory is preserved.
 
@@ -371,22 +365,22 @@ backed up when present; the large Classic audio library is not backed up.
 Other addons and `WTF` are not modified. Fully restart the game after deployment
 so the client can discover newly added sounds.
 
-To roll back, restore `WowVoice`, the two TOC files and, if present, `CatVoices`
+To roll back, restore `WowVoiceTalkingHead`, the two TOC files and, if present, `CatVoices`
 from the appropriate backup directory. Its `destination.txt` records the AddOns
 destination. Restore older Classic audio from its original archive if needed.
 
 ## Release package
 
-Package creates a ZIP archive, using the version from `src/WowVoice.toc`:
+Package creates a ZIP archive, using the version from `src/WowVoiceTalkingHead.toc`:
 
 ```text
-artifacts/WoWVoice/WowVoice-<version>.zip
+artifacts/WoWVoice/WowVoiceTalkingHead-<version>.zip
 ```
 
 The ZIP contains:
 
 ```text
-WowVoice/                         Complete addon from src/
+WowVoiceTalkingHead/              Complete addon from src/
 WowVoiceSounds/                   Complete Classic audio and two Forever TOCs
 CatVoices/                       Additional audio, metadata and attribution
 README.txt                        Plain-text Russian user guide from USER_README.md

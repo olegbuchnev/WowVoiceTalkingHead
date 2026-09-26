@@ -23,7 +23,8 @@ for _,id in ipairs({179,861,3911}) do
         event(name)
     end
 end
-assert(#plays==0 and #stops==0 and not frames.WowVoiceTalkingHead:IsShown())
+assert(#plays==0 and #stops==0)
+assert(not frames.WowVoiceTalkingHead or not frames.WowVoiceTalkingHead:IsShown())
 restored('1','0.37')
 
 -- Acceptance stays automatic and turn-in events do not replace active audio.

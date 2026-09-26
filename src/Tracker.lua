@@ -4,19 +4,32 @@ local WV = _G.WowVoice
 local buttons, hooked = {}, {}
 local progress, pulses = {}, {}
 local REMINDER_DURATION = 10
+local LISTENED_COOLDOWN = 60 * 60
 local previewStarted
+
+local function currentTimestamp()
+    -- Absolute time survives both /reload and a full client restart.
+    return GetServerTime and GetServerTime() or time()
+end
 
 local function listenedQuests()
     local guid = UnitGUID("player")
     if not (WowVoiceDB and guid) then return end
     WowVoiceDB.listenedQuests = WowVoiceDB.listenedQuests or {}
     WowVoiceDB.listenedQuests[guid] = WowVoiceDB.listenedQuests[guid] or {}
-    return WowVoiceDB.listenedQuests[guid]
+    local listened = WowVoiceDB.listenedQuests[guid]
+    local now = currentTimestamp()
+    for id, expiresAt in pairs(listened) do
+        -- Old session booleans have no playback time and cannot establish a
+        -- one-hour deadline. Discard them along with expired timestamps.
+        if type(expiresAt) ~= "number" or not (expiresAt > now) then listened[id] = nil end
+    end
+    return listened
 end
 
 function WV:MarkQuestListened(id)
     local listened = listenedQuests()
-    if listened then listened[id] = true end
+    if listened then listened[id] = currentTimestamp() + LISTENED_COOLDOWN end
     pulses[id] = nil
     self:RefreshTrackerButtons()
 end
@@ -224,16 +237,10 @@ events:RegisterEvent("PLAYER_LOGIN")
 events:RegisterEvent("ADDON_LOADED")
 events:RegisterEvent("QUEST_LOG_UPDATE")
 events:RegisterEvent("PLAYER_ENTERING_WORLD")
-events:SetScript("OnEvent", function(_, event, isInitialLogin, isReloadingUi)
+events:SetScript("OnEvent", function(_, event)
     if event == "QUEST_LOG_UPDATE" then
         scanProgress()
     elseif event == "PLAYER_ENTERING_WORLD" or event == "PLAYER_LOGIN" then
-        if event == "PLAYER_ENTERING_WORLD" and isInitialLogin and not isReloadingUi then
-            -- A real login starts a new listening session. Reloads and zone
-            -- transitions keep this character's saved playback marks.
-            local listened = listenedQuests()
-            if listened then for id in pairs(listened) do listened[id] = nil end end
-        end
         -- Login/reload and loading screens establish a fresh, silent baseline.
         progress, pulses = {}, {}
         setup()

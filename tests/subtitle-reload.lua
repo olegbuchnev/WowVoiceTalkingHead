@@ -6,8 +6,7 @@ local head=frames.WowVoiceTalkingHead
 assert(head.Body.text==savedSubtitle and head.TextScroll.scroll==0)
 local anchor=frames.WowVoiceTalkingHeadAnchor
 assert(anchor.points[1][1]=='CENTER' and anchor.points[1][4]==0 and anchor.points[1][5]==-250)
-assert(head.width==570 and head.height==155 and head.scale==1)
-assert(WowVoice:GetHeadPreset()=='classic')
-assert(head.Background.backdrop.bgFile=='Interface\\DialogFrame\\UI-DialogBox-Background')
+assert(head.width==500 and head.height==140 and head.scale==1)
+assert(head.RetailBackground.visible and head.PortraitOverlay.visible)
 WowVoice:Silence()
-print('PASS: saved description, preset and exact position survive simulated reload')
+print('PASS: saved description, dimensions and exact position survive simulated reload')

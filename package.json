@@ -1,5 +1,5 @@
 {
-  "name": "wowvoice-forever-tools",
+  "name": "wowvoice-talkinghead-tools",
   "version": "1.0.0",
   "private": true,
   "scripts": { "test": "node tests/run.js" },

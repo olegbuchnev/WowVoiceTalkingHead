@@ -19,7 +19,7 @@ function Assert-Fails {
 }
 
 try {
-  foreach ($name in @('src', 'build.ps1', 'USER_README.md', 'USER_UPDATE_README.md')) {
+  foreach ($name in @('src', 'build.ps1', 'USER_README.md')) {
     Copy-Item -LiteralPath (Join-Path $project $name) -Destination $fixture -Recurse
   }
   # Exercise repeated packaging with a small, real-audio fixture. The full
@@ -40,7 +40,7 @@ try {
     Set-Content -LiteralPath (Join-Path $fixture 'src\ForeverAudio.lua')
   $build = Join-Path $fixture 'build.ps1'
   $addons = Join-Path $fixture 'game\_classic_beta_\Interface\AddOns'
-  $voice = Join-Path $addons 'WowVoice'
+  $voice = Join-Path $addons 'WowVoiceTalkingHead'
   $sounds = Join-Path $addons 'WowVoiceSounds'
   $catSounds = Join-Path $addons 'CatVoices'
   foreach ($dir in @($voice, $sounds, $catSounds, (Join-Path $voice '.idea'), (Join-Path $addons 'Unrelated'))) {
@@ -79,7 +79,7 @@ try {
   Assert-True (Test-Path -LiteralPath (Join-Path $addons 'Unrelated\keep.txt')) 'Sibling addon was touched.'
   $backups = @(Get-ChildItem -LiteralPath (Join-Path $fixture 'backups') -Directory)
   Assert-True ($backups.Count -eq 1) 'Expected one pre-deploy backup.'
-  Assert-True ((Get-Content -LiteralPath (Join-Path $backups[0].FullName 'WowVoice\Core.lua') -Raw).Trim() -eq 'old core') 'Backup did not preserve old code.'
+  Assert-True ((Get-Content -LiteralPath (Join-Path $backups[0].FullName 'WowVoiceTalkingHead\Core.lua') -Raw).Trim() -eq 'old core') 'Backup did not preserve old code.'
   Assert-True ((Get-Content -LiteralPath (Join-Path $backups[0].FullName 'WowVoiceSounds\WowVoiceSounds.toc') -Raw).Trim() -eq 'old TOC') 'Backup did not preserve old TOC.'
   Assert-True (-not (Test-Path -LiteralPath (Join-Path $backups[0].FullName 'WowVoiceSounds\179a.ogg'))) 'Backup copied sound library.'
   Assert-True ((Get-Content -LiteralPath (Join-Path $backups[0].FullName ('CatVoices\' + $catSample.Name)) -Raw).Trim() -eq 'old supplemental audio') 'Backup did not preserve supplemental audio.'
@@ -91,7 +91,7 @@ try {
   Assert-Fails { & $build -Task Deploy -ConfigPath $config } 'Retail path accepted.'
   Assert-Fails { & $build -Task Deploy -Target Retail -ConfigPath $config } 'Retail target accepted.'
   Assert-True (@(Get-ChildItem -LiteralPath $retail -Force).Count -eq 0) 'Rejected deployment wrote files.'
-  $tocPath = Join-Path $fixture 'src\WowVoice.toc'
+  $tocPath = Join-Path $fixture 'src\WowVoiceTalkingHead.toc'
   $original = [IO.File]::ReadAllText($tocPath)
   [IO.File]::AppendAllText($tocPath, "`n..\outside.lua`n")
   Assert-Fails { & $build -Task Validate } 'Escaping TOC path accepted.'
@@ -118,6 +118,7 @@ try {
   $artifacts = Join-Path $fixture 'artifacts'
   $release = Join-Path $artifacts 'WoWVoice'
   $firstZip = @(Get-ChildItem -LiteralPath $release -Filter '*.zip' -File)[0].FullName
+  Assert-True ((Split-Path -Leaf $firstZip) -like 'WowVoiceTalkingHead-*.zip') 'Full package is missing the new project name.'
   $firstHash = (Get-FileHash -LiteralPath $firstZip).Hash
   # If an existing release cannot be replaced, it must not be truncated/deleted.
   $lock = [IO.File]::Open($firstZip, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::None)
@@ -144,7 +145,7 @@ try {
   $expected = @{}
   foreach ($file in Get-ChildItem -LiteralPath (Join-Path $fixture 'src') -File -Recurse) {
     $relative = $file.FullName.Substring($sourcePrefix.Length).Replace('\', '/')
-    $expected['WowVoice/' + $relative] = $file.FullName
+    $expected['WowVoiceTalkingHead/' + $relative] = $file.FullName
   }
   foreach ($file in Get-ChildItem -LiteralPath (Join-Path $fixture 'soundpack') -File) {
     $expected['WowVoiceSounds/' + $file.Name] = $file.FullName
@@ -165,8 +166,9 @@ try {
       if ($name -eq 'README.txt') {
         $reader = [IO.StreamReader]::new($entry.Open(), [Text.Encoding]::UTF8)
         try { $guide = $reader.ReadToEnd() } finally { $reader.Dispose() }
+        $fullGuide = $guide
         $sourceGuide = [IO.File]::ReadAllText((Join-Path $fixture 'USER_README.md'))
-        Assert-True ($guide.Contains('WowVoice')) 'Plain-text guide is missing its title.'
+        Assert-True ($guide.Contains('WowVoiceTalkingHead')) 'Plain-text guide is missing its title.'
         foreach ($url in [regex]::Matches($sourceGuide, '\]\((https?://[^)]+)\)')) {
           Assert-True ($guide.Contains($url.Groups[1].Value)) 'Plain-text guide lost a link.'
         }
@@ -182,7 +184,7 @@ try {
   finally { $sha.Dispose(); $archive.Dispose() }
   Assert-True (@(Get-ChildItem -LiteralPath $artifacts -Force).Count -eq 1) 'Expected only the shared folder in artifacts.'
   Assert-True (@(Get-ChildItem -LiteralPath $release -Force).Count -eq 1) 'Expected only the latest ZIP in the shared folder.'
-  Write-Host 'PASS: ZIP contains exactly WowVoice, both audio folders and plain-text README; runtime hashes match.'
+  Write-Host 'PASS: ZIP contains exactly WowVoiceTalkingHead, both audio folders and plain-text README; runtime hashes match.'
   Write-Host 'PASS: stable shared folder, version replacement, legacy ZIP cleanup and failed-build preservation.'
 
   $fullZip = $archives[0].FullName
@@ -197,6 +199,7 @@ try {
   try {
     & $build -Task PackageAddon
     $updateZip = @(Get-ChildItem -LiteralPath $release -Filter '*-addon-only.zip' -File)[0].FullName
+    Assert-True ((Split-Path -Leaf $updateZip) -like 'WowVoiceTalkingHead-*-addon-only.zip') 'Addon-only package is missing the new project name.'
     Assert-True ((Get-FileHash -LiteralPath $fullZip).Hash -eq $fullHash) 'Addon update changed full release.'
     $archive = [IO.Compression.ZipFile]::OpenRead($updateZip)
     $sha = [Security.Cryptography.SHA256]::Create()
@@ -209,11 +212,11 @@ try {
         if ($name -eq 'README.txt') {
           $reader = [IO.StreamReader]::new($entry.Open(), [Text.Encoding]::UTF8)
           try { $guide = $reader.ReadToEnd() } finally { $reader.Dispose() }
-          $updateTitle = (Get-Content -LiteralPath (Join-Path $fixture 'USER_UPDATE_README.md') -Encoding UTF8)[0] -replace '^# ', ''
-          Assert-True ($guide.Contains($updateTitle) -and $guide.Contains('/reload') -and $guide.Contains('WowVoiceSounds')) 'Update guide missing.'
+          Assert-True ($guide -eq $fullGuide) 'Full and addon-only archives must share the same guide.'
+          Assert-True ($guide.Contains('addon-only') -and $guide.Contains('/reload') -and $guide.Contains('WowVoiceSounds')) 'Addon-only instructions missing.'
           continue
         }
-        Assert-True ($name.StartsWith('WowVoice/') -and $name -notmatch '\.ogg$') 'Audio or unrelated folder in addon update.'
+        Assert-True ($name.StartsWith('WowVoiceTalkingHead/') -and $name -notmatch '\.ogg$') 'Audio or unrelated folder in addon update.'
         $stream = $entry.Open()
         try { $hash = [BitConverter]::ToString($sha.ComputeHash($stream)).Replace('-', '') }
         finally { $stream.Dispose() }

@@ -98,15 +98,13 @@ assert(questCache()[179].displayID==npcDisplay and not head.visible)
 command('on')
 print('PASS: item/shared quest avoids unrelated target, capture without audio or while voice is disabled')
 
--- Head visibility is independent of playback/stop button and preserves progress.
+-- The head stays visible during playback; real playback cannot be dragged.
 WV:ReplayQuest(179)
 local soundCount=#plays
-command('head off'); assert(not head.visible and #plays==soundCount)
 now=now+2
-command('head on'); assert(head.visible and #plays==soundCount)
+assert(head.visible and #plays==soundCount)
 head.scripts.OnUpdate()
 assert(head.Progress.value>0)
-command('button off'); assert(head.visible)
 local anchor=frames.WowVoiceTalkingHeadAnchor
 local beforeDrag=WowVoiceDB.headPosition
 head.scripts.OnDragStart(head)
@@ -121,4 +119,4 @@ event('QUEST_DETAIL'); portraitEvent('QUEST_ACCEPTED',179); WV:Silence()
 assert(#messages==0,'normal mode must be quiet')
 -- Preserve cache for the separate simulated reload phase.
 savedBeforeReload=questCache()[179].displayID
-print('PASS: head on/off/reset, drag persistence, no sound restarts, stop-button independence, diagnostics, quiet mode')
+print('PASS: head visibility/reset, drag persistence, no sound restarts, diagnostics, quiet mode')

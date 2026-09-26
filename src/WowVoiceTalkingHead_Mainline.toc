@@ -1,8 +1,8 @@
 ## Interface: 16001
-## Title: WowVoice
-## Group: WowVoice
-## IconTexture: Interface\AddOns\WowVoice\Media\VoiceChat-Active.tga
-## Notes: Русская озвучка классических и дополнительных квестов WoW Forever.
+## Title: WowVoice TalkingHead
+## Group: WowVoiceTalkingHead
+## IconTexture: Interface\AddOns\WowVoiceTalkingHead\Media\VoiceChat-Active.tga
+## Notes: Говорящие головы и озвучка заданий WoW Forever на основе WowVoice.
 ## Author: wowvoice
 ## Version: 1.0.8-forever.5
 ## SavedVariables: WowVoiceDB

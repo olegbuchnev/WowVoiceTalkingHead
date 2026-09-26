@@ -6,10 +6,10 @@ BottomManagedFrameContainer=CreateFrame('Frame',nil,UIParent)
 BottomManagedFrameContainer:SetSize(573,1)
 assert(BottomManagedFrameContainer:GetCenter()==nil)
 command('options')
+WV:GetHeadSettings()
 local head,anchor=frames.WowVoiceTalkingHead,frames.WowVoiceTalkingHeadAnchor
 assert(anchor:GetCenter()~=nil and anchor:GetPoint()=='BOTTOM')
-for _,preset in ipairs({'retail','classic','ellesmere'}) do
-    assert(WV:SetHeadPreset(preset))
+do
     local settings=WV:GetHeadSettings()
     assert(type(settings.x)=='number' and type(settings.y)=='number')
     assert(WowVoiceDB.headPosition==nil)
@@ -33,21 +33,19 @@ assert(#plays==played and #stops==stopped and WowVoiceDB.headPosition==nil)
 local getCenter=anchor.GetCenter
 anchor.GetCenter=function() return nil,nil end
 WowVoiceDB.headPosition={'CENTER','CENTER',123,-200}
-assert(WV:SetHeadPreset('retail'))
 local settings=WV:GetHeadSettings()
 assert(settings.x==123 and settings.y==-200)
 assert(WowVoiceDB.headPosition[3]==123 and WowVoiceDB.headPosition[4]==-200)
 WowVoiceDB.headPosition={'BOTTOMLEFT','BOTTOMLEFT',20,30}
-assert(WV:SetHeadPreset('classic'))
 settings=WV:GetHeadSettings()
 assert(settings.x==20+head:GetWidth()/2-UIParent:GetWidth()/2)
 assert(settings.y==30+head:GetHeight()/2-UIParent:GetHeight()/2)
 WV:ResetHeadPosition()
-assert(WV:SetHeadPreset('ellesmere') and WowVoiceDB.headPosition==nil)
+assert(WowVoiceDB.headPosition==nil)
 settings=WV:GetHeadSettings()
 assert(type(settings.x)=='number' and type(settings.y)=='number')
 anchor.GetCenter=getCenter
 assert(WV:ToggleHeadPreview())
 assert(head:IsVisible() and anchor:GetCenter()~=nil)
 WV:HideHeadPreview()
-print('PASS: unpositioned managed container, visible playback, lost layout recovery, pending GetCenter, saved offsets and preset/preview safety')
+print('PASS: unpositioned managed container, visible playback, lost layout recovery, pending GetCenter, saved offsets and preview safety')

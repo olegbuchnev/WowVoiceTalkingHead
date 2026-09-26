@@ -1,7 +1,7 @@
 TalkingHeads.tga contains Blizzard Entertainment's World of Warcraft UI artwork.
 Source: https://github.com/Gethe/wow-ui-textures/blob/live/QUESTFRAME/TalkingHeads.PNG
 Converted from PNG to uncompressed 32-bit TGA without changing the pixels.
-The artwork belongs to Blizzard Entertainment; it is not original WowVoice artwork.
+The artwork belongs to Blizzard Entertainment; it is not original WowVoice TalkingHead artwork.
 
 VoiceChat-Active.tga combines Blizzard's standard voice chat speaker and waves.
 Sources:
@@ -14,5 +14,5 @@ The visible artwork occupies x=0..21, y=3..19. A centered 22x22 crop at
 and half-pixel sampling. This removes excess transparent padding, fills the
 icon width and centers the speaker without changing its proportions.
 Saved as uncompressed 32-bit BGRA TGA with a top-left origin and 8-bit alpha.
-All three bundled addons reference this shared texture in WowVoice/Media.
-The artwork belongs to Blizzard Entertainment; it is not original WowVoice artwork.
+All three bundled addons reference this shared texture in WowVoiceTalkingHead/Media.
+The artwork belongs to Blizzard Entertainment; it is not original WowVoice TalkingHead artwork.

@@ -1,12 +1,7 @@
 event('ADDON_LOADED')
 local WV=WowVoice
-local previousEUI=EllesmereUI
-EllesmereUI={}
-assert(WV:GetHeadPreset()=='retail','Retail is the default even when EllesmereUI is installed')
-EllesmereUI=previousEUI
 command('options')
-assert(frames.WowVoiceOptionsPanel.Presets.retail.template=='UIRadioButtonTemplate',
-    'clients without modern radio atlases keep the stock control')
+assert(frames.WowVoiceOptionsPanel.Presets==nil)
 playerDisplayID=0
 assert(WV:ToggleHeadPreview())
 local head=frames.WowVoiceTalkingHead
@@ -25,8 +20,7 @@ bottomContainer:ClearAllPoints()
 bottomContainer:SetPoint('BOTTOM',UIParent,'BOTTOM',0,210)
 assert(WV:GetHeadSettings().y==initialY+60 and WV:GetHeadSettings().x==0,
     'default follows the bottom action-bar boundary as Blizzard moves it')
-for _, preset in ipairs({'classic','ellesmere','retail'}) do
-    WV:SetHeadPreset(preset)
+do
     assert(WowVoiceDB.headPosition==nil and anchor.points[1][2]==bottomContainer,
         'changing appearance must retain the automatic default anchor')
 end
@@ -129,8 +123,8 @@ end
 WV:StopTalkingHead()
 print('PASS: long speaker names wrap above the text without moving the portrait or overlapping content')
 
--- Retail decorations must disappear when switching to another preset.
-WV:SetHeadPreset('retail')
+-- Retail decorations and close control remain visible.
+WV:ResetHeadSettings()
 WV:ToggleHeadPreview()
 assert(head.Background.backdrop==nil and head.RetailBackground.visible and head.PortraitBackground.visible)
 assert(head.PortraitOverlay.visible and head.PortraitOverlay.frameLevel>head.Model:GetFrameLevel())
@@ -151,23 +145,9 @@ assert(head.Icon.visible and head.PortraitOverlay.visible)
 assert(head.Name.height>=head.Name:GetStringHeight())
 assert(-head.TextScroll.points[1][5]>=-head.Name.point[5]+head.Name.height)
 assert(-head.TextScroll.points[1][5]+head.TextScroll.height<=head.height-14)
-WV:SetHeadPreset('ellesmere')
-assert(not head.RetailBackground.visible and not head.PortraitBackground.visible and not head.PortraitOverlay.visible)
-assert(head.Close.visible and head.Close.Glyph.visible and head.Background.backdrop)
-assert(not head.Close.Stock.visible and not head.Close.Highlight.visible,
-    'Ellesmere close hides all stock artwork')
-assert(head.Close.normalTexture==nil and head.Close.pushedTexture==nil and head.Close.highlightTexture==nil,
-    'close must not populate native texture slots that can retain stock artwork')
-assert(head.Close.Glyph.atlas=='uitools-icon-close' and head.Close.Glyph.width==14)
-assert(head.Close.Glyph.vertexColor[4]==0.75)
-head.Close.scripts.OnEnter()
-assert(head.Close.Glyph.vertexColor[4]==1)
-head.Close.scripts.OnLeave()
-assert(head.Close.Glyph.vertexColor[4]==0.75)
 checkStopLayout()
 WV:StopTalkingHead()
-for _,preset in ipairs({'classic','ellesmere','retail'}) do
-    WV:SetHeadPreset(preset)
+do
     WV:ToggleHeadPreview()
     assert(head.Name.fontObject=='QuestTitleFont' and head.Body.fontObject=='QuestFont')
     for _, pair in ipairs({{head.Name,'QuestTitleFont'},{head.Body,'QuestFont'}}) do
@@ -175,23 +155,23 @@ for _,preset in ipairs({'classic','ellesmere','retail'}) do
         local file,size,flags=reference:GetFont()
         local actualFile,actualSize,actualFlags=pair[1]:GetFont()
         assert(actualFile==file and actualSize==size and actualFlags==flags,
-            'all styles must match native quest font families, sizes and flags')
+            'Retail must match native quest font families, sizes and flags')
     end
     assert(head.TextMeasure.fontFile==head.Body.fontFile and head.TextMeasure.fontSize==head.Body.fontSize,
         'scroll measurement must use the displayed quest font')
     assert(head.TextScroll.height%head.Body.fontSize==0,'only whole quest-font lines should be visible')
     checkStopLayout()
-    assert(head.Close.Glyph.visible==(preset=='ellesmere'))
-    assert(head.Close.Stock.visible==(preset~='ellesmere'))
+    assert(head.Close.Glyph==nil)
+    assert(head.Close.Stock.visible==true)
     head.Close.scripts.OnEnter()
     head.Close.scripts.OnMouseDown()
-    assert(head.Close.Highlight.visible==(preset~='ellesmere'))
+    assert(head.Close.Highlight.visible==true)
     assert(head.Close.Highlight.blendMode=='ADD','stock hover glow must not cover the cross with black pixels')
-    assert(head.Close.Stock.visible==(preset~='ellesmere'))
+    assert(head.Close.Stock.visible==true)
     head.Close.scripts.OnMouseUp()
     head.Close.scripts.OnLeave()
     assert(not head.Close.Highlight.visible)
     head.Close.scripts.OnClick()
     assert(not head.visible and #plays==0 and #stops==0,'every close ends silent preview')
 end
-print('PASS: Retail composition, portrait ornament, wrapped title, item fallback, close control and theme cleanup')
+print('PASS: Retail composition, portrait ornament, wrapped title, item fallback, close control')

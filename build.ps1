@@ -69,7 +69,7 @@ function Remove-CheckedDirectory {
 }
 
 function Get-AddonVersion {
-  $line = Get-Content -LiteralPath (Join-Path $AddonSource 'WowVoice.toc') -Encoding UTF8 |
+  $line = Get-Content -LiteralPath (Join-Path $AddonSource 'WowVoiceTalkingHead.toc') -Encoding UTF8 |
     Where-Object { $_ -match '^##\s+Version:\s*(.+?)\s*$' } | Select-Object -First 1
   if (-not $line) { throw 'Missing addon version.' }
   $version = [regex]::Match($line, '^##\s+Version:\s*(.+?)\s*$').Groups[1].Value
@@ -79,7 +79,7 @@ function Get-AddonVersion {
 
 function Test-AddonLayout {
   param([switch]$AddonOnly)
-  $guideName = if ($AddonOnly) { 'USER_UPDATE_README.md' } else { 'USER_README.md' }
+  $guideName = 'USER_README.md'
   if (-not (Test-Path -LiteralPath (Join-Path $RepoRoot $guideName) -PathType Leaf)) {
     throw "Missing $guideName for the release archive."
   }
@@ -128,7 +128,7 @@ function Test-AddonLayout {
       }
     }
   }
-  foreach ($tocName in @('WowVoice.toc', 'WowVoice_Mainline.toc', 'WowVoice_Standard.toc')) {
+  foreach ($tocName in @('WowVoiceTalkingHead.toc', 'WowVoiceTalkingHead_Mainline.toc', 'WowVoiceTalkingHead_Standard.toc')) {
     $toc = Join-Path $AddonSource $tocName
     if (-not (Test-Path -LiteralPath $toc -PathType Leaf)) { throw "Missing TOC: $toc" }
     $lines = @(Get-Content -LiteralPath $toc -Encoding UTF8)
@@ -145,7 +145,7 @@ function Test-AddonLayout {
     }
   }
   if ($AddonOnly) {
-    Write-Host "Validated WowVoice $(Get-AddonVersion) runtime for addon-only update."
+    Write-Host "Validated WowVoice TalkingHead $(Get-AddonVersion) runtime for addon-only update."
     return
   }
   $soundFiles = @(Get-ChildItem -LiteralPath $SoundSource -Force)
@@ -169,7 +169,7 @@ function Test-AddonLayout {
       -not (Test-Path -LiteralPath (Join-Path $CatSource 'NOTICE.txt') -PathType Leaf)) {
     throw 'catvoices must contain indexed supplemental audio, CatVoices.toc and NOTICE.txt only.'
   }
-  Write-Host "Validated WowVoice $(Get-AddonVersion), $($classicFiles.Count) Classic and $($foreverFiles.Count) supplemental recordings."
+  Write-Host "Validated WowVoice TalkingHead $(Get-AddonVersion), $($classicFiles.Count) Classic and $($foreverFiles.Count) supplemental recordings."
 }
 
 function Resolve-AddOnsDirectory {
@@ -195,10 +195,10 @@ function Resolve-AddOnsDirectory {
 
 function Invoke-Deploy {
   $addons = Resolve-AddOnsDirectory
-  $destination = Join-Path $addons 'WowVoice'
+  $destination = Join-Path $addons 'WowVoiceTalkingHead'
   $sounds = Join-Path $addons 'WowVoiceSounds'
   $catSounds = Join-Path $addons 'CatVoices'
-  Assert-DirectChildPath $destination $addons 'WowVoice'
+  Assert-DirectChildPath $destination $addons 'WowVoiceTalkingHead'
   Assert-DirectChildPath $sounds $addons 'WowVoiceSounds'
   Assert-DirectChildPath $catSounds $addons 'CatVoices'
   Assert-NoReparseTree $destination
@@ -213,7 +213,7 @@ function Invoke-Deploy {
   $backup = Join-Path $backups ((Get-Date -Format 'yyyyMMdd-HHmmss-fff') + '-' + [guid]::NewGuid().ToString('N').Substring(0, 6))
   New-Item -ItemType Directory -Path $backup -Force | Out-Null
   if (Test-Path -LiteralPath $destination) {
-    Copy-Item -LiteralPath $destination -Destination (Join-Path $backup 'WowVoice') -Recurse
+    Copy-Item -LiteralPath $destination -Destination (Join-Path $backup 'WowVoiceTalkingHead') -Recurse
   }
   if (Test-Path -LiteralPath $catSounds) {
     Copy-Item -LiteralPath $catSounds -Destination (Join-Path $backup 'CatVoices') -Recurse
@@ -256,7 +256,7 @@ function Invoke-Deploy {
   foreach ($file in Get-ChildItem -LiteralPath $CatSource -File) {
     Copy-Item -LiteralPath $file.FullName -Destination (Join-Path $catSounds $file.Name) -Force
   }
-  Write-Host "Deployed WowVoice, WowVoiceSounds and CatVoices to ${Target}: $addons"
+  Write-Host "Deployed WowVoice TalkingHead, WowVoiceSounds and CatVoices to ${Target}: $addons"
   Write-Host 'Fully restart the game to load newly added audio.'
 }
 
@@ -273,16 +273,15 @@ function Invoke-Package {
   $stage = Join-Path $ArtifactsRoot $stageName
   New-Item -ItemType Directory -Path $stage | Out-Null
   try {
-    Copy-Item -LiteralPath $AddonSource -Destination (Join-Path $stage 'WowVoice') -Recurse
-    $packagePaths = @((Join-Path $stage 'WowVoice'))
+    Copy-Item -LiteralPath $AddonSource -Destination (Join-Path $stage 'WowVoiceTalkingHead') -Recurse
+    $packagePaths = @((Join-Path $stage 'WowVoiceTalkingHead'))
     if (-not $AddonOnly) {
       Copy-Item -LiteralPath $SoundSource -Destination (Join-Path $stage 'WowVoiceSounds') -Recurse
       Copy-Item -LiteralPath $CatSource -Destination (Join-Path $stage 'CatVoices') -Recurse
       $packagePaths += @((Join-Path $stage 'WowVoiceSounds'), (Join-Path $stage 'CatVoices'))
     }
     # Convert the guide's Markdown to plain text for opening in Notepad.
-    $guideName = if ($AddonOnly) { 'USER_UPDATE_README.md' } else { 'USER_README.md' }
-    $guide = [IO.File]::ReadAllText((Join-Path $RepoRoot $guideName))
+    $guide = [IO.File]::ReadAllText((Join-Path $RepoRoot 'USER_README.md'))
     $guide = $guide -replace '(?m)^\s*```[^\r\n]*\r?\n', ''
     $guide = $guide -replace '(?m)^#{1,6}\s+', ''
     $guide = $guide -replace '\[([^\]]+)\]\(([^)]+)\)', '$1 ($2)'
@@ -290,7 +289,7 @@ function Invoke-Package {
     $guide = $guide -replace '\r?\n', "`r`n"
     [IO.File]::WriteAllText((Join-Path $stage 'README.txt'), $guide, [Text.UTF8Encoding]::new($true))
     $suffix = if ($AddonOnly) { '-addon-only' } else { '' }
-    $zipName = 'WowVoice-' + (Get-AddonVersion) + $suffix + '.zip'
+    $zipName = 'WowVoiceTalkingHead-' + (Get-AddonVersion) + $suffix + '.zip'
     $pendingZip = Join-Path $stage $zipName
     $zip = Join-Path $release $zipName
     $packagePaths += (Join-Path $stage 'README.txt')

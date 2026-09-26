@@ -12,7 +12,7 @@ differences: older clients cannot stop PlaySoundFile, so they use
 PlayMusic/StopMusic by default.
 ]]
 
-local ADDON = "WowVoice"
+local ADDON = "WowVoiceTalkingHead"
 local SOUND_ADDON = "WowVoiceSounds"
 
 -- Text sections: a = accept, p = progress, c = complete
@@ -24,10 +24,9 @@ local defaults = {
     autoPlayTurnIn = true, -- Both progress dialogue and the final quest reward dialogue
     trackerButtons = true, -- Replay controls beside tracked quest titles
     trackerProgressPulse = true, -- Silent replay reminder when quest objectives change
-    channel  = "auto",   -- auto | sound | music
+    channel  = "auto",   -- auto: Master with background sound, Music without it
     ext      = "ogg",    -- Sound pack format: ogg | mp3
     stopmode = "silence",-- Music silencing method: silence | cvar | stopmusic
-    button   = "auto",   -- Stop button mode: auto | always | off
     volume   = 1.0,      -- Voice volume on the music channel, 0..1
     tail     = 0.05,     -- Stop time offset in seconds. The timer measures
                          -- duration from the PlayMusic CALL, but buffering
@@ -44,13 +43,14 @@ local defaults = {
 }
 
 local WV = {}
+WV.displayName = "WowVoice TalkingHead"
 _G.WowVoice = WV
 
 --------------------------------------------------------------------- Utilities
 
 local function msg(fmt, ...)
     local text = select("#", ...) > 0 and format(fmt, ...) or fmt
-    DEFAULT_CHAT_FRAME:AddMessage("|cff66ccff" .. ADDON .. "|r: " .. text)
+    DEFAULT_CHAT_FRAME:AddMessage("|cff66ccff" .. WV.displayName .. "|r: " .. text)
 end
 
 local function dbg(fmt, ...)
@@ -139,14 +139,13 @@ do
     end
 
     --[[ NPC greetings use the Dialog channel and can overlap our voice-over
-         on Master. Temporarily suppress Dialog in two ways:
+         on either Master or Music. Temporarily suppress Dialog in two ways:
            Sound_EnableDialog=0 prevents NEW lines from starting.
            Sound_DialogVolume=0 mutes a line ALREADY PLAYING, since volume
                                 changes apply immediately. Disabling the
                                 channel alone does not interrupt a greeting
                                 that started before us, such as during gossip.
-         Restore both CVars after playback. Modern clients only:
-         3.3.5a does not use these CVars or this playback path.
+         Restore both CVars after playback. Clients without Dialog CVars skip it.
 ]]
     local function duckNPC()
         if not (WowVoiceDB and WowVoiceDB.ducknpc) then
@@ -200,7 +199,7 @@ do
             StopMusic()
         elseif how == "cvar" then
             StopMusic()
-            musicWasOn = GetCVar("Sound_EnableMusic")
+            musicWasOn = savedEnable or GetCVar("Sound_EnableMusic")
             SetCVar("Sound_EnableMusic", "0")
             restoreAt = GetTime() + 0.25
             ticker:Show()
@@ -226,7 +225,9 @@ do
         end
     end)
 
-    --[[ Select the sound channel only when playback can be stopped.
+    --[[ Choose once per recording. Music survives background muting on Forever;
+         Master leaves zone music alone when background sound is enabled.
+         Never change the background CVar or restart a line when it changes.
          3.3.5a has no StopSound, so it always uses the music channel even
          when the user selects sound.
 ]]
@@ -234,7 +235,10 @@ do
         local pick = (WowVoiceDB and WowVoiceDB.channel) or "auto"
         if pick == "sound" and not canStopSound then return "music" end
         if pick ~= "auto" then return pick end
-        return canStopSound and "sound" or "music"
+        if not canStopSound or GetCVar("Sound_EnableSoundWhenGameIsInBG") == "0" then
+            return "music"
+        end
+        return "sound"
     end
 
     function Playback:Stop(reason)
@@ -260,7 +264,6 @@ do
         if reason == "duration timer" and WV.FinishTalkingHead then
             WV:FinishTalkingHead()
         elseif WV.StopTalkingHead then WV:StopTalkingHead() end
-        if WV.OnPlaybackChanged then WV.OnPlaybackChanged(false) end
     end
 
     -- duration: voice line length, or nil if unknown
@@ -269,18 +272,28 @@ do
         local mode = self:mode()
         dbg("Playback: mode=%s duration=%s path=%s", tostring(mode), tostring(duration), path)
         if mode == "music" then
-            dbg("PlayMusic: резервный режим, приглушение Dialog здесь не применяется")
-            -- The new file replaces the current stream; no explicit stop is needed.
+            -- Stop a previous Master handle before switching transports. Music
+            -- replaces Music directly, preserving the original saved settings.
+            if not self.usedMusic then self:Stop("new playback") end
+            restoreAt = nil             -- An older cvar stop must not disable this line
             stopAt = nil
+            duckNPC()
             forceAudio()                 -- Enable music and apply the requested volume
-            PlayMusic(path)
+            local ok = PlayMusic(path)
+            dbg("PlayMusic: result=%s path=%s", tostring(ok), path)
+            -- Older clients return nil. Only an explicit false reports failure.
+            if ok == false then
+                self:Stop("failed music playback")
+                restoreAudio()
+                unduckNPC()
+                return false
+            end
             self.usedMusic, playing = true, true
             if descriptionQuest and WV.MarkQuestListened then WV:MarkQuestListened(descriptionQuest) end
             local tail = (WowVoiceDB and WowVoiceDB.tail) or 0.05
             stopAt = GetTime() + (duration or FALLBACK_LIMIT) + tail
             ticker:Show()
             if WV.StartTalkingHead then WV:StartTalkingHead(context, stopAt, duration) end
-            if WV.OnPlaybackChanged then WV.OnPlaybackChanged(true) end
             return true
         end
         self:Stop("new playback")
@@ -299,7 +312,7 @@ do
         if ok then
             handle, playing = h, true
             if descriptionQuest and WV.MarkQuestListened then WV:MarkQuestListened(descriptionQuest) end
-            -- Show the Stop button in auto mode and schedule a stop
+            -- Schedule a stop
             -- using the duration table for this exact sound pack.
             -- The timer calls StopSound and restores Dialog; a duration table
             -- from another pack could cut the voice line short.
@@ -309,7 +322,6 @@ do
                 tostring(duration or FALLBACK_LIMIT), tail, stopAt)
             ticker:Show()
             if WV.StartTalkingHead then WV:StartTalkingHead(context, stopAt, duration) end
-            if WV.OnPlaybackChanged then WV.OnPlaybackChanged(true) end
             return true
         end
         unduckNPC()                      -- Playback failed; restore the Dialog channel
@@ -598,7 +610,7 @@ local function warnIfNoSounds()
     if not isLoaded then return end
     if isLoaded(SOUND_ADDON) and isLoaded("CatVoices") then return end
     msg("|cffff2020Не все звуковые паки установлены или включены.|r")
-    msg("Скопируйте из архива все три папки: WowVoice, WowVoiceSounds и CatVoices в _classic_beta_\\Interface\\AddOns.")
+    msg("Скопируйте из архива все три папки: WowVoiceTalkingHead, WowVoiceSounds и CatVoices в _classic_beta_\\Interface\\AddOns.")
     msg("Включите их в списке модификаций и полностью перезапустите игру.")
 end
 
@@ -614,6 +626,9 @@ f:SetScript("OnEvent", function(self, event, arg1)
     if event == "ADDON_LOADED" then
         if arg1 ~= ADDON then return end
         WowVoiceDB = WowVoiceDB or {}
+        -- The talking head always uses Retail. Preserve its saved geometry.
+        WowVoiceDB.headEnabled, WowVoiceDB.headPreset = nil, nil
+        WowVoiceDB.button, WowVoiceDB.buttonPos = nil, nil
         WowVoiceDB.playTooltips = nil -- Removed setting; our controls no longer show tooltips.
         for k, v in pairs(defaults) do
             if WowVoiceDB[k] == nil then WowVoiceDB[k] = v end
@@ -650,15 +665,7 @@ f:SetScript("OnEvent", function(self, event, arg1)
             WowVoiceDB.tail3Migrated = true
         end
         WV.license = _G.WowVoiceLicense   -- Installer marker, or nil in development
-        local n = 0
-        if _G.WowVoiceIndex then for _ in pairs(_G.WowVoiceIndex) do n = n + 1 end end
-        msg("загружен. Квестов в индексе: %d. Команды: /wv", n)
-        -- Free CurseForge build: no license; show the Boosty donation message.
-        if not (WV.license and WV.license.key) then
-            msg("|cffffd100Понравился WowVoice? Угости разработчика пивом на Boosty|r — набери /wv boosty")
-        end
-
-        if WV.RestoreButton then WV:RestoreButton() end
+        msg("На основе WowVoice. Озвучка: WowVoice — https://boosty.to/wowvoice; Cathey — https://boosty.to/cathey")
 
     elseif event == "PLAYER_LOGIN" then
         warnIfNoSounds()
@@ -753,24 +760,6 @@ SlashCmdList["WOWVOICE"] = function(input)
             msg("формат пака: %s", rest)
         else
             msg("формат пака: %s. Варианты: mp3 | ogg", WowVoiceDB.ext)
-        end
-
-    elseif cmd == "button" then
-        if not WV.ButtonMode then
-            msg("UI.lua не загружен — кнопки нет. Новый файл в TOC клиент видит")
-            msg("только при запуске: выйди из игры полностью и зайди заново.")
-            return
-        end
-        rest = strlower(rest or "")
-        if rest == "auto" or rest == "always" or rest == "off" then
-            WV:ButtonMode(rest)
-            msg("кнопка остановки: %s", rest)
-        elseif rest == "reset" then
-            WV:ResetButton()
-            msg("кнопка возвращена на середину экрана")
-        else
-            msg("кнопка: %s. Варианты: auto | always | off | reset",
-                WowVoiceDB.button)
         end
 
     elseif cmd == "volume" or cmd == "vol" then
@@ -886,8 +875,8 @@ SlashCmdList["WOWVOICE"] = function(input)
             msg("бесплатный аудиопак: лицензия не требуется")
         end
         msg("пример пути: %s", WV:SoundPath(179, "a"))
-        msg("UI.lua (кнопка): %s",
-            WV.ButtonMode and "загружен" or "НЕ ЗАГРУЖЕН — нужен полный перезапуск игры")
+        msg("UI.lua (журнал): %s",
+            WV.RefreshJournalButtons and "загружен" or "НЕ ЗАГРУЖЕН — нужен полный перезапуск игры")
         msg("обрыв реплики: только кнопкой (при закрытии окна не прерывается)")
         if WV.HeadDiagnostics then WV:HeadDiagnostics() end
 
@@ -907,7 +896,7 @@ SlashCmdList["WOWVOICE"] = function(input)
 
     else
         msg("команды: on | off | stop | boosty | diag | debug <on|off> | duck <on|off> | test <quest_id> | stoptest")
-        msg("         volume <0..1> | tail <сек> | button <auto|always|off>")
+        msg("         volume <0..1> | tail <сек>")
         msg("         channel <auto|sound|music> | ext <mp3|ogg>")
         msg("         stopmode <silence|cvar|stopmusic>")
         msg("         options — настройки говорящей головы")

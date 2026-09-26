@@ -25,8 +25,7 @@ local function opacity(h, expected, modelReady)
 end
 
 -- No entrance or mid-playback fades; only the final second fades all parts.
-for _, preset in ipairs({'retail','classic','ellesmere'}) do
-    WV:SetHeadPreset(preset)
+do
     local h,t=start()
     assert(h.visible and h.alpha==1 and h.Model.alpha==1)
     opacity(h,1)
@@ -42,8 +41,6 @@ for _, preset in ipairs({'retail','classic','ellesmere'}) do
     assert(stops[#stops]==sound)
     restored('1','0.37')
     advance(ended+0.5); opacity(h,0.5)
-    -- Style changes must not restore opacity during the final fade.
-    WV:SetHeadPreset(preset); opacity(h,0.5)
     advance(ended+0.999); assert(h.visible); opacity(h,0.001)
     advance(ended+1); assert(not h.visible and h.Model.displayID==0)
     near(h.Model.modelAlpha,0)
@@ -95,8 +92,7 @@ advance(t+WowVoiceDur['179a']+WowVoiceDB.tail+0.01)
 h.Model:CompleteLoad(10658)
 assert(h.Model.animation==0 and not h.Model.talkAnimation)
 advance(now+0.5); opacity(h,0.5)
-WV:SetHeadEnabled(false); assert(not h.visible)
-WV:SetHeadEnabled(true); assert(not h.visible,'enabling must not resurrect finished audio')
+WV:Silence(); assert(not h.visible)
 h.Model:CompleteLoad(10658); assert(not h.visible)
 h.Model.SetCreature=setCreature
 WowVoiceDB.questSpeakers=saved

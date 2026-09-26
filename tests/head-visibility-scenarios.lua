@@ -29,9 +29,8 @@ now=now+2
 head.scripts.OnUpdate()
 assert(head.Progress.value>0 and #plays==sounds and #stops==stopped)
 
--- Independent visibility applies to every theme, both hidden and fading UI.
-for _,preset in ipairs({'retail','classic','ellesmere'}) do
-    WV:SetHeadPreset(preset)
+-- Independent visibility applies to both hidden and fading UI.
+do
     for _,alpha in ipairs({0,0.4,1}) do
         UIParent:SetAlpha(alpha)
         head.scripts.OnUpdate()
@@ -69,7 +68,7 @@ assert(not head:IsShown())
 head.Model:CompleteLoad(10658)
 near(head.Model.modelAlpha,0,'late loads must not reveal a dismissed model')
 
--- Close/disable and silent preview work while the rest of the UI stays hidden.
+-- Close and silent preview work while the rest of the UI stays hidden.
 assert(WV:ReplayQuest(179))
 visibleTogether()
 stopped=#stops
@@ -81,10 +80,10 @@ WV:HideHeadPreview()
 head.Model:CompleteLoad(10658)
 near(head.Model.modelAlpha,0)
 assert(WV:ReplayQuest(179))
-WV:SetHeadEnabled(false)
+WV:Silence()
 assert(not head:IsShown())
 head.Model:CompleteLoad(10658)
 near(head.Model.modelAlpha,0)
 UIParent:Show(); UIParent:SetAlpha(1); SetUIVisibility(true)
 assert(not head:IsShown())
-print('PASS: independent whole-panel visibility, early/late models, all themes, scale/position, continuous audio, natural completion, close, preview and disabled head')
+print('PASS: independent whole-panel visibility, early/late models, scale/position, continuous audio, natural completion, close, preview')

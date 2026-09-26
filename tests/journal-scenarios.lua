@@ -126,7 +126,7 @@ detailPlay.scripts.OnEnter(detailPlay)
 detailPlay.scripts.OnLeave(detailPlay)
 assert(GameTooltip.visible and GameTooltip:IsOwned(QuestMapFrame))
 GameTooltip:Hide()
-assert(not frames.WowVoiceStopButton.scripts.OnEnter and not frames.WowVoiceStopButton.scripts.OnLeave)
+assert(frames.WowVoiceStopButton==nil)
 print('PASS: no tooltip option or tooltips, preserved hover, obsolete setting cleanup, unrelated tooltips untouched')
 
 first.questID = 90902
