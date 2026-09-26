@@ -23,6 +23,7 @@ local defaults = {
     autoPlayAccept = true, -- Automatically play quest descriptions unless opted out
     autoPlayTurnIn = true, -- Both progress dialogue and the final quest reward dialogue
     trackerButtons = true, -- Replay controls beside tracked quest titles
+    trackerProgressPulse = true, -- Silent replay reminder when quest objectives change
     channel  = "auto",   -- auto | sound | music
     ext      = "ogg",    -- Sound pack format: ogg | mp3
     stopmode = "silence",-- Music silencing method: silence | cvar | stopmusic
@@ -264,6 +265,7 @@ do
 
     -- duration: voice line length, or nil if unknown
     function Playback:Play(path, duration, context)
+        local descriptionQuest = context and context.section == "a" and context.questId
         local mode = self:mode()
         dbg("Playback: mode=%s duration=%s path=%s", tostring(mode), tostring(duration), path)
         if mode == "music" then
@@ -273,6 +275,7 @@ do
             forceAudio()                 -- Enable music and apply the requested volume
             PlayMusic(path)
             self.usedMusic, playing = true, true
+            if descriptionQuest and WV.MarkQuestListened then WV:MarkQuestListened(descriptionQuest) end
             local tail = (WowVoiceDB and WowVoiceDB.tail) or 0.05
             stopAt = GetTime() + (duration or FALLBACK_LIMIT) + tail
             ticker:Show()
@@ -286,6 +289,7 @@ do
             -- so Lua cannot determine whether playback succeeded.
             PlaySoundFile(path)
             playing = true
+            if descriptionQuest and WV.MarkQuestListened then WV:MarkQuestListened(descriptionQuest) end
             return true
         end
         duckNPC()                        -- Mute the NPC greeting for the duration of the voice line
@@ -294,6 +298,7 @@ do
         dbg("PlaySoundFile: result=%s handle=%s", tostring(ok), tostring(h))
         if ok then
             handle, playing = h, true
+            if descriptionQuest and WV.MarkQuestListened then WV:MarkQuestListened(descriptionQuest) end
             -- Show the Stop button in auto mode and schedule a stop
             -- using the duration table for this exact sound pack.
             -- The timer calls StopSound and restores Dialog; a duration table
@@ -519,7 +524,9 @@ function WV:Speak(section, title, text, event)
     -- intentionally omitted, stay silent instead of substituting another quest.
     dbg("играю %s (квест %d, секция %s, длительность %s)",
         path, questId, section, dur and format("%.1f с", dur) or "неизвестна")
-    if not Playback:Play(path, dur, context) then
+    local ok = Playback:Play(path, dur, context)
+    if section == SECTION.accept then self:SetQuestAudioAvailable(questId, ok) end
+    if not ok then
         dbg("файл не проигрался: %s", path)
     end
 end
@@ -541,8 +548,20 @@ end
 
 -- Journal IDs belong to their row or details panel; GetQuestID() refers
 -- to the NPC dialog. Manual replay bypasses Speak and its lastKey filter.
+-- Keep runtime failures out of SavedVariables: repaired files can be retried
+-- after reload, or restored by a successful automatic description playback.
+local unavailableQuestAudio = {}
+function WV:SetQuestAudioAvailable(questId, available)
+    local unavailable = not available or nil
+    if unavailableQuestAudio[questId] == unavailable then return end
+    unavailableQuestAudio[questId] = unavailable
+    if self.RefreshJournalButtons then self:RefreshJournalButtons() end
+    if self.RefreshTrackerButtons then self:RefreshTrackerButtons() end
+end
+
 function WV:HasQuestAudio(questId)
     return type(questId) == "number" and questId > 0
+        and not unavailableQuestAudio[questId]
         and ((_G.WowVoiceDur ~= nil and _G.WowVoiceDur[questId .. "a"] ~= nil)
             or foreverAudio(questId, "a") ~= nil)
 end
@@ -561,6 +580,7 @@ function WV:ReplayQuest(questId)
     dbg("журнал: повтор questID=%s key=%s path=%s", tostring(questId), key, path)
     local context = self.GetReplaySpeaker and self:GetReplaySpeaker(questId)
     local ok = Playback:Play(path, duration, context)
+    self:SetQuestAudioAvailable(questId, ok)
     self.lastKey = ok and key or nil
     if not ok then msg("не удалось воспроизвести описание квеста %d", questId) end
     return ok

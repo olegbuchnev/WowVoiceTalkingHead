@@ -148,8 +148,39 @@ titles, including when styled by EllesmereUI. They replay the description using
 the current quest ID and leave the tracker layout unchanged. The options page
 can hide these controls independently of journal buttons and the talking head;
 `WowVoiceDB.trackerButtons` defaults to true.
+«Подсвечивать озвучку при прогрессе задания» independently enables a silent gold
+glow around those tracker buttons (`WowVoiceDB.trackerProgressPulse`, default
+true). Its checkbox is indented under the tracker-button option and disabled
+when the parent is off, preserving the saved reminder preference.
+Each objective change shows the standard gold ActionButton glow with its animated
+`IconAlertAnts` edge for 10 seconds. Size and opacity stay constant; there is no
+additional pulsing or fading.
+The triangle retains its normal 70% opacity (100% on hover); glow brightness is
+independent and does not change the icon's opacity.
+Further progress restarts that 10-second window; unchanged quest-log updates,
+accepting a quest and login/reload do not trigger or extend reminders.
+Only quests with description audio get a glow. Hiding the controls or disabling
+the reminder immediately removes the glow. It never starts playback.
+Descriptions that successfully start playing, automatically or manually, are remembered in
+`WowVoiceDB.listenedQuests` by player GUID and quest ID. They no longer trigger
+reminders during the current login session, including after reloads and zone
+transitions, even when closed early or replaced by another recording. A real
+login (`PLAYER_ENTERING_WORLD` with `isInitialLogin`, not `isReloadingUi`) clears
+only the current character's marks. Failed playback and turn-in lines do not
+mark the description as heard. Quests carried over from a previous session are
+eligible again on subsequent progress changes until played in the new session;
+the autoplay preferences do not otherwise affect reminder eligibility.
+«Тест / переместить» also previews the glow on all active tracker replay buttons,
+including heard quests and with the reminder preference disabled. The same animated
+glow stays visible until preview stops, options close, or real
+playback replaces the preview. Hidden tracker controls remain hidden.
 Replay buttons in the journal list, quest details and on-screen tracker are
-hidden when description audio is unavailable. Controls have no tooltips;
+hidden when description audio is unavailable. A failed description playback
+also hides its replay controls and glow in both journal and tracker for the
+current UI session. Reload clears this failure cache; a successful automatic
+retry restores availability too. Files listed in the bundled audio index are
+assumed available until playback reports failure; the addon does not probe them
+by playing audio in the background. Controls have no tooltips;
 hover highlighting remains. The former `playTooltips` setting is removed.
 
 The options page offers three appearance presets: Retail (selected by default),

@@ -1074,6 +1074,7 @@ end
 
 function WV:StopTalkingHead()
     local wasPreview = active and active.preview
+    if wasPreview and self.SetTrackerPulsePreview then self:SetTrackerPulsePreview(false) end
     active = nil
     transition = nil
     if head then
@@ -1173,6 +1174,7 @@ function WV:ToggleHeadPreview()
             .. "Только во время теста панель можно перемещать мышью. В обычном режиме её положение закреплено. "
             .. "Тест повторяется каждые 30 секунд и прекращается при закрытии настроек." },
         GetTime() + 30, 30, nil, true)
+    if self.SetTrackerPulsePreview then self:SetTrackerPulsePreview(true) end
     return true
 end
 

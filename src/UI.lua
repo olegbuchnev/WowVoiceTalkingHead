@@ -227,6 +227,11 @@ local function refreshQuestDetails()
     updatePlayButton(play)
 end
 
+function WV:RefreshJournalButtons()
+    refreshQuestList()
+    refreshQuestDetails()
+end
+
 local function setupJournal()
     applyEllesmereStyle(button)
     -- Blizzard may load the journal after WowVoice. Retry on ADDON_LOADED
