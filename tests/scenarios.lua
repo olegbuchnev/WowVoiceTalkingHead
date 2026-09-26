@@ -1,5 +1,6 @@
 WowVoiceDB = {debug=true}
 event('ADDON_LOADED')
+WowVoiceDB.autoPlayAccept = true -- Exercise opted-in automatic descriptions.
 assert(WowVoiceDB.debug==false and WowVoiceDB.ducknpc==true)
 print('PASS: previously saved debug=true resets on addon load')
 command('debug on'); command('debug on'); assert(WowVoiceDB.debug)

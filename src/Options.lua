@@ -34,6 +34,7 @@ function WV:RefreshHeadOptions()
     local settings = self:GetHeadSettings()
     panel.Enabled:SetChecked(settings.enabled)
     panel.TrackerButtons:SetChecked(WowVoiceDB.trackerButtons ~= false)
+    panel.AutoPlayAccept:SetChecked(WowVoiceDB.autoPlayAccept == true)
     for key, choice in pairs(panel.Presets) do
         choice:SetChecked(key == settings.preset)
     end
@@ -109,6 +110,15 @@ local function createPanel()
     panel.TrackerButtons:SetScript("OnClick", function(self)
         WV:SetTrackerButtonsEnabled(self:GetChecked() == true)
     end)
+    panel.AutoPlayAccept = CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate")
+    panel.AutoPlayAccept:SetPoint("TOPLEFT", panel, "TOPLEFT", 12, -408)
+    panel.AutoPlayAccept:SetSize(26, 26)
+    label("Озвучивать при получении задания", "GameFontHighlight", 44, -415, 510, 22)
+    panel.AutoPlayAccept:SetScript("OnClick", function(self)
+        WV:SetAutoPlayAcceptEnabled(self:GetChecked() == true)
+    end)
+    label("Если выключено, запускайте описание кнопкой в журнале или списке заданий.",
+        "GameFontHighlightSmall", 44, -443, 510, 40)
     panel:SetScript("OnShow", function()
         WV:RefreshHeadOptions()
         for _, b in pairs(panel.Buttons) do if WV.StyleButton then WV.StyleButton(b) end end

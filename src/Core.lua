@@ -20,6 +20,7 @@ local SECTION = { accept = "a", progress = "p", complete = "c" }
 
 local defaults = {
     enabled  = true,
+    autoPlayAccept = true, -- Automatically play quest descriptions unless opted out
     trackerButtons = true, -- Replay controls beside tracked quest titles
     channel  = "auto",   -- auto | sound | music
     ext      = "ogg",    -- Sound pack format: ogg | mp3
@@ -488,6 +489,10 @@ function WV:Speak(section, title, text, event)
         dbg("Speak: пропущено, enabled=false")
         return
     end
+    if section == SECTION.accept and WowVoiceDB.autoPlayAccept ~= true then
+        dbg("Speak: пропущено, autoPlayAccept=false")
+        return
+    end
 
     local key = questId .. section
     local path, dur = self:SoundPath(questId, section)
@@ -512,6 +517,11 @@ function WV:Speak(section, title, text, event)
     if not Playback:Play(path, dur, context) then
         dbg("файл не проигрался: %s", path)
     end
+end
+
+function WV:SetAutoPlayAcceptEnabled(enabled)
+    WowVoiceDB.autoPlayAccept = enabled == true
+    if self.RefreshHeadOptions then self:RefreshHeadOptions() end
 end
 
 function WV:Silence(reason)
@@ -577,6 +587,12 @@ f:SetScript("OnEvent", function(self, event, arg1)
         WowVoiceDB.playTooltips = nil -- Removed setting; our controls no longer show tooltips.
         for k, v in pairs(defaults) do
             if WowVoiceDB[k] == nil then WowVoiceDB[k] = v end
+        end
+        -- Correct the disabled default from the unreleased options build once.
+        -- Later checkbox choices, including false, survive subsequent loads.
+        if not WowVoiceDB.autoPlayAcceptDefaultOnApplied then
+            WowVoiceDB.autoPlayAccept = true
+            WowVoiceDB.autoPlayAcceptDefaultOnApplied = true
         end
         -- Diagnostics are enabled manually for the current session and reset
         -- after /reload or the next login.

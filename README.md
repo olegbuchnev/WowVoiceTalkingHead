@@ -112,6 +112,15 @@ replace API and visual verification in the Forever client.
 
 ## Appearance
 
+Quest descriptions play automatically by default. Disable
+«Озвучивать при получении задания» in the options page to opt out
+(`WowVoiceDB.autoPlayAccept`). A one-time migration enables this setting after
+the unreleased build that defaulted it off; later checkbox choices are preserved.
+With autoplay disabled, quest giver and description capture still runs,
+and manual replay from the journal or tracker remains available. Progress and
+completion dialogue keep their automatic playback. Changing the preference
+does not interrupt or start the current recording.
+
 The on-screen quest tracker has small replay arrows to the left of voiced quest
 titles, including when styled by EllesmereUI. They replay the description using
 the current quest ID and leave the tracker layout unchanged. The options page

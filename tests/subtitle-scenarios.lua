@@ -1,5 +1,6 @@
 modernRadioAtlases=true
 event('ADDON_LOADED')
+WowVoiceDB.autoPlayAccept = true
 event('PLAYER_LOGIN')
 local WV=WowVoice
 local description=string.rep('A long description with words and spaces. ',80)

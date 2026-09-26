@@ -1,4 +1,5 @@
 event('ADDON_LOADED')
+WowVoiceDB.autoPlayAccept = true
 event('PLAYER_LOGIN')
 local WV = WowVoice
 npcGUID = nil

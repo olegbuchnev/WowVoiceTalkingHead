@@ -1,4 +1,5 @@
 event('ADDON_LOADED')
+WowVoiceDB.autoPlayAccept = true
 local WV = WowVoice
 assert(CatQuestVoicePack == nil, 'supplement must work without CatQuest loaded')
 local plainID, genderID, turninID
