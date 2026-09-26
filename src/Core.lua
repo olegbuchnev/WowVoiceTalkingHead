@@ -442,9 +442,10 @@ function WV:SoundPath(questId, section)
     if extra then
         return "Interface\\AddOns\\CatVoices\\" .. extra.file, extra.duration
     end
-    if not duration and _G.WowVoiceForeverAudio and _G.WowVoiceForeverAudio[questId .. "a"] then
-        -- The supplemental pack has no progress lines and few turn-ins.
-        -- Do not substitute the description for a missing quest section.
+    if not duration and _G.WowVoiceForeverAudio
+        and (_G.WowVoiceForeverAudio[questId .. "a"] or _G.WowVoiceForeverAudio[questId .. "c"]) then
+        -- A supplemental quest may have only a turn-in. Missing sections stay
+        -- silent instead of attempting a nonexistent Classic recording.
         return nil
     end
     local secret = WV.license and WV.license.content_key

@@ -42,6 +42,25 @@ for _, variant in ipairs({{2, entry.male}, {3, entry.female}}) do
 end
 sex = 2
 
+-- JSON-only quest 99080 has completion audio, but no description/replay arrow.
+questID = 99080
+assert(not WV:HasQuestAudio(questID))
+assert(WV:SoundPath(questID, 'a') == nil and WV:SoundPath(questID, 'p') == nil)
+count = #plays
+event('QUEST_DETAIL'); event('QUEST_PROGRESS')
+assert(#plays == count, 'turn-in-only quest attempted missing audio')
+for _, variant in ipairs({{2, 'm'}, {3, 'f'}}) do
+    sex = variant[1]
+    event('QUEST_COMPLETE')
+    assert(plays[#plays].file == prefix .. '99080_t_' .. variant[2] .. '.ogg')
+    WV:Silence()
+end
+sex = 2
+WowVoiceDB.autoPlayTurnIn = false
+count = #plays
+event('QUEST_COMPLETE'); assert(#plays == count, 'turn-in-only quest ignored opt-out')
+WowVoiceDB.autoPlayTurnIn = true
+
 -- Missing progress/turn-in recordings stay silent instead of replaying detail.
 questID = plainID
 WV:Silence()

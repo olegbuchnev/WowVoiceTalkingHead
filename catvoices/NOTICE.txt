@@ -1,10 +1,12 @@
 Russian audio for Forever quests, bundled with WowVoice TalkingHead.
 
-Source: CatQuest and CatQuest_Voices 0.1.0, by Cathey (daniilcathey).
+Source: CatQuest and CatQuest_Voices 0.2.0, by Cathey (daniilcathey).
 Author: https://t.me/catheyco
 Imported from the locally supplied pack; the OGG recordings are unmodified.
 All quests present in WowVoice's Classic pack are excluded, across all sections.
 Gender-specific recordings are selected for the player's character.
+Some Forever turn-ins use temporary translations from English, as noted in
+the source README; their wording may differ from the Russian game client.
 
 The source CatQuest README describes the pack as a noncommercial fan project,
 generated with F5-TTS (Russian fine-tuning, CC BY-NC) using NPC voice references

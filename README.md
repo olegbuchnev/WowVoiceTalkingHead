@@ -297,7 +297,7 @@ Unavailable metadata or models leave the document icon visible while audio
 continues. No external addon or database download is required.
 
 `ForeverSpeakers.lua` bundles 3,765 confirmed single-NPC quest starters, including
-450 of the 697 supplemental voiced quests. It also marks 316 confirmed object or
+455 of the 703 supplemental voiced quests. It also marks 316 confirmed object or
 multiple-starter quests so they cannot accidentally inherit a Classic NPC guess.
 Captured identities and exact quest-starting items take priority. Missing records
 still fall back to the Classic index. No internet connection or other addon is
@@ -390,16 +390,23 @@ Tests, development tools, IDE settings, backups and internal manifests are exclu
 Maintain the installation and usage instructions in [USER_README.md](USER_README.md)
 in Russian; the repository README is for development documentation in English.
 
-The bundle includes 10,891 Classic recordings and 909 supplemental recordings
-for 697 additional quests (697 descriptions and four turn-ins, including gender
-variants). Filtering excludes an entire CatQuest quest if any section of that
+The bundle includes 10,891 Classic recordings and 1,497 supplemental recordings
+from CatQuest_Voices 0.2.0 for 703 additional quests (702 descriptions and 433
+turn-ins, including gender variants). Filtering excludes an entire CatQuest quest if any section of that
 quest exists in the Classic duration index. CatQuest itself is not required.
 `ForeverAudio.lua` supplies the additional filenames and exact durations read
 from each OGG stream. Runtime selection also gives Classic entries priority.
 The import manifest and SHA-256 hashes are retained in
 `docs/internal/forever-audio-manifest.json`, outside the release. The supplied
-CatQuest pack's loaded Lua index is authoritative; JSON-only entries are not
-imported. Source credit is preserved in `CatVoices/NOTICE.txt` and the user guide:
+CatQuest pack's loaded Lua index takes priority. JSON-only entries are recovered
+only when they contain a turn-in without a description, which the upstream Lua
+index omits (quest 99080 in 0.2.0). Every referenced OGG must exist and pass stream
+validation before outputs are replaced. Such quests get completion playback but
+no description replay button; missing sections remain silent. The manifest records
+the recovered IDs and reads the source version from its TOC.
+Some Forever turn-ins use temporary translations from English and may differ
+from the Russian client text, as documented by CatQuest's author.
+Source credit is preserved in `CatVoices/NOTICE.txt` and the user guide:
 CatQuest and CatQuest_Voices are by [Cathey](https://t.me/catheyco) (daniilcathey).
 
 ## Sound pack source

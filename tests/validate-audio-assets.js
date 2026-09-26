@@ -9,6 +9,7 @@ const classic = new Set([...fs.readFileSync(path.join(root, 'src/Durations.lua')
 const quests = new Set([...classic].map(k => k.slice(0, -1)));
 const expected = new Map(manifest.files.map(f => [f.file, f]));
 const indexed = new Set(), newQuests = new Set();
+const sections = { a: 0, c: 0 };
 function record(table) {
   const obj = Object.fromEntries(table.fields.map(f => [f.key.name, f.value]));
   if (obj.male) { record(obj.male); record(obj.female); return; }
@@ -23,9 +24,11 @@ for (const field of index.fields) {
   assert(/^\d+[ac]$/.test(key));
   assert(!quests.has(id), `Classic quest duplicated in supplement: ${id}`);
   newQuests.add(id);
+  sections[key.slice(-1)]++;
   record(field.value);
 }
 assert.strictEqual(newQuests.size, manifest.quests);
+assert.deepStrictEqual(sections, manifest.sections);
 assert.deepStrictEqual([...indexed].sort(), [...expected.keys()].sort());
 assert.deepStrictEqual(fs.readdirSync(path.join(root, 'catvoices')).filter(f => f.endsWith('.ogg')).sort(),
   [...indexed].sort());
