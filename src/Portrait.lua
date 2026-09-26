@@ -1,7 +1,7 @@
 -- Quest giver appearance capture and WowVoice's talking-head panel.
 -- SavedVariables stores data only, never frames or unit references.
 local WV = _G.WowVoice
-local pending, probe, request, head, anchor, active
+local pending, probe, request, head, anchor, active, transition
 local SECTION = { a = "Описание задания", p = "Выполнение задания", c = "Завершение задания" }
 local FALLBACK_ICON = "Interface\\Icons\\INV_Misc_Note_01"
 local DEFAULT_WIDTH, DEFAULT_HEIGHT = 570, 155
@@ -89,9 +89,9 @@ local function refreshEllesmereBackground(force)
     head.EllesmereBackground:Hide()
     head.EllesmereShade:Hide()
     if WV:GetHeadPreset() ~= "ellesmere" then return end
-    head:SetBackdropColor(colorValues(PRESETS.ellesmere.fill))
+    head.Background:SetBackdropColor(colorValues(PRESETS.ellesmere.fill))
     if style == "modern" then
-        head:SetBackdropColor(r, g, b, a)
+        head.Background:SetBackdropColor(r, g, b, a)
     elseif style == "eui" then
         local texture = head.EllesmereBackground
         local ok, loaded = pcall(texture.SetTexture, texture, "Interface\\AddOns\\EllesmereUI\\media\\modern_blizz.png")
@@ -108,7 +108,7 @@ local function refreshEllesmereBackground(force)
             local trim = (0.75 - 0.75 * aspect / sourceAspect) / 2
             texture:SetTexCoord(0.25 + trim, 1 - trim, 0, 0.75)
         end
-        head:SetBackdropColor(0, 0, 0, 0)
+        head.Background:SetBackdropColor(0, 0, 0, 0)
         texture:Show()
         head.EllesmereShade:Show()
     end
@@ -119,17 +119,17 @@ local function applyHeadAppearance()
     local style = PRESETS[key]
     local retail = key == "retail"
     if retail then
-        head:SetBackdrop(nil)
+        head.Background:SetBackdrop(nil)
         head.RetailBackground:Show()
         head.PortraitBackground:Show()
         head.PortraitOverlay:Show()
     else
         local inset = key == "ellesmere" and 0 or 4
-        head:SetBackdrop({ bgFile = style.background, edgeFile = style.border,
+        head.Background:SetBackdrop({ bgFile = style.background, edgeFile = style.border,
             tile = key ~= "ellesmere", tileSize = 32, edgeSize = style.edgeSize,
             insets = { left = inset, right = inset, top = inset, bottom = inset } })
-        head:SetBackdropColor(colorValues(style.fill))
-        head:SetBackdropBorderColor(colorValues(style.edge))
+        head.Background:SetBackdropColor(colorValues(style.fill))
+        head.Background:SetBackdropBorderColor(colorValues(style.edge))
         head.RetailBackground:Hide()
         head.PortraitBackground:Hide()
         head.PortraitOverlay:Hide()
@@ -275,7 +275,13 @@ local function replaySpeaker(questId, record, quests)
         return recovered
     end
 
-    local indexed = indexedSpeaker(questId)
+    local forever = _G.WowVoiceForeverSpeakers
+    local indexed
+    if type(forever) == "table" then indexed = forever[questId] end
+    -- Explicit non-NPC or multiple starters must not fall back to a possibly
+    -- different/partial Classic giver. Captured identity and exact items win.
+    if indexed == false then return record end
+    indexed = indexed or indexedSpeaker(questId)
     if not (indexed and positive(indexed.npcID)) then return record end
     recovered.npcID, recovered.name = indexed.npcID, indexed.name
     recovered.title = recovered.title or indexed.title
@@ -625,7 +631,7 @@ local function updatePortraitCamera(model)
 end
 
 local function finishTalkingModel(model)
-    if not active then return end
+    if not active or active.closing then return end
     local speaker = active.context.speaker
     -- Late notifications must not cover an item or unknown speaker's icon.
     if not active.preview and (not portraitKey(speaker)
@@ -642,7 +648,7 @@ local function finishTalkingModel(model)
 end
 
 local function tryTalkingModel()
-    if not (head and active) or active.preview or head.Model.portraitReady then return end
+    if not (head and active) or active.closing or active.preview or head.Model.portraitReady then return end
     local model, speaker = head.Model, active.context.speaker
     if not portraitKey(speaker) then return end
     local now = GetTime()
@@ -731,17 +737,46 @@ local function layoutHead()
     updatePlaybackText()
 end
 
+-- Keep model ancestors opaque: PlayerModel's rendered geometry needs its own
+-- opacity, rather than relying on a parent frame fade. Apply the same value to
+-- every visible component, without multiplying it again through its parents.
+local function setHeadOpacity(alpha)
+    head.Background:SetAlpha(alpha)
+    head.PortraitBackground:SetAlpha(alpha)
+    head.PortraitOverlay:SetAlpha(alpha)
+    head.Icon:SetAlpha(alpha)
+    head.IconBorder:SetAlpha(alpha)
+    head.Name:SetAlpha(alpha)
+    head.TextScroll:SetAlpha(alpha)
+    head.Progress:SetAlpha(alpha)
+    head.Close:SetAlpha(alpha)
+    local model = head.Model
+    local modelAlpha = model.portraitReady and alpha or 0
+    if model.SetModelAlpha then model:SetModelAlpha(modelAlpha)
+    else model:SetAlpha(modelAlpha) end
+end
+
+-- Only the end of playback fades. A frame-driven deadline cannot close a newer
+-- line or preview after the current line has been replaced.
+local function updateHeadTransition()
+    if not (head and transition) then return end
+    local elapsed = math.max(0, GetTime() - transition.startedAt)
+    setHeadOpacity(math.max(0, 1 - elapsed))
+    if GetTime() >= transition.startedAt + 1 then WV:StopTalkingHead() end
+end
+
 local function createHead()
     if head then return end
     anchor = CreateFrame("Frame", "WowVoiceTalkingHeadAnchor", UIParent)
     anchor:SetMovable(true)
     anchor:SetClampedToScreen(true)
-    head = CreateFrame("Frame", "WowVoiceTalkingHead", anchor, "BackdropTemplate")
+    head = CreateFrame("Button", "WowVoiceTalkingHead", anchor)
     head:SetPoint("CENTER", anchor, "CENTER")
     head:SetSize(DEFAULT_WIDTH, DEFAULT_HEIGHT)
     head:SetFrameStrata("DIALOG")
     head:EnableMouse(false)
     head:RegisterForDrag("LeftButton")
+    head:RegisterForClicks("RightButtonUp")
     head:SetScript("OnDragStart", function()
         if active and active.preview then anchor:StartMoving() end
     end)
@@ -761,32 +796,41 @@ local function createHead()
         texture:SetTexCoord(left / 1024, (left + width) / 1024, top / 1024, (top + height) / 1024)
         return texture
     end
-    head.RetailBackground = retailTexture(head, "BACKGROUND", 0, 0, 570, 155)
+    -- Separate visual layers preserve theme opacity and model readiness while
+    -- their contents fade together at the end of playback.
+    head.Background = CreateFrame("Frame", nil, head, "BackdropTemplate")
+    head.Background:SetAllPoints(head)
+    head.Background:SetFrameLevel(head:GetFrameLevel())
+    head.Background:EnableMouse(false)
+    head.Portrait = CreateFrame("Frame", nil, head)
+    head.Portrait:SetAllPoints(head)
+    head.Portrait:EnableMouse(false)
+    head.RetailBackground = retailTexture(head.Background, "BACKGROUND", 0, 0, 570, 155)
     head.RetailBackground:SetAllPoints(head)
-    head.EllesmereBackground = head:CreateTexture(nil, "BACKGROUND", nil, 0)
+    head.EllesmereBackground = head.Background:CreateTexture(nil, "BACKGROUND", nil, 0)
     head.EllesmereBackground:SetAllPoints(head)
-    head.EllesmereShade = head:CreateTexture(nil, "BACKGROUND", nil, 1)
+    head.EllesmereShade = head.Background:CreateTexture(nil, "BACKGROUND", nil, 1)
     head.EllesmereShade:SetColorTexture(0, 0, 0, 0.62)
     head.EllesmereShade:SetAllPoints(head)
-    head.PortraitBackground = retailTexture(head, "BACKGROUND", 572, 314, 117, 117)
+    head.PortraitBackground = retailTexture(head.Portrait, "BACKGROUND", 572, 314, 117, 117)
 
-    local border = head:CreateTexture(nil, "BACKGROUND")
+    local border = head.Portrait:CreateTexture(nil, "BACKGROUND")
     head.IconBorder = border
-    local icon = head:CreateTexture(nil, "ARTWORK")
+    local icon = head.Portrait:CreateTexture(nil, "ARTWORK")
     icon:SetSize(64, 64)
     icon:SetPoint("LEFT", head, "LEFT", 30, 0)
     icon:SetTexture(FALLBACK_ICON)
     head.Icon = icon
     border:SetPoint("CENTER", icon, "CENTER")
 
-    local model = CreateFrame("PlayerModel", nil, head)
+    local model = CreateFrame("PlayerModel", nil, head.Portrait)
     model:SetSize(120, 124)
     model:SetPoint("TOPLEFT", head, "TOPLEFT", 6, -8)
     model:EnableMouse(false)
     head.Model = model
     -- A sibling above PlayerModel keeps the ornament visible for both NPCs
     -- and item icons, including while the model is loading or transparent.
-    head.PortraitOverlay = CreateFrame("Frame", nil, head)
+    head.PortraitOverlay = CreateFrame("Frame", nil, head.Portrait)
     head.PortraitOverlay:SetFrameLevel(model:GetFrameLevel() + 1)
     head.PortraitOverlay:EnableMouse(false)
     local portraitFrame = retailTexture(head.PortraitOverlay, "OVERLAY", 572, 0, 145, 145)
@@ -808,7 +852,10 @@ local function createHead()
         return text
     end
     -- Inherit quest font sizes as well as their localized font families.
-    head.Name = head:CreateFontString(nil, "OVERLAY", "QuestTitleFont")
+    head.NameLayer = CreateFrame("Frame", nil, head)
+    head.NameLayer:SetAllPoints(head)
+    head.NameLayer:EnableMouse(false)
+    head.Name = head.NameLayer:CreateFontString(nil, "OVERLAY", "QuestTitleFont")
     head.Name:SetJustifyH("LEFT")
     head.Name:SetJustifyV("TOP")
     head.Name:SetWordWrap(true)
@@ -883,11 +930,15 @@ local function createHead()
         else WV:Silence("talking head button") end
     end
     close:SetScript("OnClick", stopPlayback)
+    head:SetScript("OnClick", function(_, button)
+        if button == "RightButton" then stopPlayback() end
+    end)
     head.Close = close
     head:SetScript("OnUpdate", function()
         tryTalkingModel()
         refreshEllesmereBackground(false)
-        updatePlaybackText()
+        if active and not active.closing then updatePlaybackText() end
+        updateHeadTransition()
     end)
     applyHeadAppearance()
     layoutHead()
@@ -902,6 +953,7 @@ function WV:RefreshTalkingHeadModel()
     model.portraitReady = false
     model:ClearModel()
     model:SetAlpha(0)
+    if model.SetModelAlpha then model:SetModelAlpha(1) end
     head.Icon:SetTexture(speaker and speaker.icon or FALLBACK_ICON)
     head.Icon:Show()
     head.IconBorder:Show()
@@ -930,7 +982,9 @@ function WV:StartTalkingHead(context, endsAt, duration, startedAt, preview)
         duration = duration, preview = preview }
     if not preview and WowVoiceDB and WowVoiceDB.headEnabled == false then return end
     createHead()
-    head:EnableMouse(preview == true)
+    head:EnableMouse(true)
+    head:SetAlpha(1)
+    setHeadOpacity(1)
     local speaker = context.speaker
     head.Name:SetText(speaker and speaker.name or "Описание задания")
     head.Title:SetText(context.title or ("Квест " .. context.questId))
@@ -943,9 +997,25 @@ function WV:StartTalkingHead(context, endsAt, duration, startedAt, preview)
     self:RefreshTalkingHeadModel()
 end
 
+-- Audio has already stopped and Dialog has been restored by Core. Leave only
+-- the visual tail alive; it cannot keep talking or restart audio/model requests.
+function WV:FinishTalkingHead()
+    if not (active and head and head:IsShown()) or active.preview then
+        self:StopTalkingHead()
+        return
+    end
+    if active.closing then return end
+    updatePlaybackText()
+    active.closing = true
+    head.Model.talkAnimation = nil
+    if head.Model.portraitReady then head.Model:SetAnimation(0) end
+    transition = { startedAt = GetTime() }
+end
+
 function WV:StopTalkingHead()
     local wasPreview = active and active.preview
     active = nil
+    transition = nil
     if head then
         anchor:StopMovingOrSizing()
         if wasPreview and WowVoiceDB.headPosition then setPosition(centerPosition()) end
@@ -954,6 +1024,7 @@ function WV:StopTalkingHead()
         head.Model.portraitReady = false
         head.Model:ClearModel()
         head:Hide()
+        head:SetAlpha(1)
     end
 end
 
@@ -1018,7 +1089,8 @@ function WV:SetHeadEnabled(enabled)
     if self.RefreshStopButton then self:RefreshStopButton() end
     if active and active.preview then return end
     if not enabled then
-        if head then head:Hide() end
+        if active and active.closing then self:StopTalkingHead()
+        elseif head then head:Hide() end
     elseif active and head and not head:IsShown() then
         self:StartTalkingHead(active.context, active.endsAt, active.duration, active.startedAt)
     elseif active and not head then

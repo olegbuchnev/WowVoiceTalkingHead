@@ -8,7 +8,7 @@ local function tick()
 end
 local function fallback()
     assert(not head.EllesmereBackground.visible and not head.EllesmereShade.visible)
-    assert(head.backdropColor[1]==0.06 and head.backdropColor[4]==0.95)
+    assert(head.Background.backdropColor[1]==0.06 and head.Background.backdropColor[4]==0.95)
 end
 fallback()
 local sounds, stopped=#plays,#stops
@@ -21,17 +21,17 @@ local skin={
 -- The integration can load after the preview, without a reload or audio restart.
 EllesmereUI={_ModuleNS={EllesmereUIBlizzardSkin={WSkin=skin}}}
 tick()
-assert(head.backdropColor[1]==0.2 and head.backdropColor[4]==0.6)
+assert(head.Background.backdropColor[1]==0.2 and head.Background.backdropColor[4]==0.6)
 local previousReads=reads
 head.scripts.OnUpdate()
 assert(reads==previousReads,'do not inspect optional addon settings every frame')
 color={0.5,0.6,0.7,0}
 tick()
-assert(head.backdropColor[1]==0.5 and head.backdropColor[4]==0,'zero opacity must be preserved')
+assert(head.Background.backdropColor[1]==0.5 and head.Background.backdropColor[4]==0,'zero opacity must be preserved')
 style='eui'
 tick()
 assert(head.EllesmereBackground.visible and head.EllesmereShade.visible)
-assert(head.backdropColor[4]==0 and head.EllesmereShade.color[4]==0.62)
+assert(head.Background.backdropColor[4]==0 and head.EllesmereShade.color[4]==0.62)
 local uv=head.EllesmereBackground.texCoord
 assert(uv[1]==0.25 and uv[2]==1 and uv[3]>0 and uv[4]<0.75,'wide window crops the atlas vertically')
 assert(WV:ApplyHeadSettings({width=360,height=600,scale=1,x=0,y=0,enabled=true}))

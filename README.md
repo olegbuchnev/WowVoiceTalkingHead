@@ -4,7 +4,9 @@ This standalone repository keeps the modified WowVoice development sources
 outside the live World of Warcraft installation. Runtime addon files live under
 `src/`; tests and build tools stay outside that directory and are never deployed.
 The runtime code is based on the Midnight version, while `Index.lua`,
-`Durations.lua` and the OGG audio come from the Russian Classic sound pack.
+`Durations.lua` and the primary OGG audio come from the Russian Classic sound pack.
+The release also bundles supplemental CatQuest recordings for quests absent from
+that pack. Original WowVoice recordings always take priority.
 This build targets **WoW Forever Beta, Interface 16001**.
 
 For installation and in-game usage, see the [user guide in Russian](USER_README.md).
@@ -19,18 +21,22 @@ from release archives.
 
 ```text
 src/                             Runtime files copied to AddOns/WowVoice
-soundpack/                       Two Forever TOC files for WowVoiceSounds
+soundpack/                       Complete Classic audio and two Forever TOCs
+catvoices/                       Filtered CatQuest audio, metadata and attribution
 tests/                           Lua tests with WoW API mocks and pipeline checks
 config/deploy.targets.local.psd1  Local Forever Beta path (gitignored)
 build.ps1 / build.cmd             Validate, test, deploy and package pipeline
 USER_README.md                   Russian user guide; converted to README.txt for packaging
-artifacts/                       Release ZIP archive (gitignored)
+artifacts/WoWVoice/              Latest release ZIP; stable folder for cloud sync (gitignored)
 backups/                         Backups created before deployment (gitignored)
 ```
 
 Edit `src/`, then run Deploy. The installed `AddOns\WowVoice` directory is a
-deployment destination, not the project's source directory. OGG audio files are
-stored separately and are not included in this repository or its release archive.
+deployment destination, not the project's source directory. OGG files are local
+build inputs (gitignored) and are included in the complete release archive.
+Populate them with `tools/import-classic-audio.js <WowVoiceSounds directory>` and
+`tools/import-forever-audio.js <CatQuest_Voices directory>` using Node.js after
+`npm ci`. Both tools read already extracted local sound packs.
 
 ## Commands
 
@@ -56,12 +62,36 @@ Run from the repository root in Windows PowerShell or Command Prompt:
 
 ### Build release package
 
+Build a release archive only when explicitly requested. Routine changes can be
+tested and deployed locally while accumulating the next release; do not run
+Package after every change or update the shared pCloud archive automatically.
+
 ```shell
 .\build.cmd -Task Package
 ```
 
-Package removes all previous contents of `artifacts/` before creating the new
-release archive.
+Package creates the new ZIP in a temporary staging directory, then places it in
+`artifacts/WoWVoice/` and removes older ZIPs, including archives left directly in
+`artifacts/` by earlier builds. The `WoWVoice` directory is never recreated, so it
+can be paired with a cloud folder for synchronization. A failed archive build
+leaves the previous release in place.
+
+For pCloud, configure Sync once between the local `artifacts/WoWVoice` folder and
+a cloud folder named `WoWVoice`, then share the cloud folder's link. Each Package
+build updates the local archive; pCloud handles uploading it. Synchronization
+and public sharing are configured separately in pCloud, not by the build script.
+
+Release folder link: [WoWVoice on pCloud](http://e.pc.cd/ju6y6alK).
+
+To copy the short link in IntelliJ IDEA, hover over the block below in the
+Markdown preview and click its copy button:
+
+```text
+http://e.pc.cd/ju6y6alK
+```
+
+Keep this cloud folder and its shared link when updating releases. This link is
+recorded only in the development README, which is excluded from release archives.
 
 IntelliJ IDEA shows a Run/Play gutter icon for each command block when
 **Detect commands that can be run right from Markdown files** is enabled in
@@ -87,14 +117,23 @@ titles, including when styled by EllesmereUI. They replay the description using
 the current quest ID and leave the tracker layout unchanged. The options page
 can hide these controls independently of journal buttons and the talking head;
 `WowVoiceDB.trackerButtons` defaults to true.
-The separate `WowVoiceDB.playTooltips` option defaults to true and controls
-tooltips for replay buttons in the journal list, quest details and on-screen
-tracker. Disabling it preserves hover highlighting and playback behavior.
+Replay buttons in the journal list, quest details and on-screen tracker are
+hidden when description audio is unavailable. Controls have no tooltips;
+hover highlighting remains. The former `playTooltips` setting is removed.
 
 The options page offers three appearance presets: Retail (selected by default),
 Classic and EllesmereUI. Installing EllesmereUI does not change the default;
 an explicitly saved preset is preserved. All three work without additional addons. Switching
 presets updates the panel without interrupting playback.
+
+All presets appear immediately, with no fades during playback or line changes.
+When audio ends, Dialog is restored immediately and the entire panel, including
+the idle model, fades out together over one second. Model geometry opacity is
+set explicitly with `SetModelAlpha`; its ancestor frames remain opaque so the
+model does not outlast the background or receive a doubled fade.
+The cross, right-click and manual stop dismiss the panel immediately, including
+during fade-out. Replacing a line restores full opacity immediately; there are
+no delayed callbacks that can hide a newer line or preview.
 
 The EllesmereUI preset reads the installed BlizzardSkin module's third-party
 window theme: its textured background or the global Modern color and opacity.
@@ -189,6 +228,33 @@ items and game objects are never replaced with an inferred NPC.
 Unavailable metadata or models leave the document icon visible while audio
 continues. No external addon or database download is required.
 
+`ForeverSpeakers.lua` bundles 3,765 confirmed single-NPC quest starters, including
+450 of the 697 supplemental voiced quests. It also marks 316 confirmed object or
+multiple-starter quests so they cannot accidentally inherit a Classic NPC guess.
+Captured identities and exact quest-starting items take priority. Missing records
+still fall back to the Classic index. No internet connection or other addon is
+needed in-game. Model availability in the client is separate from NPC identity.
+
+The factual IDs come from [Wowhead Forever](https://www.wowhead.com/forever/),
+using the [public snapshot maintained by Forever Quest Pins](https://github.com/TylerAkins/forever-quest-markers/tree/2d354aa828af29cb2e997b7367f7bb59b75f10e2/data/forever-quests).
+The snapshot catalog contains 5,058 quests: 697 parsed pages lack starter data,
+279 unusable detail records are excluded, and quest 7507 has no detail file.
+This is a coverage snapshot, not a claim that every Forever quest has a portrait.
+Russian NPC names are reused by exact NPC ID from the original Classic index;
+otherwise the source's English name is retained until a live giver is captured.
+Only starter facts are imported, not the external addon's code, map or quest text.
+
+To import a newer extracted snapshot (JSON only):
+
+```shell
+node tools/import-forever-speakers.js <data/forever-quests-directory> <commit-SHA>
+```
+
+`docs/internal/forever-speakers-manifest.json` records the commit, per-record
+SHA-256, excluded records and exact starter IDs. It is excluded from the release.
+Running the importer without arguments regenerates the Lua index offline from
+this manifest. Imports never infer a giver from the quest title or turn-in NPC.
+
 On login and quest-log changes, voiced journal quests have their portraits
 preloaded in the background. Requests are deduplicated by NPC or captured display
 ID and started at most four times per second. Successful lookups stay in memory
@@ -224,34 +290,49 @@ replace. It then synchronizes `src/` into `AddOns\WowVoice`, removing old files
 that are no longer present in the source. Existing IDE workspace state under
 the installed addon's `.idea` directory is preserved.
 
-Only `WowVoiceSounds.toc` and `WowVoiceSounds_Mainline.toc` are copied into
-`WowVoiceSounds`. OGG audio and other sound pack files remain unchanged. Other
-addons and `WTF` are not modified. Run `/reload` after deployment.
+The complete Classic audio and its two TOCs are copied into `WowVoiceSounds`;
+filtered supplemental audio is copied into `CatVoices`. Existing extra files in
+the sound directories are preserved. The current `CatVoices` folder is also
+backed up when present; the large Classic audio library is not backed up.
+Other addons and `WTF` are not modified. Fully restart the game after deployment
+so the client can discover newly added sounds.
 
-To roll back, restore `WowVoice` and the two TOC files from the appropriate
-backup directory. Its `destination.txt` records the AddOns destination.
+To roll back, restore `WowVoice`, the two TOC files and, if present, `CatVoices`
+from the appropriate backup directory. Its `destination.txt` records the AddOns
+destination. Restore older Classic audio from its original archive if needed.
 
 ## Release package
 
 Package creates a ZIP archive, using the version from `src/WowVoice.toc`:
 
 ```text
-artifacts/WowVoice-<version>.zip
+artifacts/WoWVoice/WowVoice-<version>.zip
 ```
 
 The ZIP contains:
 
 ```text
 WowVoice/                         Complete addon from src/
-WowVoiceSounds/
-  WowVoiceSounds.toc
-  WowVoiceSounds_Mainline.toc
+WowVoiceSounds/                   Complete Classic audio and two Forever TOCs
+CatVoices/                       Additional audio, metadata and attribution
 README.txt                        Plain-text Russian user guide from USER_README.md
 ```
 
-Tests, development tools, IDE settings, backups and OGG audio are excluded.
+Tests, development tools, IDE settings, backups and internal manifests are excluded.
 Maintain the installation and usage instructions in [USER_README.md](USER_README.md)
 in Russian; the repository README is for development documentation in English.
+
+The bundle includes 10,891 Classic recordings and 909 supplemental recordings
+for 697 additional quests (697 descriptions and four turn-ins, including gender
+variants). Filtering excludes an entire CatQuest quest if any section of that
+quest exists in the Classic duration index. CatQuest itself is not required.
+`ForeverAudio.lua` supplies the additional filenames and exact durations read
+from each OGG stream. Runtime selection also gives Classic entries priority.
+The import manifest and SHA-256 hashes are retained in
+`docs/internal/forever-audio-manifest.json`, outside the release. The supplied
+CatQuest pack's loaded Lua index is authoritative; JSON-only entries are not
+imported. Source credit is preserved in `CatVoices/NOTICE.txt` and the user guide:
+CatQuest and CatQuest_Voices are by [Cathey](https://t.me/catheyco) (daniilcathey).
 
 ## Sound pack source
 

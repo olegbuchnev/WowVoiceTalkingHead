@@ -21,7 +21,6 @@ local SECTION = { accept = "a", progress = "p", complete = "c" }
 local defaults = {
     enabled  = true,
     trackerButtons = true, -- Replay controls beside tracked quest titles
-    playTooltips = true,   -- Tooltips for all replay controls
     channel  = "auto",   -- auto | sound | music
     ext      = "ogg",    -- Sound pack format: ogg | mp3
     stopmode = "silence",-- Music silencing method: silence | cvar | stopmusic
@@ -238,7 +237,11 @@ do
     function Playback:Stop(reason)
         stopAt = nil
         if not restoreAt then ticker:Hide() end
-        if not playing then return end
+        if not playing then
+            -- The audio can already be over while its portrait is fading out.
+            if WV.StopTalkingHead then WV:StopTalkingHead() end
+            return
+        end
         playing = false
         if handle and canStopSound then
             dbg("StopSound: begin handle=%s reason=%s", tostring(handle), tostring(reason or "manual"))
@@ -251,7 +254,9 @@ do
             self.usedMusic = false
         end
         unduckNPC()                      -- Restore the Dialog channel (NPC greetings)
-        if WV.StopTalkingHead then WV:StopTalkingHead() end
+        if reason == "duration timer" and WV.FinishTalkingHead then
+            WV:FinishTalkingHead()
+        elseif WV.StopTalkingHead then WV:StopTalkingHead() end
         if WV.OnPlaybackChanged then WV.OnPlaybackChanged(false) end
     end
 
@@ -396,8 +401,33 @@ end
      use canonical keys such as "179a.ogg".
 ]]
 WV._nameCache = {}
+local function foreverAudio(questId, section)
+    local key = tostring(questId) .. section
+    -- Never replace a recording from the original pack, even if an imported
+    -- entry overlaps after a future pack update.
+    if _G.WowVoiceDur and _G.WowVoiceDur[key] then return nil end
+    local entries = _G.WowVoiceForeverAudio
+    local entry = entries and entries[key]
+    if not entry then return nil end
+    if entry.male then
+        return (type(UnitSex) == "function" and UnitSex("player") == 3)
+            and entry.female or entry.male
+    end
+    return entry
+end
+
 function WV:SoundPath(questId, section)
     local key = tostring(questId) .. section
+    local duration = _G.WowVoiceDur and _G.WowVoiceDur[key]
+    local extra = foreverAudio(questId, section)
+    if extra then
+        return "Interface\\AddOns\\CatVoices\\" .. extra.file, extra.duration
+    end
+    if not duration and _G.WowVoiceForeverAudio and _G.WowVoiceForeverAudio[questId .. "a"] then
+        -- The supplemental pack has no progress lines and few turn-ins.
+        -- Do not substitute the description for a missing quest section.
+        return nil
+    end
     local secret = WV.license and WV.license.content_key
     if secret and secret ~= "" and WowVoiceHash then
         local name = WV._nameCache[key]
@@ -405,10 +435,10 @@ function WV:SoundPath(questId, section)
             name = WowVoiceHash.filename(secret, key)
             WV._nameCache[key] = name
         end
-        return "Interface\\AddOns\\" .. SOUND_ADDON .. "\\" .. name
+        return "Interface\\AddOns\\" .. SOUND_ADDON .. "\\" .. name, duration
     end
     local ext = (WowVoiceDB and WowVoiceDB.ext) or "ogg"
-    return "Interface\\AddOns\\" .. SOUND_ADDON .. "\\" .. key .. "." .. ext
+    return "Interface\\AddOns\\" .. SOUND_ADDON .. "\\" .. key .. "." .. ext, duration
 end
 
 --------------------------------------------------------------------- Logic
@@ -460,12 +490,15 @@ function WV:Speak(section, title, text, event)
     end
 
     local key = questId .. section
-    local path = self:SoundPath(questId, section)
-    local dur = _G.WowVoiceDur and _G.WowVoiceDur[key]
+    local path, dur = self:SoundPath(questId, section)
+    if not path then
+        dbg("нет записи для квеста %s, секция %s", tostring(questId), section)
+        return
+    end
     dbg("выбор: event=%s questID=%s section=%s title=%s",
         tostring(event), tostring(questId), section, tostring(title))
     dbg("аудио: key=%s WowVoiceDur=%s duration=%s path=%s",
-        key, tostring(dur ~= nil), tostring(dur), path)
+        key, tostring(_G.WowVoiceDur ~= nil and _G.WowVoiceDur[key] ~= nil), tostring(dur), path)
     if key == self.lastKey then
         dbg("Speak: повтор ключа %s, PlaySoundFile не вызывается", key)
         return
@@ -490,7 +523,8 @@ end
 -- to the NPC dialog. Manual replay bypasses Speak and its lastKey filter.
 function WV:HasQuestAudio(questId)
     return type(questId) == "number" and questId > 0
-        and _G.WowVoiceDur ~= nil and _G.WowVoiceDur[questId .. "a"] ~= nil
+        and ((_G.WowVoiceDur ~= nil and _G.WowVoiceDur[questId .. "a"] ~= nil)
+            or foreverAudio(questId, "a") ~= nil)
 end
 
 function WV:ReplayQuest(questId)
@@ -503,10 +537,10 @@ function WV:ReplayQuest(questId)
         return false
     end
     local key = questId .. "a"
-    local path = self:SoundPath(questId, "a")
+    local path, duration = self:SoundPath(questId, "a")
     dbg("журнал: повтор questID=%s key=%s path=%s", tostring(questId), key, path)
     local context = self.GetReplaySpeaker and self:GetReplaySpeaker(questId)
-    local ok = Playback:Play(path, _G.WowVoiceDur[key], context)
+    local ok = Playback:Play(path, duration, context)
     self.lastKey = ok and key or nil
     if not ok then msg("не удалось воспроизвести описание квеста %d", questId) end
     return ok
@@ -514,18 +548,18 @@ end
 
 --------------------------------------------------------------------- Events
 
---[[ The CurseForge addon is only a player. The large WowVoiceSounds
-     audio pack is hosted on GitHub. If it is missing, show a prominent
-     warning with the download link instead of leaving unexplained silence.
+--[[ The complete release contains both sound folders. If a folder's
+     marker addon is missing/disabled, explain how to reinstall the bundle.
      Check at PLAYER_LOGIN, after all addons have loaded, to avoid false
      warnings caused by addon load order.
 ]]
 local function warnIfNoSounds()
     local isLoaded = (C_AddOns and C_AddOns.IsAddOnLoaded) or IsAddOnLoaded
-    if isLoaded and isLoaded(SOUND_ADDON) then return end
-    msg("|cffff2020ОЗВУЧКА НЕ УСТАНОВЛЕНА.|r Аддон с CurseForge — это только плеер.")
-    msg("Скачай пак озвучки и распакуй в Interface\\AddOns:")
-    msg("|cff33ff99github.com/HappyDridex/wowvoice/releases|r")
+    if not isLoaded then return end
+    if isLoaded(SOUND_ADDON) and isLoaded("CatVoices") then return end
+    msg("|cffff2020Не все звуковые паки установлены или включены.|r")
+    msg("Скопируйте из архива все три папки: WowVoice, WowVoiceSounds и CatVoices в _classic_beta_\\Interface\\AddOns.")
+    msg("Включите их в списке модификаций и полностью перезапустите игру.")
 end
 
 local f = CreateFrame("Frame", "WowVoiceFrame")
@@ -540,6 +574,7 @@ f:SetScript("OnEvent", function(self, event, arg1)
     if event == "ADDON_LOADED" then
         if arg1 ~= ADDON then return end
         WowVoiceDB = WowVoiceDB or {}
+        WowVoiceDB.playTooltips = nil -- Removed setting; our controls no longer show tooltips.
         for k, v in pairs(defaults) do
             if WowVoiceDB[k] == nil then WowVoiceDB[k] = v end
         end
@@ -813,8 +848,7 @@ SlashCmdList["WOWVOICE"] = function(input)
     elseif cmd == "test" then
         local id = tonumber(rest)
         if id then
-            local path = WV:SoundPath(id, "a")
-            local dur = _G.WowVoiceDur and _G.WowVoiceDur[id .. "a"]
+            local path, dur = WV:SoundPath(id, "a")
             msg("проверка: %s (%s)", path,
                 dur and format("%.1f с", dur) or "длительность неизвестна")
             Playback:Play(path, dur)

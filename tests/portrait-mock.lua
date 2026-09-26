@@ -59,6 +59,7 @@ local function region(fontObject)
     end
     function t:SetColorTexture(...) self.color={...} end
     function t:SetAllPoints() end
+    function t:SetAlpha(v) self.alpha=v end
     function t:Show() self.visible=true end
     function t:Hide() self.visible=false end
     return t
@@ -83,6 +84,8 @@ function CreateFrame(kind,name,parent,template)
         if was and self.scripts.OnHide then self.scripts.OnHide(self) end
     end
     function f:EnableMouse(v) self.mouseEnabled=v end
+    function f:SetAllPoints(parent) self.allPoints=parent end
+    function f:RegisterForClicks(...) self.clicks={...} end
     function f:StartMoving() self.moving=true end
     function f:StopMovingOrSizing() self.moving=false end
     function f:SetAutoFocus() end
@@ -120,6 +123,7 @@ function CreateFrame(kind,name,parent,template)
         return cx+rx-x+(p[4] or 0),cy+ry-y+(p[5] or 0)
     end
     if kind == 'PlayerModel' then
+        function f:SetModelAlpha(v) self.modelAlpha=v end
         function f:ClearModel() self.displayID=0; self.unit=nil end
         function f:GetDisplayInfo() return self.displayID or 0 end
         function f:GetModelFileID() return self.modelFileID or 0 end

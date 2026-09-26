@@ -61,7 +61,7 @@ print('PASS: independent a/p/c text, short text stays still, old quests read exa
 
 -- Unknown duration cannot produce invented synchronization.
 GetQuestText=function() return description end
-questID=97250; event('QUEST_DETAIL')
+questID=999999; event('QUEST_DETAIL')
 assert(head.textRange>0)
 now=now+20; head.scripts.OnUpdate()
 assert(head.TextScroll.scroll==0)
@@ -113,7 +113,7 @@ for _,key in ipairs({'retail','classic','ellesmere'}) do
     for other,choice in pairs(panel.Presets) do assert(choice:GetChecked()==(other==key)) end
     assert(head.width==570 and head.height==155 and head.scale==1)
     assert(WowVoiceDB.headPosition[3]==125.5 and WowVoiceDB.headPosition[4]==-250.25)
-    backgrounds[key]=head.backdrop and head.backdrop.bgFile or head.RetailBackground.texture
+    backgrounds[key]=head.Background.backdrop and head.Background.backdrop.bgFile or head.RetailBackground.texture
     buttons[key]=head.Close.flat and head.Close.Glyph.atlas or head.Close.Stock.texture
 end
 assert(backgrounds.retail~=backgrounds.classic and backgrounds.classic~=backgrounds.ellesmere)
@@ -157,10 +157,10 @@ panel.Buttons.test.scripts.OnClick(); assert(not head.visible)
 panel.Enabled:SetChecked(true); panel.Enabled.scripts.OnClick(panel.Enabled)
 -- Appearance changes and closing the options do not interrupt real voice.
 questID=179; event('QUEST_DETAIL')
-assert(head.visible and not head.mouseEnabled)
+assert(head.visible and head.mouseEnabled) -- Retail right-click dismissal, no dragging.
 head.scripts.OnDragStart(head); assert(not anchor.moving)
 local playingSounds=#plays; beforeStops=#stops
-assert(#plays==playingSounds and #stops==beforeStops and head.visible and not head.mouseEnabled)
+assert(#plays==playingSounds and #stops==beforeStops and head.visible and head.mouseEnabled)
 now=now+8; head.scripts.OnUpdate()
 local scroll, progress = head.TextScroll.scroll, head.Progress.value
 panel.Presets.classic.scripts.OnClick()
@@ -184,7 +184,7 @@ for _, enabled in ipairs({true,false}) do
     WV:SetHeadEnabled(enabled)
     assert(WV:ReplayQuest(179))
     local soundCount,stopCount,handle=#plays,#stops,plays[#plays].handle
-    assert(frames.WowVoiceTicker.visible and not head.mouseEnabled)
+    assert(frames.WowVoiceTicker.visible and head.mouseEnabled==enabled)
     panel.Buttons.test.scripts.OnClick()
     assert(#plays==soundCount and #stops==stopCount+1 and stops[#stops]==handle,
         'preview must stop the playing sound exactly once without starting another')

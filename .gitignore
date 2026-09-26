@@ -3,6 +3,8 @@
 /artifacts/
 /backups/
 /node_modules/
+/soundpack/*.ogg
+/catvoices/*.ogg
 /config/deploy.targets.local.psd1
 *.bak
 *.log

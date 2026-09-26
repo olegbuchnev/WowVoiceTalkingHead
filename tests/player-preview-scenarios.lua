@@ -132,7 +132,7 @@ print('PASS: long speaker names wrap above the text without moving the portrait 
 -- Retail decorations must disappear when switching to another preset.
 WV:SetHeadPreset('retail')
 WV:ToggleHeadPreview()
-assert(head.backdrop==nil and head.RetailBackground.visible and head.PortraitBackground.visible)
+assert(head.Background.backdrop==nil and head.RetailBackground.visible and head.PortraitBackground.visible)
 assert(head.PortraitOverlay.visible and head.PortraitOverlay.frameLevel>head.Model:GetFrameLevel())
 assert(head.Close.visible and head.Stop==nil)
 checkStopLayout()
@@ -153,7 +153,7 @@ assert(-head.TextScroll.points[1][5]>=-head.Name.point[5]+head.Name.height)
 assert(-head.TextScroll.points[1][5]+head.TextScroll.height<=head.height-14)
 WV:SetHeadPreset('ellesmere')
 assert(not head.RetailBackground.visible and not head.PortraitBackground.visible and not head.PortraitOverlay.visible)
-assert(head.Close.visible and head.Close.Glyph.visible and head.backdrop)
+assert(head.Close.visible and head.Close.Glyph.visible and head.Background.backdrop)
 assert(not head.Close.Stock.visible and not head.Close.Highlight.visible,
     'Ellesmere close hides all stock artwork')
 assert(head.Close.normalTexture==nil and head.Close.pushedTexture==nil and head.Close.highlightTexture==nil,

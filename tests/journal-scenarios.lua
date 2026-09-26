@@ -18,9 +18,11 @@ QuestScrollFrame=CreateFrame('Frame','QuestScrollFrame')
 local first=CreateFrame('Button',nil,QuestScrollFrame)
 first.questID=179
 first.Checkbox=CreateFrame('Frame',nil,first)
+first.Checkbox:SetPoint('TOPRIGHT',first,'TOPRIGHT',-4,-8)
 local missing=CreateFrame('Button',nil,QuestScrollFrame)
-missing.questID=97250
+missing.questID=999999
 missing.Checkbox=CreateFrame('Frame',nil,missing)
+missing.Checkbox:SetPoint('TOPRIGHT',missing,'TOPRIGHT',-4,-8)
 local active={first,missing}
 QuestScrollFrame.titleFramePool={EnumerateActive=function()
     local i=0
@@ -35,7 +37,8 @@ end
 local play=assert(playFor(first))
 local noAudio=assert(playFor(missing))
 local detailPlay=assert(playFor(details))
-assert(play.alpha==0.7 and noAudio.alpha==0.4)
+assert(play.visible and play.alpha==0.7 and not noAudio.visible)
+assert(missing.Checkbox.points[1][4]==-4,'missing audio must not reserve button space')
 assert(first.Checkbox.points[1][4]==-26)
 assert(play.points[1][2]==first.Checkbox)
 assert(detailPlay.points[1][2]==details.BackFrame.BackButton)
@@ -66,8 +69,17 @@ assert(plays[#plays].file:find('179a.ogg',1,true))
 local count,stopCount=#plays,#stops
 noAudio.scripts.OnClick(noAudio)
 assert(#plays==count and #stops==stopCount)
-noAudio.scripts.OnEnter(noAudio)
-assert(GameTooltip.lines[2]:find('нет записи',1,true))
+assert(not noAudio.visible)
+-- Both reused list rows and the details button disappear and return as IDs change.
+first.questID=999999
+QuestLogQuests_Update()
+assert(not play.visible and first.Checkbox.points[1][4]==-4)
+QuestMapFrame_ShowQuestDetails(999999)
+assert(not detailPlay.visible)
+first.questID=179
+QuestLogQuests_Update()
+QuestMapFrame_ShowQuestDetails(179)
+assert(play.visible and detailPlay.visible and first.Checkbox.points[1][4]==-26)
 WowVoiceDB.enabled=false
 play.scripts.OnClick(play)
 assert(#plays==count and #stops==stopCount)
@@ -91,35 +103,39 @@ print('PASS: lazy journal UI, list and details controls, current IDs on recycled
 print('PASS: no NPC quest API calls, no autoplay, missing audio and disabled addon preserve current playback')
 print('PASS: Master/Dialog restoration, Classic duration, single hooks/buttons, both details layouts')
 
--- One preference covers both journal controls, including missing-audio help.
-assert(WowVoiceDB.playTooltips==true)
+-- No tooltip setting or tooltip interactions remain; hover feedback still works.
 command('options')
 local panel=frames.WowVoiceOptionsPanel
-assert(panel.PlayTooltips:GetChecked())
+assert(panel.PlayTooltips==nil)
 play.scripts.OnEnter(play)
-assert(GameTooltip.visible and GameTooltip:IsOwned(play) and play.alpha==1)
-panel.PlayTooltips:SetChecked(false)
-panel.PlayTooltips.scripts.OnClick(panel.PlayTooltips)
-assert(WowVoiceDB.playTooltips==false and not GameTooltip.visible,
-    'turning off tooltips must dismiss an open replay tooltip immediately')
+assert(not GameTooltip.visible and play.alpha==1)
 count,stopCount=#plays,#stops
 for _, control in ipairs({play,detailPlay,noAudio}) do
     control.scripts.OnEnter(control)
-    assert(not GameTooltip.visible,'all journal replay tooltips must obey the preference')
+    assert(not GameTooltip.visible,'journal controls must not show tooltips')
     control.scripts.OnLeave(control)
 end
-assert(play.alpha==0.7,'hover feedback still resets with tooltips disabled')
+assert(play.alpha==0.7,'hover feedback must reset')
 assert(#plays==count and #stops==stopCount)
+WowVoiceDB.playTooltips=true
 event('ADDON_LOADED')
-assert(WowVoiceDB.playTooltips==false,'initialization must preserve a saved opt-out')
-panel.PlayTooltips:SetChecked(true)
-panel.PlayTooltips.scripts.OnClick(panel.PlayTooltips)
-detailPlay.scripts.OnEnter(detailPlay)
-assert(GameTooltip.visible and GameTooltip:IsOwned(detailPlay))
--- If another UI element has since taken the tooltip, do not hide it.
+assert(WowVoiceDB.playTooltips==nil,'obsolete preference must be removed')
+-- Hovering our controls must not touch another addon's tooltip.
 GameTooltip:SetOwner(QuestMapFrame); GameTooltip:Show()
-WV:SetPlayTooltipsEnabled(false)
+detailPlay.scripts.OnEnter(detailPlay)
+detailPlay.scripts.OnLeave(detailPlay)
 assert(GameTooltip.visible and GameTooltip:IsOwned(QuestMapFrame))
 GameTooltip:Hide()
-WV:SetPlayTooltipsEnabled(true)
-print('PASS: global replay tooltips, options, immediate dismissal, saved opt-out, hover and unrelated tooltips')
+assert(not frames.WowVoiceStopButton.scripts.OnEnter and not frames.WowVoiceStopButton.scripts.OnLeave)
+print('PASS: no tooltip option or tooltips, preserved hover, obsolete setting cleanup, unrelated tooltips untouched')
+
+first.questID = 90902
+QuestLogQuests_Update()
+assert(play.alpha == 0.7)
+play.scripts.OnClick(play)
+assert(plays[#plays].file:find('Interface\\AddOns\\CatVoices\\', 1, true) == 1)
+QuestMapFrame_ShowQuestDetails(90902)
+detailPlay.scripts.OnClick(detailPlay)
+assert(plays[#plays].file:find('Interface\\AddOns\\CatVoices\\', 1, true) == 1)
+WV:Silence()
+print('PASS: supplemental journal list/details replay uses our existing controls')

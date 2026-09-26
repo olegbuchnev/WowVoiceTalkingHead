@@ -14,7 +14,7 @@ local WV = _G.WowVoice
 if not WV then return end
 
 -- Style only our own buttons, and leave them unchanged without EllesmereUI.
--- Preserve click handlers, tooltips and dragging behavior.
+-- Preserve click handlers and dragging behavior.
 local buttonSkins = {}
 local function applyEllesmereStyle(btn)
     local eui = _G.EllesmereUI
@@ -63,27 +63,6 @@ end
 
 WV.StyleButton = applyEllesmereStyle
 
-local playTooltipOwner
-function WV:BeginPlayTooltip(owner, anchor)
-    if WowVoiceDB and WowVoiceDB.playTooltips == false then return false end
-    playTooltipOwner = owner
-    GameTooltip:SetOwner(owner, anchor)
-    return true
-end
-
-function WV:HidePlayTooltip(owner)
-    if playTooltipOwner and (not owner or owner == playTooltipOwner) then
-        if GameTooltip:IsOwned(playTooltipOwner) then GameTooltip:Hide() end
-        playTooltipOwner = nil
-    end
-end
-
-function WV:SetPlayTooltipsEnabled(value)
-    WowVoiceDB.playTooltips = value == true
-    if not WowVoiceDB.playTooltips then self:HidePlayTooltip() end
-    if self.RefreshHeadOptions then self:RefreshHeadOptions() end
-end
-
 local DEFAULT_POINT = { "CENTER", "CENTER", 0, -180 }
 
 local button = CreateFrame("Button", "WowVoiceStopButton", UIParent,
@@ -109,14 +88,6 @@ button:SetScript("OnClick", function()
     WV:Silence()
 end)
 
-button:SetScript("OnEnter", function(self)
-    GameTooltip:SetOwner(self, "ANCHOR_TOP")
-    GameTooltip:AddLine("WowVoice")
-    GameTooltip:AddLine("Клик — оборвать реплику", 1, 1, 1)
-    GameTooltip:AddLine("Перетаскивание — перенести кнопку", 0.7, 0.7, 0.7)
-    GameTooltip:Show()
-end)
-button:SetScript("OnLeave", function() GameTooltip:Hide() end)
 button:HookScript("OnShow", applyEllesmereStyle)
 applyEllesmereStyle(button)
 
@@ -165,11 +136,15 @@ local journalButtons = {}
 local journalHooks = {}
 
 local function updatePlayButton(play)
+    if not WV:HasQuestAudio(play.questOwner.questID) then
+        play:Hide()
+        return
+    end
     if not play.compact then applyEllesmereStyle(play) end
-    local available = WV:HasQuestAudio(play.questOwner.questID)
-        and WowVoiceDB and WowVoiceDB.enabled
+    local available = WowVoiceDB and WowVoiceDB.enabled
     local alpha = play.compact and not play.hovered and 0.7 or 1
     play:SetAlpha(available and alpha or 0.4)
+    play:Show()
 end
 
 local function makePlayButton(parent, questOwner, compact)
@@ -191,31 +166,21 @@ local function makePlayButton(parent, questOwner, compact)
         play:SetText("Слушать")
     end
     play:SetScript("OnClick", function(self)
-        WV:ReplayQuest(self.questOwner.questID)
+        if WV:HasQuestAudio(self.questOwner.questID) then
+            WV:ReplayQuest(self.questOwner.questID)
+        end
         updatePlayButton(self)
     end)
     play:SetScript("OnEnter", function(self)
         self.hovered = true
         updatePlayButton(self)
-        if not WV:BeginPlayTooltip(self, "ANCHOR_RIGHT") then return end
-        GameTooltip:AddLine("WowVoice — описание квеста")
-        if not WV:HasQuestAudio(self.questOwner.questID) then
-            GameTooltip:AddLine("В установленном паке нет записи описания", 0.7, 0.7, 0.7)
-        elseif not (WowVoiceDB and WowVoiceDB.enabled) then
-            GameTooltip:AddLine("Озвучка выключена. Включить: /wv on", 0.7, 0.7, 0.7)
-        else
-            GameTooltip:AddLine("Нажмите, чтобы послушать описание с начала", 1, 1, 1)
-        end
-        GameTooltip:Show()
     end)
     play:SetScript("OnLeave", function(self)
         self.hovered = false
         updatePlayButton(self)
-        WV:HidePlayTooltip(self)
     end)
     play:SetScript("OnHide", function(self)
         self.hovered = false
-        WV:HidePlayTooltip(self)
     end)
     play:SetScript("OnShow", updatePlayButton)
     journalButtons[questOwner] = play
@@ -231,8 +196,15 @@ local function refreshQuestList()
             local play = journalButtons[row] or makePlayButton(row, row, true)
             -- Make room to the right of the checkbox. The template already anchors
             -- the quest title and markers to it, so they move together.
-            row.Checkbox:ClearAllPoints()
-            row.Checkbox:SetPoint("TOPRIGHT", row, "TOPRIGHT", -26, -8)
+            if WV:HasQuestAudio(row.questID) then
+                if not play.checkboxPoint then play.checkboxPoint = { row.Checkbox:GetPoint() } end
+                row.Checkbox:ClearAllPoints()
+                row.Checkbox:SetPoint("TOPRIGHT", row, "TOPRIGHT", -26, -8)
+            elseif play.checkboxPoint then
+                local p = play.checkboxPoint
+                row.Checkbox:ClearAllPoints()
+                row.Checkbox:SetPoint(p[1], p[2], p[3], p[4], p[5])
+            end
             play:ClearAllPoints()
             play:SetPoint("LEFT", row.Checkbox, "RIGHT", 3, 0)
             updatePlayButton(play)

@@ -8,6 +8,6 @@ local anchor=frames.WowVoiceTalkingHeadAnchor
 assert(anchor.points[1][1]=='CENTER' and anchor.points[1][4]==0 and anchor.points[1][5]==-250)
 assert(head.width==570 and head.height==155 and head.scale==1)
 assert(WowVoice:GetHeadPreset()=='classic')
-assert(head.backdrop.bgFile=='Interface\\DialogFrame\\UI-DialogBox-Background')
+assert(head.Background.backdrop.bgFile=='Interface\\DialogFrame\\UI-DialogBox-Background')
 WowVoice:Silence()
 print('PASS: saved description, preset and exact position survive simulated reload')

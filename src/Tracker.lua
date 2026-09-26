@@ -24,20 +24,12 @@ local function makeButton(block)
     end)
     play:SetScript("OnEnter", function(self)
         self:SetAlpha(1)
-        if not WV:BeginPlayTooltip(self, "ANCHOR_LEFT") then return end
-        GameTooltip:AddLine("WowVoice — слушать описание квеста")
-        if not (WowVoiceDB and WowVoiceDB.enabled) then
-            GameTooltip:AddLine("Озвучка выключена. Включить: /wv on", 0.7, 0.7, 0.7)
-        end
-        GameTooltip:Show()
     end)
     play:SetScript("OnLeave", function(self)
         self:SetAlpha(0.7)
-        WV:HidePlayTooltip(self)
     end)
     play:SetScript("OnHide", function(self)
         self:SetAlpha(0.7)
-        WV:HidePlayTooltip(self)
     end)
     buttons[block] = play
     return play
