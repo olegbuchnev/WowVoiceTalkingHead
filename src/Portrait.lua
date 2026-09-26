@@ -517,7 +517,11 @@ local function restorePosition()
     else
         -- Follow Blizzard's bottom action-bar boundary without joining its alert stack.
         local bottomContainer = _G.BottomManagedFrameContainer
-        if bottomContainer then
+        local bx, by
+        if bottomContainer then bx, by = bottomContainer:GetCenter() end
+        -- Some clients expose this container before it has a screen rectangle.
+        -- Anchoring to it then leaves our entire panel without coordinates.
+        if type(bx) == "number" and type(by) == "number" then
             anchor:SetPoint("BOTTOM", bottomContainer, "BOTTOM", 0, 0)
         else
             anchor:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, DEFAULT_BOTTOM_OFFSET)
@@ -528,7 +532,23 @@ end
 local function centerPosition()
     local x, y = anchor:GetCenter()
     local cx, cy = UIParent:GetCenter()
-    return x - cx, y - cy
+    if x and y and cx and cy then return x - cx, y - cy end
+    restorePosition()
+    x, y = anchor:GetCenter()
+    if x and y and cx and cy then return x - cx, y - cy end
+    -- Layout may still be pending while the options page is opening. Derive
+    -- the saved position without overwriting it with an arbitrary center.
+    local p = WowVoiceDB and WowVoiceDB.headPosition
+    if p and p[1] and p[2] and p[3] and p[4] then
+        local function offset(point, width, height)
+            return (point:find("LEFT") and -width / 2 or point:find("RIGHT") and width / 2 or 0),
+                (point:find("BOTTOM") and -height / 2 or point:find("TOP") and height / 2 or 0)
+        end
+        local rx, ry = offset(p[2], UIParent:GetWidth(), UIParent:GetHeight())
+        local ax, ay = offset(p[1], anchor:GetWidth(), anchor:GetHeight())
+        return rx - ax + p[3], ry - ay + p[4]
+    end
+    return 0, -UIParent:GetHeight() / 2 + DEFAULT_BOTTOM_OFFSET + anchor:GetHeight() / 2
 end
 
 local function setPosition(x, y)
@@ -804,7 +824,9 @@ local function createHead()
     head = CreateFrame("Button", "WowVoiceTalkingHead", anchor)
     head:SetPoint("CENTER", anchor, "CENTER")
     head:SetSize(DEFAULT_WIDTH, DEFAULT_HEIGHT)
-    head:SetFrameStrata("DIALOG")
+    -- Keep the entire panel above dialogue/tutorial banners, including after reload.
+    head:SetFrameStrata("FULLSCREEN_DIALOG")
+    head:SetFrameLevel(200)
     head:EnableMouse(false)
     head:RegisterForDrag("LeftButton")
     head:RegisterForClicks("RightButtonUp")
@@ -969,6 +991,7 @@ local function createHead()
     end)
     head.Close = close
     head:SetScript("OnUpdate", function()
+        if not anchor:GetCenter() then restorePosition() end
         tryTalkingModel()
         refreshEllesmereBackground(false)
         if active and not active.closing then updatePlaybackText() end
@@ -1030,6 +1053,7 @@ function WV:StartTalkingHead(context, endsAt, duration, startedAt, preview)
     local text = context.text
     head.Body:SetText(text and text ~= "" and text or "Текст задания недоступен.")
     layoutHead()
+    restorePosition()
     self:RefreshTalkingHeadModel()
 end
 

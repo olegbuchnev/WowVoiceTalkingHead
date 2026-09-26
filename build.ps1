@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-  [ValidateSet('Validate', 'Test', 'Deploy', 'Package')]
+  [ValidateSet('Validate', 'Test', 'Deploy', 'Package', 'PackageAddon')]
   [string]$Task = 'Validate',
   [ValidateSet('ForeverBeta')]
   [string]$Target = 'ForeverBeta',
@@ -78,8 +78,10 @@ function Get-AddonVersion {
 }
 
 function Test-AddonLayout {
-  if (-not (Test-Path -LiteralPath (Join-Path $RepoRoot 'USER_README.md') -PathType Leaf)) {
-    throw 'Missing USER_README.md for the release archive.'
+  param([switch]$AddonOnly)
+  $guideName = if ($AddonOnly) { 'USER_UPDATE_README.md' } else { 'USER_README.md' }
+  if (-not (Test-Path -LiteralPath (Join-Path $RepoRoot $guideName) -PathType Leaf)) {
+    throw "Missing $guideName for the release archive."
   }
   $foreverDirectory = $CatSource
   $foreverIndex = Join-Path $AddonSource 'ForeverAudio.lua'
@@ -88,7 +90,7 @@ function Test-AddonLayout {
     $name = $match.Groups[1].Value
     $foreverFiles[$name] = $true
     $audio = Join-Path $foreverDirectory $name
-    if (-not (Test-Path -LiteralPath $audio -PathType Leaf) -or (Get-Item -LiteralPath $audio).Length -eq 0) {
+    if (-not $AddonOnly -and (-not (Test-Path -LiteralPath $audio -PathType Leaf) -or (Get-Item -LiteralPath $audio).Length -eq 0)) {
       throw "Missing supplemental audio: $name"
     }
   }
@@ -100,7 +102,7 @@ function Test-AddonLayout {
     $classicFiles[$name] = $true
     $classicQuests[($match.Groups[1].Value -replace '[apc]$', '')] = $true
     $audio = Join-Path $SoundSource $name
-    if (-not (Test-Path -LiteralPath $audio -PathType Leaf) -or (Get-Item -LiteralPath $audio).Length -eq 0) {
+    if (-not $AddonOnly -and (-not (Test-Path -LiteralPath $audio -PathType Leaf) -or (Get-Item -LiteralPath $audio).Length -eq 0)) {
       throw "Missing Classic audio: $name. Run tools/import-classic-audio.js with the extracted WowVoiceSounds directory."
     }
   }
@@ -110,7 +112,8 @@ function Test-AddonLayout {
       throw "Supplement duplicates Classic quest: $($match.Groups[1].Value). Reimport CatVoices."
     }
   }
-  foreach ($source in @($AddonSource, $SoundSource, $CatSource)) {
+  $sources = if ($AddonOnly) { @($AddonSource) } else { @($AddonSource, $SoundSource, $CatSource) }
+  foreach ($source in $sources) {
     if (-not (Test-Path -LiteralPath $source -PathType Container)) { throw "Missing source: $source" }
     Assert-NoReparseTree $source
     foreach ($file in Get-ChildItem -LiteralPath $source -Recurse -Force) {
@@ -140,6 +143,10 @@ function Test-AddonLayout {
         throw "Missing TOC entry: $entry"
       }
     }
+  }
+  if ($AddonOnly) {
+    Write-Host "Validated WowVoice $(Get-AddonVersion) runtime for addon-only update."
+    return
   }
   $soundFiles = @(Get-ChildItem -LiteralPath $SoundSource -Force)
   if ($soundFiles.Count -ne ($classicFiles.Count + 2)) { throw 'soundpack must contain indexed Classic audio and two Forever TOCs only.' }
@@ -254,6 +261,7 @@ function Invoke-Deploy {
 }
 
 function Invoke-Package {
+  param([switch]$AddonOnly)
   Assert-DirectChildPath $ArtifactsRoot $RepoRoot 'artifacts'
   Assert-NoReparseTree $ArtifactsRoot
   New-Item -ItemType Directory -Path $ArtifactsRoot -Force | Out-Null
@@ -266,20 +274,27 @@ function Invoke-Package {
   New-Item -ItemType Directory -Path $stage | Out-Null
   try {
     Copy-Item -LiteralPath $AddonSource -Destination (Join-Path $stage 'WowVoice') -Recurse
-    Copy-Item -LiteralPath $SoundSource -Destination (Join-Path $stage 'WowVoiceSounds') -Recurse
-    Copy-Item -LiteralPath $CatSource -Destination (Join-Path $stage 'CatVoices') -Recurse
+    $packagePaths = @((Join-Path $stage 'WowVoice'))
+    if (-not $AddonOnly) {
+      Copy-Item -LiteralPath $SoundSource -Destination (Join-Path $stage 'WowVoiceSounds') -Recurse
+      Copy-Item -LiteralPath $CatSource -Destination (Join-Path $stage 'CatVoices') -Recurse
+      $packagePaths += @((Join-Path $stage 'WowVoiceSounds'), (Join-Path $stage 'CatVoices'))
+    }
     # Convert the guide's Markdown to plain text for opening in Notepad.
-    $guide = [IO.File]::ReadAllText((Join-Path $RepoRoot 'USER_README.md'))
+    $guideName = if ($AddonOnly) { 'USER_UPDATE_README.md' } else { 'USER_README.md' }
+    $guide = [IO.File]::ReadAllText((Join-Path $RepoRoot $guideName))
     $guide = $guide -replace '(?m)^\s*```[^\r\n]*\r?\n', ''
     $guide = $guide -replace '(?m)^#{1,6}\s+', ''
     $guide = $guide -replace '\[([^\]]+)\]\(([^)]+)\)', '$1 ($2)'
     $guide = $guide.Replace('**', '').Replace('`', '')
     $guide = $guide -replace '\r?\n', "`r`n"
     [IO.File]::WriteAllText((Join-Path $stage 'README.txt'), $guide, [Text.UTF8Encoding]::new($true))
-    $zipName = 'WowVoice-' + (Get-AddonVersion) + '.zip'
+    $suffix = if ($AddonOnly) { '-addon-only' } else { '' }
+    $zipName = 'WowVoice-' + (Get-AddonVersion) + $suffix + '.zip'
     $pendingZip = Join-Path $stage $zipName
     $zip = Join-Path $release $zipName
-    Compress-Archive -LiteralPath @((Join-Path $stage 'WowVoice'), (Join-Path $stage 'WowVoiceSounds'), (Join-Path $stage 'CatVoices'), (Join-Path $stage 'README.txt')) -DestinationPath $pendingZip
+    $packagePaths += (Join-Path $stage 'README.txt')
+    Compress-Archive -LiteralPath $packagePaths -DestinationPath $pendingZip
     # Publish only a completed ZIP; preserve the previous release on build failure.
     if (Test-Path -LiteralPath $zip -PathType Leaf) {
       [IO.File]::Replace($pendingZip, $zip, [NullString]::Value)
@@ -288,7 +303,8 @@ function Invoke-Package {
     }
     foreach ($directory in @($ArtifactsRoot, $release)) {
       foreach ($old in Get-ChildItem -LiteralPath $directory -Filter '*.zip' -File) {
-        if (-not (Test-PathEquals $old.FullName $zip)) {
+        $sameKind = ($old.Name -like '*-addon-only.zip') -eq [bool]$AddonOnly
+        if ($sameKind -and -not (Test-PathEquals $old.FullName $zip)) {
           Remove-Item -LiteralPath $old.FullName
         }
       }
@@ -362,10 +378,11 @@ function Invoke-Tests {
   finally { Pop-Location; $env:Path = $previousPath }
 }
 
-Test-AddonLayout
+Test-AddonLayout -AddonOnly:($Task -eq 'PackageAddon')
 switch ($Task) {
   'Validate' { }
   'Test' { Invoke-Tests }
   'Deploy' { Invoke-Deploy }
   'Package' { Invoke-Package }
+  'PackageAddon' { Invoke-Package -AddonOnly }
 }

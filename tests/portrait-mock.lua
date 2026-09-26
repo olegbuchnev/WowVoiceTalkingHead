@@ -114,8 +114,10 @@ function CreateFrame(kind,name,parent,template)
     function f:SetVerticalScroll(v) self.scroll=v end
     function f:GetCenter()
         local p=self.points[1]
+        if not p then return nil, nil end
         local parent=p[2] or self.parent
         local cx,cy=parent:GetCenter()
+        if not cx or not cy then return nil, nil end
         local function offset(point,w,h)
             return (point:find('LEFT') and -w/2 or point:find('RIGHT') and w/2 or 0),
                 (point:find('TOP') and h/2 or point:find('BOTTOM') and -h/2 or 0)

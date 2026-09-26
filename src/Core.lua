@@ -21,6 +21,7 @@ local SECTION = { accept = "a", progress = "p", complete = "c" }
 local defaults = {
     enabled  = true,
     autoPlayAccept = true, -- Automatically play quest descriptions unless opted out
+    autoPlayTurnIn = true, -- Both progress dialogue and the final quest reward dialogue
     trackerButtons = true, -- Replay controls beside tracked quest titles
     channel  = "auto",   -- auto | sound | music
     ext      = "ogg",    -- Sound pack format: ogg | mp3
@@ -493,6 +494,10 @@ function WV:Speak(section, title, text, event)
         dbg("Speak: пропущено, autoPlayAccept=false")
         return
     end
+    if (section == SECTION.progress or section == SECTION.complete) and WowVoiceDB.autoPlayTurnIn == false then
+        dbg("Speak: пропущено, autoPlayTurnIn=false")
+        return
+    end
 
     local key = questId .. section
     local path, dur = self:SoundPath(questId, section)
@@ -521,6 +526,11 @@ end
 
 function WV:SetAutoPlayAcceptEnabled(enabled)
     WowVoiceDB.autoPlayAccept = enabled == true
+    if self.RefreshHeadOptions then self:RefreshHeadOptions() end
+end
+
+function WV:SetAutoPlayTurnInEnabled(enabled)
+    WowVoiceDB.autoPlayTurnIn = enabled == true
     if self.RefreshHeadOptions then self:RefreshHeadOptions() end
 end
 

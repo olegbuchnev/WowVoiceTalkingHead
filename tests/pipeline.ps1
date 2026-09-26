@@ -19,7 +19,7 @@ function Assert-Fails {
 }
 
 try {
-  foreach ($name in @('src', 'build.ps1', 'USER_README.md')) {
+  foreach ($name in @('src', 'build.ps1', 'USER_README.md', 'USER_UPDATE_README.md')) {
     Copy-Item -LiteralPath (Join-Path $project $name) -Destination $fixture -Recurse
   }
   # Exercise repeated packaging with a small, real-audio fixture. The full
@@ -184,6 +184,65 @@ try {
   Assert-True (@(Get-ChildItem -LiteralPath $release -Force).Count -eq 1) 'Expected only the latest ZIP in the shared folder.'
   Write-Host 'PASS: ZIP contains exactly WowVoice, both audio folders and plain-text README; runtime hashes match.'
   Write-Host 'PASS: stable shared folder, version replacement, legacy ZIP cleanup and failed-build preservation.'
+
+  $fullZip = $archives[0].FullName
+  $fullHash = (Get-FileHash -LiteralPath $fullZip).Hash
+  # Exercise an update build with both sound source directories absent.
+  foreach ($name in @('soundpack', 'catvoices')) {
+    $from = [IO.Path]::GetFullPath((Join-Path $fixture $name))
+    $held = [IO.Path]::GetFullPath((Join-Path $fixture ($name + '-held')))
+    Assert-True ((Split-Path -Parent $from) -eq $fixture -and (Split-Path -Parent $held) -eq $fixture) 'Unsafe fixture rename.'
+    Rename-Item -LiteralPath $from -NewName ($name + '-held')
+  }
+  try {
+    & $build -Task PackageAddon
+    $updateZip = @(Get-ChildItem -LiteralPath $release -Filter '*-addon-only.zip' -File)[0].FullName
+    Assert-True ((Get-FileHash -LiteralPath $fullZip).Hash -eq $fullHash) 'Addon update changed full release.'
+    $archive = [IO.Compression.ZipFile]::OpenRead($updateZip)
+    $sha = [Security.Cryptography.SHA256]::Create()
+    try {
+      $entries = @($archive.Entries | Where-Object { $_.Name })
+      $runtimeFiles = @(Get-ChildItem -LiteralPath (Join-Path $fixture 'src') -File -Recurse)
+      Assert-True ($entries.Count -eq ($runtimeFiles.Count + 1)) 'Addon update has unexpected entries.'
+      foreach ($entry in $entries) {
+        $name = $entry.FullName.Replace('\', '/')
+        if ($name -eq 'README.txt') {
+          $reader = [IO.StreamReader]::new($entry.Open(), [Text.Encoding]::UTF8)
+          try { $guide = $reader.ReadToEnd() } finally { $reader.Dispose() }
+          $updateTitle = (Get-Content -LiteralPath (Join-Path $fixture 'USER_UPDATE_README.md') -Encoding UTF8)[0] -replace '^# ', ''
+          Assert-True ($guide.Contains($updateTitle) -and $guide.Contains('/reload') -and $guide.Contains('WowVoiceSounds')) 'Update guide missing.'
+          continue
+        }
+        Assert-True ($name.StartsWith('WowVoice/') -and $name -notmatch '\.ogg$') 'Audio or unrelated folder in addon update.'
+        $stream = $entry.Open()
+        try { $hash = [BitConverter]::ToString($sha.ComputeHash($stream)).Replace('-', '') }
+        finally { $stream.Dispose() }
+        Assert-True ($hash -eq (Get-FileHash -LiteralPath $expected[$name]).Hash) "Update content mismatch: $name"
+      }
+    } finally { $sha.Dispose(); $archive.Dispose() }
+    $updateHash = (Get-FileHash -LiteralPath $updateZip).Hash
+    $lock = [IO.File]::Open($updateZip, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::None)
+    try { Assert-Fails { & $build -Task PackageAddon } 'Locked addon update was replaced.' }
+    finally { $lock.Dispose() }
+    Assert-True ((Get-FileHash -LiteralPath $updateZip).Hash -eq $updateHash) 'Failed update damaged previous ZIP.'
+    [IO.File]::AppendAllText($tocPath, "`n..\outside.lua`n")
+    try { Assert-Fails { & $build -Task PackageAddon } 'Update accepted escaping TOC entry.' }
+    finally { [IO.File]::WriteAllText($tocPath, $original) }
+    & $build -Task PackageAddon
+    Assert-True (-not (Test-Path -LiteralPath $updateZip)) 'Old addon-only version was not removed.'
+    $updateZip = @(Get-ChildItem -LiteralPath $release -Filter '*-addon-only.zip' -File)[0].FullName
+    $updateHash = (Get-FileHash -LiteralPath $updateZip).Hash
+  }
+  finally {
+    foreach ($name in @('soundpack', 'catvoices')) {
+      Rename-Item -LiteralPath (Join-Path $fixture ($name + '-held')) -NewName $name
+    }
+  }
+  & $build -Task Package
+  Assert-True ((Get-FileHash -LiteralPath $updateZip).Hash -eq $updateHash) 'Full package changed addon-only update.'
+  Assert-True (@(Get-ChildItem -LiteralPath $release -Filter '*.zip' -File).Count -eq 2) 'Expected one full release and one update.'
+  Assert-True ([IO.Directory]::GetCreationTimeUtc($release) -eq $folderCreated) 'Addon packaging recreated shared folder.'
+  Write-Host 'PASS: addon-only build without audio sources, runtime hashes, update guide, validation, failed-build preservation and independent archive replacement.'
 }
 finally {
   # Only this uniquely named temporary fixture can be recursively removed.

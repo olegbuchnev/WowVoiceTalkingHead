@@ -27,7 +27,8 @@ tests/                           Lua tests with WoW API mocks and pipeline check
 config/deploy.targets.local.psd1  Local Forever Beta path (gitignored)
 build.ps1 / build.cmd             Validate, test, deploy and package pipeline
 USER_README.md                   Russian user guide; converted to README.txt for packaging
-artifacts/WoWVoice/              Latest release ZIP; stable folder for cloud sync (gitignored)
+USER_UPDATE_README.md            Instructions for updating only the addon, without audio
+artifacts/WoWVoice/              Latest full and addon-only ZIPs; stable cloud sync folder (gitignored)
 backups/                         Backups created before deployment (gitignored)
 ```
 
@@ -71,10 +72,27 @@ Package after every change or update the shared pCloud archive automatically.
 ```
 
 Package creates the new ZIP in a temporary staging directory, then places it in
-`artifacts/WoWVoice/` and removes older ZIPs, including archives left directly in
+`artifacts/WoWVoice/` and removes older full ZIPs, including archives left directly in
 `artifacts/` by earlier builds. The `WoWVoice` directory is never recreated, so it
 can be paired with a cloud folder for synchronization. A failed archive build
 leaves the previous release in place.
+
+### Build a small addon update (without audio)
+
+```shell
+.\build.cmd -Task PackageAddon
+```
+
+Creates `artifacts/WoWVoice/WowVoice-<version>-addon-only.zip` containing only
+`WowVoice/` and a plain-text `README.txt` from `USER_UPDATE_README.md`. Use it to
+deliver code fixes to users who already have the full sound library installed.
+It includes the entire runtime addon, including textures and audio indexes,
+and can be built without local `soundpack/` or `catvoices/` directories.
+Runtime layout and TOC checks still run. The version is not changed.
+
+The shared folder retains one full release and one addon-only update. Building
+either kind replaces only that kind, preserving the other archive and the short
+link. Full releases remain necessary for first installation or new recordings.
 
 For pCloud, configure Sync once between the local `artifacts/WoWVoice` folder and
 a cloud folder named `WoWVoice`, then share the cloud folder's link. Each Package
@@ -98,8 +116,9 @@ IntelliJ IDEA shows a Run/Play gutter icon for each command block when
 **Languages & Frameworks | Markdown**. Use the repository root as the working
 directory.
 
-Deploy and Package run Validate first. Test runs separately. Validate, Deploy
-and Package require only Windows PowerShell 5.1. Test locates Node.js/npm through
+Deploy and Package run Validate first; PackageAddon checks runtime files without
+requiring audio sources. Test runs separately. All build tasks require Windows
+PowerShell 5.1. Test locates Node.js/npm through
 PATH, `NODE_EXE`, IntelliJ's local Node runtimes or standard installation
 directories. It runs `npm ci` to install the dependencies pinned in
 `package-lock.json`; an internet connection is required if they are not cached.
@@ -117,9 +136,12 @@ Quest descriptions play automatically by default. Disable
 (`WowVoiceDB.autoPlayAccept`). A one-time migration enables this setting after
 the unreleased build that defaulted it off; later checkbox choices are preserved.
 With autoplay disabled, quest giver and description capture still runs,
-and manual replay from the journal or tracker remains available. Progress and
-completion dialogue keep their automatic playback. Changing the preference
-does not interrupt or start the current recording.
+and manual replay from the journal or tracker remains available.
+«Озвучивать при сдаче задания» independently controls all progress and completion
+dialogue (`QUEST_PROGRESS` and `QUEST_COMPLETE`, sections `p` and `c`) for both
+audio packs. `WowVoiceDB.autoPlayTurnIn` defaults to true; a saved opt-out is
+preserved. Neither preference blocks manual description replay. Changing either
+preference does not interrupt or start the current recording.
 
 The on-screen quest tracker has small replay arrows to the left of voiced quest
 titles, including when styled by EllesmereUI. They replay the description using
@@ -142,11 +164,16 @@ set explicitly with `SetModelAlpha`; its ancestor frames remain opaque so the
 model does not outlast the background or receive a doubled fade.
 The entire talking-head panel uses an independent root frame, so hiding or
 fading `UIParent` leaves the portrait, text and controls visible together.
+The panel uses `FULLSCREEN_DIALOG` at frame level 200 to stay above dialogue
+tutorial banners, with all of its child frames inheriting the same strata.
 This also applies to manual UI hiding and does not depend on Dialogue UI or any
 other addon's frames, files or load order. The anchor still uses UIParent-relative
 coordinates and mirrors its effective scale. Playback completion, manual stop
 and disabling the talking head still hide the panel; late model loads cannot
 reveal a dismissed portrait.
+If the action-bar container has no screen coordinates yet, the default anchor
+falls back to the bottom of the screen. Opening options and switching presets
+also tolerate a pending layout without losing the saved panel position.
 The cross, right-click and manual stop dismiss the panel immediately, including
 during fade-out. Replacing a line restores full opacity immediately; there are
 no delayed callbacks that can hide a newer line or preview.
