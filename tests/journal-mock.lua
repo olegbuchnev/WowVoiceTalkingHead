@@ -9,6 +9,10 @@ function CreateFrame(kind,name,parent,template)
     function f:SetHeight(h) self.height=h end
     function f:SetText(t) self.text=t end
     function f:SetAlpha(a) self.alpha=a end
+    function f:GetParent() return self.parent end
+    function f:GetEffectiveScale()
+        return (self.scale or 1)*(self.parent and self.parent:GetEffectiveScale() or 1)
+    end
     function f:GetEffectiveAlpha()
         return (self.alpha or 1)*(self.parent and self.parent:GetEffectiveAlpha() or 1)
     end

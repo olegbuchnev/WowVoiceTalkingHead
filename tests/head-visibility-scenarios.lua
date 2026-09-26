@@ -4,73 +4,87 @@ local function near(actual,expected)
     assert(math.abs(actual-expected)<0.00001,tostring(actual)..' ~= '..expected)
 end
 
--- Dialogue UI can hide the game UI before the very first quest starts.
+-- Any addon can hide the normal UI before the first track starts.
+UIParent.scale=0.75
+UIParent:SetAlpha(0)
+UIParent:Hide()
 SetUIVisibility(false)
 assert(WV:ReplayQuest(179))
 local head=frames.WowVoiceTalkingHead
-assert(head.Model.portraitReady and head.Model.modelAlpha==0)
+local anchor=frames.WowVoiceTalkingHeadAnchor
+assert(anchor:GetParent()==nil)
+local function visibleTogether()
+    assert(head:IsVisible() and head.Background:IsVisible()
+        and head.TextScroll:IsVisible() and head.Close:IsVisible())
+    near(head:GetEffectiveAlpha(),1)
+    near(head.Model.modelAlpha,1)
+end
+visibleTogether()
+near(anchor:GetEffectiveScale(),0.75)
+local point={anchor:GetPoint()}
 local sounds,stopped=#plays,#stops
 head.Model:CompleteLoad(10658)
-assert(head.Model.modelAlpha==0,'late loads must not reveal hidden geometry')
+visibleTogether()
 now=now+2
 head.scripts.OnUpdate()
 assert(head.Progress.value>0 and #plays==sounds and #stops==stopped)
-SetUIVisibility(true)
-near(head.Model.modelAlpha,1)
-assert(#plays==sounds and #stops==stopped,'showing UI must not restart audio')
 
--- Parent fades must affect the model exactly once, including the final fade.
+-- Independent visibility applies to every theme, both hidden and fading UI.
 for _,preset in ipairs({'retail','classic','ellesmere'}) do
     WV:SetHeadPreset(preset)
-    UIParent:SetAlpha(0.4)
-    head.scripts.OnUpdate()
-    near(head.Model.modelAlpha,0.4)
-    near(head.Background.alpha,1)
-    UIParent:SetAlpha(0)
-    head.Model:CompleteLoad(10658)
-    near(head.Model.modelAlpha,0)
-    UIParent:SetAlpha(1)
-    head.scripts.OnUpdate()
-    near(head.Model.modelAlpha,1)
+    for _,alpha in ipairs({0,0.4,1}) do
+        UIParent:SetAlpha(alpha)
+        head.scripts.OnUpdate()
+        visibleTogether()
+        head.Model:CompleteLoad(10658)
+        visibleTogether()
+    end
 end
-UIParent:Hide()
-near(head.Model.modelAlpha,0)
 UIParent:Show()
-near(head.Model.modelAlpha,1)
-
-WV:FinishTalkingHead()
-now=now+0.5
-UIParent:SetAlpha(0.4)
-head.scripts.OnUpdate()
-near(head.Background.alpha,0.5)
-near(head.Model.modelAlpha,0.2)
-SetUIVisibility(false)
-near(head.Model.modelAlpha,0)
-now=now+1
 SetUIVisibility(true)
-near(head.Model.modelAlpha,0,'an expired fade must not flash on return')
-head.scripts.OnUpdate()
-assert(not head.visible)
-UIParent:SetAlpha(1)
+visibleTogether()
+assert(#plays==sounds and #stops==stopped,'UI changes must not restart audio')
+local restoredPoint={anchor:GetPoint()}
+for i=1,5 do assert(point[i]==restoredPoint[i], 'UI visibility changed panel position') end
+UIParent.scale=0.9
+local scaleEvents=frames.WowVoiceHeadScaleEvents
+scaleEvents.scripts.OnEvent(scaleEvents,'UI_SCALE_CHANGED')
+near(anchor:GetEffectiveScale(),0.9)
+near(head:GetEffectiveScale(),0.9*head:GetScale())
 
--- Playback can finish while UIParent is hidden and OnUpdate is suspended.
-assert(WV:ReplayQuest(179))
-local started=now
+-- Natural completion fades the entire independent panel while UIParent is hidden.
 UIParent:Hide()
+UIParent:SetAlpha(0)
+SetUIVisibility(false)
+local started=now
 tick(started+WowVoiceDur['179a']+WowVoiceDB.tail+0.01)
 restored('1','0.37')
-now=now+2
-UIParent:Show()
-near(head.Model.modelAlpha,0)
+now=now+0.5
 head.scripts.OnUpdate()
-assert(not head.visible)
+near(head.Background.alpha,0.5)
+near(head.Model.modelAlpha,0.5)
+now=now+1
+head.scripts.OnUpdate()
+assert(not head:IsShown())
+head.Model:CompleteLoad(10658)
+near(head.Model.modelAlpha,0,'late loads must not reveal a dismissed model')
 
-SetUIVisibility(false)
+-- Close/disable and silent preview work while the rest of the UI stays hidden.
+assert(WV:ReplayQuest(179))
+visibleTogether()
+stopped=#stops
+head.Close.scripts.OnClick()
+assert(not head:IsShown() and #stops==stopped+1)
 WV:ToggleHeadPreview()
-near(head.Model.modelAlpha,0)
-SetUIVisibility(true)
-near(head.Model.modelAlpha,1)
+visibleTogether()
 WV:HideHeadPreview()
 head.Model:CompleteLoad(10658)
 near(head.Model.modelAlpha,0)
-print('PASS: external UI fades/hiding, early and late model loads, continuous audio, hidden completion and preview visibility')
+assert(WV:ReplayQuest(179))
+WV:SetHeadEnabled(false)
+assert(not head:IsShown())
+head.Model:CompleteLoad(10658)
+near(head.Model.modelAlpha,0)
+UIParent:Show(); UIParent:SetAlpha(1); SetUIVisibility(true)
+assert(not head:IsShown())
+print('PASS: independent whole-panel visibility, early/late models, all themes, scale/position, continuous audio, natural completion, close, preview and disabled head')

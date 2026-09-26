@@ -2,16 +2,14 @@
 -- SavedVariables stores data only, never frames or unit references.
 local WV = _G.WowVoice
 local pending, probe, request, head, anchor, active, transition
-local gameUIVisible = true
-
--- PlayerModel geometry can outlive the ordinary UI during an external fade or
--- SetUIVisibility(false). Explicitly follow the panel's inherited visibility.
+-- PlayerModel geometry must follow our own panel's visibility and fade.
+-- The panel is independent of UIParent and other addons' interface fades.
 local function syncModelOpacity()
     if not head then return end
     local model = head.Model
     local alpha = head.visualAlpha or 1
     if transition then alpha = math.max(0, 1 - math.max(0, GetTime() - transition.startedAt)) end
-    if not active or not model.portraitReady or not gameUIVisible or not head:IsVisible() then
+    if not active or not model.portraitReady or not head:IsVisible() then
         alpha = 0
     elseif model.SetModelAlpha then
         alpha = alpha * head.Portrait:GetEffectiveAlpha()
@@ -20,14 +18,6 @@ local function syncModelOpacity()
     else model:SetAlpha(alpha) end
 end
 
--- Install before the first quest: Dialogue UI may hide the game UI before
--- the first talking head is created. This only observes the visibility call.
-if SetUIVisibility and hooksecurefunc then
-    hooksecurefunc("SetUIVisibility", function(visible)
-        gameUIVisible = visible
-        syncModelOpacity()
-    end)
-end
 local SECTION = { a = "Описание задания", p = "Выполнение задания", c = "Завершение задания" }
 local FALLBACK_ICON = "Interface\\Icons\\INV_Misc_Note_01"
 local DEFAULT_WIDTH, DEFAULT_HEIGHT = 570, 155
@@ -716,7 +706,7 @@ local function layoutHead()
     head.Name:SetHeight(nameHeight)
     head:SetSize(width, height)
     head:SetScale(scale)
-    -- Keep the invisible anchor unscaled; X/Y always use UIParent coordinates.
+    -- Only the panel receives the preset scale; the anchor uses UIParent units.
     anchor:SetSize(width * scale, height * scale)
     local textWidth = width - textLeft - textRight
     -- The portrait camera expects a roughly square viewport. Panel height
@@ -792,9 +782,23 @@ local function updateHeadTransition()
     if GetTime() >= transition.startedAt + 1 then WV:StopTalkingHead() end
 end
 
+-- Match the normal UI's coordinate scale without inheriting its visibility.
+local function refreshHeadScale()
+    if not anchor then return end
+    anchor:SetScale(UIParent:GetEffectiveScale())
+    if head and head.Model.portraitReady then updatePortraitCamera(head.Model) end
+end
+
+local scaleEvents = CreateFrame("Frame", "WowVoiceHeadScaleEvents")
+scaleEvents:RegisterEvent("PLAYER_LOGIN")
+scaleEvents:RegisterEvent("UI_SCALE_CHANGED")
+scaleEvents:RegisterEvent("DISPLAY_SIZE_CHANGED")
+scaleEvents:SetScript("OnEvent", refreshHeadScale)
+
 local function createHead()
     if head then return end
-    anchor = CreateFrame("Frame", "WowVoiceTalkingHeadAnchor", UIParent)
+    anchor = CreateFrame("Frame", "WowVoiceTalkingHeadAnchor")
+    anchor:SetScale(UIParent:GetEffectiveScale())
     anchor:SetMovable(true)
     anchor:SetClampedToScreen(true)
     head = CreateFrame("Button", "WowVoiceTalkingHead", anchor)
@@ -869,8 +873,6 @@ local function createHead()
     end)
     head:SetScript("OnShow", syncModelOpacity)
     head:SetScript("OnHide", syncModelOpacity)
-    UIParent:HookScript("OnShow", syncModelOpacity)
-    UIParent:HookScript("OnHide", syncModelOpacity)
     model:SetScript("OnModelLoaded", finishTalkingModel)
     model:SetScript("OnAnimFinished", function(self)
         if active and self.talkAnimation then self:SetAnimation(self.talkAnimation) end
