@@ -137,13 +137,21 @@ replace API and visual verification in the Forever client.
 ## Playback and background sound
 
 The default `/wv channel auto` selects the playback channel for each recording.
-With `Sound_EnableSoundWhenGameIsInBG=1`, it uses Master and leaves zone music
-alone. With background sound disabled, it uses PlayMusic: live Forever testing
+With `Sound_EnableSoundWhenGameIsInBG=1`, it uses Master and keeps zone music
+playing. During the recording, Master volume is multiplied by the user's original
+Dialog volume (100% Master and 30% Dialog becomes 30% Master). This also lowers
+music and other game sounds until playback stops. With background sound disabled,
+it uses PlayMusic: live Forever testing
 confirmed that the voice becomes silent in the background and returns at the
 current playback position when the game regains focus. The addon never changes
 the background-sound setting. Music playback temporarily enables music and sets
-its volume, replaces zone music, and restores the previous settings on stop,
-completion or logout. NPC Dialog suppression applies to both playback paths,
+its volume to the user's original Dialog volume without changing Master. It
+replaces zone music. Both paths restore their temporary settings on stop,
+completion, logout or an explicit playback failure. Settings manually changed
+during playback are preserved if they differ from the addon's temporary values.
+Consecutive recordings use the original values rather than repeatedly reducing
+volume. `/wv volume 0..1` is an additional Dialog-relative multiplier in both paths
+(default 1). NPC Dialog suppression applies to both playback paths,
 unless `/wv duck off` is selected.
 
 Changing the background preference does not restart or move the current voice;
@@ -152,6 +160,43 @@ during a Master recording, minimizing can still interrupt that recording.
 `/wv channel sound` and `/wv channel music` retain their explicit overrides.
 PlayMusic can report less reliable file availability than PlaySoundFile; an
 explicit failure is handled, but a successful return cannot prove audibility.
+
+## Background preparation and frame time
+
+`Work.lua` runs a shared cooperative queue with a soft 1 ms budget per frame,
+measured with `debugprofilestop`. Jobs yield between small units. The scheduler
+uses measured step costs to defer work that is unlikely to fit, and rotates jobs
+so an expensive step cannot starve. Native client calls cannot be interrupted;
+overruns are recorded rather than presented as a hard guarantee. Without the
+profiler, a 64-step ceiling still bounds each slice. No callback remains attached
+to `OnUpdate` when the queue is empty. Clients with timers also sleep between
+scheduled retries; older clients use a lightweight waiting callback.
+
+Portrait preparation starts three seconds after login/world entry, pauses in
+combat and while leaving the world, and resumes automatically. The Classic
+reverse speaker index is built incrementally. Each journal scan walks inventory
+slots once and saved speaker appearances once, rather than once per quest.
+Only current snapshots are committed; inventory changes request a fresh scan.
+The warmup worker spaces model requests at least 0.25 seconds apart, with at most
+two pending attempts, a two-second attempt timeout and bounded retries. Each
+model frame retains its own NPC identity so late events cannot cross speakers.
+Finished or exhausted queues stop running until relevant events request work.
+
+Manual playback does not wait for preparation. Before the reverse index is
+ready, it resolves only the requested ID synchronously. Existing live capture,
+item identity and the visible portrait's retry path remain available immediately.
+
+Quest-progress events coalesce over 0.05 seconds; the scan yields between quests
+and remains enabled in combat. Login/world entry resets the silent baseline and
+cancels an older scan. Progress changes within one coalescing window are observed
+as the latest state. Playback and the golden reminder animation are not queued.
+
+`/wv perf` reports session-local pending work, maximum slice duration, overruns,
+errors, and per-job total/max step time. `/wv diag` includes the same report.
+The measurements cover this queue, not total frame time or all other addons.
+Regression tests verify budget sharing, combat behavior, idle shutdown, native
+overrun reporting, and 100 inventory queries for 25 quests/100 slots (previously
+2,500). These are controlled mocks, not an in-game FPS benchmark.
 
 ## Appearance
 

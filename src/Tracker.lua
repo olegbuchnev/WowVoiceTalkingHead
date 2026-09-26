@@ -12,7 +12,7 @@ local function currentTimestamp()
     return GetServerTime and GetServerTime() or time()
 end
 
-local function listenedQuests()
+local function listenedQuests(incremental)
     local guid = UnitGUID("player")
     if not (WowVoiceDB and guid) then return end
     WowVoiceDB.listenedQuests = WowVoiceDB.listenedQuests or {}
@@ -23,6 +23,7 @@ local function listenedQuests()
         -- Old session booleans have no playback time and cannot establish a
         -- one-hour deadline. Discard them along with expired timestamps.
         if type(expiresAt) ~= "number" or not (expiresAt > now) then listened[id] = nil end
+        if incremental then coroutine.yield() end
     end
     return listened
 end
@@ -187,7 +188,7 @@ local function scanProgress()
     local log = _G.C_QuestLog
     if not (log and log.GetNumQuestLogEntries and log.GetInfo and log.GetQuestObjectives) then return end
     local present = {}
-    local listened = listenedQuests() or {}
+    local listened = listenedQuests(true) or {}
     for index = 1, log.GetNumQuestLogEntries() do
         local info = log.GetInfo(index)
         if info and not info.isHeader and info.questID and info.questID > 0 then
@@ -204,9 +205,11 @@ local function scanProgress()
                 end
             end
         end
+        coroutine.yield()
     end
     for id in pairs(progress) do
         if not present[id] then progress[id], pulses[id] = nil, nil end
+        coroutine.yield()
     end
     WV:RefreshTrackerButtons()
 end
@@ -219,6 +222,7 @@ end
 
 local function setup()
     local tracker = _G.QuestObjectiveTracker
+    if tracker and hooked[tracker] then return end
     if tracker and not hooked[tracker] and type(tracker.Update) == "function"
         and type(tracker.FreeBlock) == "function" then
         hooked[tracker] = true
@@ -239,12 +243,13 @@ events:RegisterEvent("QUEST_LOG_UPDATE")
 events:RegisterEvent("PLAYER_ENTERING_WORLD")
 events:SetScript("OnEvent", function(_, event)
     if event == "QUEST_LOG_UPDATE" then
-        scanProgress()
+        WV.Work:Queue("tracker-progress", scanProgress, 0.05)
     elseif event == "PLAYER_ENTERING_WORLD" or event == "PLAYER_LOGIN" then
         -- Login/reload and loading screens establish a fresh, silent baseline.
         progress, pulses = {}, {}
+        WV.Work:Cancel("tracker-progress")
         setup()
-        scanProgress()
+        WV.Work:Queue("tracker-progress", scanProgress, 0.05)
     else
         setup()
     end

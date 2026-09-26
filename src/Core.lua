@@ -27,7 +27,7 @@ local defaults = {
     channel  = "auto",   -- auto: Master with background sound, Music without it
     ext      = "ogg",    -- Sound pack format: ogg | mp3
     stopmode = "silence",-- Music silencing method: silence | cvar | stopmusic
-    volume   = 1.0,      -- Voice volume on the music channel, 0..1
+    volume   = 1.0,      -- Additional multiplier of the user's Dialog volume, 0..1
     tail     = 0.05,     -- Stop time offset in seconds. The timer measures
                          -- duration from the PlayMusic CALL, but buffering
                          -- delays the actual audio slightly. Shift the stop
@@ -108,9 +108,44 @@ do
 ]]
     local FALLBACK_LIMIT = 180      -- Seconds to play when the duration is unknown
     local stopAt = nil
-    local restoreAt, musicWasOn = nil, nil
-    local savedVol, savedEnable = nil, nil
+    local restoreAt = nil
     local savedDialog, savedDialogVol = nil, nil
+
+    -- Restore only settings that still have our temporary value. A player's
+    -- manual adjustment during playback takes precedence over the snapshot.
+    local temporaryCVars = {}
+    local function sameValue(a, b)
+        return a == b or (tonumber(a) ~= nil and tonumber(a) == tonumber(b))
+    end
+    local function originalCVar(name)
+        local current, saved = GetCVar(name), temporaryCVars[name]
+        if saved and sameValue(current, saved.applied) then return saved.original end
+        return current
+    end
+    local function setTemporaryCVar(name, value)
+        local original = originalCVar(name)
+        if original == nil then return end -- Older clients may lack this CVar
+        SetCVar(name, tostring(value))
+        temporaryCVars[name] = {original=original, applied=GetCVar(name)}
+    end
+    local function restoreCVar(name)
+        local saved = temporaryCVars[name]
+        temporaryCVars[name] = nil
+        if saved and sameValue(GetCVar(name), saved.applied) then
+            SetCVar(name, saved.original)
+        end
+    end
+    local function voiceVolume()
+        -- Dialog is normally zero while we suppress NPC greetings. Read the
+        -- user's value from the snapshot, including across consecutive lines.
+        local dialog = tonumber(originalCVar("Sound_DialogVolume")) or 1
+        local multiplier = tonumber(WowVoiceDB and WowVoiceDB.volume) or 1
+        return math.max(0, math.min(1, dialog)) * math.max(0, math.min(1, multiplier))
+    end
+    local function forceMasterAudio()
+        local master = tonumber(originalCVar("Sound_MasterVolume"))
+        if master then setTemporaryCVar("Sound_MasterVolume", master * voiceVolume()) end
+    end
 
     local SILENCE = "Interface\\AddOns\\" .. SOUND_ADDON .. "\\silence.ogg"
 
@@ -121,21 +156,13 @@ do
          when playback stops.
 ]]
     local function forceAudio()
-        if savedVol == nil then                      -- Save the original value once
-            savedVol = GetCVar("Sound_MusicVolume")
-            savedEnable = GetCVar("Sound_EnableMusic")
-        end
-        SetCVar("Sound_EnableMusic", "1")
-        local v = (WowVoiceDB and WowVoiceDB.volume) or 1.0
-        SetCVar("Sound_MusicVolume", tostring(v))
+        setTemporaryCVar("Sound_EnableMusic", "1")
+        setTemporaryCVar("Sound_MusicVolume", voiceVolume())
     end
 
     local function restoreAudio()
-        if savedVol ~= nil then
-            SetCVar("Sound_MusicVolume", savedVol)
-            SetCVar("Sound_EnableMusic", savedEnable or "1")
-            savedVol, savedEnable = nil, nil
-        end
+        restoreCVar("Sound_MusicVolume")
+        restoreCVar("Sound_EnableMusic")
     end
 
     --[[ NPC greetings use the Dialog channel and can overlap our voice-over
@@ -160,8 +187,8 @@ do
             savedDialog = GetCVar("Sound_EnableDialog")
             savedDialogVol = GetCVar("Sound_DialogVolume")
         end
-        SetCVar("Sound_EnableDialog", "0")
-        SetCVar("Sound_DialogVolume", "0")
+        setTemporaryCVar("Sound_EnableDialog", "0")
+        setTemporaryCVar("Sound_DialogVolume", "0")
         dbg("Dialog duck: saved enable=%s volume=%s; current enable=%s volume=%s",
             tostring(savedDialog), tostring(savedDialogVol),
             tostring(GetCVar("Sound_EnableDialog")), tostring(GetCVar("Sound_DialogVolume")))
@@ -171,8 +198,8 @@ do
         if savedDialog ~= nil then
             dbg("Dialog restore: begin enable=%s volume=%s",
                 tostring(savedDialog), tostring(savedDialogVol))
-            SetCVar("Sound_EnableDialog", savedDialog)
-            if savedDialogVol ~= nil then SetCVar("Sound_DialogVolume", savedDialogVol) end
+            restoreCVar("Sound_EnableDialog")
+            restoreCVar("Sound_DialogVolume")
             dbg("Dialog restore: done enable=%s volume=%s",
                 tostring(GetCVar("Sound_EnableDialog")), tostring(GetCVar("Sound_DialogVolume")))
             savedDialog, savedDialogVol = nil, nil
@@ -199,8 +226,7 @@ do
             StopMusic()
         elseif how == "cvar" then
             StopMusic()
-            musicWasOn = savedEnable or GetCVar("Sound_EnableMusic")
-            SetCVar("Sound_EnableMusic", "0")
+            setTemporaryCVar("Sound_EnableMusic", "0")
             restoreAt = GetTime() + 0.25
             ticker:Show()
         else
@@ -213,7 +239,9 @@ do
     ticker:SetScript("OnUpdate", function()
         local now = GetTime()
         if restoreAt and now >= restoreAt then
-            SetCVar("Sound_EnableMusic", musicWasOn or "1")
+            -- restoreAudio already released this setting on Stop. Do not
+            -- overwrite a manual change made during the legacy stop delay.
+            restoreCVar("Sound_EnableMusic")
             restoreAt = nil
             if not stopAt then ticker:Hide() end
         end
@@ -260,6 +288,7 @@ do
             restoreAudio()
             self.usedMusic = false
         end
+        restoreCVar("Sound_MasterVolume")
         unduckNPC()                      -- Restore the Dialog channel (NPC greetings)
         if reason == "duration timer" and WV.FinishTalkingHead then
             WV:FinishTalkingHead()
@@ -306,6 +335,7 @@ do
             return true
         end
         duckNPC()                        -- Mute the NPC greeting for the duration of the voice line
+        forceMasterAudio()
         dbg("PlaySoundFile: begin channel=Master path=%s", path)
         local ok, h = PlaySoundFile(path, "Master")
         dbg("PlaySoundFile: result=%s handle=%s", tostring(ok), tostring(h))
@@ -324,6 +354,7 @@ do
             if WV.StartTalkingHead then WV:StartTalkingHead(context, stopAt, duration) end
             return true
         end
+        restoreCVar("Sound_MasterVolume")
         unduckNPC()                      -- Playback failed; restore the Dialog channel
         return false
     end
@@ -767,9 +798,9 @@ SlashCmdList["WOWVOICE"] = function(input)
         local v = tonumber(rest)
         if v and v >= 0 and v <= 1 then
             WowVoiceDB.volume = v
-            msg("громкость реплик: %.2f (применится к следующей)", v)
+            msg("множитель громкости диалогов: %.2f (применится к следующей реплике)", v)
         else
-            msg("громкость: %.2f. Задать: /wv volume 0..1 (напр. 1.0)",
+            msg("множитель громкости диалогов: %.2f. Задать: /wv volume 0..1 (по умолчанию 1.0)",
                 WowVoiceDB.volume)
         end
 
@@ -840,6 +871,9 @@ SlashCmdList["WOWVOICE"] = function(input)
     elseif cmd == "head" then
         if WV.HeadCommand then WV:HeadCommand(strlower(rest or "")) end
 
+    elseif cmd == "perf" then
+        if WV.Work then WV.Work:Report() end
+
     elseif cmd == "diag" then
         local ver, build, _, iface = GetBuildInfo()
         local n = 0
@@ -857,7 +891,7 @@ SlashCmdList["WOWVOICE"] = function(input)
         msg("канал: %s (настройка %s), остановка звука: %s",
             Playback:mode(), WowVoiceDB.channel,
             Playback:canStop() and "поддерживается" or "нет, откат на музыку")
-        msg("громкость реплик: %.2f | сдвиг остановки: %+.2f с",
+        msg("множитель громкости диалогов: %.2f | сдвиг остановки: %+.2f с",
             WowVoiceDB.volume, WowVoiceDB.tail)
         msg("сейчас в клиенте: музыка %s, громкость музыки %s",
             GetCVar("Sound_EnableMusic") == "1" and "вкл" or "ВЫКЛ",
@@ -880,6 +914,7 @@ SlashCmdList["WOWVOICE"] = function(input)
             WV.RefreshJournalButtons and "загружен" or "НЕ ЗАГРУЖЕН — нужен полный перезапуск игры")
         msg("обрыв реплики: только кнопкой (при закрытии окна не прерывается)")
         if WV.HeadDiagnostics then WV:HeadDiagnostics() end
+        if WV.Work then WV.Work:Report() end
 
     elseif cmd == "test" then
         local id = tonumber(rest)
@@ -896,7 +931,7 @@ SlashCmdList["WOWVOICE"] = function(input)
         StaticPopup_Show("WOWVOICE_BOOSTY")
 
     else
-        msg("команды: on | off | stop | boosty | diag | debug <on|off> | duck <on|off> | test <quest_id> | stoptest")
+        msg("команды: on | off | stop | boosty | diag | perf | debug <on|off> | duck <on|off> | test <quest_id> | stoptest")
         msg("         volume <0..1> | tail <сек>")
         msg("         channel <auto|sound|music> | ext <mp3|ogg>")
         msg("         stopmode <silence|cvar|stopmusic>")

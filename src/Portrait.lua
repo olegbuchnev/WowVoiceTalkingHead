@@ -99,29 +99,40 @@ local function questStarterItem(questId)
 end
 
 local indexedSource, indexedSpeakers
+local function addIndexedSpeaker(index, title, entry)
+    if not positive(entry.q) then return end
+    local previous = index[entry.q]
+    local npcID = positive(entry.i) and entry.i or nil
+    if previous == nil then
+        index[entry.q] = { questId = entry.q, title = title,
+            npcID = npcID, name = npcID and entry.n or nil }
+    elseif previous and previous.npcID ~= npcID then index[entry.q] = false end
+end
+local function prepareSpeakerIndex()
+    local source = _G.WowVoiceIndex
+    if type(source) ~= "table" or source == indexedSource then return end
+    local index = {}
+    for title, entries in pairs(source) do
+        for _, entry in ipairs(entries) do
+            addIndexedSpeaker(index, title, entry)
+            coroutine.yield()
+        end
+    end
+    if source == _G.WowVoiceIndex then indexedSource, indexedSpeakers = source, index end
+end
 local function indexedSpeaker(questId)
     local source = _G.WowVoiceIndex
     if type(source) ~= "table" then return end
-    if source ~= indexedSource then
-        indexedSource, indexedSpeakers = source, {}
-        for title, entries in pairs(source) do
-            for _, entry in ipairs(entries) do
-                if positive(entry.q) then
-                    local previous = indexedSpeakers[entry.q]
-                    local npcID = positive(entry.i) and entry.i or nil
-                    if previous == nil then
-                        -- Only i/n describe the giver; ei/en describe the receiver.
-                        indexedSpeakers[entry.q] = { questId = entry.q, title = title,
-                            npcID = npcID, name = npcID and entry.n or nil }
-                    elseif previous and previous.npcID ~= npcID then
-                        -- Conflicting records must not choose an arbitrary speaker.
-                        indexedSpeakers[entry.q] = false
-                    end
-                end
-            end
+    if source == indexedSource then return indexedSpeakers[questId] or nil end
+    -- A click before preparation completes still resolves immediately. Look up
+    -- only this ID without allocating the full reverse index on the click path.
+    local found = {}
+    for title, entries in pairs(source) do
+        for _, entry in ipairs(entries) do
+            if entry.q == questId then addIndexedSpeaker(found, title, entry) end
         end
     end
-    return indexedSpeakers[questId] or nil
+    return found[questId] or nil
 end
 
 local function knownDisplay(quests, npcID)
@@ -137,14 +148,15 @@ local function knownDisplay(quests, npcID)
     return displayID
 end
 
-local function replaySpeaker(questId, record, quests)
+local function replaySpeaker(questId, record, quests, snapshot)
     if record and (positive(record.displayID) or positive(record.npcID)
         or positive(record.itemID) or positive(record.objectID)) then return record end
 
     local recovered = {}
     if record then for key, value in pairs(record) do recovered[key] = value end end
     recovered.questId = questId
-    local item = questStarterItem(questId)
+    local item
+    if snapshot then item = snapshot.items[questId] else item = questStarterItem(questId) end
     if item then
         recovered.itemID = item.itemID
         recovered.icon = positive(item.iconFileID) and item.iconFileID or nil
@@ -164,118 +176,162 @@ local function replaySpeaker(questId, record, quests)
     if not (indexed and positive(indexed.npcID)) then return record end
     recovered.npcID, recovered.name = indexed.npcID, indexed.name
     recovered.title = recovered.title or indexed.title
-    recovered.displayID = knownDisplay(quests, indexed.npcID)
+    if snapshot then recovered.displayID = snapshot.displays[indexed.npcID] or nil
+    else recovered.displayID = knownDisplay(quests, indexed.npcID) end
     -- Inferred identity stays transient, so updated metadata can correct it.
     debugLog("recovered quest=" .. questId .. " npc=" .. indexed.npcID)
     return recovered
 end
 
-local warmModels, warmScanAt, warmNextAt = {}, nil, 0
+local warmModels, warmList, warmRevision = {}, {}, 0
 local function portraitKey(speaker)
     if not speaker or speaker.itemID or speaker.objectID then return end
     if positive(speaker.displayID) then return "Display" .. speaker.displayID end
     if positive(speaker.npcID) then return "NPC" .. speaker.npcID end
 end
-
 local function cachedPortraitDisplay(speaker)
     local job = warmModels[portraitKey(speaker)]
     return job and job.displayID
 end
-
-local function scanQuestPortraits()
-    local log = C_QuestLog
-    if not (log and log.GetNumQuestLogEntries and log.GetInfo) then return end
-    for _, job in pairs(warmModels) do job.wanted = false end
-    for index = 1, log.GetNumQuestLogEntries() do
-        local info = log.GetInfo(index)
-        if info and not info.isHeader and WV:HasQuestAudio(info.questID) then
-            local speaker = WV:GetReplaySpeaker(info.questID).speaker
-            local key = portraitKey(speaker)
-            if key then
-                local job = warmModels[key]
-                if not job then
-                    job = { npcID = speaker.npcID, requestedDisplay = speaker.displayID }
-                    warmModels[key] = job
-                end
-                job.wanted = true
-                if job.exhausted and GetTime() >= job.retryAfter then job.exhausted = nil end
-            end
+local function createWarmModel(key, job)
+    -- Lifetime ownership prevents late callbacks from impersonating another NPC.
+    local model = CreateFrame("PlayerModel", "WowVoiceWarmPortrait" .. key, UIParent)
+    job.model = model
+    model:Hide()
+    model:SetSize(1, 1)
+    model:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT")
+    model:SetAlpha(0)
+    if model.SetModelAlpha then model:SetModelAlpha(0) end
+    model:EnableMouse(false)
+    model:SetScript("OnModelLoaded", function()
+        if not job.wanted then return end
+        local display = model:GetDisplayInfo()
+        if not positive(display) then return end
+        job.displayID, job.loadingUntil = display, nil
+        model:Hide()
+        if head and active and not active.preview and not head.Model.portraitReady
+            and portraitKey(active.context.speaker) == key then
+            WV:RefreshTalkingHeadModel()
         end
-    end
-    for _, job in pairs(warmModels) do
-        if not job.wanted and job.model then
-            job.model:Hide()
-            job.expires = nil
-        end
-    end
-end
-
-local function updateQuestPortraits()
-    local now = GetTime()
-    if warmScanAt and now >= warmScanAt then
-        warmScanAt = nil
-        scanQuestPortraits()
-    end
-    if now < warmNextAt then return end
-    warmNextAt = now + 0.25
-    local scheduled = {}
-    for key, job in pairs(warmModels) do
-        if job.wanted and not job.displayID and not job.exhausted then
-            scheduled[#scheduled + 1] = { key = key, job = job }
-        end
-    end
-    -- New requests go before retries, so slow NPCs cannot starve the queue.
-    table.sort(scheduled, function(a, b)
-        local first, second = a.job.nextTry or 0, b.job.nextTry or 0
-        if first == second then return a.key < b.key end
-        return first < second
     end)
-    for _, entry in ipairs(scheduled) do
-        local key, job = entry.key, entry.job
-        if job.wanted and not job.displayID and not job.exhausted and now >= (job.retryAfter or 0) then
-            if not job.expires then
-                job.expires, job.attempts, job.nextTry = now + 20, 0, now
-            end
-            if now >= job.expires then
-                job.expires, job.retryAfter = nil, now + 60
-                job.exhausted = true
-                if job.model then job.model:Hide() end
-            elseif now >= job.nextTry and job.attempts < 8 then
-                if not job.model then
-                    -- Each identity owns its model: late loads cannot be attributed
-                    -- to a different NPC after a queue slot is reused.
-                    local model = CreateFrame("PlayerModel", "WowVoiceWarmPortrait" .. key, UIParent)
-                    job.model = model
-                    model:SetSize(1, 1)
-                    model:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT")
-                    model:SetAlpha(0)
-                    if model.SetModelAlpha then model:SetModelAlpha(0) end
-                    model:EnableMouse(false)
-                    model:SetScript("OnModelLoaded", function()
-                        if not job.wanted then return end
-                        local display = model:GetDisplayInfo()
-                        if not positive(display) then return end
-                        job.displayID = display
-                        model:Hide()
-                        if head and active and not active.preview and not head.Model.portraitReady
-                            and portraitKey(active.context.speaker) == key then
-                            WV:RefreshTalkingHeadModel()
-                        end
-                    end)
+end
+local function warmPortraits()
+    while true do
+        local now, loading, candidate, pendingWork = GetTime(), 0, nil, false
+        for _, job in ipairs(warmList) do
+            if job.wanted and not job.displayID and not job.exhausted then
+                if job.loadingUntil and now >= job.loadingUntil then
+                    job.loadingUntil = nil
+                    if job.model then job.model:Hide() end
                 end
-                job.attempts, job.nextTry = job.attempts + 1, now + 2
+                if job.expires and now >= job.expires then
+                    job.exhausted, job.retryAfter, job.loadingUntil = true, now + 60, nil
+                    if job.model then job.model:Hide() end
+                else
+                    pendingWork = true
+                    if job.loadingUntil then loading = loading + 1 end
+                    if not job.loadingUntil and now >= (job.nextTry or 0) and (job.attempts or 0) < 8
+                        and (not candidate or (job.nextTry or 0) < (candidate.nextTry or 0)) then
+                        candidate = job
+                    end
+                end
+            end
+            coroutine.yield()
+        end
+        if not pendingWork then return end
+        if candidate and loading < 2 and candidate.wanted and not candidate.displayID then
+            local job = candidate
+            if not job.model then createWarmModel(job.key, job); coroutine.yield() end
+            if job.wanted and not job.displayID then
+                local current = GetTime()
+                job.expires = job.expires or (current + 20)
+                job.attempts = (job.attempts or 0) + 1
+                job.nextTry, job.loadingUntil = current + 2, current + 2
                 job.model:Show()
                 if positive(job.requestedDisplay) then
                     pcall(job.model.SetDisplayInfo, job.model, job.requestedDisplay)
-                else
-                    pcall(job.model.SetCreature, job.model, job.npcID)
+                else pcall(job.model.SetCreature, job.model, job.npcID) end
+                -- Only OnModelLoaded confirms readiness, never early metadata.
+            end
+        end
+        coroutine.yield(0.25)
+    end
+end
+local function scanQuestPortraits()
+    local log = C_QuestLog
+    if not (log and log.GetNumQuestLogEntries and log.GetInfo) then return end
+    prepareSpeakerIndex()
+    local revision = warmRevision
+    local snapshot = { items = {}, displays = {} }
+    local quests = characterQuests()
+    if not quests then return end
+    -- One incremental inventory pass for the entire journal, not one per quest.
+    local bags = C_Container
+    if bags and bags.GetContainerItemQuestInfo and bags.GetContainerItemInfo and bags.GetContainerNumSlots then
+        for bag = 0, NUM_TOTAL_EQUIPPED_BAG_SLOTS or NUM_BAG_SLOTS or 4 do
+            for slot = 1, bags.GetContainerNumSlots(bag) do
+                local quest = bags.GetContainerItemQuestInfo(bag, slot)
+                if quest and positive(quest.questID) then
+                    local item = bags.GetContainerItemInfo(bag, slot)
+                    if item and positive(item.itemID) and not snapshot.items[quest.questID] then
+                        snapshot.items[quest.questID] = item
+                    end
                 end
-                -- GetDisplayInfo can return metadata before the model is loaded.
-                -- Only OnModelLoaded may complete this job and hide its frame.
-                return -- Start at most one request per update interval.
+                coroutine.yield()
+                if revision ~= warmRevision then return end
             end
         end
     end
+    -- Build the unambiguous display cache once, including old saved quests.
+    for _, speaker in pairs(quests) do
+        if positive(speaker.npcID) and not speaker.itemID and positive(speaker.displayID) then
+            local old = snapshot.displays[speaker.npcID]
+            if old == nil then snapshot.displays[speaker.npcID] = speaker.displayID
+            elseif old ~= speaker.displayID then snapshot.displays[speaker.npcID] = false end
+        end
+        coroutine.yield()
+        if revision ~= warmRevision then return end
+    end
+    local wanted = {}
+    for index = 1, log.GetNumQuestLogEntries() do
+        if revision ~= warmRevision then return end
+        local info = log.GetInfo(index)
+        if info and not info.isHeader and WV:HasQuestAudio(info.questID) then
+            local speaker = replaySpeaker(info.questID, quests[info.questID], quests, snapshot)
+            local key = portraitKey(speaker)
+            if key then wanted[key] = speaker end
+        end
+        coroutine.yield()
+    end
+    if revision ~= warmRevision then return end
+    -- Commit only a complete, current snapshot; live playback has priority.
+    for _, job in ipairs(warmList) do
+        job.wanted = wanted[job.key] ~= nil
+        if not job.wanted then
+            job.loadingUntil, job.expires = nil, nil
+            if job.model then job.model:Hide() end
+        end
+    end
+    warmList = {}
+    for key, speaker in pairs(wanted) do
+        local job = warmModels[key]
+        if not job then
+            job = { key = key, npcID = speaker.npcID, requestedDisplay = speaker.displayID }
+            warmModels[key] = job
+        end
+        job.wanted = true
+        if job.exhausted and GetTime() >= job.retryAfter then
+            job.exhausted, job.expires, job.attempts = nil, nil, nil
+        end
+        warmList[#warmList + 1] = job
+    end
+    table.sort(warmList, function(a, b) return a.key < b.key end)
+    -- Also request one rerun if the old worker is about to finish a stale list.
+    WV.Work:Queue("portrait-models", warmPortraits, 0, true)
+end
+local function queueQuestPortraits()
+    warmRevision = warmRevision + 1
+    WV.Work:Queue("portrait-scan", scanQuestPortraits, 0.5, true)
 end
 
 local function resetProbe()
@@ -1027,10 +1083,12 @@ events:RegisterEvent("QUEST_LOG_UPDATE")
 events:RegisterEvent("QUEST_ACCEPTED")
 events:RegisterEvent("QUEST_TURNED_IN")
 events:RegisterEvent("QUEST_REMOVED")
-events:SetScript("OnUpdate", updateQuestPortraits)
+events:RegisterEvent("BAG_UPDATE_DELAYED")
+events:RegisterEvent("PLAYER_ENTERING_WORLD")
 events:SetScript("OnEvent", function(_, event, questId)
-    warmScanAt = warmScanAt or (GetTime() + 0.5)
-    if event == "PLAYER_LOGIN" or event == "QUEST_LOG_UPDATE" then return end
+    queueQuestPortraits()
+    if event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD"
+        or event == "QUEST_LOG_UPDATE" or event == "BAG_UPDATE_DELAYED" then return end
     local quests = characterQuests()
     if not quests then return end
     if event == "QUEST_ACCEPTED" then

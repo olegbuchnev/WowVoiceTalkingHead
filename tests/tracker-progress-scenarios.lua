@@ -1,7 +1,17 @@
 event('ADDON_LOADED')
 local WV = WowVoice
 local events = frames.WowVoiceTrackerEvents
-local function send(name, ...) events.scripts.OnEvent(events, name, ...) end
+local function send(name, ...)
+    events.scripts.OnEvent(events, name, ...)
+    -- Simulate the deferred, coalesced scan before asserting rendered state.
+    now = now + 0.051
+    for i = 1, 100 do
+        if not WV.Work.jobs['tracker-progress'] then break end
+        local update = frames.WowVoiceWorkFrame.scripts.OnUpdate
+        if update then update() end
+    end
+    assert(not WV.Work.jobs['tracker-progress'], 'progress scan did not finish')
+end
 local quests = {179, 192, 90902, 999999}
 local objectives = {}
 for _, id in ipairs(quests) do

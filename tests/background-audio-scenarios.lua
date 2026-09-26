@@ -30,7 +30,7 @@ for _, enabled in ipairs({'0','1'}) do
         local before=#plays
         assert(WV:ReplayQuest(179))
         local first=music[#music]
-        assert(first.file==WV:SoundPath(179,'a') and first.enabled=='1' and first.volume=='1.0')
+        assert(first.file==WV:SoundPath(179,'a') and first.enabled=='1' and tonumber(first.volume)==0.37)
         assert(first.dialog=='0' and first.dialogVolume=='0')
         assert(#plays==before, 'background-off selects Music')
         tick(now+2)
@@ -121,3 +121,90 @@ assert(WV:ReplayQuest(179))
 WV:Silence()
 settings('0','0.42')
 print('PASS: automatic background routing, per-line selection, both channel transitions, NPC ducking, explicit overrides, music restoration and failure cleanup')
+
+-- Both transports use the original Dialog slider. Master must multiply,
+-- never replace the user's Master value, and repeated lines must not compound.
+local function near(key, expected)
+    assert(math.abs(tonumber(cvars[key])-expected)<0.000001, key..' expected '..expected..', got '..tostring(cvars[key]))
+end
+musicOK=true
+for _, background in ipairs({'0','1'}) do
+    for _, masterVolume in ipairs({'0','0.2','0.5','1'}) do
+        for _, dialogVolume in ipairs({'0','0.3','1'}) do
+            for _, ending in ipairs({'timer','close','logout','failure'}) do
+                cvars.Sound_EnableSoundWhenGameIsInBG=background
+                cvars.Sound_MasterVolume=masterVolume
+                cvars.Sound_DialogVolume=dialogVolume
+                cvars.Sound_EnableMusic,cvars.Sound_MusicVolume='0','0.42'
+                for line=1,3 do
+                    assert(WV:ReplayQuest(179))
+                    near('Sound_MasterVolume', tonumber(masterVolume)*(background=='1' and tonumber(dialogVolume) or 1))
+                    near('Sound_MusicVolume', background=='1' and 0.42 or tonumber(dialogVolume))
+                    assert(cvars.Sound_EnableMusic==(background=='1' and '0' or '1'))
+                end
+                if ending=='timer' then tick(now+duration+0.051)
+                elseif ending=='close' then WV:Silence()
+                elseif ending=='logout' then event('PLAYER_LOGOUT')
+                else
+                    soundOK,musicOK=false,false
+                    assert(not WV:ReplayQuest(179))
+                    soundOK,musicOK=true,true
+                    WV:SetQuestAudioAvailable(179,true)
+                end
+                assert(cvars.Sound_MasterVolume==masterVolume)
+                assert(cvars.Sound_DialogVolume==dialogVolume)
+                assert(cvars.Sound_MusicVolume=='0.42' and cvars.Sound_EnableMusic=='0')
+            end
+        end
+    end
+end
+
+-- Mid-line manual adjustments survive close and also survive a replacement.
+-- Only settings still carrying the addon's value are restored.
+for _, background in ipairs({'0','1'}) do
+    for _, replace in ipairs({false,true}) do
+        cvars.Sound_EnableSoundWhenGameIsInBG=background
+        cvars.Sound_MasterVolume,cvars.Sound_DialogVolume='0.5','0.3'
+        cvars.Sound_EnableMusic,cvars.Sound_MusicVolume='1','0.42'
+        assert(WV:ReplayQuest(179))
+        SetCVar('Sound_MasterVolume','0.7')
+        SetCVar('Sound_MusicVolume','0.6')
+        SetCVar('Sound_EnableMusic','0')
+        SetCVar('Sound_DialogVolume','0.4')
+        SetCVar('Sound_EnableDialog','1')
+        if replace then
+            assert(WV:ReplayQuest(179))
+            near('Sound_MasterVolume',background=='1' and 0.28 or 0.7)
+            near('Sound_MusicVolume',background=='1' and 0.6 or 0.4)
+        end
+        WV:Silence()
+        assert(cvars.Sound_MasterVolume=='0.7' and cvars.Sound_MusicVolume=='0.6')
+        assert(cvars.Sound_EnableMusic=='0')
+        restored('1','0.4')
+    end
+end
+
+-- Legacy delayed restoration must not undo settings changed after stopping.
+command('stopmode cvar')
+cvars.Sound_EnableSoundWhenGameIsInBG='0'
+assert(WV:ReplayQuest(179))
+WV:Silence()
+SetCVar('Sound_EnableMusic','1')
+tick(now+0.3)
+assert(cvars.Sound_EnableMusic=='1')
+command('stopmode silence')
+
+-- Explicit relative attenuation works the same way in either transport,
+-- and opting out of NPC suppression does not bypass Dialog volume matching.
+WowVoiceDB.ducknpc=false
+command('volume 0.5')
+for _, background in ipairs({'0','1'}) do
+    cvars.Sound_EnableSoundWhenGameIsInBG=background
+    cvars.Sound_MasterVolume,cvars.Sound_DialogVolume='0.5','0.3'
+    assert(WV:ReplayQuest(179))
+    near('Sound_MasterVolume',background=='1' and 0.075 or 0.5)
+    if background=='0' then near('Sound_MusicVolume',0.15) end
+    restored('1','0.3')
+    WV:Silence()
+end
+print('PASS: Dialog-relative Master/Music volume, zero and low sliders, consecutive playback, all stop/failure paths, manual settings and multiplier')

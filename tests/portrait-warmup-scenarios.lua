@@ -29,13 +29,14 @@ function CreateFrame(kind,name,parent,template)
     return frame
 end
 local function background(seconds)
-    for i=1,seconds*4 do
-        now=now+.25
-        frames.WowVoicePortraitEvents.scripts.OnUpdate()
+    for i=1,math.ceil(seconds*60) do
+        now=now+1/60
+        local update = frames.WowVoiceWorkFrame.scripts.OnUpdate
+        if update then update() end
     end
 end
 portraitEvent('PLAYER_LOGIN')
-background(1)
+background(5)
 assert(requests[658] == 1 and requests[3052] == 1)
 assert(not requests[240] and not requests[999999])
 local count=0

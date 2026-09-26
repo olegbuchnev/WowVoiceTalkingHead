@@ -15,6 +15,7 @@ Durations.lua
 ForeverAudio.lua
 ForeverSpeakers.lua
 Core.lua
+Work.lua
 CameraModels.lua
 CameraProfiles.lua
 UI.lua
