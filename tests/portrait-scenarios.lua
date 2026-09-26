@@ -84,7 +84,8 @@ WV:Silence(); questID=179
 local oldGUID=UnitGUID
 UnitGUID=function(unit) if unit=='npc' or unit=='questnpc' then return nil end return oldGUID(unit) end
 event('QUEST_DETAIL'); portraitEvent('QUEST_ACCEPTED',179)
-assert(questCache()[179].npcID==nil and head.Icon.visible and head.Model.displayID==0)
+assert(questCache()[179].npcID==nil and not head.Icon.visible and head.Model.creatureID==658)
+assert(head.Name.text=='Стен Крепкорук', 'Missing live NPC uses indexed giver, never the unrelated target')
 UnitGUID=oldGUID
 -- No audio: capture still works, but panel stays hidden on playback failure.
 WV:Silence(); modelLoadsImmediately=true; soundOK=false; questID=97250

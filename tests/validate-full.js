@@ -1,7 +1,7 @@
 const fs=require('fs'),path=require('path');
 const {lua,lauxlib,lualib,to_luastring,to_jsstring}=require('fengari');
 const root=process.argv[2];
-for (const scenario of ['work-scenarios.lua','startup-work-scenarios.lua','scenarios.lua','journal-scenarios.lua','tracker-scenarios.lua','tracker-progress-scenarios.lua','unavailable-audio-scenarios.lua','background-audio-scenarios.lua','retail-head-scenarios.lua','forever-audio-scenarios.lua','head-transition-scenarios.lua','head-visibility-scenarios.lua','accept-autoplay-scenarios.lua','turnin-autoplay-scenarios.lua','portrait-position-scenarios.lua']) {
+for (const scenario of ['work-scenarios.lua','startup-work-scenarios.lua','scenarios.lua','journal-scenarios.lua','tracker-scenarios.lua','tracker-progress-scenarios.lua','unavailable-audio-scenarios.lua','background-audio-scenarios.lua','retail-head-scenarios.lua','forever-audio-scenarios.lua','gossip-quest-speaker-scenarios.lua','head-transition-scenarios.lua','head-visibility-scenarios.lua','accept-autoplay-scenarios.lua','turnin-autoplay-scenarios.lua','portrait-position-scenarios.lua']) {
     const L=lauxlib.luaL_newstate(); lualib.luaL_openlibs(L);
     function run(file) {
         let s=lauxlib.luaL_loadbuffer(L,to_luastring(fs.readFileSync(file,'utf8')),null,to_luastring('@'+file));

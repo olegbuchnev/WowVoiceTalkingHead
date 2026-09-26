@@ -324,6 +324,12 @@ includes the current model file ID and camera profile.
 
 ## Quest speaker recovery
 
+The initial quest-description briefing also resolves the indexed giver when
+`QUEST_DETAIL` has no live `npc` or `questnpc`, including quests opened through a
+gossip option (for example, quest 2842 from Sovik). Captured NPCs, exact starter
+items and game objects keep priority. Inferred identities remain transient, and
+this fallback never substitutes the giver for a progress/completion speaker.
+
 Journal replay also supports quests accepted before WowVoice was installed.
 Captured per-character speaker data takes priority. When it is missing or has
 no identity, the addon checks bags for an exact quest-starter item match, then

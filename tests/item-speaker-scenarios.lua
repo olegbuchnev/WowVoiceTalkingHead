@@ -50,11 +50,12 @@ WV:Silence(); restored('1','0.37')
 print('PASS: receiver NPC model, item cache removed on turn-in without stopping audio')
 
 npcGUID=nil
--- Missing API and missing bag mapping both use a neutral document.
+-- Missing API and missing bag mapping use a neutral document for a quest
+-- without an indexed NPC giver (176 is a wanted poster).
 C_Container=nil
-questID=861; event('QUEST_DETAIL'); portraitEvent('QUEST_ACCEPTED',861)
+questID=176; event('QUEST_DETAIL'); portraitEvent('QUEST_ACCEPTED',176)
 assert(h.Name.text=='Описание задания' and h.Icon.texture=='Interface\\Icons\\INV_Misc_Note_01')
-assert(h.Icon.visible and not questCache()[861].itemID)
+assert(h.Icon.visible and not questCache()[176].itemID)
 WV:Silence()
 C_Container={GetContainerNumSlots=function() return 1 end,
     GetContainerItemQuestInfo=function() return {isQuestItem=true,questID=99999} end,
@@ -72,7 +73,7 @@ assert(questCache()[179].itemID==10621 and not h.visible)
 command('on'); WV:ReplayQuest(179)
 assert(h.Name.text=='Описание задания' and h.Icon.visible)
 WV:Silence(); portraitEvent('QUEST_REMOVED',179)
-assert(not questCache()[179] and questCache()[861])
+assert(not questCache()[179] and questCache()[176])
 command('debug off'); messages={}
 event('QUEST_DETAIL'); portraitEvent('QUEST_ACCEPTED',179); WV:Silence()
 assert(#messages==0)

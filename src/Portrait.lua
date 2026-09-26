@@ -148,24 +148,9 @@ local function knownDisplay(quests, npcID)
     return displayID
 end
 
-local function replaySpeaker(questId, record, quests, snapshot)
+local function recoverQuestNPC(questId, record, quests, snapshot)
     if record and (positive(record.displayID) or positive(record.npcID)
         or positive(record.itemID) or positive(record.objectID)) then return record end
-
-    local recovered = {}
-    if record then for key, value in pairs(record) do recovered[key] = value end end
-    recovered.questId = questId
-    local item
-    if snapshot then item = snapshot.items[questId] else item = questStarterItem(questId) end
-    if item then
-        recovered.itemID = item.itemID
-        recovered.icon = positive(item.iconFileID) and item.iconFileID or nil
-        recovered.name = item.itemName ~= "" and item.itemName or nil
-        -- Keep an identified item after it is consumed or removed from the bags.
-        if quests then quests[questId] = recovered end
-        return recovered
-    end
-
     local forever = _G.WowVoiceForeverSpeakers
     local indexed
     if type(forever) == "table" then indexed = forever[questId] end
@@ -174,6 +159,9 @@ local function replaySpeaker(questId, record, quests, snapshot)
     if indexed == false then return record end
     indexed = indexed or indexedSpeaker(questId)
     if not (indexed and positive(indexed.npcID)) then return record end
+    local recovered = {}
+    if record then for key, value in pairs(record) do recovered[key] = value end end
+    recovered.questId = questId
     recovered.npcID, recovered.name = indexed.npcID, indexed.name
     recovered.title = recovered.title or indexed.title
     if snapshot then recovered.displayID = snapshot.displays[indexed.npcID] or nil
@@ -181,6 +169,25 @@ local function replaySpeaker(questId, record, quests, snapshot)
     -- Inferred identity stays transient, so updated metadata can correct it.
     debugLog("recovered quest=" .. questId .. " npc=" .. indexed.npcID)
     return recovered
+end
+
+local function replaySpeaker(questId, record, quests, snapshot)
+    if record and (positive(record.displayID) or positive(record.npcID)
+        or positive(record.itemID) or positive(record.objectID)) then return record end
+    local item
+    if snapshot then item = snapshot.items[questId] else item = questStarterItem(questId) end
+    if item then
+        local recovered = {}
+        if record then for key, value in pairs(record) do recovered[key] = value end end
+        recovered.questId = questId
+        recovered.itemID = item.itemID
+        recovered.icon = positive(item.iconFileID) and item.iconFileID or nil
+        recovered.name = item.itemName ~= "" and item.itemName or nil
+        -- Keep an identified item after it is consumed or removed from the bags.
+        if quests then quests[questId] = recovered end
+        return recovered
+    end
+    return recoverQuestNPC(questId, record, quests, snapshot)
 end
 
 local warmModels, warmList, warmRevision = {}, {}, 0
@@ -407,7 +414,12 @@ function WV:CaptureQuestSpeaker(questId, section, title, text)
     resetProbe()
     if unit then captureModel(record, unit) end
     debugLog("view quest=" .. questId .. " section=" .. section .. " guid=" .. tostring(guid))
-    return { questId = questId, section = section, title = title, text = text, speaker = record }
+    -- Gossip-triggered quest details can arrive without npc/questnpc. Resolve
+    -- the description's giver just as journal replay does. Keep pending as the
+    -- original capture: inferred metadata must not become a permanent identity.
+    -- Progress/completion belong to the receiver, so never infer their giver.
+    local speaker = section == "a" and recoverQuestNPC(questId, record, characterQuests()) or record
+    return { questId = questId, section = section, title = title, text = text, speaker = speaker }
 end
 
 function WV:GetReplaySpeaker(questId)
