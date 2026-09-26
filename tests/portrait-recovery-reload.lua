@@ -1,0 +1,13 @@
+event('ADDON_LOADED')
+event('PLAYER_LOGIN')
+assert(WowVoice:ReplayQuest(179))
+local h = frames.WowVoiceTalkingHead
+assert(h.Name.text == 'Recovered item' and h.Icon.visible and h.Icon.texture == 134939)
+assert(questCache()[179].itemID == 10621)
+WowVoice:Silence()
+assert(WowVoice:ReplayQuest(861))
+assert(h.Model.creatureID == 3052 and not h.Icon.visible and not questCache()[861])
+portraitEvent('QUEST_REMOVED',179)
+assert(not questCache()[179])
+WowVoice:Silence(); restored('1','0.37')
+print('PASS: recovered items survive reload and clear on removal; inferred NPCs resolve again without saved guesses')

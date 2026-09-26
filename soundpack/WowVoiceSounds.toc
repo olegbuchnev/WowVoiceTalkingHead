@@ -1,0 +1,5 @@
+## Interface: 16001
+## Title: WowVoice Sounds
+## Notes: Русский Classic-аудиопак для WowVoice Forever. Файлы: <quest_id><секция>.ogg (a/p/c).
+## Author: wowvoice
+## Version: 1.0.3-forever.1

@@ -1,0 +1,18 @@
+## Interface: 16001
+## Title: WowVoice
+## Notes: Русская озвучка Vanilla-квестов для WoW Forever (Classic-аудиопак).
+## Author: wowvoice
+## Version: 1.0.8-forever.1
+## SavedVariables: WowVoiceDB
+## X-Sounds-Addon: WowVoiceSounds
+
+License.lua
+Hash.lua
+Index.lua
+Durations.lua
+Core.lua
+CameraModels.lua
+CameraProfiles.lua
+UI.lua
+Portrait.lua
+Options.lua

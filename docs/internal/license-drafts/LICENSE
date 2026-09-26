@@ -1,0 +1,143 @@
+DRAFT - deferred proposal, not adopted for the current release.
+Retained for future review; excluded from release archives.
+
+WowVoice Forever - Free Distribution License 1.0
+================================================
+
+Copyright (c) 2026 WowVoice Forever Beta contributors
+
+1. Scope
+--------
+
+"Covered Material" means original contributions made for the WowVoice Forever
+Beta adaptation, including additions, modifications, development tools, tests
+and documentation, only to the extent that the contributors offering this
+license ("Licensors") hold the relevant rights. "You" means the recipient
+exercising the permissions granted below. This license does not license the
+entire addon or grant rights to underlying or third-party material.
+
+2. Excluded material and upstream status
+---------------------------------------
+
+* Original WowVoice code and data by the upstream WowVoice author(s), including
+  the underlying portions of modified files, Index.lua and Durations.lua:
+  https://github.com/HappyDridex/wowvoice
+  https://github.com/HappyDridex/wowvoice/releases/tag/v1.0
+  No copyright license was found on 2026-09-26 in the GitHub repository or in
+  WowVoice-classic-1.15.zip and WowVoice-midnight-12.0.7-addon.zip from v1.0.
+  The CurseForge license could not be verified. Upstream permissions remain
+  unresolved; this file does not grant permission to redistribute or relicense
+  that material. Obtain the applicable terms from its rights holder(s).
+  License.lua configures audio activation; it is not a copyright license.
+* Original audio packs, downloaded separately, are not covered by this license.
+* Blizzard Entertainment artwork, including Media/TalkingHeads.tga, remains
+  third-party material. See src/Media/NOTICE.txt in the repository or
+  WowVoice/Media/NOTICE.txt in the release archive.
+* Model identities derived from the WoW community listfile in CameraModels.lua
+  are excluded from this grant:
+  https://github.com/wowdev/wow-listfile/releases/tag/202609242243
+* Third-party development dependencies retain their own licenses.
+
+3. Permissions
+--------------
+
+Subject to all conditions of this license, the Licensors grant You a worldwide,
+non-exclusive, royalty-free copyright license to use, reproduce, study, modify,
+merge, create derivative works of, and distribute the Covered Material, in
+source or other form. Distribution may be standalone or part of a bundle,
+provided that it complies with section 4.
+
+4. No monetized distribution
+---------------------------
+
+You must not sell, rent, or otherwise monetize distribution of or access to
+the Covered Material, including modified versions and portions incorporated
+into other works. You must not include or deliver it as part of a monetized
+addon collection, bundle, installer, launcher, update service, or other offering.
+
+Monetization includes direct or indirect monetary or other material benefit
+connected with providing, promoting, or maintaining that distribution or access,
+whether received by You or another person acting on your behalf. In particular,
+the prohibition covers:
+
+* Purchase prices, subscriptions, paid memberships and paid private channels,
+  including Boosty, Patreon and equivalent services.
+* Payments or donations required for downloads, access, early access, updates
+  or other distribution-related advantages.
+* Advertising, sponsorship, referral revenue and voluntary donations solicited
+  or accepted to fund or reward distribution or maintenance of the offering,
+  even when its downloads are available to everyone without payment.
+* Charges described as payment for compilation, packaging, installation,
+  configuration, support or another service when the transaction includes
+  delivery of or access to the Covered Material or a bundle containing it.
+
+The prohibition applies even if the Covered Material is described as a free
+component, gift or bonus, if the fee is attributed to other components or
+services, or if an installer downloads it separately instead of bundling it.
+Renaming or modifying it does not remove these conditions. Unrelated income
+of a distributor does not by itself constitute monetization under this section.
+
+5. Redistribution conditions
+----------------------------
+
+Every copy or substantial portion of the Covered Material that You distribute
+must include this English license text and preserve applicable copyright and
+third-party notices. Modified distributions must clearly state that they have
+been modified and must not imply endorsement by the original authors.
+
+The Covered Material, including your modifications to it, must remain available
+to recipients under this license. You may not relicense it on terms that permit
+the monetization prohibited by section 4 or remove its license conditions.
+These conditions do not relicense independent third-party components. Each
+recipient receives the permissions for the Covered Material directly from its
+applicable Licensors, subject to this license.
+
+6. Ordinary use and independent rights
+-------------------------------------
+
+Ordinary use of the addon while playing, including in monetized livestreams,
+videos, reviews or tutorials, is permitted. Revenue or donations for that
+content are permitted provided they are not connected with distribution of
+or access to the addon or a bundle containing it as described in section 4.
+Private use and private modification do not require publication of changes.
+
+This license does not restrict rights available independently under applicable
+law, including applicable copyright exceptions, or revoke rights separately
+granted under another license. It grants no rights to third-party material,
+trademarks or endorsement.
+
+7. No warranty, support obligation or liability
+----------------------------------------------
+
+To the fullest extent permitted by applicable law, the Covered Material is
+provided "AS IS" and "AS AVAILABLE", without express or implied warranties,
+including warranties of merchantability, fitness for a particular purpose,
+non-infringement, accuracy, compatibility or uninterrupted operation.
+
+The Licensors have no obligation under this license to provide maintenance,
+support, updates, fixes or continued compatibility with any game or platform.
+
+To the fullest extent permitted by applicable law, the Licensors shall not be
+liable for claims, losses or damages arising from the Covered Material or its
+use or inability to be used, including loss of data or settings, lost profits,
+or direct, indirect, incidental or consequential damages, whether in contract,
+tort or otherwise, even if advised of their possibility. Nothing in this
+license excludes or limits liability that applicable law does not allow to
+be excluded or limited.
+
+8. Breach
+---------
+
+The permissions granted to You under this license terminate automatically
+if You breach its conditions. Termination does not terminate permissions of
+recipients who remain in compliance. Sections concerning excluded material,
+independent rights, warranty disclaimers and liability limitations survive
+termination.
+
+9. Language and identity of this license
+---------------------------------------
+
+The English text in LICENSE is authoritative. LICENSE.ru.md is a Russian
+translation for convenience; in case of discrepancy, the English text governs.
+This is a custom license, not the MIT License or an OSI-approved open source
+license. Its name refers to free-of-charge distribution subject to these terms.

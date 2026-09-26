@@ -1,0 +1,4 @@
+TalkingHeads.tga contains Blizzard Entertainment's World of Warcraft UI artwork.
+Source: https://github.com/Gethe/wow-ui-textures/blob/live/QUESTFRAME/TalkingHeads.PNG
+Converted from PNG to uncompressed 32-bit TGA without changing the pixels.
+The artwork belongs to Blizzard Entertainment; it is not original WowVoice artwork.

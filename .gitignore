@@ -1,0 +1,10 @@
+/.idea/
+/*.iml
+/artifacts/
+/backups/
+/node_modules/
+/config/deploy.targets.local.psd1
+*.bak
+*.log
+*.tmp
+*~
