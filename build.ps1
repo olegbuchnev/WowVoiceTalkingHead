@@ -206,9 +206,16 @@ function Invoke-Package {
   try {
     Copy-Item -LiteralPath $AddonSource -Destination (Join-Path $stage 'WowVoice') -Recurse
     Copy-Item -LiteralPath $SoundSource -Destination (Join-Path $stage 'WowVoiceSounds') -Recurse
-    Copy-Item -LiteralPath (Join-Path $RepoRoot 'USER_README.md') -Destination (Join-Path $stage 'README.md')
+    # Convert the guide's Markdown to plain text for opening in Notepad.
+    $guide = [IO.File]::ReadAllText((Join-Path $RepoRoot 'USER_README.md'))
+    $guide = $guide -replace '(?m)^\s*```[^\r\n]*\r?\n', ''
+    $guide = $guide -replace '(?m)^#{1,6}\s+', ''
+    $guide = $guide -replace '\[([^\]]+)\]\(([^)]+)\)', '$1 ($2)'
+    $guide = $guide.Replace('**', '').Replace('`', '')
+    $guide = $guide -replace '\r?\n', "`r`n"
+    [IO.File]::WriteAllText((Join-Path $stage 'README.txt'), $guide, [Text.UTF8Encoding]::new($true))
     $zip = Join-Path $ArtifactsRoot ('WowVoice-' + (Get-AddonVersion) + '.zip')
-    Compress-Archive -LiteralPath @((Join-Path $stage 'WowVoice'), (Join-Path $stage 'WowVoiceSounds'), (Join-Path $stage 'README.md')) -DestinationPath $zip
+    Compress-Archive -LiteralPath @((Join-Path $stage 'WowVoice'), (Join-Path $stage 'WowVoiceSounds'), (Join-Path $stage 'README.txt')) -DestinationPath $zip
     Write-Host "Package created: $zip"
   }
   finally { Remove-CheckedDirectory $stage $ArtifactsRoot 'package-stage' }

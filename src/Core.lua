@@ -20,6 +20,8 @@ local SECTION = { accept = "a", progress = "p", complete = "c" }
 
 local defaults = {
     enabled  = true,
+    trackerButtons = true, -- Replay controls beside tracked quest titles
+    playTooltips = true,   -- Tooltips for all replay controls
     channel  = "auto",   -- auto | sound | music
     ext      = "ogg",    -- Sound pack format: ogg | mp3
     stopmode = "silence",-- Music silencing method: silence | cvar | stopmusic

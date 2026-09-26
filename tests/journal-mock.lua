@@ -31,14 +31,23 @@ function CreateFrame(kind,name,parent,template)
     end
     return f
 end
-function hooksecurefunc(name,callback)
+function hooksecurefunc(name,callback,methodCallback)
+    if type(name)=='table' then
+        local owner,method=name,callback
+        local key=tostring(owner)..'.'..method
+        hookCounts[key]=(hookCounts[key] or 0)+1
+        local original=owner[method]
+        owner[method]=function(...) original(...); methodCallback(...) end
+        return
+    end
     hookCounts[name]=(hookCounts[name] or 0)+1
     local original=_G[name]
     _G[name]=function(...) original(...); callback(...) end
 end
 UIParent=CreateFrame('Frame','UIParent')
 GameTooltip={lines={}}
-function GameTooltip:SetOwner() self.lines={} end
+function GameTooltip:SetOwner(owner) self.lines={}; self.owner=owner end
+function GameTooltip:IsOwned(owner) return self.owner==owner end
 function GameTooltip:AddLine(s) self.lines[#self.lines+1]=s end
-function GameTooltip:Show() end
-function GameTooltip:Hide() end
+function GameTooltip:Show() self.visible=true end
+function GameTooltip:Hide() self.visible=false; self.owner=nil end

@@ -14,5 +14,6 @@ Core.lua
 CameraModels.lua
 CameraProfiles.lua
 UI.lua
+Tracker.lua
 Portrait.lua
 Options.lua

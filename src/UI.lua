@@ -63,6 +63,27 @@ end
 
 WV.StyleButton = applyEllesmereStyle
 
+local playTooltipOwner
+function WV:BeginPlayTooltip(owner, anchor)
+    if WowVoiceDB and WowVoiceDB.playTooltips == false then return false end
+    playTooltipOwner = owner
+    GameTooltip:SetOwner(owner, anchor)
+    return true
+end
+
+function WV:HidePlayTooltip(owner)
+    if playTooltipOwner and (not owner or owner == playTooltipOwner) then
+        if GameTooltip:IsOwned(playTooltipOwner) then GameTooltip:Hide() end
+        playTooltipOwner = nil
+    end
+end
+
+function WV:SetPlayTooltipsEnabled(value)
+    WowVoiceDB.playTooltips = value == true
+    if not WowVoiceDB.playTooltips then self:HidePlayTooltip() end
+    if self.RefreshHeadOptions then self:RefreshHeadOptions() end
+end
+
 local DEFAULT_POINT = { "CENTER", "CENTER", 0, -180 }
 
 local button = CreateFrame("Button", "WowVoiceStopButton", UIParent,
@@ -144,14 +165,18 @@ local journalButtons = {}
 local journalHooks = {}
 
 local function updatePlayButton(play)
-    applyEllesmereStyle(play)
+    if not play.compact then applyEllesmereStyle(play) end
     local available = WV:HasQuestAudio(play.questOwner.questID)
         and WowVoiceDB and WowVoiceDB.enabled
-    play:SetAlpha(available and 1 or 0.4)
+    local alpha = play.compact and not play.hovered and 0.7 or 1
+    play:SetAlpha(available and alpha or 0.4)
 end
 
 local function makePlayButton(parent, questOwner, compact)
-    local play = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    local template
+    if not compact then template = "UIPanelButtonTemplate" end
+    local play = CreateFrame("Button", nil, parent, template)
+    play.compact = compact
     play.questOwner = questOwner
     play:SetSize(compact and 22 or 108, 22)
     if compact then
@@ -170,8 +195,9 @@ local function makePlayButton(parent, questOwner, compact)
         updatePlayButton(self)
     end)
     play:SetScript("OnEnter", function(self)
+        self.hovered = true
         updatePlayButton(self)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        if not WV:BeginPlayTooltip(self, "ANCHOR_RIGHT") then return end
         GameTooltip:AddLine("WowVoice — описание квеста")
         if not WV:HasQuestAudio(self.questOwner.questID) then
             GameTooltip:AddLine("В установленном паке нет записи описания", 0.7, 0.7, 0.7)
@@ -182,7 +208,15 @@ local function makePlayButton(parent, questOwner, compact)
         end
         GameTooltip:Show()
     end)
-    play:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    play:SetScript("OnLeave", function(self)
+        self.hovered = false
+        updatePlayButton(self)
+        WV:HidePlayTooltip(self)
+    end)
+    play:SetScript("OnHide", function(self)
+        self.hovered = false
+        WV:HidePlayTooltip(self)
+    end)
     play:SetScript("OnShow", updatePlayButton)
     journalButtons[questOwner] = play
     return play

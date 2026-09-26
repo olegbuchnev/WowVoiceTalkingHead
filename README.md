@@ -8,7 +8,7 @@ The runtime code is based on the Midnight version, while `Index.lua`,
 This build targets **WoW Forever Beta, Interface 16001**.
 
 For installation and in-game usage, see the [user guide in Russian](USER_README.md).
-The release archive includes that guide as `README.md`.
+The release archive includes that guide as plain-text `README.txt` (UTF-8).
 
 The proposed license is deferred. Its [English draft](docs/internal/license-drafts/LICENSE)
 and [Russian translation](docs/internal/license-drafts/LICENSE.ru.md) are retained
@@ -23,7 +23,7 @@ soundpack/                       Two Forever TOC files for WowVoiceSounds
 tests/                           Lua tests with WoW API mocks and pipeline checks
 config/deploy.targets.local.psd1  Local Forever Beta path (gitignored)
 build.ps1 / build.cmd             Validate, test, deploy and package pipeline
-USER_README.md                   Russian user guide; packaged as README.md
+USER_README.md                   Russian user guide; converted to README.txt for packaging
 artifacts/                       Release ZIP archive (gitignored)
 backups/                         Backups created before deployment (gitignored)
 ```
@@ -81,6 +81,15 @@ isolated temporary directory without deploying to the game. These checks do not
 replace API and visual verification in the Forever client.
 
 ## Appearance
+
+The on-screen quest tracker has small replay arrows to the left of voiced quest
+titles, including when styled by EllesmereUI. They replay the description using
+the current quest ID and leave the tracker layout unchanged. The options page
+can hide these controls independently of journal buttons and the talking head;
+`WowVoiceDB.trackerButtons` defaults to true.
+The separate `WowVoiceDB.playTooltips` option defaults to true and controls
+tooltips for replay buttons in the journal list, quest details and on-screen
+tracker. Disabling it preserves hover highlighting and playback behavior.
 
 The options page offers three appearance presets: Retail (selected by default),
 Classic and EllesmereUI. Installing EllesmereUI does not change the default;
@@ -237,7 +246,7 @@ WowVoice/                         Complete addon from src/
 WowVoiceSounds/
   WowVoiceSounds.toc
   WowVoiceSounds_Mainline.toc
-README.md                         Russian user guide from USER_README.md
+README.txt                        Plain-text Russian user guide from USER_README.md
 ```
 
 Tests, development tools, IDE settings, backups and OGG audio are excluded.

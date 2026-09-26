@@ -1,4 +1,5 @@
 event('ADDON_LOADED')
+local WV=WowVoice
 local journal
 for _,f in ipairs(allFrames) do
     if f~=frames.WowVoiceFrame and f.events.ADDON_LOADED and f.events.PLAYER_LOGIN then journal=f; break end
@@ -34,7 +35,7 @@ end
 local play=assert(playFor(first))
 local noAudio=assert(playFor(missing))
 local detailPlay=assert(playFor(details))
-assert(play.alpha==1 and noAudio.alpha==0.4)
+assert(play.alpha==0.7 and noAudio.alpha==0.4)
 assert(first.Checkbox.points[1][4]==-26)
 assert(play.points[1][2]==first.Checkbox)
 assert(detailPlay.points[1][2]==details.BackFrame.BackButton)
@@ -89,3 +90,36 @@ assert(#allFrames==created)
 print('PASS: lazy journal UI, list and details controls, current IDs on recycled rows, repeated manual playback')
 print('PASS: no NPC quest API calls, no autoplay, missing audio and disabled addon preserve current playback')
 print('PASS: Master/Dialog restoration, Classic duration, single hooks/buttons, both details layouts')
+
+-- One preference covers both journal controls, including missing-audio help.
+assert(WowVoiceDB.playTooltips==true)
+command('options')
+local panel=frames.WowVoiceOptionsPanel
+assert(panel.PlayTooltips:GetChecked())
+play.scripts.OnEnter(play)
+assert(GameTooltip.visible and GameTooltip:IsOwned(play) and play.alpha==1)
+panel.PlayTooltips:SetChecked(false)
+panel.PlayTooltips.scripts.OnClick(panel.PlayTooltips)
+assert(WowVoiceDB.playTooltips==false and not GameTooltip.visible,
+    'turning off tooltips must dismiss an open replay tooltip immediately')
+count,stopCount=#plays,#stops
+for _, control in ipairs({play,detailPlay,noAudio}) do
+    control.scripts.OnEnter(control)
+    assert(not GameTooltip.visible,'all journal replay tooltips must obey the preference')
+    control.scripts.OnLeave(control)
+end
+assert(play.alpha==0.7,'hover feedback still resets with tooltips disabled')
+assert(#plays==count and #stops==stopCount)
+event('ADDON_LOADED')
+assert(WowVoiceDB.playTooltips==false,'initialization must preserve a saved opt-out')
+panel.PlayTooltips:SetChecked(true)
+panel.PlayTooltips.scripts.OnClick(panel.PlayTooltips)
+detailPlay.scripts.OnEnter(detailPlay)
+assert(GameTooltip.visible and GameTooltip:IsOwned(detailPlay))
+-- If another UI element has since taken the tooltip, do not hide it.
+GameTooltip:SetOwner(QuestMapFrame); GameTooltip:Show()
+WV:SetPlayTooltipsEnabled(false)
+assert(GameTooltip.visible and GameTooltip:IsOwned(QuestMapFrame))
+GameTooltip:Hide()
+WV:SetPlayTooltipsEnabled(true)
+print('PASS: global replay tooltips, options, immediate dismissal, saved opt-out, hover and unrelated tooltips')

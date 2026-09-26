@@ -92,7 +92,7 @@ try {
   foreach ($file in Get-ChildItem -LiteralPath (Join-Path $fixture 'soundpack') -File) {
     $expected['WowVoiceSounds/' + $file.Name] = $file.FullName
   }
-  $expected['README.md'] = Join-Path $fixture 'USER_README.md'
+  $expected['README.txt'] = $null
   Add-Type -AssemblyName System.IO.Compression.FileSystem
   $archive = [IO.Compression.ZipFile]::OpenRead($archives[0].FullName)
   $sha = [Security.Cryptography.SHA256]::Create()
@@ -102,6 +102,17 @@ try {
     foreach ($entry in $entries) {
       $name = $entry.FullName.Replace('\', '/')
       Assert-True ($expected.ContainsKey($name)) "Unexpected archive file: $name"
+      if ($name -eq 'README.txt') {
+        $reader = [IO.StreamReader]::new($entry.Open(), [Text.Encoding]::UTF8)
+        try { $guide = $reader.ReadToEnd() } finally { $reader.Dispose() }
+        $sourceGuide = [IO.File]::ReadAllText((Join-Path $fixture 'USER_README.md'))
+        Assert-True ($guide.Contains('WowVoice')) 'Plain-text guide is missing its title.'
+        foreach ($url in [regex]::Matches($sourceGuide, '\]\((https?://[^)]+)\)')) {
+          Assert-True ($guide.Contains($url.Groups[1].Value)) 'Plain-text guide lost a link.'
+        }
+        Assert-True ($guide -notmatch '(?m)^#{1,6}\s|\*\*|`|\]\(https?://') 'Markdown remained in README.txt.'
+        continue
+      }
       $stream = $entry.Open()
       try { $hash = [BitConverter]::ToString($sha.ComputeHash($stream)).Replace('-', '') }
       finally { $stream.Dispose() }
@@ -110,7 +121,7 @@ try {
   }
   finally { $sha.Dispose(); $archive.Dispose() }
   Assert-True (@(Get-ChildItem -LiteralPath $artifacts -Force).Count -eq 1) 'Expected only the release ZIP in artifacts.'
-  Write-Host 'PASS: ZIP contains exactly WowVoice, two sound TOCs and user README; hashes match.'
+  Write-Host 'PASS: ZIP contains exactly WowVoice, two sound TOCs and plain-text README; runtime hashes match.'
 }
 finally {
   # Only this uniquely named temporary fixture can be recursively removed.

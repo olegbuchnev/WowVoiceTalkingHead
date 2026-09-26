@@ -33,6 +33,8 @@ function WV:RefreshHeadOptions()
     if not panel or not panel:IsShown() then return end
     local settings = self:GetHeadSettings()
     panel.Enabled:SetChecked(settings.enabled)
+    panel.TrackerButtons:SetChecked(WowVoiceDB.trackerButtons ~= false)
+    panel.PlayTooltips:SetChecked(WowVoiceDB.playTooltips ~= false)
     for key, choice in pairs(panel.Presets) do
         choice:SetChecked(key == settings.preset)
     end
@@ -51,11 +53,11 @@ local function createPanel()
         fs:SetText(text)
         return fs
     end
-    label("WowVoice — говорящая голова", "GameFontNormalLarge", 16, -16, 560, 28)
+    label("WowVoice", "GameFontNormalLarge", 16, -16, 560, 28)
     panel.Enabled = CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate")
     panel.Enabled:SetPoint("TOPLEFT", panel, "TOPLEFT", 12, -52)
     panel.Enabled:SetSize(26, 26)
-    label("Показывать говорящую голову", "GameFontHighlight", 44, -57, 420, 22)
+    label("Показывать говорящую голову", "GameFontHighlight", 44, -59, 420, 22)
     panel.Enabled:SetScript("OnClick", function(self)
         WV:SetHeadEnabled(self:GetChecked() == true)
     end)
@@ -63,11 +65,11 @@ local function createPanel()
     for i, preset in ipairs(WV:GetHeadPresets()) do
         local key, name = preset.key, preset.name
         local y = -98 - (i - 1) * 30
-        local text = label(name, "GameFontNormal", 50, y, 490, 0)
+        local text = label(name, "GameFontNormal", 50, y - 2, 490, 0)
         local choice = createRadio(panel)
         choice:SetSize(18, 18)
-        -- Align the radio's center with the text line, not its baseline.
-        choice:SetPoint("CENTER", text, "LEFT", -20, 0)
+        -- Lower the label optically while keeping the radio in its original position.
+        choice:SetPoint("CENTER", text, "LEFT", -20, 2)
         choice.Label = text
         choice:SetScript("OnClick", function()
             WV:SetHeadPreset(key)
@@ -101,6 +103,20 @@ local function createPanel()
         status("Положение окна сброшено.")
     end)
     panel.Status = label("", "GameFontHighlightSmall", 20, -304, 540, 48)
+    panel.TrackerButtons = CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate")
+    panel.TrackerButtons:SetPoint("TOPLEFT", panel, "TOPLEFT", 12, -366)
+    panel.TrackerButtons:SetSize(26, 26)
+    label("Кнопки озвучки в списке заданий на экране", "GameFontHighlight", 44, -373, 510, 22)
+    panel.TrackerButtons:SetScript("OnClick", function(self)
+        WV:SetTrackerButtonsEnabled(self:GetChecked() == true)
+    end)
+    panel.PlayTooltips = CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate")
+    panel.PlayTooltips:SetPoint("TOPLEFT", panel, "TOPLEFT", 12, -402)
+    panel.PlayTooltips:SetSize(26, 26)
+    label("Подсказки у кнопок воспроизведения", "GameFontHighlight", 44, -409, 510, 22)
+    panel.PlayTooltips:SetScript("OnClick", function(self)
+        WV:SetPlayTooltipsEnabled(self:GetChecked() == true)
+    end)
     panel:SetScript("OnShow", function()
         WV:RefreshHeadOptions()
         for _, b in pairs(panel.Buttons) do if WV.StyleButton then WV.StyleButton(b) end end
