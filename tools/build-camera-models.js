@@ -71,11 +71,13 @@ async function main() {
             const femaleTroll = rule[0] === 'troll' && /female|priestess|(?:guard|caster)_f/.test(filename);
             // Keep the wide female blood elf talk animation separate from other elves.
             const femaleBloodElf = filename.startsWith('character/bloodelf/female/');
+            const maleNightElf = filename.startsWith('character/nightelf/male/');
+            const maleHuman = filename.startsWith('character/human/male/');
             const maleGoblin = filename.startsWith('character/goblin/male/')
                 || filename === 'creature/goblin/goblin.m2';
             const femaleOrc = filename.startsWith('character/orc/female/');
             const family = femaleOrc ? 'orc_female' : maleGoblin ? 'goblin_male' : femaleBloodElf ? 'bloodelf_female'
-                : femaleTroll ? 'troll_female' : rule[0];
+                : maleNightElf ? 'nightelf_male' : maleHuman ? 'human_male' : femaleTroll ? 'troll_female' : rule[0];
             entries.set(Number(match[1]), {family, filename});
         }
     }

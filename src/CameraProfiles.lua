@@ -8,6 +8,8 @@ local profiles = {
     -- Reduced the leftward shift after feedback; confirmed for the tested model.
     orc_female = { distance = 1.35, y = -0.04, z = 0 },
     human = { distance = 1.15, y = 0, z = -0.025 },
+    -- Lift male humans and shift slightly right within the portrait.
+    human_male = { distance = 1.15, y = 0.02, z = 0 },
     dwarf = { distance = 1.2, y = 0, z = 0.025 },
     gnome = { distance = 1.25, y = 0, z = 0.08 },
     goblin = { distance = 1.3, y = 0, z = 0.04 },
@@ -15,6 +17,8 @@ local profiles = {
     troll = { distance = 1.28, y = 0.12, z = 0.025 },
     troll_female = { distance = 1.28, y = 0, z = 0.025 },
     elf = { distance = 1.18, y = 0, z = -0.025 },
+    -- Lift male night elves and shift slightly right within the portrait.
+    nightelf_male = { distance = 1.18, y = 0.04, z = 0.025 },
     -- Leave room for the female blood elf's wide talking animation on both sides.
     -- A 0.10 vertical offset clipped the head at the top; use a smaller lift.
     -- The revised framing was confirmed in game for the tested female blood elf.

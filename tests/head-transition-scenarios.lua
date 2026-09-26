@@ -21,7 +21,7 @@ local function opacity(h, expected, modelReady)
         'Icon','IconBorder','Name','TextScroll','Progress','Close'}) do
         near(h[part].alpha,expected)
     end
-    near(h.Model.modelAlpha,modelReady==false and 1 or expected)
+    near(h.Model.modelAlpha,modelReady==false and 0 or expected)
 end
 
 -- No entrance or mid-playback fades; only the final second fades all parts.

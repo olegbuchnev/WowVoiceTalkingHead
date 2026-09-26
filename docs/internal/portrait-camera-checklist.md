@@ -29,6 +29,17 @@ the same profile.
   The tested model file ID was not reported; other variants remain unverified.
 - [x] Tauren — previously tested model(s); sex was not explicitly recorded. Profile: `tauren`. Preserve the accepted framing.
 
+- [x] Night elf — male. Profile: `nightelf_male`. User confirmed the raised,
+  rightward framing on Keeper Ilthalaine: distance `1.18`, lateral offset `0.04`,
+  vertical offset `0.025`. The tested model file ID was not reported;
+  other standard, HD and HD SDR variants remain unverified.
+
+- [x] Human — male. Profile: `human_male`. User confirmed the revised framing
+  on Marshal McBride: distance `1.15`, lateral offset `0.02`, vertical offset `0`.
+  The initial `0.04` / `0.025` shift was too strong and was reduced by half.
+  The tested model file ID was not reported; other male human variants remain
+  unverified.
+
 ## Maintenance
 
 - Add a checked entry only after explicit in-game confirmation.

@@ -131,6 +131,9 @@ When audio ends, Dialog is restored immediately and the entire panel, including
 the idle model, fades out together over one second. Model geometry opacity is
 set explicitly with `SetModelAlpha`; its ancestor frames remain opaque so the
 model does not outlast the background or receive a doubled fade.
+The model also follows inherited UI opacity and game UI visibility, including
+Dialogue UI's hide-interface mode. Hiding the panel does not interrupt audio;
+late model loads cannot reveal a portrait over a hidden interface.
 The cross, right-click and manual stop dismiss the panel immediately, including
 during fade-out. Replacing a line restores full opacity immediately; there are
 no delayed callbacks that can hide a newer line or preview.

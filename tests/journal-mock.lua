@@ -9,6 +9,20 @@ function CreateFrame(kind,name,parent,template)
     function f:SetHeight(h) self.height=h end
     function f:SetText(t) self.text=t end
     function f:SetAlpha(a) self.alpha=a end
+    function f:GetEffectiveAlpha()
+        return (self.alpha or 1)*(self.parent and self.parent:GetEffectiveAlpha() or 1)
+    end
+    function f:IsVisible()
+        return self.visible and (not self.parent or self.parent:IsVisible())
+    end
+    function f:Show()
+        local was=self.visible; self.visible=true
+        if not was and self.scripts.OnShow then self.scripts.OnShow(self) end
+    end
+    function f:Hide()
+        local was=self.visible; self.visible=false
+        if was and self.scripts.OnHide then self.scripts.OnHide(self) end
+    end
     function f:SetFrameStrata() end
     function f:SetMovable() end
     function f:EnableMouse() end

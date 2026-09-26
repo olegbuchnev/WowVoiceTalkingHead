@@ -1,4 +1,6 @@
 local baseCreateFrame = CreateFrame
+gameUIShown = true
+function SetUIVisibility(shown) gameUIShown = shown end
 C_Texture = { GetAtlasInfo = function(name)
     if modernRadioAtlases and (name=='common-dropdown-tickradial' or name=='common-dropdown-icon-radialtick-yellow') then
         return {width=18,height=18}

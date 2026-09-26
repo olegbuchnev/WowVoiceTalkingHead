@@ -2,6 +2,32 @@
 -- SavedVariables stores data only, never frames or unit references.
 local WV = _G.WowVoice
 local pending, probe, request, head, anchor, active, transition
+local gameUIVisible = true
+
+-- PlayerModel geometry can outlive the ordinary UI during an external fade or
+-- SetUIVisibility(false). Explicitly follow the panel's inherited visibility.
+local function syncModelOpacity()
+    if not head then return end
+    local model = head.Model
+    local alpha = head.visualAlpha or 1
+    if transition then alpha = math.max(0, 1 - math.max(0, GetTime() - transition.startedAt)) end
+    if not active or not model.portraitReady or not gameUIVisible or not head:IsVisible() then
+        alpha = 0
+    elseif model.SetModelAlpha then
+        alpha = alpha * head.Portrait:GetEffectiveAlpha()
+    end
+    if model.SetModelAlpha then model:SetModelAlpha(alpha)
+    else model:SetAlpha(alpha) end
+end
+
+-- Install before the first quest: Dialogue UI may hide the game UI before
+-- the first talking head is created. This only observes the visibility call.
+if SetUIVisibility and hooksecurefunc then
+    hooksecurefunc("SetUIVisibility", function(visible)
+        gameUIVisible = visible
+        syncModelOpacity()
+    end)
+end
 local SECTION = { a = "Описание задания", p = "Выполнение задания", c = "Завершение задания" }
 local FALLBACK_ICON = "Interface\\Icons\\INV_Misc_Note_01"
 local DEFAULT_WIDTH, DEFAULT_HEIGHT = 570, 155
@@ -370,6 +396,7 @@ local function updateQuestPortraits()
                     model:SetSize(1, 1)
                     model:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT")
                     model:SetAlpha(0)
+                    if model.SetModelAlpha then model:SetModelAlpha(0) end
                     model:EnableMouse(false)
                     model:SetScript("OnModelLoaded", function()
                         if not job.wanted then return end
@@ -423,6 +450,7 @@ local function captureModel(record, unit)
         probe:SetSize(1, 1)
         probe:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT")
         probe:SetAlpha(0)
+        if probe.SetModelAlpha then probe:SetModelAlpha(0) end
         probe:EnableMouse(false)
         probe:SetScript("OnModelLoaded", finishCapture)
         probe:SetScript("OnUpdate", function()
@@ -643,6 +671,7 @@ local function finishTalkingModel(model)
     model.talkAnimation = model:HasAnimation(60) and 60 or 0
     model:SetAnimation(model.talkAnimation)
     model:SetAlpha(1)
+    syncModelOpacity()
     head.Icon:Hide()
     head.IconBorder:Hide()
 end
@@ -741,6 +770,7 @@ end
 -- opacity, rather than relying on a parent frame fade. Apply the same value to
 -- every visible component, without multiplying it again through its parents.
 local function setHeadOpacity(alpha)
+    head.visualAlpha = alpha
     head.Background:SetAlpha(alpha)
     head.PortraitBackground:SetAlpha(alpha)
     head.PortraitOverlay:SetAlpha(alpha)
@@ -750,10 +780,7 @@ local function setHeadOpacity(alpha)
     head.TextScroll:SetAlpha(alpha)
     head.Progress:SetAlpha(alpha)
     head.Close:SetAlpha(alpha)
-    local model = head.Model
-    local modelAlpha = model.portraitReady and alpha or 0
-    if model.SetModelAlpha then model:SetModelAlpha(modelAlpha)
-    else model:SetAlpha(modelAlpha) end
+    syncModelOpacity()
 end
 
 -- Only the end of playback fades. A frame-driven deadline cannot close a newer
@@ -838,7 +865,12 @@ local function createHead()
     model:SetScript("OnShow", function(self)
         -- PlayerModel can reset its camera when a hidden parent is shown again.
         if active and self.portraitReady then updatePortraitCamera(self) end
+        syncModelOpacity()
     end)
+    head:SetScript("OnShow", syncModelOpacity)
+    head:SetScript("OnHide", syncModelOpacity)
+    UIParent:HookScript("OnShow", syncModelOpacity)
+    UIParent:HookScript("OnHide", syncModelOpacity)
     model:SetScript("OnModelLoaded", finishTalkingModel)
     model:SetScript("OnAnimFinished", function(self)
         if active and self.talkAnimation then self:SetAnimation(self.talkAnimation) end
@@ -939,6 +971,7 @@ local function createHead()
         refreshEllesmereBackground(false)
         if active and not active.closing then updatePlaybackText() end
         updateHeadTransition()
+        syncModelOpacity()
     end)
     applyHeadAppearance()
     layoutHead()
@@ -953,7 +986,7 @@ function WV:RefreshTalkingHeadModel()
     model.portraitReady = false
     model:ClearModel()
     model:SetAlpha(0)
-    if model.SetModelAlpha then model:SetModelAlpha(1) end
+    if model.SetModelAlpha then model:SetModelAlpha(0) end
     head.Icon:SetTexture(speaker and speaker.icon or FALLBACK_ICON)
     head.Icon:Show()
     head.IconBorder:Show()
@@ -967,6 +1000,7 @@ function WV:RefreshTalkingHeadModel()
             model.portraitReady = true
             updatePortraitCamera(model)
             model:SetAlpha(1)
+            syncModelOpacity()
             head.Icon:Hide()
             head.IconBorder:Hide()
         end

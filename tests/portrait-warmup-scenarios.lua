@@ -43,6 +43,8 @@ for _ in pairs(requests) do count=count+1 end
 assert(count==2 and #plays==0 and #stops==0)
 assert(not frames.WowVoiceTalkingHead, 'background warmup must not create a visible head')
 assert(frames.WowVoiceWarmPortraitNPC658.alpha==0)
+assert(frames.WowVoiceWarmPortraitNPC658.modelAlpha==0,
+    'warmup geometry must be invisible independently of frame alpha')
 assert(frames.WowVoiceWarmPortraitNPC658.visible,
     'an early display ID must not finish or hide an unloaded warmup model')
 print('PASS: login warms unique journal givers gradually, skipping headers, receivers, items and quests without audio')
