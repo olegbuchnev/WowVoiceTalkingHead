@@ -354,6 +354,51 @@ send('QUEST_LOG_UPDATE'); assert(not play.ProgressGlow.visible)
 increment(179); assert(play.ProgressGlow.visible)
 print('PASS: immediate progress after acceptance, legacy acceptance history ignored, silent reload and preserved listening cooldown')
 
+-- Abandonment clears only this quest's old pause, before any new offer playback.
+local function removeQuest(id)
+    for index, value in ipairs(quests) do
+        if value == id then table.remove(quests, index); break end
+    end
+    assert(events.events.QUEST_REMOVED)
+    send('QUEST_REMOVED', id)
+end
+assert(WV:ReplayQuest(192)); WV:Silence()
+local otherDeadline = WowVoiceDB.listenedQuests[playerGUID][192]
+assert(WV:ReplayQuest(179)); WV:Silence()
+WowVoiceDB.listenedQuests['Player-2-OTHER'][179] = serverNow+1800
+local otherCharacterDeadline = WowVoiceDB.listenedQuests['Player-2-OTHER'][179]
+-- A queued scan of the old quest must not resume after removal.
+events.scripts.OnEvent(events, 'QUEST_LOG_UPDATE')
+removeQuest(179)
+assert(not WowVoiceDB.listenedQuests[playerGUID][179] and not play.ProgressGlow.visible)
+assert(WowVoiceDB.listenedQuests[playerGUID][192] == otherDeadline)
+assert(WowVoiceDB.listenedQuests['Player-2-OTHER'][179] == otherCharacterDeadline)
+send('PLAYER_ENTERING_WORLD')
+assert(not WowVoiceDB.listenedQuests[playerGUID][179], 'reload cannot resurrect an abandoned quest pause')
+quests[#quests+1] = 179
+objectives[179][1].numFulfilled = 0
+accept(179)
+assert(not play.ProgressGlow.visible, 'silent reacceptance only establishes a baseline')
+increment(179)
+assert(play.ProgressGlow.visible, 'new progress after abandonment is eligible without another listen')
+removeQuest(179)
+assert(not play.ProgressGlow.visible, 'abandoning also clears an active reminder')
+-- Automatic offer playback occurs before acceptance, and creates a NEW pause.
+WV:SetAutoPlayAcceptEnabled(true)
+questID = 179
+event('QUEST_DETAIL')
+local newDeadline = WowVoiceDB.listenedQuests[playerGUID][179]
+assert(newDeadline == serverNow+1800)
+quests[#quests+1] = 179
+objectives[179][1].numFulfilled = 0
+accept(179)
+assert(WowVoiceDB.listenedQuests[playerGUID][179] == newDeadline,
+    'acceptance preserves the new automatic description pause')
+increment(179)
+assert(not play.ProgressGlow.visible, 'new listening still suppresses first progress')
+WV:Silence()
+print('PASS: abandonment clears old cooldown and queued scan, preserves other quests/characters, silent reacceptance and fresh autoplay pause')
+
 -- The production notification shares the glow's eligibility and preference.
 -- Never duplicate Blizzard's yellow message when real progress is observed.
 UIErrorsFrame = CreateFrame('MessageFrame', 'UIErrorsFrame', UIParent)

@@ -144,6 +144,68 @@ assert(WV:ReplayQuest(192))
 assert(WowVoiceDB.listenedQuests[playerGUID][192] == serverNow + 1800)
 command('remindertest off')
 WV:Silence()
+-- Use rendered message bounds, not the fixed container height or message count.
+local status = UIErrorsFrame
+local statusRegions = {}
+function status:GetTop() return 1000 end
+function status:GetRegions() return table.unpack(statusRegions) end
+local function statusText(text, top)
+    local region = status:CreateFontString(nil, 'ARTWORK', 'ErrorFont')
+    region:SetFont('font', 18, '')
+    region:SetWidth(180)
+    region:SetText(text)
+    region:SetAlpha(1)
+    region.layoutReady = true
+    function region:IsObjectType(kind) return kind == 'FontString' end
+    function region:IsVisible() return self.visible and status:IsVisible() end
+    function region:GetAlpha() return self.alpha end
+    function region:GetBottom() return self.layoutReady and (top-self:GetStringHeight()) or nil end
+    statusRegions[#statusRegions+1] = region
+    return region
+end
+local single = statusText('Single line', 1000)
+command('remindertest 179')
+assert(frame.points[1][5] == -24, 'one visible line retains the compact original gap')
+local heldDeadline = frame.expiresAt
+single:SetText('First line\nSecond line')
+updateAt(now + 0.01)
+assert(frame.points[1][5] == -42, 'one multiline message moves the reminder below both lines')
+local lower = statusText('Another message', 960)
+frame.scripts.OnEnter(frame)
+updateAt(now + 0.01)
+assert(frame.points[1][5] == -64 and frame.questID == 179,
+    'late simultaneous message moves down even while hovered, without changing the click target')
+assert(frame.expiresAt == heldDeadline, 'layout updates do not renew the reminder timer')
+lower:Hide(); single:Hide()
+updateAt(now + 0.01)
+assert(frame.points[1][5] == -64, 'expired or cleared messages do not pull the reminder upward')
+frame.scripts.OnLeave(frame)
+updateAt(now + 5)
+assert(not frame:IsShown())
+single:Show(); single:SetText('Single line')
+local transparent = statusText('Old pooled message', 800)
+transparent:SetAlpha(0)
+local blank = statusText(' ', 700)
+command('remindertest 179')
+assert(frame.points[1][5] == -24, 'fresh appearances ignore old offsets, hidden, transparent and empty regions')
+-- Geometry may be unavailable until the next render pass.
+single:SetText('First line\nSecond line')
+single.layoutReady = false
+command('remindertest 179')
+assert(frame.points[1][5] == -24)
+single.layoutReady = true
+updateAt(now + 0.01)
+assert(frame.points[1][5] == -42, 'deferred native layout is picked up during OnUpdate')
+-- Narrow native regions also wrap a message without an explicit newline.
+single:SetText('1234567890123456789012345')
+updateAt(now + 0.01)
+assert(frame.points[1][5] == -42, 'native width wrapping uses the rendered bounds')
+status:SetScale(1.5)
+command('remindertest 179')
+assert(frame.points[1][5] == -60, 'native bounds are converted to the reminder effective scale')
+status:SetScale(1)
+command('remindertest off')
+print('PASS: multiline and stacked native messages, late layout, width wrapping, hover, scale conversion, pooled regions and stable position until hide')
 UIErrorsFrame = nil
 command('remindertest 179')
 assert(frame.points[1][2] == UIParent, 'fallback placement when no standard message frame exists')

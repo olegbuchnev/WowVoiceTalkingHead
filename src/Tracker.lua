@@ -31,8 +31,38 @@ local function visibleTrackerQuest(play)
     return true
 end
 
+local function positionReminder(self)
+    local status = self.statusFrame
+    if not status then return end
+    local offset = (self.statusFontSize or 18) + 6
+    local top = status.GetTop and status:GetTop()
+    if top and status.GetRegions and status:IsVisible() then
+        local scale = self:GetEffectiveScale()
+        top = top * status:GetEffectiveScale() / scale
+        -- Read the rendered message regions, including native wrapping and
+        -- multiple simultaneous messages, rather than the container's height.
+        for _, region in ipairs({ status:GetRegions() }) do
+            if region:IsObjectType("FontString") and region:IsVisible() and region:GetAlpha() > 0 then
+                local text, bottom = region:GetText(), region:GetBottom()
+                if text and text:find("%S") and bottom then
+                    offset = math.max(offset, top - bottom * region:GetEffectiveScale() / scale + 6)
+                end
+            end
+        end
+    end
+    -- Keep the lowest position for this appearance. Expiring messages must
+    -- not pull the clickable reminder upward, including while hovered.
+    offset = math.max(offset, self.statusOffset or 0)
+    if offset ~= self.statusOffset then
+        self.statusOffset = offset
+        self:ClearAllPoints()
+        self:SetPoint("TOP", status, "TOP", 0, -offset)
+    end
+end
+
 local function updateReminderPreview(self)
     if not self.isTest and not pulseEnabled() then self:Hide(); return end
+    positionReminder(self)
     if self.hovered then return end
     local remaining = self.expiresAt - GetTime()
     if remaining <= 0 then self:Hide(); return end
@@ -79,6 +109,7 @@ local function showQuestReminder(id, isTest)
         end)
         frame:SetScript("OnHide", function(self)
             self:SetScript("OnUpdate", nil)
+            self.statusOffset = nil
             self.hovered = false
             self.Icon:SetAlpha(0.7)
         end)
@@ -88,10 +119,9 @@ local function showQuestReminder(id, isTest)
         frame:Hide()
     end
     local frame = reminderPreview
-    frame:ClearAllPoints()
     if UIErrorsFrame then
-        -- The message occupies the first line, not the entire 60px container.
-        -- Anchor below that line so the reminder does not leave a large gap.
+        if frame.statusFrame ~= UIErrorsFrame then frame.statusOffset = nil end
+        frame.statusFrame = UIErrorsFrame
         local font, size, flags = UIErrorsFrame:GetFont()
         if font and size then
             size = size * UIErrorsFrame:GetEffectiveScale() / frame:GetEffectiveScale()
@@ -104,14 +134,17 @@ local function showQuestReminder(id, isTest)
         frame.Icon:SetPoint("LEFT", frame.Label, "RIGHT", gap, 0)
         frame:SetSize(frame.Label:GetStringWidth() + gap + iconSize,
             math.max((size or 18) + 4, iconSize + 2))
-        frame:SetPoint("TOP", UIErrorsFrame, "TOP", 0, -((size or 18) + 6))
+        frame.statusFontSize = size or 18
         if isTest then
             local log = _G.C_QuestLog
             local objectives = log and log.GetQuestObjectives and log.GetQuestObjectives(id)
             local text = objectives and objectives[1] and objectives[1].text
             UIErrorsFrame:AddMessage(text and text:find("%S") and text or "Цель задания: 1/5", 1, 1, 0)
         end
+        positionReminder(frame)
     else
+        frame.statusFrame, frame.statusOffset = nil, nil
+        frame:ClearAllPoints()
         frame:SetPoint("TOP", UIParent, "TOP", 0, -146)
     end
     frame.questID = id
@@ -175,9 +208,9 @@ local function currentTimestamp()
     return GetServerTime and GetServerTime() or time()
 end
 
-local function resetAcceptedQuest(id)
+local function resetQuestReminder(id)
     if type(id) ~= "number" or id <= 0 then return end
-    -- Reaccepting a quest starts a fresh baseline, never a progress reminder.
+    -- Acceptance/removal starts a fresh baseline, never a progress reminder.
     progress[id], pulses[id] = nil, nil
     if reminderPreview and reminderPreview.questID == id then reminderPreview:Hide() end
 end
@@ -437,11 +470,21 @@ events:RegisterEvent("ADDON_LOADED")
 events:RegisterEvent("QUEST_LOG_UPDATE")
 events:RegisterEvent("QUEST_WATCH_UPDATE")
 events:RegisterEvent("QUEST_ACCEPTED")
+events:RegisterEvent("QUEST_REMOVED")
 events:RegisterEvent("PLAYER_ENTERING_WORLD")
 events:SetScript("OnEvent", function(_, event, questId, legacyQuestId)
-    if event == "QUEST_ACCEPTED" then
-        resetAcceptedQuest(legacyQuestId or questId)
+    if event == "QUEST_ACCEPTED" or event == "QUEST_REMOVED" then
         WV.Work:Cancel("tracker-progress")
+        local id = event == "QUEST_ACCEPTED" and (legacyQuestId or questId) or questId
+        resetQuestReminder(id)
+        if event == "QUEST_REMOVED" and type(id) == "number" and id > 0 then
+            -- Clear on removal, not acceptance: the new offer's automatic
+            -- description can start before QUEST_ACCEPTED and must keep its pause.
+            local listened = listenedQuests()
+            if listened then listened[id] = nil end
+            if reminderTestQuest == id then reminderTestQuest, reminderTestStarted = nil, nil end
+            if lastProgressQuest == id then lastProgressQuest = nil end
+        end
         WV.Work:Queue("tracker-progress", scanProgress, 0.05)
         WV:RefreshTrackerButtons()
     elseif event == "QUEST_WATCH_UPDATE" then

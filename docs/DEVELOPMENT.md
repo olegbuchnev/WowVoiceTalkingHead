@@ -257,7 +257,10 @@ Further progress restarts that 10-second window; unchanged quest-log updates,
 accepting a quest and login/reload do not trigger or extend reminders.
 Only quests with description audio get a glow. The same eligible progress also
 shows a five-second clickable gold `Вспомнить задание` line below the native
-system message. `Напоминать об озвучке при прогрессе` in `Кнопки и напоминания`
+visible message regions. Rendered FontString bounds account for wrapping and
+stacked messages, including messages that arrive later. The reminder only moves
+downward until hidden, so disappearing status text does not move the click target
+upward. A fresh appearance resets the offset. `Напоминать об озвучке при прогрессе` in `Кнопки и напоминания`
 controls both effects through the existing `trackerProgressPulse` preference.
 Hiding the controls or disabling the reminder immediately removes both effects.
 Neither starts playback automatically. Native progress text is never duplicated.
@@ -273,6 +276,10 @@ completion events do not renew it; login with a completed quest stays silent.
 no acceptance timer or cross-quest eligibility rule; old `lastAcceptedQuest` data
 is ignored. Baselines stay current with the option disabled; acceptance, missing
 cache entries and unchanged snapshots do not count as progress.
+`QUEST_REMOVED` cancels a pending scan and clears this quest's baseline, reminder
+and listening pause for the current character. A new acceptance cannot inherit
+the abandoned attempt's pause. Acceptance itself preserves a fresh pause from
+automatic description playback in the new offer, which can precede acceptance.
 Descriptions that successfully start automatically or through manual Play suppress
 reminders for that character and quest for 30 minutes, even if closed early or
 replaced. While that pause remains active, each objective change for the same quest
@@ -305,7 +312,7 @@ seconds; repeating the test replaces that test glow and `off` clears both previe
 elements. Test glow does not change real progress pulses or saved cooldowns.
 A single background-free text line
 uses the system message font and size, with the tracker's replay icon scaled
-proportionally on its right, directly below the first system message line.
+proportionally on its right, below the bottom visible system message line.
 The text uses the original gold color, matching the replay icon.
 It lasts five seconds including its fade, stays visible while hovered and starts
 a fresh five-second countdown on every mouse leave. Repeated tests also restart
