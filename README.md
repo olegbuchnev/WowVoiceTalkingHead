@@ -1,5 +1,24 @@
 # WowVoice TalkingHead — Forever Beta
 
+Русская озвучка заданий для **WoW Forever Beta** с говорящей головой в стиле Retail
+и кнопками повторного прослушивания в журнале и списке заданий.
+
+## Скачать и установить
+
+- **[Последняя версия — GitHub Releases](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/latest).**
+  Для первой установки скачайте `WowVoiceTalkingHead-<version>.zip`: он содержит
+  аддон и обе звуковые библиотеки. Распакуйте три папки в `Interface/AddOns` при
+  закрытой игре. Автоматические архивы GitHub «Source code» для установки не подходят.
+- **Обновление без звуков:** архив с суффиксом `-addon-only.zip` на той же странице.
+  Он подходит, если звуковые библиотеки уже установлены и в выпуске не менялись.
+- **[Зеркало на pCloud](http://e.pc.cd/ju6y6alK)** продолжает работать по прежней ссылке.
+
+Подробности установки, настройки и авторы озвучки — в **[инструкции](USER_README.md)**.
+Это самостоятельная модификация на основе WowVoice с записями WowVoice и Cathey;
+она не является официальным выпуском исходных проектов.
+
+## Development
+
 WowVoice TalkingHead is a Forever Beta build based on WowVoice, with talking
 heads and quest playback controls. This repository keeps its development sources
 outside the live World of Warcraft installation. Runtime addon files live under
@@ -115,6 +134,19 @@ http://e.pc.cd/ju6y6alK
 
 Keep this cloud folder and its shared link when updating releases. This link is
 recorded only in the development README, which is excluded from release archives.
+
+### GitHub publication
+
+Source repository: [olegbuchnev/WowVoiceTalkingHead](https://github.com/olegbuchnev/WowVoiceTalkingHead).
+Commit source changes and use `git push origin main` to publish them. Pushing
+source does not build or upload release archives. Publish the full and addon-only
+ZIPs as GitHub Release assets after the requested package builds; keep the pCloud
+copies as well. Do not attach local backups, deployment settings or extracted
+audio sources to the repository. Audio belongs in the full release ZIP.
+
+Release assets include `SHA256SUMS.txt` for download integrity checks. Checksums
+verify that a download matches the published files; they are not an antivirus
+certification.
 
 IntelliJ IDEA shows a Run/Play gutter icon for each command block when
 **Detect commands that can be run right from Markdown files** is enabled in
