@@ -242,8 +242,8 @@ titles. They replay the description using
 the current quest ID and leave the tracker layout unchanged. The options page
 can hide these controls independently of journal buttons and the talking head;
 `WowVoiceDB.trackerButtons` defaults to true.
-«Подсвечивать озвучку при прогрессе задания» independently enables a silent gold
-glow around those tracker buttons (`WowVoiceDB.trackerProgressPulse`, default
+«Напоминать об озвучке при прогрессе» enables both the silent gold glow around
+those tracker buttons and the replay notification (`WowVoiceDB.trackerProgressPulse`, default
 true). Its checkbox is indented under the tracker-button option and disabled
 when the parent is off, preserving the saved reminder preference.
 Each eligible objective change shows the standard gold ActionButton glow with its animated
@@ -253,8 +253,17 @@ The triangle retains its normal 70% opacity (100% on hover); glow brightness is
 independent and does not change the icon's opacity.
 Further progress restarts that 10-second window; unchanged quest-log updates,
 accepting a quest and login/reload do not trigger or extend reminders.
-Only quests with description audio get a glow. Hiding the controls or disabling
-the reminder immediately removes the glow. It never starts playback.
+Only quests with description audio get a glow. The same eligible progress also
+shows a five-second clickable gold `Вспомнить задание` line below the native
+system message. `Напоминать об озвучке при прогрессе` in `Кнопки и напоминания`
+controls both effects through the existing `trackerProgressPulse` preference.
+Hiding the controls or disabling the reminder immediately removes both effects.
+Neither starts playback automatically. Native progress text is never duplicated.
+Repeated progress refreshes the line; a hovered line keeps its quest click target
+even when another quest changes. Multiple changes prefer the latest
+`QUEST_WATCH_UPDATE` quest, falling back to stable quest-ID order. Abandoning a
+quest, reacceptance, loading screens, audio unavailability and manual replay clear
+its notification. The existing five-minute and one-hour rules apply to both effects.
 `QUEST_ACCEPTED` stores the last quest ID, absolute acceptance timestamp and an
 `otherProgress` flag in `WowVoiceDB.lastAcceptedQuest`, keyed by character GUID.
 Only that quest waits five real minutes before progress can trigger a reminder.
@@ -281,6 +290,26 @@ unexpired timestamps from previous builds remain valid.
 including heard quests and with the reminder preference disabled. The same animated
 glow stays visible until preview stops, options close, or real
 playback replaces the preview. Hidden tracker controls remain hidden.
+
+`/wv remindertest [questID]` previews the same replay notification below
+`UIErrorsFrame`, together with a yellow test message showing that quest's first
+objective. Without an ID it randomly selects a voiced journal quest whose replay
+button is currently visible in the tracker (including parent visibility, alpha
+and screen bounds). An explicit ID must meet the same conditions. With no eligible
+quest it only prints an explanation. The selected tracker button glows for ten
+seconds; repeating the test replaces that test glow and `off` clears both preview
+elements. Test glow does not change real progress pulses or saved cooldowns.
+A single background-free text line
+uses the system message font and size, with the tracker's replay icon scaled
+proportionally on its right, directly below the first system message line.
+The text uses the original gold color, matching the replay icon.
+It lasts five seconds including its fade, stays visible while hovered and starts
+a fresh five-second countdown on every mouse leave. Repeated tests also restart
+the timer. Tracker glow still lasts ten seconds.
+Showing it does not change quest progress, acceptance history or cooldowns.
+Clicking it performs a normal manual replay and therefore starts the one-hour
+cooldown. The mock bypasses acceptance and listened timers without modifying them.
+
 Replay buttons in the journal list, quest details and on-screen tracker are
 hidden when description audio is unavailable. A failed description playback
 also hides its replay controls and glow in both journal and tracker for the

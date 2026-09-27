@@ -4,9 +4,157 @@ local WV = _G.WowVoice
 local buttons, hooked = {}, {}
 local progress, pulses = {}, {}
 local REMINDER_DURATION = 10
+local REMINDER_MESSAGE_DURATION = 5
 local LISTENED_COOLDOWN = 60 * 60
 local LAST_ACCEPTED_DELAY = 5 * 60
 local previewStarted
+local reminderPreview
+local reminderTestQuest, reminderTestStarted
+local lastProgressQuest
+
+local function enabled()
+    return WowVoiceDB and WowVoiceDB.trackerButtons ~= false
+end
+
+local function pulseEnabled()
+    return enabled() and WowVoiceDB.enabled ~= false and WowVoiceDB.trackerProgressPulse ~= false
+end
+
+local function visibleTrackerQuest(play)
+    if not play.active or not play:IsVisible() or play:GetEffectiveAlpha() <= 0 then return false end
+    -- Hidden/collapsed parents are covered by IsVisible. Also exclude buttons
+    -- whose center is outside the screen, even if their frame is still shown.
+    local x, y = play:GetCenter()
+    if not x or not y then return false end
+    local scale = play:GetEffectiveScale() / UIParent:GetEffectiveScale()
+    if x * scale < 0 or y * scale < 0 or x * scale > UIParent:GetWidth()
+        or y * scale > UIParent:GetHeight() then return false end
+    return true
+end
+
+local function updateReminderPreview(self)
+    if not self.isTest and not pulseEnabled() then self:Hide(); return end
+    if self.hovered then return end
+    local remaining = self.expiresAt - GetTime()
+    if remaining <= 0 then self:Hide(); return end
+    self:SetAlpha(math.min(1, remaining / 0.35))
+end
+
+-- Shared by actual progress and the explicit mock. Only the mock emits a
+-- synthetic yellow message; normal notifications leave Blizzard's text alone.
+local function showQuestReminder(id, isTest)
+    if reminderPreview and reminderPreview:IsShown() and reminderPreview.hovered
+        and reminderPreview.questID ~= id then
+        -- Do not change the click target under the user's mouse.
+        return
+    end
+    if not reminderPreview then
+        local frame = CreateFrame("Button", "WowVoiceQuestReminderPreview", UIParent)
+        reminderPreview = frame
+        frame:SetSize(180, 20)
+        frame:SetFrameStrata("DIALOG")
+        local label = frame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+        label:SetPoint("LEFT", frame, "LEFT", 0, 0)
+        label:SetText("Вспомнить задание")
+        label:SetWordWrap(false)
+        label:SetTextColor(1, 0.82, 0)
+        frame.Label = label
+        local _, baseFontSize = label:GetFont()
+        frame.baseFontSize = baseFontSize or 12
+        frame:SetWidth(label:GetStringWidth() + 24)
+        local icon = frame:CreateTexture(nil, "ARTWORK")
+        icon:SetTexture("Interface\\Buttons\\UI-SpellbookIcon-NextPage-Up")
+        icon:SetSize(18, 18)
+        icon:SetPoint("LEFT", label, "RIGHT", 6, 0)
+        icon:SetAlpha(0.7)
+        frame.Icon = icon
+        frame:SetScript("OnEnter", function(self)
+            self.hovered = true
+            self:SetAlpha(1)
+            self.Icon:SetAlpha(1)
+        end)
+        frame:SetScript("OnLeave", function(self)
+            if self.hovered then self.expiresAt = GetTime() + REMINDER_MESSAGE_DURATION end
+            self.hovered = false
+            self.Icon:SetAlpha(0.7)
+        end)
+        frame:SetScript("OnHide", function(self)
+            self:SetScript("OnUpdate", nil)
+            self.hovered = false
+            self.Icon:SetAlpha(0.7)
+        end)
+        frame:SetScript("OnClick", function(self)
+            if WV:ReplayQuest(self.questID) then self:Hide() end
+        end)
+        frame:Hide()
+    end
+    local frame = reminderPreview
+    frame:ClearAllPoints()
+    if UIErrorsFrame then
+        -- The message occupies the first line, not the entire 60px container.
+        -- Anchor below that line so the reminder does not leave a large gap.
+        local font, size, flags = UIErrorsFrame:GetFont()
+        if font and size then
+            size = size * UIErrorsFrame:GetEffectiveScale() / frame:GetEffectiveScale()
+            frame.Label:SetFont(font, size, flags)
+        end
+        local ratio = (size or frame.baseFontSize) / frame.baseFontSize
+        local iconSize, gap = 18 * ratio, 6 * ratio
+        frame.Icon:SetSize(iconSize, iconSize)
+        frame.Icon:ClearAllPoints()
+        frame.Icon:SetPoint("LEFT", frame.Label, "RIGHT", gap, 0)
+        frame:SetSize(frame.Label:GetStringWidth() + gap + iconSize,
+            math.max((size or 18) + 4, iconSize + 2))
+        frame:SetPoint("TOP", UIErrorsFrame, "TOP", 0, -((size or 18) + 6))
+        if isTest then
+            local log = _G.C_QuestLog
+            local objectives = log and log.GetQuestObjectives and log.GetQuestObjectives(id)
+            local text = objectives and objectives[1] and objectives[1].text
+            UIErrorsFrame:AddMessage(text and text:find("%S") and text or "Цель задания: 1/5", 1, 1, 0)
+        end
+    else
+        frame:SetPoint("TOP", UIParent, "TOP", 0, -146)
+    end
+    frame.questID = id
+    frame.isTest = isTest == true
+    frame.expiresAt = GetTime() + REMINDER_MESSAGE_DURATION
+    frame:SetAlpha(1)
+    frame:Show()
+    frame:SetScript("OnUpdate", updateReminderPreview)
+end
+
+-- Showing a mock never manufactures quest progress or changes cooldowns.
+function WV:TestQuestReminder(id)
+    reminderTestQuest, reminderTestStarted = nil, nil
+    if reminderPreview then reminderPreview:Hide() end
+    self:RefreshTrackerButtons()
+    if id == false then return end
+    local log, inLog = _G.C_QuestLog, {}
+    if log and log.GetNumQuestLogEntries and log.GetInfo then
+        for index = 1, log.GetNumQuestLogEntries() do
+            local info = log.GetInfo(index)
+            if info and not info.isHeader and info.questID then inLog[info.questID] = true end
+        end
+    end
+    local candidates, seen = {}, {}
+    for _, play in pairs(buttons) do
+        local questID = play.questID
+        if (not id or id == questID) and inLog[questID] and not seen[questID]
+            and visibleTrackerQuest(play) and self:HasQuestAudio(questID) then
+            seen[questID] = true
+            candidates[#candidates + 1] = questID
+        end
+    end
+    if #candidates == 0 then
+        DEFAULT_CHAT_FRAME:AddMessage(WV.displayName .. ": нет видимого квеста с кнопкой озвучки для теста")
+        return
+    end
+    table.sort(candidates)
+    id = candidates[math.random(#candidates)]
+    showQuestReminder(id, true)
+    reminderTestQuest, reminderTestStarted = id, GetTime()
+    self:RefreshTrackerButtons()
+end
 
 local function currentTimestamp()
     -- Absolute time survives both /reload and a full client restart.
@@ -26,6 +174,7 @@ local function rememberAcceptedQuest(id)
     WowVoiceDB.lastAcceptedQuest[guid] = { questID = id, acceptedAt = currentTimestamp(), otherProgress = false }
     -- Reaccepting a quest starts a fresh baseline, never a progress reminder.
     progress[id], pulses[id] = nil, nil
+    if reminderPreview and reminderPreview.questID == id then reminderPreview:Hide() end
 end
 
 local function listenedQuests(incremental)
@@ -48,15 +197,11 @@ function WV:MarkQuestListened(id)
     local listened = listenedQuests()
     if listened then listened[id] = currentTimestamp() + LISTENED_COOLDOWN end
     pulses[id] = nil
+    if reminderTestQuest == id then
+        reminderTestQuest, reminderTestStarted = nil, nil
+    end
+    if reminderPreview and reminderPreview.questID == id then reminderPreview:Hide() end
     self:RefreshTrackerButtons()
-end
-
-local function enabled()
-    return WowVoiceDB and WowVoiceDB.trackerButtons ~= false
-end
-
-local function pulseEnabled()
-    return enabled() and WowVoiceDB.enabled ~= false and WowVoiceDB.trackerProgressPulse ~= false
 end
 
 local function stopPulse(play)
@@ -68,10 +213,12 @@ local function stopPulse(play)
 end
 
 local function updatePulse(play)
-    local started = previewStarted or pulses[play.questID]
+    local testStarted = reminderTestQuest == play.questID and reminderTestStarted
+    if testStarted and GetTime() - testStarted >= REMINDER_DURATION then testStarted = nil end
+    local started = previewStarted or testStarted or pulses[play.questID]
     local elapsed = started and (GetTime() - started)
     if not play.active or not enabled() or not elapsed
-        or (not previewStarted and (not pulseEnabled() or elapsed >= REMINDER_DURATION)) then
+        or (not previewStarted and not testStarted and (not pulseEnabled() or elapsed >= REMINDER_DURATION)) then
         stopPulse(play)
         return
     end
@@ -141,6 +288,9 @@ local function makeButton(block)
 end
 
 function WV:RefreshTrackerButtons()
+    if reminderPreview and reminderPreview:IsShown() and (not enabled()
+        or not WV:HasQuestAudio(reminderPreview.questID)
+        or (not reminderPreview.isTest and not pulseEnabled())) then reminderPreview:Hide() end
     for id, started in pairs(pulses) do
         if not pulseEnabled() or GetTime() - started >= REMINDER_DURATION then pulses[id] = nil end
     end
@@ -229,17 +379,26 @@ local function scanProgress()
             if id ~= recent.questID then recent.otherProgress = true end
         end
     end
+    local reminderID
     for id in pairs(changed) do
         local waiting = recent and id == recent.questID and not recent.otherProgress
             and currentTimestamp() < recent.acceptedAt + LAST_ACCEPTED_DELAY
         if not waiting and not listened[id] and pulseEnabled() and WV:HasQuestAudio(id) then
             pulses[id] = GetTime()
+            -- Prefer the most recent native progress event; use a stable order
+            -- when several changes arrive without QUEST_WATCH_UPDATE.
+            if not reminderID or id == lastProgressQuest
+                or (reminderID ~= lastProgressQuest and id < reminderID) then reminderID = id end
         end
         coroutine.yield()
     end
     for id in pairs(progress) do
         if not present[id] then progress[id], pulses[id] = nil, nil end
         coroutine.yield()
+    end
+    if reminderPreview and not present[reminderPreview.questID] then reminderPreview:Hide() end
+    if reminderID and pulseEnabled() and not listened[reminderID] and WV:HasQuestAudio(reminderID) then
+        showQuestReminder(reminderID, false)
     end
     WV:RefreshTrackerButtons()
 end
@@ -270,6 +429,7 @@ local events = CreateFrame("Frame", "WowVoiceTrackerEvents")
 events:RegisterEvent("PLAYER_LOGIN")
 events:RegisterEvent("ADDON_LOADED")
 events:RegisterEvent("QUEST_LOG_UPDATE")
+events:RegisterEvent("QUEST_WATCH_UPDATE")
 events:RegisterEvent("QUEST_ACCEPTED")
 events:RegisterEvent("PLAYER_ENTERING_WORLD")
 events:SetScript("OnEvent", function(_, event, questId, legacyQuestId)
@@ -278,11 +438,16 @@ events:SetScript("OnEvent", function(_, event, questId, legacyQuestId)
         WV.Work:Cancel("tracker-progress")
         WV.Work:Queue("tracker-progress", scanProgress, 0.05)
         WV:RefreshTrackerButtons()
+    elseif event == "QUEST_WATCH_UPDATE" then
+        lastProgressQuest = questId
+        WV.Work:Queue("tracker-progress", scanProgress, 0.05)
     elseif event == "QUEST_LOG_UPDATE" then
         WV.Work:Queue("tracker-progress", scanProgress, 0.05)
     elseif event == "PLAYER_ENTERING_WORLD" or event == "PLAYER_LOGIN" then
         -- Login/reload and loading screens establish a fresh, silent baseline.
         progress, pulses = {}, {}
+        lastProgressQuest, reminderTestQuest, reminderTestStarted = nil, nil, nil
+        if reminderPreview then reminderPreview:Hide() end
         WV.Work:Cancel("tracker-progress")
         setup()
         WV.Work:Queue("tracker-progress", scanProgress, 0.05)

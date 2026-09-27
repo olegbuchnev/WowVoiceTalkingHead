@@ -4,8 +4,8 @@
 Во время воспроизведения на экране отображаются портрет персонажа и текст реплики.
 Описание задания можно повторно прослушать кнопкой ▶ в журнале или списке заданий.
 
-**[Скачать полный архив](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.0.8-forever.6/WowVoiceTalkingHead-1.0.8-forever.6.zip)** ·
-**[Скачать addon-only](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.0.8-forever.6/WowVoiceTalkingHead-1.0.8-forever.6-addon-only.zip)** ·
+**[Скачать полный архив](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.0.8-forever.7/WowVoiceTalkingHead-1.0.8-forever.7.zip)** ·
+**[Скачать addon-only](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.0.8-forever.7/WowVoiceTalkingHead-1.0.8-forever.7-addon-only.zip)** ·
 [Инструкция](USER_README.md) ·
 [Сообщить об ошибке](https://github.com/olegbuchnev/WowVoiceTalkingHead/issues)
 
@@ -33,13 +33,13 @@
 
 ## Установка
 
-1. **[Скачайте полный архив](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.0.8-forever.6/WowVoiceTalkingHead-1.0.8-forever.6.zip)** —
+1. **[Скачайте полный архив](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.0.8-forever.7/WowVoiceTalkingHead-1.0.8-forever.7.zip)** —
    все необходимые звуки уже внутри.
 2. **Закройте игру** и скопируйте из архива три папки — `WowVoiceTalkingHead`,
    `WowVoiceSounds` и `CatVoices` — в `_classic_beta_/Interface/AddOns/`.
 3. **Запустите игру**, включите аддоны в списке модификаций и откройте задание у NPC.
 
-**Обновление:** [скачайте addon-only](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.0.8-forever.6/WowVoiceTalkingHead-1.0.8-forever.6-addon-only.zip),
+**Обновление:** [скачайте addon-only](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.0.8-forever.7/WowVoiceTalkingHead-1.0.8-forever.7-addon-only.zip),
 замените папку `WowVoiceTalkingHead` и выполните `/reload`. Если в выпуске
 обновилась звуковая библиотека, понадобится полный архив и перезапуск игры.
 

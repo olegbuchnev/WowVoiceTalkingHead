@@ -4,7 +4,7 @@
 ## IconTexture: Interface\AddOns\WowVoiceTalkingHead\Media\VoiceChat-Active.tga
 ## Notes: Говорящие головы и озвучка заданий WoW Forever на основе WowVoice.
 ## Author: wowvoice
-## Version: 1.0.8-forever.6
+## Version: 1.0.8-forever.7
 ## SavedVariables: WowVoiceDB
 ## X-Sounds-Addon: WowVoiceSounds
 

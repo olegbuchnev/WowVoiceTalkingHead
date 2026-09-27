@@ -767,6 +767,17 @@ SlashCmdList["WOWVOICE"] = function(input)
         if not WowVoiceDB.enabled then WV:Silence() end
         msg("озвучка %s", WowVoiceDB.enabled and "включена" or "выключена")
 
+    elseif cmd == "remindertest" then
+        local value = strtrim(rest or "")
+        local id = tonumber(value)
+        if value == "off" then
+            WV:TestQuestReminder(false)
+        elseif value == "" or (id and id > 0 and id == math.floor(id)) then
+            WV:TestQuestReminder(id)
+        else
+            msg("тест напоминания: /wv remindertest [ID квеста] | off")
+        end
+
     elseif cmd == "stop" then
         WV:Silence()
         msg("остановлено")

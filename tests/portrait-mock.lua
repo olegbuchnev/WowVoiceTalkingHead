@@ -52,7 +52,10 @@ local function region(fontObject,parent)
     function t:SetTexCoord(...) self.texCoord={...} end
     function t:SetText(s) self.text=s end
     function t:SetTextColor(...) self.textColor={...} end
+    function t:SetShadowColor(...) self.shadowColor={...} end
+    function t:SetShadowOffset(...) self.shadowOffset={...} end
     function t:GetText() return self.text end
+    function t:GetStringWidth() return #((self.text or ''):gsub('[\128-\191]', '')) * self.fontSize / 2 end
     function t:SetSize(w,h) self.width,self.height=w,h end
     function t:SetPoint(...) self.point={...} end
     function t:ClearAllPoints() self.point=nil end
