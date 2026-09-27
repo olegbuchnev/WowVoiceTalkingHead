@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-  [ValidateSet('Validate', 'Test', 'Deploy', 'Package', 'PackageAddon')]
+  [ValidateSet('Validate', 'Test', 'Deploy', 'DeployAddon', 'Package', 'PackageAddon')]
   [string]$Task = 'Validate',
   [ValidateSet('ForeverBeta')]
   [string]$Target = 'ForeverBeta',
@@ -194,6 +194,7 @@ function Resolve-AddOnsDirectory {
 }
 
 function Invoke-Deploy {
+  param([switch]$AddonOnly)
   $addons = Resolve-AddOnsDirectory
   $destination = Join-Path $addons 'WowVoiceTalkingHead'
   $sounds = Join-Path $addons 'WowVoiceSounds'
@@ -202,8 +203,10 @@ function Invoke-Deploy {
   Assert-DirectChildPath $sounds $addons 'WowVoiceSounds'
   Assert-DirectChildPath $catSounds $addons 'CatVoices'
   Assert-NoReparseTree $destination
-  Assert-NoReparseTree $sounds
-  Assert-NoReparseTree $catSounds
+  if (-not $AddonOnly) {
+    Assert-NoReparseTree $sounds
+    Assert-NoReparseTree $catSounds
+  }
 
   # Back up before the first write. Classic audio is restored from the source
   # library without copying that large library into every backup.
@@ -215,13 +218,15 @@ function Invoke-Deploy {
   if (Test-Path -LiteralPath $destination) {
     Copy-Item -LiteralPath $destination -Destination (Join-Path $backup 'WowVoiceTalkingHead') -Recurse
   }
-  if (Test-Path -LiteralPath $catSounds) {
-    Copy-Item -LiteralPath $catSounds -Destination (Join-Path $backup 'CatVoices') -Recurse
-  }
-  New-Item -ItemType Directory -Path (Join-Path $backup 'WowVoiceSounds') | Out-Null
-  foreach ($name in $SoundTocs) {
-    $file = Join-Path $sounds $name
-    if (Test-Path -LiteralPath $file) { Copy-Item -LiteralPath $file -Destination (Join-Path $backup 'WowVoiceSounds') }
+  if (-not $AddonOnly) {
+    if (Test-Path -LiteralPath $catSounds) {
+      Copy-Item -LiteralPath $catSounds -Destination (Join-Path $backup 'CatVoices') -Recurse
+    }
+    New-Item -ItemType Directory -Path (Join-Path $backup 'WowVoiceSounds') | Out-Null
+    foreach ($name in $SoundTocs) {
+      $file = Join-Path $sounds $name
+      if (Test-Path -LiteralPath $file) { Copy-Item -LiteralPath $file -Destination (Join-Path $backup 'WowVoiceSounds') }
+    }
   }
   $addons | Set-Content -LiteralPath (Join-Path $backup 'destination.txt') -Encoding UTF8
   Write-Host "Backup: $backup"
@@ -247,6 +252,11 @@ function Invoke-Deploy {
     if (@(Get-ChildItem -LiteralPath $dir.FullName -Force).Count -eq 0) {
       [IO.Directory]::Delete($dir.FullName)
     }
+  }
+  if ($AddonOnly) {
+    Write-Host "Deployed WowVoice TalkingHead to ${Target}: $addons"
+    Write-Host 'Sound libraries unchanged. Use /reload in game to load the updated addon.'
+    return
   }
   New-Item -ItemType Directory -Path $sounds -Force | Out-Null
   foreach ($file in Get-ChildItem -LiteralPath $SoundSource -File) {
@@ -377,11 +387,12 @@ function Invoke-Tests {
   finally { Pop-Location; $env:Path = $previousPath }
 }
 
-Test-AddonLayout -AddonOnly:($Task -eq 'PackageAddon')
+Test-AddonLayout -AddonOnly:($Task -in @('PackageAddon', 'DeployAddon'))
 switch ($Task) {
   'Validate' { }
   'Test' { Invoke-Tests }
   'Deploy' { Invoke-Deploy }
+  'DeployAddon' { Invoke-Deploy -AddonOnly }
   'Package' { Invoke-Package }
   'PackageAddon' { Invoke-Package -AddonOnly }
 }

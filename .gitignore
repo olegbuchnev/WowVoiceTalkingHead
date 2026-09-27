@@ -6,6 +6,7 @@
 /soundpack/*.ogg
 /catvoices/*.ogg
 /config/deploy.targets.local.psd1
+/BUILD.local.md
 *.bak
 *.log
 *.tmp

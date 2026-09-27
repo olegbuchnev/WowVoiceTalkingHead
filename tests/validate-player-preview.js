@@ -10,3 +10,6 @@ function run(file) {
 for(const file of ['mock.lua','journal-mock.lua','portrait-mock.lua']) run(path.join(__dirname,file));
 for(const file of fs.readFileSync(path.join(root,'WowVoiceTalkingHead.toc'),'utf8').split(/\r?\n/).filter(s=>s.endsWith('.lua'))) run(path.join(root,file));
 run(path.join(__dirname,'player-preview-scenarios.lua'));
+run(path.join(__dirname,'head-scale-scenarios.lua'));
+run(path.join(__dirname,'head-anchor-scenarios.lua'));
+run(path.join(__dirname,'head-auto-preview-scenarios.lua'));

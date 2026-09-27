@@ -297,7 +297,6 @@ do
 
     -- duration: voice line length, or nil if unknown
     function Playback:Play(path, duration, context)
-        local descriptionQuest = context and context.section == "a" and context.questId
         local mode = self:mode()
         dbg("Playback: mode=%s duration=%s path=%s", tostring(mode), tostring(duration), path)
         if mode == "music" then
@@ -318,7 +317,6 @@ do
                 return false
             end
             self.usedMusic, playing = true, true
-            if descriptionQuest and WV.MarkQuestListened then WV:MarkQuestListened(descriptionQuest) end
             local tail = (WowVoiceDB and WowVoiceDB.tail) or 0.05
             stopAt = GetTime() + (duration or FALLBACK_LIMIT) + tail
             ticker:Show()
@@ -331,7 +329,6 @@ do
             -- so Lua cannot determine whether playback succeeded.
             PlaySoundFile(path)
             playing = true
-            if descriptionQuest and WV.MarkQuestListened then WV:MarkQuestListened(descriptionQuest) end
             return true
         end
         duckNPC()                        -- Mute the NPC greeting for the duration of the voice line
@@ -341,7 +338,6 @@ do
         dbg("PlaySoundFile: result=%s handle=%s", tostring(ok), tostring(h))
         if ok then
             handle, playing = h, true
-            if descriptionQuest and WV.MarkQuestListened then WV:MarkQuestListened(descriptionQuest) end
             -- Schedule a stop
             -- using the duration table for this exact sound pack.
             -- The timer calls StopSound and restores Dialog; a duration table
@@ -624,6 +620,9 @@ function WV:ReplayQuest(questId)
     dbg("журнал: повтор questID=%s key=%s path=%s", tostring(questId), key, path)
     local context = self.GetReplaySpeaker and self:GetReplaySpeaker(questId)
     local ok = Playback:Play(path, duration, context)
+    -- Only an explicit Play starts the reminder cooldown. Automatic dialogue
+    -- must not override the separate five-minute rule for the last acceptance.
+    if ok and self.MarkQuestListened then self:MarkQuestListened(questId) end
     self:SetQuestAudioAvailable(questId, ok)
     self.lastKey = ok and key or nil
     if not ok then msg("не удалось воспроизвести описание квеста %d", questId) end

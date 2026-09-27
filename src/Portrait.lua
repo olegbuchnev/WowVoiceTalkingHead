@@ -2,10 +2,34 @@
 -- SavedVariables stores data only, never frames or unit references.
 local WV = _G.WowVoice
 local pending, probe, request, head, anchor, active, transition
+local scalePreview
+local scaleCapture, scaleSnapshot
+local scaleSnapshotStatus = "not requested"
+local textScalePreviewStatus = "not requested"
+local updateScalePreviewVisual
+local scaleTraces = {}
+local function traceScaleEvent(key)
+    local trace = scalePreview and scalePreview.trace
+    if trace then trace[key] = (trace[key] or 0) + 1 end
+end
+
+local function sampleScaleModel()
+    local trace = scalePreview and scalePreview.trace
+    if not trace then return end
+    local model = head.Model
+    traceScaleEvent("frames")
+    if not head:IsVisible() or not model:IsVisible() then traceScaleEvent("hidden") end
+    if not model.portraitReady then traceScaleEvent("unready") end
+    if model.GetPaused and not model:GetPaused() then traceScaleEvent("unpaused") end
+    if model.GetDoBlend and model:GetDoBlend() then traceScaleEvent("blending") end
+    local display = model:GetDisplayInfo()
+    if display ~= trace.lastDisplay then traceScaleEvent("identity"); trace.lastDisplay = display end
+end
 -- PlayerModel geometry must follow our own panel's visibility and fade.
 -- The panel is independent of UIParent and other addons' interface fades.
 local function syncModelOpacity()
     if not head then return end
+    if scalePreview and scalePreview.reparented then return end
     local model = head.Model
     local alpha = head.visualAlpha or 1
     if transition then alpha = math.max(0, 1 - math.max(0, GetTime() - transition.startedAt)) end
@@ -14,6 +38,7 @@ local function syncModelOpacity()
     elseif model.SetModelAlpha then
         alpha = alpha * head.Portrait:GetEffectiveAlpha()
     end
+    if alpha <= 0 then traceScaleEvent("alphaZero") end
     if model.SetModelAlpha then model:SetModelAlpha(alpha)
     else model:SetAlpha(alpha) end
 end
@@ -439,6 +464,21 @@ function WV:GetReplaySpeaker(questId)
     return { questId = questId, section = "a", title = title, text = text, speaker = record }
 end
 
+local headAnchorPoints = { TOPLEFT = true, TOP = true, TOPRIGHT = true, LEFT = true,
+    CENTER = true, RIGHT = true, BOTTOMLEFT = true, BOTTOM = true, BOTTOMRIGHT = true }
+
+local function pointOffset(point, width, height)
+    return (point:find("LEFT") and -width / 2 or point:find("RIGHT") and width / 2 or 0),
+        (point:find("BOTTOM") and -height / 2 or point:find("TOP") and height / 2 or 0)
+end
+
+function WV:GetHeadAnchor()
+    local point = WowVoiceDB and WowVoiceDB.headAnchor
+    if headAnchorPoints[point] then return point end
+    local p = WowVoiceDB and WowVoiceDB.headPosition
+    return p and headAnchorPoints[p[1]] and p[1] or "BOTTOM"
+end
+
 local function restorePosition()
     if not anchor then return end
     local p = WowVoiceDB and WowVoiceDB.headPosition
@@ -471,24 +511,30 @@ local function centerPosition()
     -- the saved position without overwriting it with an arbitrary center.
     local p = WowVoiceDB and WowVoiceDB.headPosition
     if p and p[1] and p[2] and p[3] and p[4] then
-        local function offset(point, width, height)
-            return (point:find("LEFT") and -width / 2 or point:find("RIGHT") and width / 2 or 0),
-                (point:find("BOTTOM") and -height / 2 or point:find("TOP") and height / 2 or 0)
-        end
-        local rx, ry = offset(p[2], UIParent:GetWidth(), UIParent:GetHeight())
-        local ax, ay = offset(p[1], anchor:GetWidth(), anchor:GetHeight())
+        local rx, ry = pointOffset(p[2], UIParent:GetWidth(), UIParent:GetHeight())
+        local ax, ay = pointOffset(p[1], anchor:GetWidth(), anchor:GetHeight())
         return rx - ax + p[3], ry - ay + p[4]
     end
     return 0, -UIParent:GetHeight() / 2 + DEFAULT_BOTTOM_OFFSET + anchor:GetHeight() / 2
 end
 
-local function setPosition(x, y)
-    -- Coordinates in UI units relative to the center of the screen.
+local function clampCenterPosition(x, y)
     local maxX = math.max(0, (UIParent:GetWidth() - anchor:GetWidth()) / 2)
     local maxY = math.max(0, (UIParent:GetHeight() - anchor:GetHeight()) / 2)
-    x, y = math.max(-maxX, math.min(maxX, x)), math.max(-maxY, math.min(maxY, y))
-    WowVoiceDB.headPosition = { "CENTER", "CENTER", x, y }
-    restorePosition()
+    return math.max(-maxX, math.min(maxX, x)), math.max(-maxY, math.min(maxY, y))
+end
+
+local function setPosition(x, y, temporary)
+    -- Coordinates in UI units relative to the center of the screen.
+    x, y = clampCenterPosition(x, y)
+    -- Retain legacy center coordinates until a point has been explicitly chosen.
+    local point = headAnchorPoints[WowVoiceDB.headAnchor] and WowVoiceDB.headAnchor or "CENTER"
+    local ax, ay = pointOffset(point, anchor:GetWidth(), anchor:GetHeight())
+    local rx, ry = pointOffset(point, UIParent:GetWidth(), UIParent:GetHeight())
+    x, y = x + ax - rx, y + ay - ry
+    if not temporary then WowVoiceDB.headPosition = { point, point, x, y } end
+    anchor:ClearAllPoints()
+    anchor:SetPoint(point, UIParent, point, x, y)
 end
 
 -- Approximate speech cost: count UTF-8 characters, not individual bytes.
@@ -563,7 +609,7 @@ local function buildScrollPlan(lineHeight, visibleLines)
 end
 
 local function updatePlaybackText()
-    if not (head and active) then return end
+    if not (head and active) or scalePreview then return end
     local elapsed = math.max(0, GetTime() - active.startedAt)
     if active.preview and elapsed >= active.duration then
         active.startedAt = GetTime()
@@ -587,9 +633,17 @@ local function updatePlaybackText()
     head.TextScroll:SetVerticalScroll(offset)
 end
 
+local function disablePortraitBlend(model)
+    -- SetUnit/SetDisplayInfo reuse the same native PlayerModel. Do not carry
+    -- implicit model transitions from an NPC into the next player preview.
+    if model.SetDoBlend then model:SetDoBlend(false) end
+end
+
 local function updatePortraitCamera(model)
+    traceScaleEvent("fullCamera")
     -- Let PlayerModel compute its portrait camera. Selecting an embedded M2
     -- camera with SetCamera(0) can leave a model in its authored full-body view.
+    disablePortraitBlend(model)
     local profile, key, fileID = WV:GetPortraitCameraProfile(model)
     model.cameraProfile, model.cameraFileID = key, fileID
     model:SetPortraitZoom(1)
@@ -600,7 +654,10 @@ local function updatePortraitCamera(model)
 end
 
 local function finishTalkingModel(model)
+    traceScaleEvent("loaded")
     if not active or active.closing then return end
+    disablePortraitBlend(model)
+    if scalePreview then scalePreview.modelLoaded = true; return end
     local speaker = active.context.speaker
     -- Late notifications must not cover an item or unknown speaker's icon.
     if not active.preview and (not portraitKey(speaker)
@@ -624,6 +681,7 @@ local function tryTalkingModel()
     local now = GetTime()
     if now < (active.modelNextTry or 0) or now > (active.modelDeadline or 0) then return end
     active.modelNextTry = now + 1
+    disablePortraitBlend(model)
     local display = speaker.displayID or cachedPortraitDisplay(speaker)
     if positive(display) then
         local ok, loaded = pcall(model.SetDisplayInfo, model, display)
@@ -633,14 +691,31 @@ local function tryTalkingModel()
     elseif positive(speaker.npcID) then
         pcall(model.SetCreature, model, speaker.npcID)
     end
+    disablePortraitBlend(model)
     -- A numeric display ID is not proof that render resources are ready.
     -- Keep the placeholder until OnModelLoaded configures the camera.
+end
+
+function WV:GetHeadScale()
+    local scale = tonumber(WowVoiceDB and WowVoiceDB.headScale) or 1
+    if scale ~= scale or math.abs(scale) == math.huge then scale = 1 end
+    return math.floor(math.max(0.5, math.min(1.5, scale)) * 100 + 0.5) / 100
+end
+
+local function refreshHeadTextFonts()
+    -- Return to native glyph rendering at the final effective scale, preserving
+    -- the client's font files, logical sizes and outline flags.
+    for _, text in ipairs({ head.Name, head.Body, head.TextMeasure }) do
+        text:SetFont(text:GetFont())
+    end
 end
 
 local function layoutHead()
     local width = (WowVoiceDB and WowVoiceDB.headWidth) or DEFAULT_WIDTH
     local height = (WowVoiceDB and WowVoiceDB.headHeight) or DEFAULT_HEIGHT
-    local scale = (WowVoiceDB and WowVoiceDB.headScale) or 1
+    local scale = WV:GetHeadScale()
+    head:SetScale(scale)
+    refreshHeadTextFonts()
     local textLeft, textRight = 152, 42
     -- Retail composition: portrait on the left, name above
     -- the text on the right, and space reserved for the close button.
@@ -656,7 +731,6 @@ local function layoutHead()
     head.Name:SetPoint("TOPLEFT", head, "TOPLEFT", textLeft, -25)
     head.Name:SetHeight(nameHeight)
     head:SetSize(width, height)
-    head:SetScale(scale)
     -- Only the panel receives the saved scale; the anchor uses UIParent units.
     anchor:SetSize(width * scale, height * scale)
     local textWidth = width - textLeft - textRight
@@ -711,6 +785,9 @@ end
 -- every visible component, without multiplying it again through its parents.
 local function setHeadOpacity(alpha)
     head.visualAlpha = alpha
+    if scalePreview and scalePreview.snapshot then
+        scaleSnapshot:SetAlpha(alpha / scalePreview.alpha)
+    end
     head.Background:SetAlpha(alpha)
     head.PortraitBackground:SetAlpha(alpha)
     head.PortraitOverlay:SetAlpha(alpha)
@@ -745,6 +822,22 @@ scaleEvents:RegisterEvent("UI_SCALE_CHANGED")
 scaleEvents:RegisterEvent("DISPLAY_SIZE_CHANGED")
 scaleEvents:SetScript("OnEvent", refreshHeadScale)
 
+local function updateHead()
+    sampleScaleModel()
+    if scalePreview and scalePreview.visualDirty then updateScalePreviewVisual() end
+    if not anchor:GetCenter() then restorePosition() end
+    if head.draggingPosition and WV.RefreshHeadPositionOptions then WV:RefreshHeadPositionOptions() end
+    if active and active.autoPreview and active.autoHideAt and GetTime() >= active.autoHideAt
+        and not scalePreview and not head.draggingPosition then
+        active.autoHideAt = nil
+        WV:FinishTalkingHead()
+    end
+    if not scalePreview then tryTalkingModel() end
+    if active and not active.closing then updatePlaybackText() end
+    updateHeadTransition()
+    syncModelOpacity()
+end
+
 local function createHead()
     if head then return end
     anchor = CreateFrame("Frame", "WowVoiceTalkingHeadAnchor")
@@ -761,13 +854,23 @@ local function createHead()
     head:RegisterForDrag("LeftButton")
     head:RegisterForClicks("RightButtonUp")
     head:SetScript("OnDragStart", function()
-        if active and active.preview then anchor:StartMoving() end
+        if active and active.preview then
+            if active.autoPreview then WV:EnsureHeadPreview() end
+            local x, y = centerPosition()
+            local movement = { x = x, y = y, scale = anchor:GetEffectiveScale() }
+            if GetCursorPosition then movement.cursorX, movement.cursorY = GetCursorPosition() end
+            head.draggingPosition = movement
+            anchor:StartMoving()
+            if WV.RefreshHeadPositionOptions then WV:RefreshHeadPositionOptions() end
+        end
     end)
     head:SetScript("OnDragStop", function()
+        head.draggingPosition = nil
         anchor:StopMovingOrSizing()
         if active and active.preview then
             setPosition(centerPosition())
             if WV.RefreshHeadOptions then WV:RefreshHeadOptions() end
+            WV:FinishAutoHeadPreview(2)
         end
     end)
 
@@ -814,15 +917,17 @@ local function createHead()
     local portraitFrame = retailTexture(head.PortraitOverlay, "OVERLAY", 572, 0, 145, 145)
     portraitFrame:SetAllPoints(head.PortraitOverlay)
     model:SetScript("OnShow", function(self)
+        traceScaleEvent("shown")
         -- PlayerModel can reset its camera when a hidden parent is shown again.
-        if active and self.portraitReady then updatePortraitCamera(self) end
+        if not scalePreview and active and self.portraitReady then updatePortraitCamera(self) end
         syncModelOpacity()
     end)
+    model:SetScript("OnHide", function() traceScaleEvent("hiddenEvent") end)
     head:SetScript("OnShow", syncModelOpacity)
     head:SetScript("OnHide", syncModelOpacity)
     model:SetScript("OnModelLoaded", finishTalkingModel)
     model:SetScript("OnAnimFinished", function(self)
-        if active and self.talkAnimation then self:SetAnimation(self.talkAnimation) end
+        if not scalePreview and active and self.talkAnimation then self:SetAnimation(self.talkAnimation) end
     end)
 
     local function label(font, y, height)
@@ -898,13 +1003,7 @@ local function createHead()
         if button == "RightButton" then stopPlayback() end
     end)
     head.Close = close
-    head:SetScript("OnUpdate", function()
-        if not anchor:GetCenter() then restorePosition() end
-        tryTalkingModel()
-        if active and not active.closing then updatePlaybackText() end
-        updateHeadTransition()
-        syncModelOpacity()
-    end)
+    head:SetScript("OnUpdate", updateHead)
     applyHeadAppearance()
     layoutHead()
     restorePosition()
@@ -913,7 +1012,12 @@ end
 
 function WV:RefreshTalkingHeadModel()
     if not (head and active) then return end
+    traceScaleEvent("reload")
+    -- Late speaker capture/cache completion must not clear a frozen portrait.
+    -- Coalesce those requests and load the latest identity after release.
+    if scalePreview then scalePreview.modelRefresh = true; return end
     local model, speaker = head.Model, active.context.speaker
+    disablePortraitBlend(model)
     model.talkAnimation = nil
     model.portraitReady = false
     model:ClearModel()
@@ -924,7 +1028,8 @@ function WV:RefreshTalkingHeadModel()
     head.IconBorder:Show()
     active.modelNextTry, active.modelDeadline = 0, GetTime() + 20
     if active.preview then
-        local loaded = model:SetUnit("player")
+        local loaded = model:SetUnit("player", false)
+        disablePortraitBlend(model)
         debugLog("SetUnit(player)=" .. tostring(loaded) .. " display=" .. tostring(model:GetDisplayInfo()))
         -- A successful SetUnit may use a cached model; do not leave it transparent
         -- while waiting for an event. OnModelLoaded handles camera and animation.
@@ -966,7 +1071,8 @@ end
 -- Audio has already stopped and Dialog has been restored by Core. Leave only
 -- the visual tail alive; it cannot keep talking or restart audio/model requests.
 function WV:FinishTalkingHead()
-    if not (active and head and head:IsShown()) or active.preview then
+    traceScaleEvent("finished")
+    if not (active and head and head:IsShown()) or (active.preview and not active.autoPreview) then
         self:StopTalkingHead()
         return
     end
@@ -979,11 +1085,13 @@ function WV:FinishTalkingHead()
 end
 
 function WV:StopTalkingHead()
+    self:EndHeadScalePreview(true)
     local wasPreview = active and active.preview
     if wasPreview and self.SetTrackerPulsePreview then self:SetTrackerPulsePreview(false) end
     active = nil
     transition = nil
     if head then
+        head.draggingPosition = nil
         anchor:StopMovingOrSizing()
         if wasPreview and WowVoiceDB.headPosition then setPosition(centerPosition()) end
         head:EnableMouse(false)
@@ -998,19 +1106,537 @@ end
 function WV:GetHeadSettings()
     createHead()
     local x, y = centerPosition()
-    return { width = head:GetWidth(), height = head:GetHeight(), scale = head:GetScale(),
-        x = x, y = y }
+    return { width = head:GetWidth(), height = head:GetHeight(), scale = scalePreview and scalePreview.scale or head:GetScale(),
+        x = x, y = y, anchor = self:GetHeadAnchor() }
+end
+
+function WV:SetHeadAnchor(point)
+    if not headAnchorPoints[point] then return false, "Выберите точку привязки на схеме." end
+    createHead()
+    self:EndHeadScalePreview(true)
+    local x, y = centerPosition()
+    WowVoiceDB.headAnchor = point
+    setPosition(x, y)
+    if self.RefreshHeadOptions then self:RefreshHeadOptions() end
+    return true
+end
+
+function WV:GetHeadAnchorPosition()
+    createHead()
+    local x, y = centerPosition()
+    local movement = head.draggingPosition
+    if movement and movement.cursorX and movement.cursorY and GetCursorPosition then
+        local cursorX, cursorY = GetCursorPosition()
+        if cursorX and cursorY then
+            -- Native StartMoving can expose a cached frame rectangle until
+            -- release. Cursor delta gives a live readout in UIParent units.
+            x, y = clampCenterPosition(movement.x + (cursorX - movement.cursorX) / movement.scale,
+                movement.y + (cursorY - movement.cursorY) / movement.scale)
+        end
+    end
+    local point = self:GetHeadAnchor()
+    local ax, ay = pointOffset(point, anchor:GetWidth(), anchor:GetHeight())
+    -- All nine selected points share one coordinate origin: screen center.
+    -- Saved placement may still use an edge-relative anchor for screen resizing.
+    return x + ax, y + ay
+end
+
+function WV:SetHeadAnchorPosition(x, y)
+    if type(x) ~= "number" or type(y) ~= "number" or x ~= x or y ~= y
+        or math.abs(x) == math.huge or math.abs(y) == math.huge then
+        return false, "Введите числа в поля X и Y. Допускаются минус и дробная часть."
+    end
+    createHead()
+    self:EndHeadScalePreview(true)
+    local point = self:GetHeadAnchor()
+    local ax, ay = pointOffset(point, anchor:GetWidth(), anchor:GetHeight())
+    WowVoiceDB.headAnchor = point
+    setPosition(x - ax, y - ay)
+    if self.RefreshHeadOptions then self:RefreshHeadOptions() end
+    return true
 end
 
 function WV:CenterTalkingHead()
     createHead()
     local _, y = centerPosition()
     setPosition(0, y)
+    if self.RefreshHeadOptions then self:RefreshHeadOptions() end
 end
 
 function WV:ResetHeadPosition()
-    WowVoiceDB.headPosition = nil
+    self:EndHeadScalePreview(true)
+    WowVoiceDB.headPosition, WowVoiceDB.headAnchor = nil, nil
     restorePosition()
+    if self.RefreshHeadOptions then self:RefreshHeadOptions() end
+end
+
+local function restoreSnapshotSource()
+    if not scalePreview or not scalePreview.reparented then return end
+    head:SetParent(anchor)
+    head:ClearAllPoints()
+    head:SetPoint("CENTER", anchor, "CENTER")
+    head:SetFrameStrata("FULLSCREEN_DIALOG")
+    head:SetFrameLevel(200)
+    scalePreview.reparented = nil
+end
+
+local function beginVertexTextPreview()
+    local vertex = Enum and Enum.FontStringScaleAnimationMode and Enum.FontStringScaleAnimationMode.Vertex
+    if not vertex or not head.SetIgnoreParentScale or not head.CreateAnimationGroup then return false end
+    for _, text in ipairs({ head.Name, head.Body }) do
+        if not text.SetScaleAnimationMode or not text.GetScaleAnimationMode then return false end
+    end
+    if not head.TextScaleLayer then
+        local layer = CreateFrame("Frame", nil, head)
+        layer:EnableMouse(false)
+        layer:SetIgnoreParentScale(true)
+        layer:SetPoint("TOPLEFT", head, "TOPLEFT", 0, 0)
+        layer:Hide()
+        local group = layer:CreateAnimationGroup()
+        group:SetLooping("REPEAT")
+        local transform = group:CreateAnimation("Scale")
+        transform:SetOrigin("TOPLEFT", 0, 0)
+        transform:SetDuration(1)
+        transform:SetScaleFrom(1, 1)
+        transform:SetScaleTo(1, 1)
+        layer.Group, layer.Transform = group, transform
+        head.TextScaleLayer = layer
+    end
+    local layer = head.TextScaleLayer
+    local state = { baseScale = head:GetScale(),
+        namePoint = { head.Name:GetPoint(1) }, scrollPoint = { head.TextScroll:GetPoint(1) },
+        scrollWidth = head.TextScroll:GetWidth(), scrollHeight = head.TextScroll:GetHeight(),
+        contentWidth = head.TextContent:GetWidth(), contentHeight = head.TextContent:GetHeight(),
+        scrollOffset = head.TextScroll:GetVerticalScroll(),
+        nameLevel = head.NameLayer:GetFrameLevel(), scrollLevel = head.TextScroll:GetFrameLevel(),
+        nameMode = head.Name:GetScaleAnimationMode(), bodyMode = head.Body:GetScaleAnimationMode() }
+    layer:SetScale(head:GetEffectiveScale())
+    layer:SetSize(head:GetWidth(), head:GetHeight())
+    -- Ignore the changing parent scale so native glyph metrics and line layout
+    -- stay at their original effective size. Only the render transform changes.
+    head.NameLayer:SetParent(layer)
+    head.NameLayer:ClearAllPoints()
+    head.NameLayer:SetAllPoints(layer)
+    head.Name:ClearAllPoints()
+    head.Name:SetPoint(state.namePoint[1], layer, state.namePoint[3], state.namePoint[4], state.namePoint[5])
+    head.TextScroll:SetParent(layer)
+    head.TextScroll:ClearAllPoints()
+    head.TextScroll:SetPoint(state.scrollPoint[1], layer, state.scrollPoint[3], state.scrollPoint[4], state.scrollPoint[5])
+    head.Name:SetScaleAnimationMode(vertex)
+    head.Body:SetScaleAnimationMode(vertex)
+    layer:Show()
+    scalePreview.vertexText = state
+    textScalePreviewStatus = "vertex"
+    return true
+end
+
+local function updateVertexTextPreview(scale)
+    local layer = head.TextScaleLayer
+    local state = scalePreview.vertexText
+    local ratio = scale / state.baseScale
+    -- Vertex animations change glyph geometry, not native child anchors or the
+    -- ScrollFrame's clip rectangle. Scale those explicitly in the fixed-scale
+    -- layer's units, always from the captured layout (never cumulatively).
+    head.Name:ClearAllPoints()
+    head.Name:SetPoint(state.namePoint[1], layer, state.namePoint[3],
+        state.namePoint[4] * ratio, state.namePoint[5] * ratio)
+    head.TextScroll:ClearAllPoints()
+    head.TextScroll:SetPoint(state.scrollPoint[1], layer, state.scrollPoint[3],
+        state.scrollPoint[4] * ratio, state.scrollPoint[5] * ratio)
+    head.TextScroll:SetSize(state.scrollWidth * ratio, state.scrollHeight * ratio)
+    -- The scroll child's extent must match the transformed glyphs so native
+    -- scroll bounds neither clamp a growing preview nor expose extra lines.
+    head.TextContent:SetSize(state.contentWidth * ratio, state.contentHeight * ratio)
+    head.TextScroll:UpdateScrollChildRect()
+    head.TextScroll:SetVerticalScroll(state.scrollOffset * ratio)
+    layer.Transform:SetScaleFrom(ratio, ratio)
+    layer.Transform:SetScaleTo(ratio, ratio)
+    -- A constant looping transform holds the exact ratio between slider events.
+    layer.Group:Play()
+end
+
+local function endVertexTextPreview(state)
+    if not state then return end
+    local layer = head.TextScaleLayer
+    layer.Group:Stop()
+    head.NameLayer:SetParent(head)
+    head.NameLayer:SetFrameLevel(state.nameLevel)
+    head.NameLayer:ClearAllPoints()
+    head.NameLayer:SetAllPoints(head)
+    head.Name:ClearAllPoints()
+    head.Name:SetPoint(state.namePoint[1], state.namePoint[2], state.namePoint[3], state.namePoint[4], state.namePoint[5])
+    head.TextScroll:SetParent(head)
+    head.TextScroll:SetFrameLevel(state.scrollLevel)
+    head.TextScroll:ClearAllPoints()
+    head.TextScroll:SetPoint(state.scrollPoint[1], state.scrollPoint[2], state.scrollPoint[3], state.scrollPoint[4], state.scrollPoint[5])
+    head.TextScroll:SetSize(state.scrollWidth, state.scrollHeight)
+    head.TextContent:SetSize(state.contentWidth, state.contentHeight)
+    head.TextScroll:UpdateScrollChildRect()
+    head.TextScroll:SetVerticalScroll(state.scrollOffset)
+    head.Name:SetScaleAnimationMode(state.nameMode)
+    head.Body:SetScaleAnimationMode(state.bodyMode)
+    layer:Hide()
+end
+
+local function beginPortraitViewportPreview()
+    local model = head.Model
+    if not model.SetIgnoreParentScale then return end
+    local state = { baseScale = head:GetScale(), ownScale = model:GetScale(),
+        width = model:GetWidth(), height = model:GetHeight(), point = { model:GetPoint(1) },
+        ignoreScale = model.IsIgnoringParentScale and model:IsIgnoringParentScale() or false }
+    local effectiveScale = model:GetEffectiveScale()
+    model:SetIgnoreParentScale(true)
+    model:SetScale(effectiveScale)
+    scalePreview.portraitViewport = state
+end
+
+local function updatePortraitViewportPreview(scale)
+    local state, model = scalePreview.portraitViewport, head.Model
+    local ratio = scale / state.baseScale
+    -- Changing the inherited scale needed RefreshCamera on every input frame.
+    -- Keep the model's native scale constant and resize its actual viewport,
+    -- preserving the aspect ratio, camera, pose and screen-space placement.
+    model:ClearAllPoints()
+    model:SetPoint(state.point[1], state.point[2], state.point[3],
+        state.point[4] * ratio, state.point[5] * ratio)
+    model:SetSize(state.width * ratio, state.height * ratio)
+    traceScaleEvent("viewport")
+end
+
+local function endPortraitViewportPreview(state)
+    if not state then return end
+    local model = head.Model
+    model:SetIgnoreParentScale(state.ignoreScale)
+    model:SetScale(state.ownScale)
+    model:ClearAllPoints()
+    model:SetPoint(state.point[1], state.point[2], state.point[3], state.point[4], state.point[5])
+    model:SetSize(state.width, state.height)
+end
+
+updateScalePreviewVisual = function()
+    if not scalePreview or scalePreview.capturePending then return end
+    local scale = scalePreview.scale
+    scalePreview.visualDirty = nil
+    if scalePreview.appliedScale == scale then return end
+    -- Moving an ancestor after starting the vertex transform invalidates the
+    -- text layer's render placement, particularly with a non-central pivot.
+    -- Stop the previous transform before any geometry changes and restart it
+    -- only after the panel, scroll viewport and glyph offsets are final.
+    if scalePreview.vertexText then head.TextScaleLayer.Group:Stop() end
+    if scalePreview.snapshot then
+        scaleSnapshot:SetScale(scale)
+    else
+        -- Failed capture must not disable live resizing. Keep the pose/text frozen
+        -- and preserve the configured camera. Reapplying zoom/position/rotation
+        -- for every slider event resets the portrait unnecessarily.
+        if head:GetScale() ~= scale then
+            local scrollOffset = head.TextScroll:GetVerticalScroll()
+            head:SetScale(scale)
+            if scalePreview.portraitViewport then
+                updatePortraitViewportPreview(scale)
+            elseif head.Model.portraitReady then
+                disablePortraitBlend(head.Model)
+                traceScaleEvent("camera")
+                head.Model:RefreshCamera()
+            end
+            -- Refresh native clipping at the new effective scale without setting
+            -- text/fonts/widths or rebuilding the frozen line and scroll layout.
+            if not scalePreview.vertexText then
+                head.TextScroll:UpdateScrollChildRect()
+                head.TextScroll:SetVerticalScroll(scrollOffset)
+            end
+        end
+    end
+    anchor:SetSize(head:GetWidth() * scale, head:GetHeight() * scale)
+    if WowVoiceDB.headPosition then
+        local ax, ay = pointOffset(scalePreview.anchorPoint, anchor:GetWidth(), anchor:GetHeight())
+        setPosition(scalePreview.pivotX - ax, scalePreview.pivotY - ay, true)
+    else restorePosition() end
+    if scalePreview.vertexText then updateVertexTextPreview(scale) end
+    scalePreview.appliedScale = scale
+end
+
+local function captureScaleSnapshot()
+    if not head:IsShown() or (head.visualAlpha or 1) <= 0 then return false end
+    if scaleCapture == false then return false end
+    if not scaleCapture then
+        local ok, frame = pcall(CreateFrame, "OffScreenFrame", "WowVoiceHeadScaleCapture")
+        if not ok or not frame.TakeSnapshot or not frame.ApplySnapshot or not frame.Flush or not frame.SetMaxSnapshots then
+            scaleSnapshotStatus = ok and "snapshot API unavailable" or tostring(frame)
+            scaleCapture = false
+            return false
+        end
+        scaleCapture = frame
+        scaleCapture:SetMaxSnapshots(1)
+        scaleSnapshot = CreateFrame("Frame", "WowVoiceHeadScaleSnapshot", anchor)
+        scaleSnapshot:SetFrameStrata("FULLSCREEN_DIALOG")
+        scaleSnapshot:SetFrameLevel(200)
+        scaleSnapshot:SetScript("OnUpdate", updateHead)
+        scaleSnapshot:EnableMouse(false)
+        scaleSnapshot:SetPoint("CENTER", anchor, "CENTER")
+        scaleSnapshot.Texture = scaleSnapshot:CreateTexture(nil, "ARTWORK")
+        scaleSnapshot.Texture:SetAllPoints(scaleSnapshot)
+        scaleSnapshot:Hide()
+    end
+    -- Preserve the source's effective scale and screen rectangle during capture.
+    -- Only this offscreen tree is rasterized: no world or options UI is included.
+    scaleCapture:SetScale(anchor:GetEffectiveScale())
+    scaleCapture:SetSize(head:GetWidth() * head:GetScale(), head:GetHeight() * head:GetScale())
+    scaleCapture:ClearAllPoints()
+    scaleCapture:SetPoint("CENTER", UIParent, "CENTER", scalePreview.x, scalePreview.y)
+    scaleCapture:Show()
+    scalePreview.reparented = true
+    head:SetParent(scaleCapture)
+    head:ClearAllPoints()
+    head:SetPoint("CENTER", scaleCapture, "CENTER")
+    local preview, frames = scalePreview, 0
+    preview.capturePending = true
+    scaleSnapshotStatus = "waiting for render"
+    -- Blizzard's own OffScreenFrame consumer waits two frames before capturing.
+    -- Reparenting and requesting a snapshot in the same input callback is too early.
+    scaleCapture:SetScript("OnUpdate", function()
+        if scalePreview ~= preview then return end
+        frames = frames + 1
+        if frames < 2 then return end
+        local ok, snapshotID = pcall(scaleCapture.TakeSnapshot, scaleCapture)
+        scaleSnapshotStatus = ok and "TakeSnapshot returned nil" or tostring(snapshotID)
+        if ok and snapshotID then
+            local applied, success = pcall(scaleCapture.ApplySnapshot, scaleCapture, scaleSnapshot.Texture, snapshotID)
+            scaleSnapshotStatus = applied and "ApplySnapshot returned false" or tostring(success)
+            if applied and success ~= false then
+                preview.capturePending, preview.snapshot = nil, true
+                scaleSnapshotStatus = "ready"
+                scaleCapture:SetScript("OnUpdate", nil)
+                scaleSnapshot:SetSize(head:GetWidth(), head:GetHeight())
+                scaleSnapshot:SetAlpha(1)
+                updateScalePreviewVisual()
+                -- OffScreenFrame children can still draw on screen. Only the
+                -- texture may remain visible, or the original covers its resize.
+                scaleCapture:Hide()
+                scaleSnapshot:Show()
+                return
+            end
+        end
+        scaleCapture:Flush()
+        if frames < 6 then return end
+        preview.capturePending = nil
+        scaleCapture:SetScript("OnUpdate", nil)
+        restoreSnapshotSource()
+        scaleCapture:Hide()
+        updateScalePreviewVisual()
+        debugLog("scale snapshot: " .. scaleSnapshotStatus)
+    end)
+    return false
+end
+
+-- Measure complete word prefixes at the original scale. Selection rectangles
+-- are not a reliable source of wrapped-line coordinates on every client.
+local function frozenLineText(text, source)
+    if not head.ScaleTextMeasure then
+        head.ScaleTextMeasure = head:CreateFontString(nil, "ARTWORK")
+        head.ScaleTextMeasure:Hide()
+    end
+    local measure = head.ScaleTextMeasure
+    measure:SetFont(text:GetFont())
+    measure:SetSpacing(text:GetSpacing())
+    measure:SetWidth(text:GetWidth())
+    measure:SetHeight(0)
+    measure:SetWordWrap(text:CanWordWrap())
+    measure:SetNonSpaceWrap(text:CanNonSpaceWrap())
+    if measure.SetSmoothScaling and text.GetSmoothScaling then
+        measure:SetSmoothScaling(text:GetSmoothScaling())
+    end
+    local function height(value)
+        measure:SetText(value)
+        return measure:GetStringHeight()
+    end
+    local originalHeight, singleHeight = height(source), height("А")
+    if math.abs(originalHeight - text:GetStringHeight()) > 0.1 then return end
+    local parts, previousHeight, previousEnd = {}, nil, 1
+    for start, word, finish in source:gmatch("()(%S+)()") do
+        local gap = source:sub(previousEnd, start - 1)
+        parts[#parts + 1] = gap
+        -- Complex inline objects and words spanning several lines retain their
+        -- normal layout if it cannot be reproduced and verified exactly.
+        if height(word) > singleHeight + 0.1 then return end
+        local prefixHeight = height(source:sub(1, finish - 1))
+        if previousHeight and prefixHeight > previousHeight + 0.1
+            and not gap:find("\n", 1, true) and not gap:find("|n", 1, true) then
+            parts[#parts + 1] = "\n"
+        end
+        parts[#parts + 1] = word
+        previousHeight, previousEnd = prefixHeight, finish
+    end
+    parts[#parts + 1] = source:sub(previousEnd)
+    local frozen = table.concat(parts)
+    local _, fontSize = text:GetFont()
+    local width = text:GetWidth() * 4 + fontSize * #source
+    -- Keep multiline rendering enabled. Extra width prevents automatic wraps;
+    -- the inserted newlines alone define the frozen layout.
+    measure:SetWordWrap(true)
+    measure:SetWidth(width)
+    if math.abs(height(frozen) - originalHeight) > 0.1 then return end
+    return frozen, width
+end
+
+local function restoreTextLines(entry)
+    entry.text:SetWordWrap(entry.wrap)
+    entry.text:SetNonSpaceWrap(entry.nonSpaceWrap)
+    entry.text:SetWidth(entry.width)
+    entry.text:SetText(entry.source)
+end
+
+local function freezeHeadTextLines()
+    local entries = {}
+    for _, text in ipairs({ head.Name, head.Body }) do
+        local source = text:GetText()
+        if source and source ~= "" and text.CanWordWrap and text.CanNonSpaceWrap then
+            local ok, frozen, width = pcall(frozenLineText, text, source)
+            if ok and frozen then
+                local originalHeight = text:GetStringHeight()
+                local entry = { text = text, source = source, width = text:GetWidth(),
+                    wrap = text:CanWordWrap(), nonSpaceWrap = text:CanNonSpaceWrap() }
+                text:SetWordWrap(true)
+                text:SetWidth(width)
+                text:SetText(frozen)
+                if math.abs(text:GetStringHeight() - originalHeight) <= 0.1 then
+                    entries[#entries + 1] = entry
+                else
+                    restoreTextLines(entry)
+                end
+            end
+        end
+    end
+    return entries
+end
+
+function WV:BeginHeadScalePreview()
+    if scalePreview then return end
+    createHead()
+    local x, y = centerPosition()
+    scalePreview = { x = x, y = y, startedAt = GetTime(), playback = active,
+        scale = head:GetScale(), alpha = head.visualAlpha or 1,
+        keepModel = head.Model.GetKeepModelOnHide and head.Model:GetKeepModelOnHide() or false,
+        paused = head.Model.GetPaused and head.Model:GetPaused() or false }
+    scalePreview.anchorPoint = self:GetHeadAnchor()
+    local ax, ay = pointOffset(scalePreview.anchorPoint, anchor:GetWidth(), anchor:GetHeight())
+    scalePreview.pivotX, scalePreview.pivotY = x + ax, y + ay
+    scalePreview.trace = { source = active and (active.preview and "test" or "NPC") or "idle",
+        from = head:GetScale(), display = head.Model:GetDisplayInfo(), lastDisplay = head.Model:GetDisplayInfo(),
+        pausedAPI = head.Model.GetPaused ~= nil }
+    if head.Model.SetKeepModelOnHide then head.Model:SetKeepModelOnHide(true) end
+    disablePortraitBlend(head.Model)
+    if head.Model.SetPaused then head.Model:SetPaused(true) end
+    scalePreview.textLines, scalePreview.textScaling = {}, {}
+    if beginVertexTextPreview() then
+        beginPortraitViewportPreview()
+        return
+    end
+    textScalePreviewStatus = "legacy fallback"
+    -- Capture line breaks before changing even the font's smooth-scaling mode.
+    scalePreview.textLines = freezeHeadTextLines()
+    -- Smooth scaling is only a drag preview, not the settled font-rendering mode.
+    scalePreview.textScaling = {}
+    for _, text in ipairs({ head.Name, head.Body, head.TextMeasure }) do
+        if text.SetSmoothScaling then
+            scalePreview.textScaling[#scalePreview.textScaling + 1] = {
+                text = text, smooth = text.GetSmoothScaling and text:GetSmoothScaling() or false,
+            }
+            text:SetSmoothScaling(true)
+        end
+    end
+    scalePreview.snapshot = captureScaleSnapshot()
+end
+
+function WV:EndHeadScalePreview(cancel)
+    if not scalePreview then return true end
+    local preview, scale = scalePreview, math.floor(scalePreview.scale * 100 + 0.5) / 100
+    local trace = preview.trace
+    trace.to, trace.cancelled = preview.scale, cancel == true
+    trace.path = preview.vertexText and "vertex" or preview.snapshot and "snapshot" or "fallback"
+    scaleTraces[#scaleTraces + 1] = trace
+    if #scaleTraces > 3 then table.remove(scaleTraces, 1) end
+    if scaleCapture then scaleCapture:SetScript("OnUpdate", nil) end
+    restoreSnapshotSource()
+    if scaleSnapshot then
+        scaleSnapshot:Hide()
+        scaleSnapshot.Texture:SetTexture(nil)
+        scaleCapture:Flush()
+        scaleCapture:Hide()
+    end
+    scalePreview = nil
+    endPortraitViewportPreview(preview.portraitViewport)
+    endVertexTextPreview(preview.vertexText)
+    for _, entry in ipairs(preview.textLines) do restoreTextLines(entry) end
+    for _, entry in ipairs(preview.textScaling) do entry.text:SetSmoothScaling(entry.smooth) end
+    if head.Model.SetKeepModelOnHide then head.Model:SetKeepModelOnHide(preview.keepModel) end
+    if head.Model.SetPaused then head.Model:SetPaused(preview.paused) end
+    -- A silent preview resumes from the frozen text; real audio keeps its clock.
+    if active and active == preview.playback and active.preview then
+        local elapsed = GetTime() - preview.startedAt
+        active.startedAt, active.endsAt = active.startedAt + elapsed, active.endsAt + elapsed
+    end
+    if preview.modelRefresh then self:RefreshTalkingHeadModel()
+    elseif preview.modelLoaded then finishTalkingModel(head.Model) end
+    if cancel then
+        local changed = head:GetScale() ~= self:GetHeadScale()
+        scale = self:GetHeadScale()
+        head:SetScale(scale)
+        anchor:SetSize(head:GetWidth() * scale, head:GetHeight() * scale)
+        if changed and head.Model.portraitReady then updatePortraitCamera(head.Model) end
+        restorePosition()
+    elseif scale ~= self:GetHeadScale() or head:GetScale() ~= scale then
+        local ok, reason = self:SetHeadScale(scale)
+        if ok then return true end
+        -- Display bounds may have changed since the last accepted drag value.
+        scale = self:GetHeadScale()
+        head:SetScale(scale)
+        anchor:SetSize(head:GetWidth() * scale, head:GetHeight() * scale)
+        restorePosition()
+        refreshHeadTextFonts()
+        updatePlaybackText()
+        return false, reason
+    end
+    refreshHeadTextFonts()
+    updatePlaybackText()
+    return true
+end
+
+function WV:SetHeadScale(scale, temporary)
+    if type(scale) ~= "number" or scale ~= scale or scale < 0.5 or scale > 1.5 then
+        return false, "Введите масштаб от 50 до 150%."
+    end
+    createHead()
+    -- Keep fractional slider positions while dragging; only saved values use 1% steps.
+    if not temporary then scale = math.floor(scale * 100 + 0.5) / 100 end
+    if head:GetWidth() * scale > UIParent:GetWidth() or head:GetHeight() * scale > UIParent:GetHeight() then
+        return false, "Панель больше экрана. Уменьшите масштаб."
+    end
+    if temporary then
+        self:BeginHeadScalePreview()
+        scalePreview.scale = scale
+        -- Native sliders can emit multiple changes (and duplicates) before a
+        -- render. Apply only the latest percentage to the preview.
+        scalePreview.visualDirty = true
+        return true
+    end
+    local x, y = centerPosition()
+    local positioned = WowVoiceDB.headPosition ~= nil
+    local point = self:GetHeadAnchor()
+    local ax, ay = pointOffset(point, anchor:GetWidth(), anchor:GetHeight())
+    local pivotX, pivotY = x + ax, y + ay
+    WowVoiceDB.headScale = scale
+    layoutHead()
+    if head.Model.portraitReady then updatePortraitCamera(head.Model) end
+    -- Hold the selected point in place; screen bounds take precedence if the
+    -- enlarged panel would otherwise extend offscreen. Automatic placement
+    -- continues to follow the action bars until the user chooses a point.
+    if positioned then
+        ax, ay = pointOffset(point, anchor:GetWidth(), anchor:GetHeight())
+        setPosition(pivotX - ax, pivotY - ay)
+    else restorePosition() end
+    if self.RefreshHeadOptions then self:RefreshHeadOptions() end
+    return true
 end
 
 function WV:ApplyHeadSettings(settings)
@@ -1021,8 +1647,8 @@ function WV:ApplyHeadSettings(settings)
         end
     end
     if settings.width < 360 or settings.width > 1000 or settings.height < 140 or settings.height > 600
-        or settings.scale < 0.5 or settings.scale > 2 then
-        return false, "Ширина: 360–1000; высота: 140–600; масштаб: 50–200%."
+        or settings.scale < 0.5 or settings.scale > 1.5 then
+        return false, "Ширина: 360–1000; высота: 140–600; масштаб: 50–150%."
     end
     if settings.width * settings.scale > UIParent:GetWidth()
         or settings.height * settings.scale > UIParent:GetHeight() then
@@ -1035,7 +1661,43 @@ function WV:ApplyHeadSettings(settings)
     return true
 end
 
+function WV:EnsureHeadPreview()
+    -- Reusing an automatic preview cancels its old deadline/fade without
+    -- reloading the model. Real playback and an explicit test remain independent.
+    if active and active.preview and active.autoPreview then
+        active.autoHideAt = nil
+        if active.closing then
+            active.closing, transition = nil, nil
+            setHeadOpacity(1)
+            if head.Model.portraitReady then
+                head.Model.talkAnimation = head.Model:HasAnimation(60) and 60 or 0
+                head.Model:SetAnimation(head.Model.talkAnimation)
+            end
+        end
+        return true
+    end
+    if active and not active.closing then return true end
+    local ok, reason = self:ToggleHeadPreview()
+    if ok and active and active.preview then active.autoPreview = true end
+    return ok, reason
+end
+
+function WV:FinishAutoHeadPreview(delay)
+    if not (active and active.preview and active.autoPreview) then return end
+    active.autoHideAt = GetTime() + delay
+    if delay == 0 and not scalePreview and not head.draggingPosition then
+        active.autoHideAt = nil
+        self:FinishTalkingHead()
+    end
+end
+
 function WV:ToggleHeadPreview()
+    -- Pressing Test during an automatic preview pins that same panel open.
+    if active and active.preview and active.autoPreview then
+        self:EnsureHeadPreview()
+        active.autoPreview, active.autoHideAt = nil, nil
+        return true
+    end
     if active and active.preview then self:StopTalkingHead(); return true end
     -- Stop the audio and its timer, restoring Dialog before opening a silent preview.
     self:Silence("talking head preview")
@@ -1060,6 +1722,7 @@ end
 function WV:ResetHeadSettings()
     createHead()
     WowVoiceDB.headWidth, WowVoiceDB.headHeight, WowVoiceDB.headScale, WowVoiceDB.headPosition = nil, nil, nil, nil
+    WowVoiceDB.headAnchor = nil
     layoutHead()
     restorePosition()
 end
@@ -1073,7 +1736,22 @@ function WV:HeadCommand(command)
     end
 end
 
+function WV:HeadScaleDiagnostics()
+    if #scaleTraces == 0 then message("Scale: сначала измените масштаб ползунком."); return end
+    for index, trace in ipairs(scaleTraces) do
+        message(string.format("Scale[%d] %s %.1f>%.1f%% id=%s %s frames=%d cam=%d/full=%d view=%d load=%d reload=%d show/hide=%d/%d alpha0=%d hidden=%d unready=%d ids=%d unpaused=%s blend=%d finish=%d %s",
+            index, trace.source, trace.from * 100, trace.to * 100, tostring(trace.display), trace.path,
+            trace.frames or 0, trace.camera or 0, trace.fullCamera or 0, trace.viewport or 0, trace.loaded or 0, trace.reload or 0,
+            trace.shown or 0, trace.hiddenEvent or 0, trace.alphaZero or 0, trace.hidden or 0,
+            trace.unready or 0, trace.identity or 0, trace.pausedAPI and tostring(trace.unpaused or 0) or "?",
+            trace.blending or 0, trace.finished or 0, trace.cancelled and "cancel" or "release"))
+    end
+end
+
 function WV:HeadDiagnostics()
+    message("Scale snapshot: " .. scaleSnapshotStatus)
+    message("Text scale preview: " .. textScalePreviewStatus)
+    self:HeadScaleDiagnostics()
     local quests, count = characterQuests(), 0
     if quests then for _ in pairs(quests) do count = count + 1 end end
     message("Portrait: сохранено квестгиверов=" .. count)

@@ -89,6 +89,7 @@ try {
   New-Item -ItemType Directory -Path $retail -Force | Out-Null
   "@{ ForeverBeta = '$($retail.Replace("'", "''"))' }" | Set-Content -LiteralPath $config
   Assert-Fails { & $build -Task Deploy -ConfigPath $config } 'Retail path accepted.'
+  Assert-Fails { & $build -Task DeployAddon -ConfigPath $config } 'Addon-only deploy accepted Retail path.'
   Assert-Fails { & $build -Task Deploy -Target Retail -ConfigPath $config } 'Retail target accepted.'
   Assert-True (@(Get-ChildItem -LiteralPath $retail -Force).Count -eq 0) 'Rejected deployment wrote files.'
   $tocPath = Join-Path $fixture 'src\WowVoiceTalkingHead.toc'
@@ -197,6 +198,41 @@ try {
     Rename-Item -LiteralPath $from -NewName ($name + '-held')
   }
   try {
+    # Deploy code with no audio sources; installed audio and its TOCs must not be written.
+    "@{ ForeverBeta = '$($addons.Replace("'", "''"))' }" | Set-Content -LiteralPath $config
+    $audioBefore = @{}
+    foreach ($file in Get-ChildItem -LiteralPath $sounds, $catSounds -File -Recurse) {
+      $audioBefore[$file.FullName] = @((Get-FileHash -LiteralPath $file.FullName).Hash, $file.LastWriteTimeUtc.Ticks)
+    }
+    'before addon-only deploy' | Set-Content -LiteralPath $oldCore
+    'stale' | Set-Content -LiteralPath (Join-Path $voice 'obsolete.lua')
+    $previousBackups = @(Get-ChildItem -LiteralPath (Join-Path $fixture 'backups') -Directory).FullName
+    & $build -Task DeployAddon -Target ForeverBeta -ConfigPath $config
+    foreach ($file in Get-ChildItem -LiteralPath (Join-Path $fixture 'src') -File -Recurse) {
+      $relative = $file.FullName.Substring($sourcePrefix.Length)
+      Assert-True ((Get-FileHash -LiteralPath $file.FullName).Hash -eq
+        (Get-FileHash -LiteralPath (Join-Path $voice $relative)).Hash) "Addon-only deployment mismatch: $relative"
+    }
+    Assert-True (-not (Test-Path -LiteralPath (Join-Path $voice 'obsolete.lua'))) 'Addon-only deploy kept stale code.'
+    Assert-True (Test-Path -LiteralPath (Join-Path $voice '.idea\workspace.xml')) 'Addon-only deploy removed IDE state.'
+    $audioAfter = @(Get-ChildItem -LiteralPath $sounds, $catSounds -File -Recurse)
+    Assert-True ($audioAfter.Count -eq $audioBefore.Count) 'Addon-only deploy changed audio file count.'
+    foreach ($file in $audioAfter) {
+      Assert-True ($audioBefore.ContainsKey($file.FullName)) 'Addon-only deploy created an audio file.'
+      $before = $audioBefore[$file.FullName]
+      Assert-True ((Get-FileHash -LiteralPath $file.FullName).Hash -eq $before[0] -and
+        $file.LastWriteTimeUtc.Ticks -eq $before[1]) "Addon-only deploy wrote audio: $($file.Name)"
+    }
+    $addonBackups = @(Get-ChildItem -LiteralPath (Join-Path $fixture 'backups') -Directory |
+      Where-Object { $_.FullName -notin $previousBackups })
+    Assert-True ($addonBackups.Count -eq 1) 'Expected one addon-only backup.'
+    $addonBackup = $addonBackups[0].FullName
+    Assert-True ((Get-Content -LiteralPath (Join-Path $addonBackup 'WowVoiceTalkingHead\Core.lua') -Raw).Trim() -eq
+      'before addon-only deploy') 'Addon-only backup lost old code.'
+    Assert-True (@(Get-ChildItem -LiteralPath $addonBackup -Force).Count -eq 2 -and
+      (Test-Path -LiteralPath (Join-Path $addonBackup 'destination.txt'))) 'Addon-only backup contains unexpected files.'
+    Write-Host 'PASS: addon-only deploy without audio sources, runtime sync, backup, IDE state and untouched audio contents/timestamps.'
+
     & $build -Task PackageAddon
     $updateZip = @(Get-ChildItem -LiteralPath $release -Filter '*-addon-only.zip' -File)[0].FullName
     Assert-True ((Split-Path -Leaf $updateZip) -like 'WowVoiceTalkingHead-*-addon-only.zip') 'Addon-only package is missing the new project name.'

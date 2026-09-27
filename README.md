@@ -4,8 +4,8 @@
 Во время воспроизведения на экране отображаются портрет персонажа и текст реплики.
 Описание задания можно повторно прослушать кнопкой ▶ в журнале или списке заданий.
 
-**[Скачать полный архив](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.0.8-forever.5/WowVoiceTalkingHead-1.0.8-forever.5.zip)** ·
-**[Скачать addon-only](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.0.8-forever.5/WowVoiceTalkingHead-1.0.8-forever.5-addon-only.zip)** ·
+**[Скачать полный архив](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.0.8-forever.6/WowVoiceTalkingHead-1.0.8-forever.6.zip)** ·
+**[Скачать addon-only](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.0.8-forever.6/WowVoiceTalkingHead-1.0.8-forever.6-addon-only.zip)** ·
 [Инструкция](USER_README.md) ·
 [Сообщить об ошибке](https://github.com/olegbuchnev/WowVoiceTalkingHead/issues)
 
@@ -18,7 +18,9 @@
 ## Возможности
 
 - **Панель в стиле Retail.** Портрет собеседника, его имя и текст реплики.
-  Положение панели можно изменить в настройках.
+  Положение и масштаб панели (50–150%) можно изменить в настройках.
+  Девять точек на схеме задают привязку и неподвижную точку при масштабировании.
+  Поля X/Y позволяют точно задать её смещение относительно экрана.
 - **Более 4 900 заданий с озвучкой.** Классические истории и дополнительные квесты
   Forever из библиотек WowVoice и Cathey. Набор записей зависит от задания:
   озвучены не все этапы и реплики.
@@ -31,13 +33,13 @@
 
 ## Установка
 
-1. **[Скачайте полный архив](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.0.8-forever.5/WowVoiceTalkingHead-1.0.8-forever.5.zip)** —
+1. **[Скачайте полный архив](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.0.8-forever.6/WowVoiceTalkingHead-1.0.8-forever.6.zip)** —
    все необходимые звуки уже внутри.
 2. **Закройте игру** и скопируйте из архива три папки — `WowVoiceTalkingHead`,
    `WowVoiceSounds` и `CatVoices` — в `_classic_beta_/Interface/AddOns/`.
 3. **Запустите игру**, включите аддоны в списке модификаций и откройте задание у NPC.
 
-**Обновление:** [скачайте addon-only](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.0.8-forever.5/WowVoiceTalkingHead-1.0.8-forever.5-addon-only.zip),
+**Обновление:** [скачайте addon-only](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.0.8-forever.6/WowVoiceTalkingHead-1.0.8-forever.6-addon-only.zip),
 замените папку `WowVoiceTalkingHead` и выполните `/reload`. Если в выпуске
 обновилась звуковая библиотека, понадобится полный архив и перезапуск игры.
 
@@ -48,7 +50,7 @@
 
 Введите **`/wv options`** или откройте **Параметры → Модификации → WowVoice TalkingHead**,
 чтобы выбрать автозапуск при получении и сдаче заданий, настроить напоминания
-или переместить панель. Чтобы остановить реплику,
+или изменить положение и масштаб панели. Чтобы остановить реплику,
 нажмите крестик на панели. Повторить описание можно кнопкой ▶ у задания.
 
 Подробнее о настройках, звуке и решении проблем — в [инструкции](USER_README.md).

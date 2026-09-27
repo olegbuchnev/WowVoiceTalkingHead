@@ -79,7 +79,7 @@ playerSetUnitSuccess, modelLoadsImmediately = true, true
 WV:ToggleHeadPreview()
 local cameraRefreshes=head.Model.cameraRefreshes
 local previousSize=head.Model.width
-for _, dimensions in ipairs({{360,600,1},{1000,140,1},{470,160,2},{1000,600,.5}}) do
+for _, dimensions in ipairs({{360,600,1},{1000,140,1},{470,160,1.5},{1000,600,.5}}) do
     assert(WV:ApplyHeadSettings({width=dimensions[1],height=dimensions[2],scale=dimensions[3],
         x=10000,y=10000,enabled=true}))
     local model=head.Model

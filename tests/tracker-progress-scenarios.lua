@@ -180,9 +180,9 @@ send('PLAYER_ENTERING_WORLD')
 WV:SetAutoPlayAcceptEnabled(true)
 questID=192
 event('QUEST_DETAIL')
-assert(WowVoiceDB.listenedQuests[playerGUID][192], 'automatic descriptions count immediately too')
+assert(not WowVoiceDB.listenedQuests[playerGUID][192], 'automatic descriptions do not start a manual-play cooldown')
 change(192, 3)
-assert(not other.ProgressGlow.visible, 'automatic playback suppresses progress reminders too')
+assert(other.ProgressGlow.visible, 'automatic playback does not suppress progress reminders for another quest')
 finish(192)
 WV:SetAutoPlayTurnInEnabled(true)
 questID=861
@@ -201,7 +201,7 @@ assert(WV:ReplayQuest(90902))
 assert(WV:ReplayQuest(861))
 finish(861)
 assert(WowVoiceDB.listenedQuests[playerGUID][90902], 'replaced playback still counts')
-print('PASS: started descriptions persist per character even when closed/replaced; failures and turn-in lines do not count')
+print('PASS: manual description starts persist even when closed/replaced; autoplay, failures and turn-in lines do not start a cooldown')
 
 -- Actual options Test button previews every visible arrow, even heard quests
 -- and when the preference is disabled, without changing either saved state.
@@ -296,3 +296,120 @@ assert(not WowVoiceDB.listenedQuests[playerGUID][179])
 change(179, 3)
 assert(play.ProgressGlow.visible, 'legacy session marks do not prevent future reminders')
 print('PASS: absolute one-hour cooldown, exact expiry, replay renewal, failed starts, restart/reload/zoning, offline time and legacy migration')
+
+-- Last acceptance delays only that quest, and only until another quest changes.
+extra = row(90902)
+tracker:Update()
+supplemental = playFor(extra)
+local function accept(id)
+    assert(events.events.QUEST_ACCEPTED)
+    send('QUEST_ACCEPTED', id)
+    local recent = WowVoiceDB.lastAcceptedQuest[playerGUID]
+    assert(recent.questID == id and recent.acceptedAt == serverNow and not recent.otherProgress)
+    return recent
+end
+local function wallAdvance(seconds)
+    serverNow = serverNow + seconds
+    advance(seconds)
+end
+local function increment(id)
+    change(id, objectives[id][1].numFulfilled + 1)
+end
+accept(179)
+increment(179)
+assert(not play.ProgressGlow.visible, 'the last accepted quest waits five minutes')
+wallAdvance(299); increment(179)
+assert(not play.ProgressGlow.visible, 'the acceptance delay is still active at 4:59')
+wallAdvance(1); send('QUEST_LOG_UPDATE')
+assert(not play.ProgressGlow.visible, 'five-minute expiry alone must not create a reminder')
+increment(179)
+assert(play.ProgressGlow.visible, 'the next progress at five minutes can remind')
+wallAdvance(11)
+local recent = accept(192)
+increment(192)
+assert(not other.ProgressGlow.visible)
+increment(179)
+assert(play.ProgressGlow.visible and recent.otherProgress, 'another quest reminds immediately and removes the delay')
+increment(192)
+assert(other.ProgressGlow.visible and serverNow == recent.acceptedAt,
+    'returning to the latest quest reminds without waiting five minutes')
+wallAdvance(11)
+recent = accept(192)
+assert(not other.ProgressGlow.visible, 'reaccepting resets any old glow and the delay')
+increment(192); assert(not other.ProgressGlow.visible)
+send('QUEST_LOG_UPDATE')
+local cachedObjectives = objectives[179]
+objectives[179] = nil; send('QUEST_LOG_UPDATE')
+objectives[179] = cachedObjectives; send('QUEST_LOG_UPDATE')
+assert(not recent.otherProgress, 'unchanged events and objective cache misses do not remove the delay')
+-- Both quests can change in one coalesced event. Process the latest first to
+-- ensure journal order cannot suppress its reminder after another quest changes.
+quests = {192, 179, 90902, 999999}
+objectives[192][1].numFulfilled = objectives[192][1].numFulfilled + 1
+objectives[179][1].numFulfilled = objectives[179][1].numFulfilled + 1
+send('QUEST_LOG_UPDATE')
+assert(other.ProgressGlow.visible and play.ProgressGlow.visible and recent.otherProgress)
+wallAdvance(11)
+recent = accept(179)
+increment(999999)
+assert(recent.otherProgress, 'another quest without an audio recording also removes the delay')
+increment(179); assert(play.ProgressGlow.visible)
+-- Starting a newer quest replaces, rather than extends, the previous delay.
+wallAdvance(11)
+recent = accept(90902)
+increment(90902); assert(not supplemental.ProgressGlow.visible)
+increment(179); assert(play.ProgressGlow.visible)
+increment(90902); assert(supplemental.ProgressGlow.visible)
+-- Acceptance time and the other-quest flag survive loading screens/reloads,
+-- while objective baselines remain silent. Offline time counts toward five minutes.
+wallAdvance(11)
+recent = accept(179)
+wallAdvance(200)
+event('ADDON_LOADED'); send('PLAYER_LOGIN'); send('PLAYER_ENTERING_WORLD')
+assert(WowVoiceDB.lastAcceptedQuest[playerGUID] == recent and not recent.otherProgress)
+increment(179); assert(not play.ProgressGlow.visible)
+wallAdvance(100)
+send('PLAYER_ENTERING_WORLD')
+assert(not play.ProgressGlow.visible)
+increment(179); assert(play.ProgressGlow.visible)
+wallAdvance(11)
+recent = accept(179)
+increment(192); assert(recent.otherProgress)
+send('PLAYER_ENTERING_WORLD'); increment(179)
+assert(play.ProgressGlow.visible, 'the removed delay stays removed after reload')
+wallAdvance(11)
+recent = accept(179)
+local owner = playerGUID
+playerGUID = 'Player-3-NEW'
+send('PLAYER_ENTERING_WORLD'); increment(179)
+assert(play.ProgressGlow.visible and not WowVoiceDB.lastAcceptedQuest[playerGUID], 'last acceptance is per character')
+playerGUID = owner
+send('PLAYER_ENTERING_WORLD'); increment(179)
+assert(not play.ProgressGlow.visible and WowVoiceDB.lastAcceptedQuest[playerGUID] == recent)
+-- Disabled reminders keep observing progress but do not replay it on enable.
+WV:SetTrackerProgressPulseEnabled(false)
+increment(192); assert(recent.otherProgress and not other.ProgressGlow.visible)
+WV:SetTrackerProgressPulseEnabled(true)
+assert(not play.ProgressGlow.visible and not other.ProgressGlow.visible)
+increment(179); assert(play.ProgressGlow.visible)
+-- A manual Play has priority over both acceptance rules, even if closed early.
+play.scripts.OnClick()
+local deadline = WowVoiceDB.listenedQuests[playerGUID][179]
+assert(deadline == serverNow + 3600 and not play.ProgressGlow.visible)
+frames.WowVoiceTalkingHead.Close.scripts.OnClick()
+accept(179)
+increment(192); increment(179)
+assert(not play.ProgressGlow.visible, 'other-quest progress cannot bypass the manual-play hour')
+wallAdvance(301); increment(179)
+assert(not play.ProgressGlow.visible, 'the five-minute delay cannot bypass the manual-play hour')
+serverNow = deadline - 1
+increment(179); assert(not play.ProgressGlow.visible)
+serverNow = deadline
+send('QUEST_LOG_UPDATE'); assert(not play.ProgressGlow.visible)
+increment(179); assert(play.ProgressGlow.visible)
+-- Progress on a manually suppressed quest still removes another quest's delay.
+assert(WV:ReplayQuest(179)); WV:Silence()
+recent = accept(192)
+increment(179); assert(not play.ProgressGlow.visible and recent.otherProgress)
+increment(192); assert(other.ProgressGlow.visible)
+print('PASS: last acceptance waits five real minutes, other-quest progress removes the delay, coalesced order, silent baselines, no-audio quests, restart/offline persistence, character isolation and manual-hour priority')

@@ -238,7 +238,7 @@ preserved. Neither preference blocks manual description replay. Changing either
 preference does not interrupt or start the current recording.
 
 The on-screen quest tracker has small replay arrows to the left of voiced quest
-titles, including when styled by EllesmereUI. They replay the description using
+titles. They replay the description using
 the current quest ID and leave the tracker layout unchanged. The options page
 can hide these controls independently of journal buttons and the talking head;
 `WowVoiceDB.trackerButtons` defaults to true.
@@ -246,7 +246,7 @@ can hide these controls independently of journal buttons and the talking head;
 glow around those tracker buttons (`WowVoiceDB.trackerProgressPulse`, default
 true). Its checkbox is indented under the tracker-button option and disabled
 when the parent is off, preserving the saved reminder preference.
-Each objective change shows the standard gold ActionButton glow with its animated
+Each eligible objective change shows the standard gold ActionButton glow with its animated
 `IconAlertAnts` edge for 10 seconds. Size and opacity stay constant; there is no
 additional pulsing or fading.
 The triangle retains its normal 70% opacity (100% on hover); glow brightness is
@@ -255,15 +255,28 @@ Further progress restarts that 10-second window; unchanged quest-log updates,
 accepting a quest and login/reload do not trigger or extend reminders.
 Only quests with description audio get a glow. Hiding the controls or disabling
 the reminder immediately removes the glow. It never starts playback.
-Descriptions that successfully start playing, automatically or manually, suppress
+`QUEST_ACCEPTED` stores the last quest ID, absolute acceptance timestamp and an
+`otherProgress` flag in `WowVoiceDB.lastAcceptedQuest`, keyed by character GUID.
+Only that quest waits five real minutes before progress can trigger a reminder.
+Any objective change on a different quest removes the delay until the next acceptance,
+even if the other quest has no audio or is under a manual-play cooldown. All changed
+quests in a coalesced scan are collected before eligibility is evaluated, making
+simultaneous changes independent of journal order. Baselines stay current with the
+option disabled; acceptance, missing cache entries and unchanged snapshots do not
+count as progress. Reacceptance resets the latest quest's baseline and delay. Saved
+acceptance state survives reload/login, and offline time counts toward five minutes.
+Descriptions that successfully start through manual Play suppress
 reminders for that character and quest for one hour, even if closed early or
 replaced. `WowVoiceDB.listenedQuests` stores absolute expiry timestamps by player
 GUID and quest ID, using server time (or epoch time on older clients). Reload,
 zoning and full logout/login preserve the deadline; time spent offline counts.
-A successful replay renews the hour. Failed playback and turn-in lines do not
+A successful replay renews the hour. Autoplay, failed playback and turn-in lines do not
 start or extend it. Expiry alone does not show a glow: the next objective change
 can trigger one. Expired entries and legacy session booleans without timestamps
-are discarded. The autoplay preferences do not otherwise affect eligibility.
+are discarded. The manual-play cooldown takes priority over both acceptance rules.
+It is recorded in `ReplayQuest`, independently of the audio transport and portrait
+context; automatic `Playback:Play` calls do not establish or extend it. Existing
+unexpired timestamps from previous builds remain valid.
 «Тест / переместить» also previews the glow on all active tracker replay buttons,
 including heard quests and with the reminder preference disabled. The same animated
 glow stays visible until preview stops, options close, or real
@@ -305,6 +318,134 @@ The cross, right-click and manual stop dismiss the panel immediately, including
 during fade-out; late model loads cannot reveal a dismissed portrait.
 
 The default panel is 570 by 155 at 100% scale. Saved custom dimensions remain.
+The options page provides a 50–150% whole-panel scale slider and an integer
+percentage field (Enter applies; Escape or focus loss cancels edits). Dragging
+uses fractional percentages for continuous preview; the displayed percentage
+and the value committed on release are rounded to 1% steps.
+The first drag event (including a value callback delivered before mouse-down)
+opens an idle panel's silent test automatically. An existing test or real playback
+is reused without toggling, restarting or silencing it. An automatically opened
+preview starts the normal one-second end-of-line fade immediately on slider release.
+Successful numeric scale/coordinate entry shows it for two seconds before that fade;
+anchor selection also uses the two-second hold. Explicit Test mode remains open
+after these actions, and closing options leaves real playback running.
+Automatic preview identity and its hold deadline belong to the current playback
+object, so a replacement quest cannot inherit an old deadline. Repeated edits cancel
+the previous deadline/fade and reuse the model. Dragging holds the preview until
+release; mouse positioning starts a new two-second hold after release. Pressing Test
+during automatic preview promotes it to persistent Test mode without reloading.
+When `FontStringScaleAnimationMode.Vertex` is available, dragging moves the name
+and text scroll frame into a temporary layer with a fixed native effective scale.
+A constant looping Scale animation transforms that layer by requested/start scale,
+using the same ratio on both axes and a top-left origin. Font strings use Vertex
+mode so the glyph geometry scales without recomputing glyph widths or word spacing.
+The original text, wrapping and font sizes stay unchanged. Native child anchors
+and ScrollFrame clipping do not follow the glyph animation: title/body offsets,
+viewport size, scroll-child extent and scroll offset are therefore explicitly
+multiplied by the same ratio in the layer's fixed-scale units. Every update uses
+the captured values, avoiding cumulative drift; cleanup restores those values.
+Each changed preview scale stops the previous text transform before changing
+parent geometry. The transform restarts only after the final panel size, anchored
+position and scroll clipping have been applied, including non-central pivots.
+The portrait also keeps its original native effective scale while dragging by
+temporarily ignoring parent scale. Its viewport dimensions and anchor offsets
+use the same requested/start ratio, preserving the square aspect ratio without
+calling `RefreshCamera` on each step. Release, cancel, closing options or stopping
+playback restores the model's scale, size and anchors, stops the text transform
+and restores parents and font animation modes before normal final layout. `/wv diag` reports
+`Text scale preview: vertex` when this path was selected.
+Portrait loading and camera updates explicitly disable native model blending;
+player previews also pass `false` to `SetUnit`'s blend argument. This keeps reuse
+of the same PlayerModel consistent across player tests and NPC playback. Speaker
+capture/cache refresh requests arriving during a scale drag are coalesced and
+applied after release/cancellation, so they cannot clear the frozen model mid-drag.
+The last three drags retain a bounded, session-only diagnostic summary: camera
+refreshes, viewport resizes (`view`), load/reload requests, show/hide events, zero-alpha writes, sampled
+visibility/readiness, display changes, pause/blend state and playback completion.
+Read it with `/run WowVoice:HeadScaleDiagnostics()` (also included in `/wv diag`).
+Nothing is printed automatically or saved to SavedVariables. These counters trace
+addon/native events; they do not measure GPU flicker or prove its absence.
+
+Clients without Vertex support instead capture the current panel once through `OffScreenFrame:TakeSnapshot`
+and `ApplySnapshot` after allowing two render frames, then scales that texture.
+The source is hidden when capture succeeds so it cannot cover the texture.
+The latest requested slider value is applied as soon as the capture is ready.
+The live panel is temporarily
+parented to the offscreen capture at its original effective scale; its model,
+text and camera remain unchanged throughout the drag. Mouse release (including
+outside the slider) restores the live parent, applies the final scale and refreshes
+the portrait camera. Snapshots are limited to one and flushed after use.
+Failed capture is retried for at most six frames, then the live panel scales
+with its pose/text paused. Slider events are coalesced to the latest percentage
+once per frame; duplicate percentages do nothing. The live fallback calls only
+`RefreshCamera` after a scale change, preserving zoom, position and rotation
+instead of reapplying the portrait profile on every step.
+In this fallback, name, body and measuring font strings enable `SetSmoothScaling` only during a
+drag, when available, avoiding integer font-height jumps in the preview. Release
+or cancellation restores each font string's previous mode and reapplies the
+native font at the final effective scale; preview rendering is not kept afterward.
+Before changing that mode, a hidden font string measures complete word prefixes
+with the name/body's original font, spacing, width and scale. The preview fixes
+the current word wraps with explicit newlines and adds enough width to prevent
+additional automatic wraps, keeping multiline rendering enabled. Both the
+measured candidate and the displayed result must retain the original text height;
+otherwise the source remains unchanged. Unreproducible layouts (such as words
+spanning several lines) also retain their normal rendering. Release or cancellation
+restores the exact source text, widths and wrapping flags; the committed scale
+then receives its normal layout. Measurements happen once per drag.
+Live scaling refreshes the native scroll-child
+rectangle once per changed scale while retaining the frozen scroll offset and
+line layout; it does not reset text, fonts or widths during dragging.
+Unsupported capture uses this same live fallback. `/wv diag` reports the last
+capture status. Cancellation removes pending callbacks as well as the snapshot.
+The silent preview resumes its frozen clock; real audio continues and the text
+catches up on release. Closing options cancels the temporary scale and unpauses
+the model. Ending/replacing playback also clears the temporary state.
+The options page includes a panel outline with nine mutually exclusive 32-unit
+radio buttons: corners, edge midpoints and center.
+The controls use layered 128px `TempPortraitAlphaMask` circles instead of enlarging
+the legacy 16px radio sprites: a grey outer ring, dark center and gold selected dot.
+The coordinate area has one caption, without a repeated anchor name or keyboard hint.
+Numeric fields use `GameFontHighlightSmall` and a thin grey rectangular backdrop,
+matching the compact AceGUI slider fields seen in Questie's options.
+Selecting a point stores
+`headAnchor` and converts the current center into `{ point, point, x, y }` screen
+offsets in `headPosition`, without moving the panel. It opens an idle silent preview
+or reuses existing playback. The page scrolls vertically to keep every setting
+accessible at smaller UI sizes.
+The page groups panel geometry, quest autoplay and tracker controls into separate
+sections with headings and dividers. X/Y fields next to the diagram expose the
+chosen point's coordinates from UIParent's center, in UIParent units:
+positive X is right and positive Y is up. The legacy `GetHeadSettings().x/y` remain
+center-relative panel-center coordinates; `GetHeadAnchorPosition`/`SetHeadAnchorPosition`
+use selected-point coordinates with the same screen-center origin for all nine points.
+Changing selection changes the coordinates only by the distance between points on
+the panel, never by changing the coordinate origin. Existing saved edge-relative
+placement is read without moving the panel. Enter or the apply button validates both fields before changing anything;
+signed decimals accept either a dot or comma. Tab switches fields without discarding
+drafts, Escape/closing options discard them, and unrelated option refreshes preserve
+an active draft. Explicit positioning/scale actions discard the draft before refreshing.
+Applied values are read back after screen clamping, displayed to two decimal places
+without trailing zeroes. Coordinate entry opens idle preview without interrupting audio.
+During mouse movement in preview mode, only the coordinate fields refresh each frame,
+and only changed strings are rewritten. Starting a drag discards numeric drafts;
+release saves the position and normal preview cleanup clears the movement flag.
+The readout uses physical cursor displacement divided by the captured UI scale,
+added to the initial panel center and clamped to screen bounds. It therefore updates
+even when native StartMoving reports a stale frame rectangle until release. The final
+saved position comes from the native rectangle after StopMovingOrSizing.
+Scale changes preserve the chosen point of manually positioned panels. A drag
+captures its original screen position once, then derives each new center from
+that position and the scaled dimensions. Numeric input and release rounding use
+the same pivot. Screen clamping takes precedence when growth reaches an edge;
+reversing a drag uses the original pivot without accumulating clamp drift.
+Movement and horizontal centering retain the explicit point and rewrite its offsets.
+Existing center-based saved positions retain their behavior. The automatic default
+keeps following the action-bar boundary until a point is chosen or the panel is moved.
+The selector displays the current saved point, or bottom for automatic placement.
+Scale and position have separate reset buttons; position reset also clears the
+explicit anchor choice and restores automatic bottom placement. Saved legacy scale values are
+rounded to whole percentages and limited to the supported range when displayed.
 Starting the preview stops current playback, restores audio settings and opens
 the draggable player model without sound. A second click or closing options
 ends the preview; interrupted playback does not resume automatically.

@@ -5,11 +5,27 @@ local buttons, hooked = {}, {}
 local progress, pulses = {}, {}
 local REMINDER_DURATION = 10
 local LISTENED_COOLDOWN = 60 * 60
+local LAST_ACCEPTED_DELAY = 5 * 60
 local previewStarted
 
 local function currentTimestamp()
     -- Absolute time survives both /reload and a full client restart.
     return GetServerTime and GetServerTime() or time()
+end
+
+local function lastAcceptedQuest()
+    local guid = UnitGUID("player")
+    local records = WowVoiceDB and WowVoiceDB.lastAcceptedQuest
+    return records and guid and records[guid]
+end
+
+local function rememberAcceptedQuest(id)
+    local guid = UnitGUID("player")
+    if not (WowVoiceDB and guid and type(id) == "number" and id > 0) then return end
+    WowVoiceDB.lastAcceptedQuest = WowVoiceDB.lastAcceptedQuest or {}
+    WowVoiceDB.lastAcceptedQuest[guid] = { questID = id, acceptedAt = currentTimestamp(), otherProgress = false }
+    -- Reaccepting a quest starts a fresh baseline, never a progress reminder.
+    progress[id], pulses[id] = nil, nil
 end
 
 local function listenedQuests(incremental)
@@ -187,23 +203,37 @@ end
 local function scanProgress()
     local log = _G.C_QuestLog
     if not (log and log.GetNumQuestLogEntries and log.GetInfo and log.GetQuestObjectives) then return end
-    local present = {}
+    local present, changed = {}, {}
     local listened = listenedQuests(true) or {}
     for index = 1, log.GetNumQuestLogEntries() do
         local info = log.GetInfo(index)
         if info and not info.isHeader and info.questID and info.questID > 0 then
             local id = info.questID
             present[id] = true
-            if WV:HasQuestAudio(id) then
-                local state = objectiveState(id)
-                if state then
-                    if progress[id] and progress[id] ~= state and not listened[id] and pulseEnabled() then
-                        pulses[id] = GetTime()
-                    end
-                    -- Always keep the baseline current, even with reminders off.
-                    progress[id] = state
-                end
+            -- Progress on another quest removes the acceptance delay even if
+            -- that quest has no audio or is under its own manual-play cooldown.
+            local state = objectiveState(id)
+            if state then
+                if progress[id] and progress[id] ~= state then changed[id] = true end
+                -- Always keep the baseline current, even with reminders off.
+                progress[id] = state
             end
+        end
+        coroutine.yield()
+    end
+    local recent = lastAcceptedQuest()
+    -- Resolve all changes before choosing reminders, so coalesced updates do
+    -- not depend on which quest happened to come first in the journal.
+    if recent then
+        for id in pairs(changed) do
+            if id ~= recent.questID then recent.otherProgress = true end
+        end
+    end
+    for id in pairs(changed) do
+        local waiting = recent and id == recent.questID and not recent.otherProgress
+            and currentTimestamp() < recent.acceptedAt + LAST_ACCEPTED_DELAY
+        if not waiting and not listened[id] and pulseEnabled() and WV:HasQuestAudio(id) then
+            pulses[id] = GetTime()
         end
         coroutine.yield()
     end
@@ -240,9 +270,15 @@ local events = CreateFrame("Frame", "WowVoiceTrackerEvents")
 events:RegisterEvent("PLAYER_LOGIN")
 events:RegisterEvent("ADDON_LOADED")
 events:RegisterEvent("QUEST_LOG_UPDATE")
+events:RegisterEvent("QUEST_ACCEPTED")
 events:RegisterEvent("PLAYER_ENTERING_WORLD")
-events:SetScript("OnEvent", function(_, event)
-    if event == "QUEST_LOG_UPDATE" then
+events:SetScript("OnEvent", function(_, event, questId, legacyQuestId)
+    if event == "QUEST_ACCEPTED" then
+        rememberAcceptedQuest(legacyQuestId or questId)
+        WV.Work:Cancel("tracker-progress")
+        WV.Work:Queue("tracker-progress", scanProgress, 0.05)
+        WV:RefreshTrackerButtons()
+    elseif event == "QUEST_LOG_UPDATE" then
         WV.Work:Queue("tracker-progress", scanProgress, 0.05)
     elseif event == "PLAYER_ENTERING_WORLD" or event == "PLAYER_LOGIN" then
         -- Login/reload and loading screens establish a fresh, silent baseline.
