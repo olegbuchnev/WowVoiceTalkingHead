@@ -118,12 +118,24 @@ also listed on the project landing page. Development documentation is excluded f
 
 ### GitHub publication
 
+Show changes to the player-facing README to the user before pushing them.
+Publish those changes only after the user approves the preview. Keep its wording
+factual and avoid promotional slogans.
+
 Source repository: [olegbuchnev/WowVoiceTalkingHead](https://github.com/olegbuchnev/WowVoiceTalkingHead).
 Commit source changes and use `git push origin main` to publish them. Pushing
 source does not build or upload release archives. Publish the full and addon-only
 ZIPs as GitHub Release assets after the requested package builds; keep the pCloud
 copies as well. Do not attach local backups, deployment settings or extracted
 audio sources to the repository. Audio belongs in the full release ZIP.
+
+The player-facing README links directly to the full and addon-only ZIP assets
+using `/releases/download/<tag>/<filename>`, so clicking starts the download.
+For every release, update all corresponding download links in README.md (both
+the opening links and the installation/update instructions) to the published
+assets. Verify both URLs before pushing the approved README. Keep the previous
+working links until the replacement assets are published; do not change the
+addon version merely to refresh these links.
 
 Release assets include `SHA256SUMS.txt` for download integrity checks. Checksums
 verify that a download matches the published files; they are not an antivirus
