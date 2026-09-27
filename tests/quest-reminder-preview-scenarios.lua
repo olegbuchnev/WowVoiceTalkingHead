@@ -117,12 +117,31 @@ assert(#messages == count and not frame.visible)
 command('remindertest 179')
 frame.scripts.OnClick(frame)
 assert(not frame.visible and plays[#plays].file:find('179a.ogg', 1, true))
-assert(WowVoiceDB.listenedQuests[playerGUID][179], 'actual click retains normal manual-play cooldown')
+assert(not WowVoiceDB.listenedQuests or not WowVoiceDB.listenedQuests[playerGUID]
+    or not WowVoiceDB.listenedQuests[playerGUID][179], 'mock playback must not start a cooldown')
 assert(not replay[179].ProgressGlow.visible, 'click also clears test glow')
+WV:Silence()
+command('remindertest 179')
+updateAt(now + 6)
+assert(not frame.visible and replay[179].ProgressGlow.visible)
+replay[179].scripts.OnClick(replay[179])
+assert(not WowVoiceDB.listenedQuests or not WowVoiceDB.listenedQuests[playerGUID]
+    or not WowVoiceDB.listenedQuests[playerGUID][179], 'mock tracker click must not start a cooldown either')
+WV:Silence()
+assert(WV:ReplayQuest(179), 'ordinary replay still works after test ends')
 local deadline = WowVoiceDB.listenedQuests[playerGUID][179]
+assert(deadline == serverNow + 3600, 'ordinary replay still sets the real cooldown')
 command('remindertest 179')
 assert(replay[179].ProgressGlow.visible and WowVoiceDB.listenedQuests[playerGUID][179] == deadline,
     'mock can preview an existing cooldown without changing it')
+serverNow = serverNow + 30
+frame.scripts.OnClick(frame)
+assert(WowVoiceDB.listenedQuests[playerGUID][179] == deadline, 'mock playback never extends or clears a real cooldown')
+command('remindertest 192')
+updateAt(now + 11)
+assert(not WV:IsQuestReminderTest(192), 'expired mock cannot exempt later manual playback')
+assert(WV:ReplayQuest(192))
+assert(WowVoiceDB.listenedQuests[playerGUID][192] == serverNow + 3600)
 command('remindertest off')
 WV:Silence()
 UIErrorsFrame = nil

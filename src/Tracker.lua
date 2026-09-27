@@ -156,6 +156,21 @@ function WV:TestQuestReminder(id)
     self:RefreshTrackerButtons()
 end
 
+function WV:IsQuestReminderTest(id)
+    return (reminderPreview and reminderPreview:IsShown() and reminderPreview.isTest
+        and reminderPreview.questID == id)
+        or (reminderTestQuest == id and reminderTestStarted
+            and GetTime() - reminderTestStarted < REMINDER_DURATION)
+end
+
+function WV:FinishQuestReminderTest(id)
+    if reminderTestQuest == id then reminderTestQuest, reminderTestStarted = nil, nil end
+    if reminderPreview and reminderPreview.isTest and reminderPreview.questID == id then
+        reminderPreview:Hide()
+    end
+    self:RefreshTrackerButtons()
+end
+
 local function currentTimestamp()
     -- Absolute time survives both /reload and a full client restart.
     return GetServerTime and GetServerTime() or time()

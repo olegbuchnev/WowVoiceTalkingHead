@@ -307,8 +307,11 @@ It lasts five seconds including its fade, stays visible while hovered and starts
 a fresh five-second countdown on every mouse leave. Repeated tests also restart
 the timer. Tracker glow still lasts ten seconds.
 Showing it does not change quest progress, acceptance history or cooldowns.
-Clicking it performs a normal manual replay and therefore starts the one-hour
-cooldown. The mock bypasses acceptance and listened timers without modifying them.
+Clicking the mock line or that quest's tracker button while the mock is active
+plays its description without setting or extending the one-hour cooldown. An
+existing real cooldown remains intact. After the mock ends, ordinary manual Play
+uses the usual cooldown again. The mock bypasses acceptance and listened timers
+without modifying them.
 
 Replay buttons in the journal list, quest details and on-screen tracker are
 hidden when description audio is unavailable. A failed description playback

@@ -616,13 +616,20 @@ function WV:ReplayQuest(questId)
         return false
     end
     local key = questId .. "a"
+    -- A mock's card or highlighted tracker button previews the recording
+    -- without counting it as a real manual listen. Capture before playback
+    -- changes other preview state.
+    local isReminderTest = self.IsQuestReminderTest and self:IsQuestReminderTest(questId)
     local path, duration = self:SoundPath(questId, "a")
     dbg("журнал: повтор questID=%s key=%s path=%s", tostring(questId), key, path)
     local context = self.GetReplaySpeaker and self:GetReplaySpeaker(questId)
     local ok = Playback:Play(path, duration, context)
     -- Only an explicit Play starts the reminder cooldown. Automatic dialogue
     -- must not override the separate five-minute rule for the last acceptance.
-    if ok and self.MarkQuestListened then self:MarkQuestListened(questId) end
+    if ok then
+        if isReminderTest then self:FinishQuestReminderTest(questId)
+        elseif self.MarkQuestListened then self:MarkQuestListened(questId) end
+    end
     self:SetQuestAudioAvailable(questId, ok)
     self.lastKey = ok and key or nil
     if not ok then msg("не удалось воспроизвести описание квеста %d", questId) end
