@@ -13,7 +13,8 @@ local function send(name, ...)
     assert(not WV.Work.jobs['tracker-progress'], 'progress scan did not finish')
 end
 local quests = {179, 192, 90902, 999999}
-local objectives = {}
+local objectives, completed = {}, {}
+C_QuestLog.IsComplete = function(id) return completed[id] == true end
 for _, id in ipairs(quests) do
     objectives[id] = {{text='Targets: 0/10', type='monster', numFulfilled=0, numRequired=10, finished=false}}
 end
@@ -180,9 +181,13 @@ send('PLAYER_ENTERING_WORLD')
 WV:SetAutoPlayAcceptEnabled(true)
 questID=192
 event('QUEST_DETAIL')
-assert(not WowVoiceDB.listenedQuests[playerGUID][192], 'automatic descriptions do not start a manual-play cooldown')
+assert(WowVoiceDB.listenedQuests[playerGUID][192] == serverNow + 1800, 'automatic descriptions start the same 30-minute cooldown')
 change(192, 3)
-assert(other.ProgressGlow.visible, 'automatic playback does not suppress progress reminders for another quest')
+assert(not other.ProgressGlow.visible, 'the first kill after automatic playback must not remind')
+local autoDeadline = WowVoiceDB.listenedQuests[playerGUID][192]
+serverNow = serverNow + 1
+event('QUEST_DETAIL')
+assert(WowVoiceDB.listenedQuests[playerGUID][192] == autoDeadline, 'duplicate dialogue events do not renew the cooldown')
 finish(192)
 WV:SetAutoPlayTurnInEnabled(true)
 questID=861
@@ -201,7 +206,7 @@ assert(WV:ReplayQuest(90902))
 assert(WV:ReplayQuest(861))
 finish(861)
 assert(WowVoiceDB.listenedQuests[playerGUID][90902], 'replaced playback still counts')
-print('PASS: manual description starts persist even when closed/replaced; autoplay, failures and turn-in lines do not start a cooldown')
+print('PASS: manual and automatic descriptions share cooldown; duplicate events, failures and turn-in lines do not renew it')
 
 -- Actual options Test button previews every visible arrow, even heard quests
 -- and when the preference is disabled, without changing either saved state.
@@ -234,79 +239,83 @@ assert(not play.ProgressGlow.visible and not other.scripts.OnUpdate, 'portrait c
 assert(not WowVoiceDB.trackerProgressPulse, 'test never changes saved preference')
 print('PASS: options test keeps all active arrows glowing; close, toggle and real playback clean up')
 
--- A one-hour wall-clock cooldown survives logout, reload and zoning.
+-- A listening pause slides only while active and only for that quest's progress.
 WV:SetTrackerProgressPulseEnabled(true)
-local heardUntil=WowVoiceDB.listenedQuests[playerGUID][179]
-assert(heardUntil==serverNow+3600, 'successful playback stores an absolute one-hour deadline')
-WowVoiceDB.listenedQuests['Player-2-OTHER']={[192]=heardUntil}
-serverNow=heardUntil-3590
-now=0 -- A new client process has a different uptime.
-event('PLAYER_LOGOUT')
-send('PLAYER_LOGIN')
-send('PLAYER_ENTERING_WORLD', true, false)
-assert(WowVoiceDB.listenedQuests[playerGUID][179]==heardUntil)
-assert(WowVoiceDB.listenedQuests['Player-2-OTHER'][192]==heardUntil)
-assert(not play.ProgressGlow.visible, 'login itself does not start a reminder')
+assert(WV:ReplayQuest(179)); WV:Silence()
+local heardUntil = WowVoiceDB.listenedQuests[playerGUID][179]
+assert(heardUntil == serverNow + 1800)
+serverNow = serverNow + 60
 change(179, 9)
-assert(not play.ProgressGlow.visible, 'a full restart does not reset the cooldown')
-serverNow=heardUntil-1
-send('PLAYER_ENTERING_WORLD', false, true)
+local extended = WowVoiceDB.listenedQuests[playerGUID][179]
+assert(extended == serverNow + 1800 and extended == heardUntil + 60)
+assert(not play.ProgressGlow.visible, 'first item renews the active pause')
+serverNow = serverNow + 60
+send('QUEST_LOG_UPDATE'); tracker:Update()
+assert(WowVoiceDB.listenedQuests[playerGUID][179] == extended, 'unchanged events do not renew')
+change(192, 4)
+assert(WowVoiceDB.listenedQuests[playerGUID][179] == extended, 'other quests do not renew')
 change(179, 8)
-assert(not play.ProgressGlow.visible, 'reload preserves the remaining second')
-send('PLAYER_ENTERING_WORLD', false, false)
-change(179, 7)
-assert(not play.ProgressGlow.visible, 'zone transitions preserve the cooldown')
-serverNow=heardUntil
+extended = WowVoiceDB.listenedQuests[playerGUID][179]
+assert(extended == serverNow + 1800, 'second item renews the pause again')
+-- Reloads, zoning and other characters preserve rather than extend the deadline.
+local originalGUID = playerGUID
+WowVoiceDB.listenedQuests['Player-2-OTHER'] = {[179]=extended-10}
+serverNow = serverNow + 10
+now = 0
+send('PLAYER_LOGIN'); send('PLAYER_ENTERING_WORLD')
+assert(WowVoiceDB.listenedQuests[playerGUID][179] == extended)
+assert(WowVoiceDB.listenedQuests['Player-2-OTHER'][179] == extended-10)
+playerGUID = 'Player-2-OTHER'
+send('PLAYER_ENTERING_WORLD'); change(179, 7)
+assert(WowVoiceDB.listenedQuests[originalGUID][179] == extended, 'activity is per character')
+playerGUID = originalGUID
+send('PLAYER_ENTERING_WORLD')
+serverNow = extended-1
 send('QUEST_LOG_UPDATE')
-assert(not play.ProgressGlow.visible, 'expiry alone never lights the button')
+assert(not play.ProgressGlow.visible and WowVoiceDB.listenedQuests[playerGUID][179] == extended)
+serverNow = extended
+send('QUEST_LOG_UPDATE')
+assert(not play.ProgressGlow.visible, 'expiry alone is silent')
 change(179, 6)
-assert(play.ProgressGlow.visible and play.ProgressAnts.visible, 'progress at exactly one hour reminds again')
-assert(not WowVoiceDB.listenedQuests[playerGUID][179], 'expired records are pruned')
-assert(WV:ReplayQuest(179))
-frames.WowVoiceTalkingHead.Close.scripts.OnClick()
-assert(not play.ProgressGlow.visible and not play.ProgressAnts.visible)
-local firstDeadline=WowVoiceDB.listenedQuests[playerGUID][179]
-serverNow=serverNow+1800
-assert(WV:ReplayQuest(179))
-WV:Silence()
-local extended=WowVoiceDB.listenedQuests[playerGUID][179]
-assert(extended==serverNow+3600 and extended==firstDeadline+1800, 'replay starts a fresh hour')
-serverNow=firstDeadline
-change(179, 5)
-assert(not play.ProgressGlow.visible, 'the older deadline cannot end a renewed cooldown')
--- Failed starts neither create nor extend a cooldown.
-soundOK=false
+assert(play.ProgressGlow.visible and not WowVoiceDB.listenedQuests[playerGUID][179],
+    'progress after 30 quiet minutes reminds instead of renewing an expired pause')
+-- A real replay renews; failed playback does not.
+assert(WV:ReplayQuest(179)); WV:Silence()
+local firstDeadline = WowVoiceDB.listenedQuests[playerGUID][179]
+serverNow = serverNow + 900
+assert(WV:ReplayQuest(179)); WV:Silence()
+extended = WowVoiceDB.listenedQuests[playerGUID][179]
+assert(extended == firstDeadline+900)
+soundOK = false
 assert(not WV:ReplayQuest(179))
-assert(WowVoiceDB.listenedQuests[playerGUID][179]==extended)
-soundOK=true
-WV:SetQuestAudioAvailable(179,true)
--- Offline time counts; login still establishes a silent baseline.
+assert(WowVoiceDB.listenedQuests[playerGUID][179] == extended)
+soundOK = true
+WV:SetQuestAudioAvailable(179, true)
+-- Offline time counts and does not replay old progress at login.
 event('PLAYER_LOGOUT')
-serverNow=extended+600
-now=0
-send('PLAYER_LOGIN')
-send('PLAYER_ENTERING_WORLD', true, false)
+serverNow = extended+600
+now = 0
+send('PLAYER_LOGIN'); send('PLAYER_ENTERING_WORLD')
 assert(not play.ProgressGlow.visible and not WowVoiceDB.listenedQuests[playerGUID][179])
-change(179, 4)
-assert(play.ProgressGlow.visible, 'offline expiry allows the next objective change')
--- Legacy booleans carry no date: do not suppress reminders forever or invent a deadline.
-WowVoiceDB.listenedQuests[playerGUID][179]=true
+change(179, 5); assert(play.ProgressGlow.visible)
+-- Upgrade old one-hour deadlines once, retaining the original listening time.
+WowVoiceDB.reminderCooldown30Minutes = nil
+WowVoiceDB.listenedQuests[playerGUID] = {[179]=serverNow+3500, [192]=serverNow+1700, [90902]=true}
+WowVoiceDB.listenedQuests['Player-2-OTHER'] = {[179]=serverNow+3400}
 send('PLAYER_LOGIN')
-assert(not WowVoiceDB.listenedQuests[playerGUID][179])
-change(179, 3)
-assert(play.ProgressGlow.visible, 'legacy session marks do not prevent future reminders')
-print('PASS: absolute one-hour cooldown, exact expiry, replay renewal, failed starts, restart/reload/zoning, offline time and legacy migration')
+assert(WowVoiceDB.listenedQuests[playerGUID][179] == serverNow+1700)
+assert(not WowVoiceDB.listenedQuests[playerGUID][192] and not WowVoiceDB.listenedQuests[playerGUID][90902])
+assert(WowVoiceDB.listenedQuests['Player-2-OTHER'][179] == serverNow+1600)
+send('PLAYER_LOGIN')
+assert(WowVoiceDB.listenedQuests[playerGUID][179] == serverNow+1700, 'migration is not repeated')
+serverNow = serverNow+1800
+send('PLAYER_ENTERING_WORLD')
+print('PASS: sliding 30-minute pause, unchanged and other-quest events, character isolation, reload/offline expiry, replay/failure and migration')
 
--- Last acceptance delays only that quest, and only until another quest changes.
-extra = row(90902)
-tracker:Update()
-supplemental = playFor(extra)
+-- Acceptance only resets the baseline, without hidden timers or cross-quest rules.
 local function accept(id)
     assert(events.events.QUEST_ACCEPTED)
     send('QUEST_ACCEPTED', id)
-    local recent = WowVoiceDB.lastAcceptedQuest[playerGUID]
-    assert(recent.questID == id and recent.acceptedAt == serverNow and not recent.otherProgress)
-    return recent
 end
 local function wallAdvance(seconds)
     serverNow = serverNow + seconds
@@ -315,111 +324,41 @@ end
 local function increment(id)
     change(id, objectives[id][1].numFulfilled + 1)
 end
+WowVoiceDB.lastAcceptedQuest = {[playerGUID]={questID=179, acceptedAt=serverNow, otherProgress=false}}
 accept(179)
+assert(not play.ProgressGlow.visible, 'acceptance itself is silent')
 increment(179)
-assert(not play.ProgressGlow.visible, 'the last accepted quest waits five minutes')
-wallAdvance(299); increment(179)
-assert(not play.ProgressGlow.visible, 'the acceptance delay is still active at 4:59')
-wallAdvance(1); send('QUEST_LOG_UPDATE')
-assert(not play.ProgressGlow.visible, 'five-minute expiry alone must not create a reminder')
-increment(179)
-assert(play.ProgressGlow.visible, 'the next progress at five minutes can remind')
-wallAdvance(11)
-local recent = accept(192)
+assert(play.ProgressGlow.visible, 'first progress immediately after acceptance can remind')
+accept(192)
 increment(192)
-assert(not other.ProgressGlow.visible)
+assert(other.ProgressGlow.visible, 'newer acceptance adds no delay')
+accept(179)
+assert(not play.ProgressGlow.visible, 'reacceptance clears an old reminder')
 increment(179)
-assert(play.ProgressGlow.visible and recent.otherProgress, 'another quest reminds immediately and removes the delay')
-increment(192)
-assert(other.ProgressGlow.visible and serverNow == recent.acceptedAt,
-    'returning to the latest quest reminds without waiting five minutes')
-wallAdvance(11)
-recent = accept(192)
-assert(not other.ProgressGlow.visible, 'reaccepting resets any old glow and the delay')
-increment(192); assert(not other.ProgressGlow.visible)
-send('QUEST_LOG_UPDATE')
-local cachedObjectives = objectives[179]
-objectives[179] = nil; send('QUEST_LOG_UPDATE')
-objectives[179] = cachedObjectives; send('QUEST_LOG_UPDATE')
-assert(not recent.otherProgress, 'unchanged events and objective cache misses do not remove the delay')
--- Both quests can change in one coalesced event. Process the latest first to
--- ensure journal order cannot suppress its reminder after another quest changes.
-quests = {192, 179, 90902, 999999}
-objectives[192][1].numFulfilled = objectives[192][1].numFulfilled + 1
-objectives[179][1].numFulfilled = objectives[179][1].numFulfilled + 1
-send('QUEST_LOG_UPDATE')
-assert(other.ProgressGlow.visible and play.ProgressGlow.visible and recent.otherProgress)
-wallAdvance(11)
-recent = accept(179)
-increment(999999)
-assert(recent.otherProgress, 'another quest without an audio recording also removes the delay')
-increment(179); assert(play.ProgressGlow.visible)
--- Starting a newer quest replaces, rather than extends, the previous delay.
-wallAdvance(11)
-recent = accept(90902)
-increment(90902); assert(not supplemental.ProgressGlow.visible)
-increment(179); assert(play.ProgressGlow.visible)
-increment(90902); assert(supplemental.ProgressGlow.visible)
--- Acceptance time and the other-quest flag survive loading screens/reloads,
--- while objective baselines remain silent. Offline time counts toward five minutes.
-wallAdvance(11)
-recent = accept(179)
-wallAdvance(200)
-event('ADDON_LOADED'); send('PLAYER_LOGIN'); send('PLAYER_ENTERING_WORLD')
-assert(WowVoiceDB.lastAcceptedQuest[playerGUID] == recent and not recent.otherProgress)
-increment(179); assert(not play.ProgressGlow.visible)
-wallAdvance(100)
+assert(play.ProgressGlow.visible, 'reacceptance does not restart a hidden timer')
 send('PLAYER_ENTERING_WORLD')
-assert(not play.ProgressGlow.visible)
-increment(179); assert(play.ProgressGlow.visible)
-wallAdvance(11)
-recent = accept(179)
-increment(192); assert(recent.otherProgress)
-send('PLAYER_ENTERING_WORLD'); increment(179)
-assert(play.ProgressGlow.visible, 'the removed delay stays removed after reload')
-wallAdvance(11)
-recent = accept(179)
-local owner = playerGUID
-playerGUID = 'Player-3-NEW'
-send('PLAYER_ENTERING_WORLD'); increment(179)
-assert(play.ProgressGlow.visible and not WowVoiceDB.lastAcceptedQuest[playerGUID], 'last acceptance is per character')
-playerGUID = owner
-send('PLAYER_ENTERING_WORLD'); increment(179)
-assert(not play.ProgressGlow.visible and WowVoiceDB.lastAcceptedQuest[playerGUID] == recent)
--- Disabled reminders keep observing progress but do not replay it on enable.
-WV:SetTrackerProgressPulseEnabled(false)
-increment(192); assert(recent.otherProgress and not other.ProgressGlow.visible)
-WV:SetTrackerProgressPulseEnabled(true)
 assert(not play.ProgressGlow.visible and not other.ProgressGlow.visible)
-increment(179); assert(play.ProgressGlow.visible)
--- A manual Play has priority over both acceptance rules, even if closed early.
+increment(179)
+assert(play.ProgressGlow.visible, 'progress after reload ignores old acceptance history')
 play.scripts.OnClick()
 local deadline = WowVoiceDB.listenedQuests[playerGUID][179]
-assert(deadline == serverNow + 3600 and not play.ProgressGlow.visible)
+assert(deadline == serverNow + 1800 and not play.ProgressGlow.visible)
 frames.WowVoiceTalkingHead.Close.scripts.OnClick()
 accept(179)
 increment(192); increment(179)
-assert(not play.ProgressGlow.visible, 'other-quest progress cannot bypass the manual-play hour')
-wallAdvance(301); increment(179)
-assert(not play.ProgressGlow.visible, 'the five-minute delay cannot bypass the manual-play hour')
+assert(other.ProgressGlow.visible and not play.ProgressGlow.visible, 'other quests do not override a listening cooldown')
 serverNow = deadline - 1
 increment(179); assert(not play.ProgressGlow.visible)
-serverNow = deadline
+serverNow = WowVoiceDB.listenedQuests[playerGUID][179]
 send('QUEST_LOG_UPDATE'); assert(not play.ProgressGlow.visible)
 increment(179); assert(play.ProgressGlow.visible)
--- Progress on a manually suppressed quest still removes another quest's delay.
-assert(WV:ReplayQuest(179)); WV:Silence()
-recent = accept(192)
-increment(179); assert(not play.ProgressGlow.visible and recent.otherProgress)
-increment(192); assert(other.ProgressGlow.visible)
-print('PASS: last acceptance waits five real minutes, other-quest progress removes the delay, coalesced order, silent baselines, no-audio quests, restart/offline persistence, character isolation and manual-hour priority')
+print('PASS: immediate progress after acceptance, legacy acceptance history ignored, silent reload and preserved listening cooldown')
 
 -- The production notification shares the glow's eligibility and preference.
 -- Never duplicate Blizzard's yellow message when real progress is observed.
 UIErrorsFrame = CreateFrame('MessageFrame', 'UIErrorsFrame', UIParent)
 function UIErrorsFrame:GetFont() return 'system-font', 18, '' end
 function UIErrorsFrame:AddMessage() error('real progress must not emit a synthetic status message') end
-WowVoiceDB.lastAcceptedQuest[playerGUID] = nil
 WowVoiceDB.listenedQuests[playerGUID] = {}
 send('PLAYER_ENTERING_WORLD')
 local notice = frames.WowVoiceQuestReminderPreview
@@ -490,23 +429,74 @@ increment(179)
 accept(179)
 assert(not notice:IsShown(), 'reacceptance removes the old notification')
 wallAdvance(270); increment(179)
-assert(not notice:IsShown(), 'first progress at 4:30 remains silent')
+assert(notice:IsShown(), 'first progress at 4:30 has no acceptance delay')
 wallAdvance(60); increment(179)
 assert(notice:IsShown(), 'next progress at 5:30 shows the message')
 notice.scripts.OnClick(notice)
 assert(not notice:IsShown() and not play.ProgressGlow.visible)
-assert(WowVoiceDB.listenedQuests[playerGUID][179] == serverNow + 3600)
+assert(WowVoiceDB.listenedQuests[playerGUID][179] == serverNow + 1800)
 WV:Silence()
-wallAdvance(3599); increment(179)
-assert(not notice:IsShown(), 'manual play suppresses the notification for the whole hour')
-wallAdvance(1); increment(179)
-assert(notice:IsShown(), 'next progress at expiry can notify again')
+wallAdvance(1799); increment(179)
+assert(not notice:IsShown(), 'manual play suppresses the notification for the whole 30 minutes')
+wallAdvance(1800); increment(179)
+assert(notice:IsShown(), 'next progress after 30 quiet minutes can notify again')
 send('PLAYER_ENTERING_WORLD')
 assert(not notice:IsShown(), 'zone changes clear notification and establish a silent baseline')
 accept(179)
 increment(192)
 increment(179)
-assert(notice:IsShown() and notice.questID == 179, 'other-quest progress removes the message acceptance delay')
+assert(notice:IsShown() and notice.questID == 179, 'quest switching has no effect on eligibility')
+-- Final progress follows the same rules, including a return after two days.
+objectives[179] = {{text='Targets: 8/9', type='monster', numFulfilled=8, numRequired=9, finished=false}}
+completed[179] = false
+send('PLAYER_ENTERING_WORLD')
+assert(WV:ReplayQuest(179)); WV:Silence()
+event('PLAYER_LOGOUT')
+serverNow = serverNow + 2*24*60*60
+now = 0
+send('PLAYER_LOGIN'); send('PLAYER_ENTERING_WORLD')
+assert(not notice:IsShown() and not play.ProgressGlow.visible, 'returning at 8/9 establishes a silent baseline')
+objectives[179][1].text = 'Targets: 9/9'
+objectives[179][1].numFulfilled = 9
+objectives[179][1].finished = true
+completed[179] = true
+send('QUEST_WATCH_UPDATE', 179)
+assert(notice:IsShown() and play.ProgressGlow.visible, '9/9 after two days reminds after the listening pause has expired')
+local finalDeadline = notice.expiresAt
+notice.scripts.OnEnter(notice)
+send('QUEST_LOG_UPDATE')
+assert(notice:IsShown() and notice.expiresAt == finalDeadline, 'unchanged completion neither hides nor renews the reminder')
+notice.scripts.OnLeave(notice)
+advanceNotice(5)
+assert(not notice:IsShown())
+send('QUEST_LOG_UPDATE')
+assert(not notice:IsShown(), 'unchanged completed quests do not repeatedly remind')
+send('PLAYER_ENTERING_WORLD')
+assert(not notice:IsShown() and not play.ProgressGlow.visible, 'login at 9/9 is silent')
+-- Completing a quest during an active listening pause still suppresses both effects.
+completed[179] = false
+objectives[179][1].numFulfilled = 8
+objectives[179][1].finished = false
+send('PLAYER_ENTERING_WORLD')
+assert(WV:ReplayQuest(179)); WV:Silence()
+serverNow = serverNow + 60
+objectives[179][1].numFulfilled = 9
+objectives[179][1].finished = true
+completed[179] = true
+send('QUEST_WATCH_UPDATE', 179)
+assert(not notice:IsShown() and not play.ProgressGlow.visible, '9/9 respects the active pause')
+assert(WowVoiceDB.listenedQuests[playerGUID][179] == serverNow+1800, 'final progress renews an active pause like intermediate progress')
+-- A single non-counter escort objective can also remind after the pause expires.
+serverNow = serverNow + 1800
+objectives[179] = {{text='Escort in progress', type='event', finished=false}}
+completed[179] = false
+send('PLAYER_ENTERING_WORLD')
+objectives[179][1].text = 'Escort complete'
+objectives[179][1].finished = true
+completed[179] = true
+send('QUEST_LOG_UPDATE')
+assert(notice:IsShown() and play.ProgressGlow.visible, 'escort completion uses the same reminder rules')
+print('PASS: 8/9 to 9/9 after two days, completed baselines, unchanged events, active pause renewal and escort completion')
 for index, id in ipairs(quests) do
     if id == 179 then table.remove(quests, index); break end
 end
@@ -515,4 +505,4 @@ assert(not notice:IsShown(), 'removing the quest also removes its clickable noti
 increment(999999)
 assert(not notice:IsShown(), 'quests without audio remain silent')
 assert(WV.Work.errors == beforeErrors, 'production notifications must not fail inside the deferred scan')
-print('PASS: real reminder and glow share one option, no duplicate status/autoplay, renewal, hover target safety, native-event priority, lifecycle cleanup and five-minute/one-hour rules')
+print('PASS: real reminder and glow share one option, no duplicate status/autoplay, renewal, hover target safety, native-event priority, lifecycle cleanup and listening cooldown')

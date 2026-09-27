@@ -565,6 +565,9 @@ function WV:Speak(section, title, text, event)
     dbg("играю %s (квест %d, секция %s, длительность %s)",
         path, questId, section, dur and format("%.1f с", dur) or "неизвестна")
     local ok = Playback:Play(path, dur, context)
+    if ok and section == SECTION.accept and self.MarkQuestListened then
+        self:MarkQuestListened(questId)
+    end
     if section == SECTION.accept then self:SetQuestAudioAvailable(questId, ok) end
     if not ok then
         dbg("файл не проигрался: %s", path)
@@ -624,8 +627,7 @@ function WV:ReplayQuest(questId)
     dbg("журнал: повтор questID=%s key=%s path=%s", tostring(questId), key, path)
     local context = self.GetReplaySpeaker and self:GetReplaySpeaker(questId)
     local ok = Playback:Play(path, duration, context)
-    -- Only an explicit Play starts the reminder cooldown. Automatic dialogue
-    -- must not override the separate five-minute rule for the last acceptance.
+    -- Real descriptions, automatic or manual, share the reminder cooldown.
     if ok then
         if isReminderTest then self:FinishQuestReminderTest(questId)
         elseif self.MarkQuestListened then self:MarkQuestListened(questId) end

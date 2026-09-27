@@ -68,7 +68,7 @@ local function createPanel()
     scroll:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
     scroll:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -28, 0)
     local content = CreateFrame("Frame", nil, scroll)
-    content:SetSize(584, 820)
+    content:SetSize(584, 880)
     scroll:SetScrollChild(content)
     scroll:SetScript("OnSizeChanged", function(self, width)
         content:SetWidth(math.max(584, width))
@@ -326,8 +326,10 @@ local function createPanel()
     panel.TrackerProgressPulse.Label = label("Напоминать об озвучке при прогрессе",
         "GameFontHighlight", 70, -737, 484, 22)
     panel.TrackerProgressPulse.Description = label(
-        "Подсветка кнопки и «Вспомнить задание» под сообщением о прогрессе.",
-        "GameFontHighlightSmall", 70, -765, 484, 32)
+        "Подсветка кнопки и «Вспомнить задание» при прогрессе, включая последнюю цель.\n"
+            .. "После запуска описания — автоматически или вручную — пауза на 30 минут.\n"
+            .. "Прогресс по этому квесту продлевает действующую паузу ещё на 30 минут.",
+        "GameFontHighlightSmall", 70, -765, 484, 90)
     panel.TrackerProgressPulse:SetScript("OnClick", function(self)
         WV:SetTrackerProgressPulseEnabled(self:GetChecked() == true)
     end)

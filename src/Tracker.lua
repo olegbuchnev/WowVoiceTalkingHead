@@ -5,8 +5,7 @@ local buttons, hooked = {}, {}
 local progress, pulses = {}, {}
 local REMINDER_DURATION = 10
 local REMINDER_MESSAGE_DURATION = 5
-local LISTENED_COOLDOWN = 60 * 60
-local LAST_ACCEPTED_DELAY = 5 * 60
+local LISTENED_COOLDOWN = 30 * 60
 local previewStarted
 local reminderPreview
 local reminderTestQuest, reminderTestStarted
@@ -176,17 +175,8 @@ local function currentTimestamp()
     return GetServerTime and GetServerTime() or time()
 end
 
-local function lastAcceptedQuest()
-    local guid = UnitGUID("player")
-    local records = WowVoiceDB and WowVoiceDB.lastAcceptedQuest
-    return records and guid and records[guid]
-end
-
-local function rememberAcceptedQuest(id)
-    local guid = UnitGUID("player")
-    if not (WowVoiceDB and guid and type(id) == "number" and id > 0) then return end
-    WowVoiceDB.lastAcceptedQuest = WowVoiceDB.lastAcceptedQuest or {}
-    WowVoiceDB.lastAcceptedQuest[guid] = { questID = id, acceptedAt = currentTimestamp(), otherProgress = false }
+local function resetAcceptedQuest(id)
+    if type(id) ~= "number" or id <= 0 then return end
     -- Reaccepting a quest starts a fresh baseline, never a progress reminder.
     progress[id], pulses[id] = nil, nil
     if reminderPreview and reminderPreview.questID == id then reminderPreview:Hide() end
@@ -196,12 +186,22 @@ local function listenedQuests(incremental)
     local guid = UnitGUID("player")
     if not (WowVoiceDB and guid) then return end
     WowVoiceDB.listenedQuests = WowVoiceDB.listenedQuests or {}
+    if not WowVoiceDB.reminderCooldown30Minutes then
+        -- Previous builds stored one-hour deadlines. Keep the original start
+        -- time when shortening existing pauses, including other characters.
+        for _, quests in pairs(WowVoiceDB.listenedQuests) do
+            for id, expiresAt in pairs(quests) do
+                if type(expiresAt) == "number" then quests[id] = expiresAt - 30 * 60 end
+            end
+        end
+        WowVoiceDB.reminderCooldown30Minutes = true
+    end
     WowVoiceDB.listenedQuests[guid] = WowVoiceDB.listenedQuests[guid] or {}
     local listened = WowVoiceDB.listenedQuests[guid]
     local now = currentTimestamp()
     for id, expiresAt in pairs(listened) do
-        -- Old session booleans have no playback time and cannot establish a
-        -- one-hour deadline. Discard them along with expired timestamps.
+        -- Old session booleans have no playback time and cannot establish
+        -- a deadline. Discard them along with expired timestamps.
         if type(expiresAt) ~= "number" or not (expiresAt > now) then listened[id] = nil end
         if incremental then coroutine.yield() end
     end
@@ -375,8 +375,6 @@ local function scanProgress()
         if info and not info.isHeader and info.questID and info.questID > 0 then
             local id = info.questID
             present[id] = true
-            -- Progress on another quest removes the acceptance delay even if
-            -- that quest has no audio or is under its own manual-play cooldown.
             local state = objectiveState(id)
             if state then
                 if progress[id] and progress[id] ~= state then changed[id] = true end
@@ -386,19 +384,12 @@ local function scanProgress()
         end
         coroutine.yield()
     end
-    local recent = lastAcceptedQuest()
-    -- Resolve all changes before choosing reminders, so coalesced updates do
-    -- not depend on which quest happened to come first in the journal.
-    if recent then
-        for id in pairs(changed) do
-            if id ~= recent.questID then recent.otherProgress = true end
-        end
-    end
     local reminderID
     for id in pairs(changed) do
-        local waiting = recent and id == recent.questID and not recent.otherProgress
-            and currentTimestamp() < recent.acceptedAt + LAST_ACCEPTED_DELAY
-        if not waiting and not listened[id] and pulseEnabled() and WV:HasQuestAudio(id) then
+        -- Only a still-active listening pause slides with real progress.
+        -- After 30 quiet minutes the next change can remind again.
+        if listened[id] then listened[id] = currentTimestamp() + LISTENED_COOLDOWN end
+        if not listened[id] and pulseEnabled() and WV:HasQuestAudio(id) then
             pulses[id] = GetTime()
             -- Prefer the most recent native progress event; use a stable order
             -- when several changes arrive without QUEST_WATCH_UPDATE.
@@ -449,7 +440,7 @@ events:RegisterEvent("QUEST_ACCEPTED")
 events:RegisterEvent("PLAYER_ENTERING_WORLD")
 events:SetScript("OnEvent", function(_, event, questId, legacyQuestId)
     if event == "QUEST_ACCEPTED" then
-        rememberAcceptedQuest(legacyQuestId or questId)
+        resetAcceptedQuest(legacyQuestId or questId)
         WV.Work:Cancel("tracker-progress")
         WV.Work:Queue("tracker-progress", scanProgress, 0.05)
         WV:RefreshTrackerButtons()

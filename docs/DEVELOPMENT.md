@@ -242,6 +242,8 @@ titles. They replay the description using
 the current quest ID and leave the tracker layout unchanged. The options page
 can hide these controls independently of journal buttons and the talking head;
 `WowVoiceDB.trackerButtons` defaults to true.
+For the exact reminder decision order, saved-state semantics and examples, see
+[Алгоритм напоминаний об озвучке](QUEST_REMINDERS.md) (developer notes).
 «Напоминать об озвучке при прогрессе» enables both the silent gold glow around
 those tracker buttons and the replay notification (`WowVoiceDB.trackerProgressPulse`, default
 true). Its checkbox is indented under the tracker-button option and disabled
@@ -263,29 +265,31 @@ Repeated progress refreshes the line; a hovered line keeps its quest click targe
 even when another quest changes. Multiple changes prefer the latest
 `QUEST_WATCH_UPDATE` quest, falling back to stable quest-ID order. Abandoning a
 quest, reacceptance, loading screens, audio unavailability and manual replay clear
-its notification. The existing five-minute and one-hour rules apply to both effects.
-`QUEST_ACCEPTED` stores the last quest ID, absolute acceptance timestamp and an
-`otherProgress` flag in `WowVoiceDB.lastAcceptedQuest`, keyed by character GUID.
-Only that quest waits five real minutes before progress can trigger a reminder.
-Any objective change on a different quest removes the delay until the next acceptance,
-even if the other quest has no audio or is under a manual-play cooldown. All changed
-quests in a coalesced scan are collected before eligibility is evaluated, making
-simultaneous changes independent of journal order. Baselines stay current with the
-option disabled; acceptance, missing cache entries and unchanged snapshots do not
-count as progress. Reacceptance resets the latest quest's baseline and delay. Saved
-acceptance state survives reload/login, and offline time counts toward five minutes.
-Descriptions that successfully start through manual Play suppress
-reminders for that character and quest for one hour, even if closed early or
-replaced. `WowVoiceDB.listenedQuests` stores absolute expiry timestamps by player
+its notification. Final objective progress follows the same rules as intermediate
+progress: reaching 9/9 or finishing an escort can remind if no listening pause is
+active. Whole-quest completion does not hide or suppress the reminder. Unchanged
+completion events do not renew it; login with a completed quest stays silent.
+`QUEST_ACCEPTED` only resets the quest's baseline and existing reminder. There is
+no acceptance timer or cross-quest eligibility rule; old `lastAcceptedQuest` data
+is ignored. Baselines stay current with the option disabled; acceptance, missing
+cache entries and unchanged snapshots do not count as progress.
+Descriptions that successfully start automatically or through manual Play suppress
+reminders for that character and quest for 30 minutes, even if closed early or
+replaced. While that pause remains active, each objective change for the same quest
+renews it for another 30 minutes. After 30 minutes without progress, the next change
+can remind rather than silently renew an expired pause. Combat, other quests and
+unchanged snapshots do not extend it.
+`WowVoiceDB.listenedQuests` stores absolute expiry timestamps by player
 GUID and quest ID, using server time (or epoch time on older clients). Reload,
 zoning and full logout/login preserve the deadline; time spent offline counts.
-A successful replay renews the hour. Autoplay, failed playback and turn-in lines do not
+A successful replay renews the pause. Failed playback and turn-in lines do not
 start or extend it. Expiry alone does not show a glow: the next objective change
 can trigger one. Expired entries and legacy session booleans without timestamps
-are discarded. The manual-play cooldown takes priority over both acceptance rules.
-It is recorded in `ReplayQuest`, independently of the audio transport and portrait
-context; automatic `Playback:Play` calls do not establish or extend it. Existing
-unexpired timestamps from previous builds remain valid.
+are discarded. The pause is recorded by successful description playback in `Speak`
+and `ReplayQuest`, independently of the portrait. Duplicate dialogue events that
+do not start audio do not renew it. Existing one-hour timestamps are shortened by
+30 minutes once for all characters, preserving their original start time; the
+`reminderCooldown30Minutes` flag prevents repeating the migration.
 «Тест / переместить» also previews the glow on all active tracker replay buttons,
 including heard quests and with the reminder preference disabled. The same animated
 glow stays visible until preview stops, options close, or real
@@ -308,10 +312,10 @@ a fresh five-second countdown on every mouse leave. Repeated tests also restart
 the timer. Tracker glow still lasts ten seconds.
 Showing it does not change quest progress, acceptance history or cooldowns.
 Clicking the mock line or that quest's tracker button while the mock is active
-plays its description without setting or extending the one-hour cooldown. An
+plays its description without setting or extending the listening pause. An
 existing real cooldown remains intact. After the mock ends, ordinary manual Play
-uses the usual cooldown again. The mock bypasses acceptance and listened timers
-without modifying them.
+uses the usual cooldown again. The mock bypasses real reminder eligibility
+without modifying the listening pause.
 
 Replay buttons in the journal list, quest details and on-screen tracker are
 hidden when description audio is unavailable. A failed description playback
