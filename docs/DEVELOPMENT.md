@@ -118,6 +118,19 @@ also listed on the project landing page. Development documentation is excluded f
 
 ### GitHub publication
 
+The player website is hosted at https://olegbuchnev.github.io/WowVoiceTalkingHead/.
+Run `npm run build:site` (Node.js 24) to generate `artifacts/site/` locally.
+`tools/build-site.mjs` builds the landing page from README.md and the full guide
+from USER_README.md; download URLs and screenshots come from README.md as well.
+Keep its named sections (Installation, Features, Settings, CatQuest compatibility,
+and Credits, using their current Russian headings), or update the generator when
+renaming them. Presentation lives in `site/style.css`.
+
+`.github/workflows/pages.yml` publishes only the generated website on changes to
+its inputs on main. GitHub Pages uses the GitHub Actions publishing source.
+Do not upload the repository root, audio inputs, or release ZIPs to Pages.
+Updating the release links in README.md also updates the website automatically.
+
 Show changes to the player-facing README to the user before pushing them.
 Publish those changes only after the user approves the preview. Keep its wording
 factual and avoid promotional slogans.
