@@ -62,10 +62,27 @@ async function artifactInfo(url) {
   const dateText = new Intl.DateTimeFormat('ru-RU', {
     day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC',
   }).format(date);
-  return `<p class="artifact-meta"><a href="${escape(`${repository}/releases/tag/${encodeURIComponent(tag)}`)}" aria-label="Изменения в версии ${escape(tag.replace(/^v/, ''))}">Версия ${escape(tag.replace(/^v/, ''))}</a><br>Обновлён <time datetime="${date.toISOString()}">${dateText}</time></p>`;
+  return { tag, html: `<p class="artifact-meta"><a href="${escape(`${repository}/releases/tag/${encodeURIComponent(tag)}`)}" aria-label="Изменения в версии ${escape(tag.replace(/^v/, ''))}">Аддон: ${escape(tag.replace(/^v/, ''))}</a><br>Обновлён <time datetime="${date.toISOString()}">${dateText}</time></p>` };
 }
 const fullInfo = await artifactInfo(full);
 const addonInfo = await artifactInfo(addon);
+async function publishedAudioVersion(file, legacyVersions) {
+  // Read the source tagged for the downloadable FULL release, not main: an
+  // unreleased import or a newer addon-only build must not change these labels.
+  const response = await fetch(`https://raw.githubusercontent.com/olegbuchnev/WowVoiceTalkingHead/${encodeURIComponent(fullInfo.tag)}/${file}`, {
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!response.ok) throw Error(`Cannot read published audio metadata: ${file} (HTTP ${response.status})`);
+  const toc = await response.text();
+  const field = key => new RegExp(`^##[ \\t]+${key}:[ \\t]*(\\S+)`, 'm').exec(toc)?.[1];
+  const version = field('X-Source-Version') || legacyVersions[field('Version')];
+  if (!version) throw Error(`Unknown upstream audio version in ${fullInfo.tag}/${file}`);
+  return version;
+}
+const [wowVoiceVersion, catheyVersion] = await Promise.all([
+  publishedAudioVersion('soundpack/WowVoiceSounds.toc', { '1.0.3-forever.1': '1.0.1' }),
+  publishedAudioVersion('catvoices/CatVoices.toc', { '0.2.0-wowvoice.1': '0.2.0' }),
+]);
 const screenshots = tokens.filter(token => token.type === 'paragraph' && token.tokens?.[0]?.type === 'image');
 if (!screenshots.length) throw Error('README is missing screenshots');
 const sections = new Map();
@@ -103,14 +120,18 @@ function page(content, isGuide = false) {
           <a class="button primary" href="${escape(full)}">Скачать полный архив <span aria-hidden="true">↓</span></a>
           <div class="download-info">
             <p class="download-note">Для первой установки · со звуками</p>
-            ${fullInfo}
+            ${fullInfo.html}
+            <dl class="audio-versions" aria-label="Версии исходных паков озвучки в полном архиве">
+              <dt>Озвучка WowVoice:</dt><dd>${escape(wowVoiceVersion)}</dd>
+              <dt>Озвучка Cathey:</dt><dd>${escape(catheyVersion)}</dd>
+            </dl>
           </div>
         </div>
         <div class="download-card" role="group" aria-label="Обновление аддона без звуков">
           <a class="button" href="${escape(addon)}">Обновить аддон <span aria-hidden="true">↓</span></a>
           <div class="download-info">
             <p class="download-note">Без звуков · addon-only</p>
-            ${addonInfo}
+            ${addonInfo.html}
           </div>
         </div>
         <a class="mirror" href="${escape(mirror)}">Зеркало на pCloud ↗</a>

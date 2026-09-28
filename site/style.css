@@ -23,6 +23,9 @@ a:focus-visible { outline: 3px solid #a46b19; outline-offset: 5px; border-radius
 .artifact-meta a { font-size: 13px; font-weight: 600; text-decoration: none; }
 .artifact-meta a:hover { text-decoration: underline; }
 .artifact-meta time { font-variant-numeric: tabular-nums; }
+.audio-versions { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 8px; border-top: 1px solid var(--line); padding-top: 10px; margin: 12px 0 0; font-size: 12px; line-height: 1.6; }
+.audio-versions dt { color: var(--muted); text-align: right; }
+.audio-versions dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .mirror { font-size: 14px; }
 nav { display: grid; gap: 8px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 14px; }
 nav a { text-decoration: none; }
