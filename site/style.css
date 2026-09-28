@@ -15,7 +15,11 @@ a:focus-visible { outline: 3px solid #a46b19; outline-offset: 5px; border-radius
 .button:hover { background: #f1f6f3; }
 .primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .primary:hover { background: #1d503d; color: #fff; }
-.download-note { color: var(--muted); font-size: 12px; margin: 6px 0 16px; }
+.download-note { color: var(--muted); font-size: 12px; margin: 6px 0 8px; }
+.artifact-meta { color: var(--muted); font-size: 12px; line-height: 1.7; margin: 0 0 20px; }
+.artifact-meta a { font-size: 13px; font-weight: 600; text-decoration: none; }
+.artifact-meta a:hover { text-decoration: underline; }
+.artifact-meta time { font-variant-numeric: tabular-nums; }
 .mirror { font-size: 14px; }
 nav { display: grid; gap: 8px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 14px; }
 nav a { text-decoration: none; }
@@ -65,3 +69,4 @@ footer a { color: var(--muted); }
   h2 { font-size: 23px; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+@media (max-height: 820px) { .sidebar { position: static; } }

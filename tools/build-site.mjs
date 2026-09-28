@@ -34,6 +34,38 @@ const full = links.find(link => /\/releases\/download\/[^/]+\/[^/]+\.zip$/.test(
 const addon = links.find(link => link.endsWith('-addon-only.zip'));
 const mirror = links.find(link => link.startsWith('https://e.pcloud.link/'));
 if (!title || !intro || !full || !addon || !mirror) throw Error('README is missing the title, introduction or download links');
+// Resolve metadata for the exact downloads in README, which may use different releases.
+// Keep API calls in the build; visitors do not need JavaScript or a GitHub API request.
+const releases = new Map();
+async function artifactInfo(url) {
+  const prefix = `${repository}/releases/download/`;
+  if (!url.startsWith(prefix)) throw Error(`Unexpected download URL: ${url}`);
+  const tag = decodeURIComponent(url.slice(prefix.length).split('/')[0]);
+  if (!releases.has(tag)) {
+    const headers = { Accept: 'application/vnd.github+json', 'User-Agent': 'WowVoice-Pages' };
+    if (process.env.GITHUB_TOKEN) headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
+    const response = await fetch(`https://api.github.com/repos/olegbuchnev/WowVoiceTalkingHead/releases/tags/${encodeURIComponent(tag)}`, {
+      headers, signal: AbortSignal.timeout(15000),
+    });
+    if (!response.ok) throw Error(`Cannot load release ${tag}: HTTP ${response.status}`);
+    releases.set(tag, await response.json());
+  }
+  const release = releases.get(tag);
+  const asset = release.assets?.find(item => item.browser_download_url === url);
+  if (release.draft || release.prerelease || !release.published_at || asset?.state !== 'uploaded') {
+    throw Error(`Download is not a published release asset: ${url}`);
+  }
+  // Draft assets may be uploaded before publication, or replaced afterwards.
+  const timestamps = [release.published_at, asset.updated_at].map(value => Date.parse(value));
+  if (timestamps.some(value => !Number.isFinite(value))) throw Error(`Invalid publication date: ${url}`);
+  const date = new Date(Math.max(...timestamps));
+  const dateText = new Intl.DateTimeFormat('ru-RU', {
+    day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC',
+  }).format(date);
+  return `<p class="artifact-meta"><a href="${escape(`${repository}/releases/tag/${encodeURIComponent(tag)}`)}" aria-label="Изменения в версии ${escape(tag.replace(/^v/, ''))}">Версия ${escape(tag.replace(/^v/, ''))}</a><br>Обновлён <time datetime="${date.toISOString()}">${dateText}</time></p>`;
+}
+const fullInfo = await artifactInfo(full);
+const addonInfo = await artifactInfo(addon);
 const screenshots = tokens.filter(token => token.type === 'paragraph' && token.tokens?.[0]?.type === 'image');
 if (!screenshots.length) throw Error('README is missing screenshots');
 const sections = new Map();
@@ -69,8 +101,10 @@ function page(content, isGuide = false) {
       <div class="downloads" aria-label="Скачать аддон">
         <a class="button primary" href="${escape(full)}">Скачать полный архив <span aria-hidden="true">↓</span></a>
         <p class="download-note">Для первой установки · со звуками</p>
+        ${fullInfo}
         <a class="button" href="${escape(addon)}">Обновить аддон <span aria-hidden="true">↓</span></a>
         <p class="download-note">Без звуков · addon-only</p>
+        ${addonInfo}
         <a class="mirror" href="${escape(mirror)}">Зеркало на pCloud ↗</a>
       </div>
       <nav aria-label="Разделы сайта">

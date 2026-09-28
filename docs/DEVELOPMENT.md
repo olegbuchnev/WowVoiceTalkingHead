@@ -130,6 +130,16 @@ renaming them. Presentation lives in `site/style.css`.
 its inputs on main. GitHub Pages uses the GitHub Actions publishing source.
 Do not upload the repository root, audio inputs, or release ZIPs to Pages.
 Updating the release links in README.md also updates the website automatically.
+Each download button shows its own release version and artifact update date.
+The site builder queries GitHub Releases for the exact URLs in README.md, using
+the later of the release publication and asset update timestamps (displayed in UTC).
+These dates describe the archives, not when their audio recordings last changed.
+The build needs network access; `GITHUB_TOKEN` is optional locally and supplied by
+Actions. Missing/unpublished assets or API failures stop publication, preserving
+the existing site rather than displaying guessed dates. Updating README download
+links after publication refreshes this metadata automatically. After replacing an
+asset on an existing release, run the Publish website workflow manually if no
+README change follows.
 
 Show changes to the player-facing README to the user before pushing them.
 Publish those changes only after the user approves the preview. Keep its wording
