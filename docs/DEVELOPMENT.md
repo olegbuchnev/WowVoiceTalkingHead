@@ -104,13 +104,13 @@ a cloud folder named `WoWVoice`, then share the cloud folder's link. Each Packag
 build updates the local archive; pCloud handles uploading it. Synchronization
 and public sharing are configured separately in pCloud, not by the build script.
 
-Release folder link: [WowVoice TalkingHead on pCloud](http://e.pc.cd/ju6y6alK).
+Release folder link: [WowVoice TalkingHead on pCloud](https://e.pcloud.link/publink/show?code=ju6y6alK).
 
-To copy the short link in IntelliJ IDEA, hover over the block below in the
+To copy the folder link in IntelliJ IDEA, hover over the block below in the
 Markdown preview and click its copy button:
 
 ```text
-http://e.pc.cd/ju6y6alK
+https://e.pcloud.link/publink/show?code=ju6y6alK
 ```
 
 Keep this cloud folder and its shared link when updating releases. This link is
