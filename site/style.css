@@ -4,7 +4,7 @@ html { scroll-behavior: smooth; scroll-padding-top: 32px; }
 body { margin: 0; background: #fff; color: var(--ink); font: 16px/1.75 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
 a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 3px; }
 a:hover { color: #163e30; }
-a:focus-visible, summary:focus-visible { outline: 3px solid #a46b19; outline-offset: 5px; border-radius: 2px; }
+a:focus-visible { outline: 3px solid #a46b19; outline-offset: 5px; border-radius: 2px; }
 .layout { display: grid; grid-template-columns: 254px minmax(0, 730px); gap: 88px; max-width: 1168px; margin: 0 auto; padding: 72px 48px 40px; }
 .sidebar { position: sticky; top: 56px; align-self: start; }
 .brand { display: block; color: var(--ink); text-decoration: none; font-size: 33px; font-weight: 700; line-height: 1.15; letter-spacing: -1.3px; }
@@ -32,7 +32,6 @@ p { margin: 0 0 18px; }
 .screenshots { margin: 28px 0 38px; }
 img { display: block; max-width: 100%; height: auto; border-radius: 5px; }
 .screenshots p { margin: 14px 0; }
-summary { cursor: pointer; color: var(--muted); font-size: 13px; width: fit-content; }
 section { border-top: 1px solid var(--line); padding-top: 30px; margin-top: 32px; }
 ol, ul { padding-left: 23px; margin: 0 0 20px; }
 li { padding-left: 4px; margin-bottom: 12px; }

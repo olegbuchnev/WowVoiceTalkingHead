@@ -88,8 +88,7 @@ function page(content, isGuide = false) {
 </html>
 `;
 }
-const gallery = markdown.parse(screenshots[0].raw) + (screenshots.length > 1
-  ? `<details class="gallery"><summary>Ещё примеры из игры</summary>${markdown.parse(screenshots.slice(1).map(token => token.raw).join('\n\n'))}</details>` : '');
+const gallery = markdown.parse(screenshots.map(token => token.raw).join('\n\n'));
 const content = `<div class="intro"><p class="eyebrow">WoW Forever Beta</p><h1>Квесты с русской озвучкой</h1>${markdown.parse(intro)}</div>
   <div class="screenshots">${gallery}</div>
   ${section('Установка', 'installation')}
