@@ -99,12 +99,20 @@ function page(content, isGuide = false) {
       <a class="brand" href="./">WowVoice<span>TalkingHead</span></a>
       <p class="tagline">Русская озвучка квестов<br>для WoW Forever Beta</p>
       <div class="downloads" aria-label="Скачать аддон">
-        <a class="button primary" href="${escape(full)}">Скачать полный архив <span aria-hidden="true">↓</span></a>
-        <p class="download-note">Для первой установки · со звуками</p>
-        ${fullInfo}
-        <a class="button" href="${escape(addon)}">Обновить аддон <span aria-hidden="true">↓</span></a>
-        <p class="download-note">Без звуков · addon-only</p>
-        ${addonInfo}
+        <div class="download-card" role="group" aria-label="Полный архив со звуками">
+          <a class="button primary" href="${escape(full)}">Скачать полный архив <span aria-hidden="true">↓</span></a>
+          <div class="download-info">
+            <p class="download-note">Для первой установки · со звуками</p>
+            ${fullInfo}
+          </div>
+        </div>
+        <div class="download-card" role="group" aria-label="Обновление аддона без звуков">
+          <a class="button" href="${escape(addon)}">Обновить аддон <span aria-hidden="true">↓</span></a>
+          <div class="download-info">
+            <p class="download-note">Без звуков · addon-only</p>
+            ${addonInfo}
+          </div>
+        </div>
         <a class="mirror" href="${escape(mirror)}">Зеркало на pCloud ↗</a>
       </div>
       <nav aria-label="Разделы сайта">
