@@ -11,7 +11,8 @@ that pack. Original WowVoice recordings always take priority.
 This build targets **WoW Forever Beta, Interface 16001**.
 
 The in-game title is **WowVoice TalkingHead**, and its addon ID and folder are
-`WowVoiceTalkingHead`. The command remains `/wv`; audio folders are `WowVoiceSounds`
+`WowVoiceTalkingHead`. The command `/thead` opens settings; `/thead help` lists commands.
+The original `/wv` and `/wowvoice` aliases are not registered; audio folders are `WowVoiceSounds`
 and `CatVoices`.
 The cloud sync directory also retains its existing name and shared link.
 
@@ -140,6 +141,11 @@ the existing site rather than displaying guessed dates. Updating README download
 links after publication refreshes this metadata automatically. After replacing an
 asset on an existing release, run the Publish website workflow manually if no
 README change follows.
+The full-download card also shows the upstream WowVoice and Cathey audio versions,
+using the same labels as the in-game options. The site reads sound TOCs from the
+full download's release tag, not from main or a newer addon-only tag. It prefers
+`X-Source-Version` and recognizes the exact legacy pack versions described below;
+unknown source versions stop the build rather than publishing a guessed number.
 
 Show changes to the player-facing README to the user before pushing them.
 Publish those changes only after the user approves the preview. Keep its wording
@@ -184,7 +190,7 @@ replace API and visual verification in the Forever client.
 
 ## Playback and background sound
 
-The default `/wv channel auto` selects the playback channel for each recording.
+The default `/thead channel auto` selects the playback channel for each recording.
 With `Sound_EnableSoundWhenGameIsInBG=1`, it uses Master and keeps zone music
 playing. During the recording, Master volume is multiplied by the user's original
 Dialog volume (100% Master and 30% Dialog becomes 30% Master). This also lowers
@@ -198,14 +204,14 @@ replaces zone music. Both paths restore their temporary settings on stop,
 completion, logout or an explicit playback failure. Settings manually changed
 during playback are preserved if they differ from the addon's temporary values.
 Consecutive recordings use the original values rather than repeatedly reducing
-volume. `/wv volume 0..1` is an additional Dialog-relative multiplier in both paths
+volume. `/thead volume 0..1` is an additional Dialog-relative multiplier in both paths
 (default 1). NPC Dialog suppression applies to both playback paths,
-unless `/wv duck off` is selected.
+unless `/thead duck off` is selected.
 
 Changing the background preference does not restart or move the current voice;
 the next recording uses the new preference. If background sound is disabled
 during a Master recording, minimizing can still interrupt that recording.
-`/wv channel sound` and `/wv channel music` retain their explicit overrides.
+`/thead channel sound` and `/thead channel music` retain their explicit overrides.
 PlayMusic can report less reliable file availability than PlaySoundFile; an
 explicit failure is handled, but a successful return cannot prove audibility.
 
@@ -239,8 +245,8 @@ and remains enabled in combat. Login/world entry resets the silent baseline and
 cancels an older scan. Progress changes within one coalescing window are observed
 as the latest state. Playback and the golden reminder animation are not queued.
 
-`/wv perf` reports session-local pending work, maximum slice duration, overruns,
-errors, and per-job total/max step time. `/wv diag` includes the same report.
+`/thead perf` reports session-local pending work, maximum slice duration, overruns,
+errors, and per-job total/max step time. `/thead diag` includes the same report.
 The measurements cover this queue, not total frame time or all other addons.
 Regression tests verify budget sharing, combat behavior, idle shutdown, native
 overrun reporting, and 100 inventory queries for 25 quests/100 slots (previously
@@ -349,7 +355,7 @@ including heard quests and with the reminder preference disabled. The same anima
 glow stays visible until preview stops, options close, or real
 playback replaces the preview. Hidden tracker controls remain hidden.
 
-`/wv remindertest [questID]` previews the same replay notification below
+`/thead remindertest [questID]` previews the same replay notification below
 `UIErrorsFrame`, together with a yellow test message showing that quest's first
 objective. Without an ID it randomly selects a voiced journal quest whose replay
 button is currently visible in the tracker (including parent visibility, alpha
@@ -442,7 +448,7 @@ temporarily ignoring parent scale. Its viewport dimensions and anchor offsets
 use the same requested/start ratio, preserving the square aspect ratio without
 calling `RefreshCamera` on each step. Release, cancel, closing options or stopping
 playback restores the model's scale, size and anchors, stops the text transform
-and restores parents and font animation modes before normal final layout. `/wv diag` reports
+and restores parents and font animation modes before normal final layout. `/thead diag` reports
 `Text scale preview: vertex` when this path was selected.
 Portrait loading and camera updates explicitly disable native model blending;
 player previews also pass `false` to `SetUnit`'s blend argument. This keeps reuse
@@ -452,7 +458,7 @@ applied after release/cancellation, so they cannot clear the frozen model mid-dr
 The last three drags retain a bounded, session-only diagnostic summary: camera
 refreshes, viewport resizes (`view`), load/reload requests, show/hide events, zero-alpha writes, sampled
 visibility/readiness, display changes, pause/blend state and playback completion.
-Read it with `/run WowVoice:HeadScaleDiagnostics()` (also included in `/wv diag`).
+Read it with `/run WowVoice:HeadScaleDiagnostics()` (also included in `/thead diag`).
 Nothing is printed automatically or saved to SavedVariables. These counters trace
 addon/native events; they do not measure GPU flicker or prove its absence.
 
@@ -486,7 +492,7 @@ then receives its normal layout. Measurements happen once per drag.
 Live scaling refreshes the native scroll-child
 rectangle once per changed scale while retaining the frozen scroll offset and
 line layout; it does not reset text, fonts or widths during dragging.
-Unsupported capture uses this same live fallback. `/wv diag` reports the last
+Unsupported capture uses this same live fallback. `/thead diag` reports the last
 capture status. Cancellation removes pending callbacks as well as the snapshot.
 The silent preview resumes its frozen clock; real audio continues and the text
 catches up on release. Closing options cancels the temporary scale and unpauses
@@ -542,7 +548,7 @@ ends the preview; interrupted playback does not resume automatically.
 The default position is bottom center above the action bars, following Retail's
 `BottomManagedFrameContainer` without joining Blizzard's alert stack. If its
 coordinates are unavailable, the anchor falls back to 96 UI units above the
-bottom edge. Saved positions take priority; `/wv head reset` restores the default.
+bottom edge. Saved positions take priority; `/thead head reset` restores the default.
 Opening an unmoved preview preserves the automatic anchor.
 
 The default geometry uses a 115 by 115 model at (21, -21), the name at (152, -25),
@@ -579,7 +585,7 @@ Unrecognized models or unavailable APIs keep the original framing.
 [WoW community listfile](https://github.com/wowdev/wow-listfile/releases/tag/202609242243).
 Only model identities are derived from that source. Regenerate the table with
 `node tools/build-camera-models.js <community-listfile.csv>` using that release.
-`PortraitCameraOverrides` allows individual model corrections; `/wv diag`
+`PortraitCameraOverrides` allows individual model corrections; `/thead diag`
 includes the current model file ID and camera profile.
 
 ## Quest speaker recovery
@@ -682,6 +688,20 @@ destination. Restore older Classic audio from its original archive if needed.
 
 ## Release package
 
+The options header shows the addon version and the upstream audio pack versions,
+read from each installed pack's `X-Source-Version` TOC metadata. Audio import tools
+copy this field from the original TOC and preserve its filename in `X-Source-TOC`.
+Classic imports prefer `WowVoiceSounds_Vanilla.toc` over the generic TOC; the
+original Classic 1.15 archive has version 1.0.1 in that client-specific TOC and
+0.1.0 in the generic one. All 10,891 bundled Classic recordings match that archive
+byte-for-byte. Cathey's supplemental recordings come from CatQuest_Voices 0.2.0.
+
+Older published packs without source metadata are recognized by their exact
+adaptation versions (WowVoiceSounds 1.0.3-forever.1 and CatVoices 0.2.0-wowvoice.1).
+Unknown versions are not guessed by stripping suffixes. Labels use the installed
+WowVoiceSounds/CatVoices packs, never a separately installed CatQuest addon or the
+latest online release. There is no separate combined database revision.
+
 Package creates a ZIP archive, using the version from `src/WowVoiceTalkingHead.toc`:
 
 ```text
@@ -731,12 +751,12 @@ The separate Story modules are commented out in CatQuest's own 0.2.0 TOC.
 This uses CatQuest's initialized settings table, with no required/optional
 TOC dependency, private namespace access or upstream file edits. A late
 CatQuest ADDON_LOADED event defers synchronization until its handler finishes;
-PLAYER_LOGIN also synchronizes. `/wv off` and PLAYER_LOGOUT restore the original
-flags before serialization; `/wv on` captures and suppresses them again. Manual
+PLAYER_LOGIN also synchronizes. `/thead off` and PLAYER_LOGOUT restore the original
+flags before serialization; `/thead on` captures and suppresses them again. Manual
 changes away from the temporary false value are preserved on restoration.
 CatQuest settings remain editable: manually re-enabling its quest autoplay can
 allow simultaneous playback until the next takeover/reload. Manual reading is
-independent and is not stopped when WowVoice starts. `/wv diag` reports takeover.
+independent and is not stopped when WowVoice starts. `/thead diag` reports takeover.
 
 Audio packs remain independent. WowVoice does not read CatQuest_Voices at runtime,
 and CatQuest does not use WowVoiceSounds/CatVoices. Either addon works alone.

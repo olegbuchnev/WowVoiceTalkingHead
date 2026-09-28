@@ -3,6 +3,18 @@ event('ADDON_LOADED')
 WowVoiceDB.autoPlayAccept = true -- Exercise opted-in automatic descriptions.
 assert(WowVoiceDB.debug==false and WowVoiceDB.ducknpc==true)
 print('PASS: previously saved debug=true resets on addon load')
+assert(SLASH_WOWVOICETALKINGHEAD1 == '/thead')
+assert(SLASH_WOWVOICE1 == nil and SLASH_WOWVOICE2 == nil and SlashCmdList.WOWVOICE == nil,
+    'original WowVoice slash commands must remain available to their owner')
+local openOptions, opened = WowVoice.OpenOptions, 0
+WowVoice.OpenOptions = function() opened = opened + 1 end
+command(''); command('   '); command('options')
+assert(opened == 3, '/thead without arguments must open settings')
+messages = {}
+command('help')
+assert(opened == 3 and has('/thead help'), '/thead help must show help without opening settings')
+WowVoice.OpenOptions = openOptions
+print('PASS: /thead opens settings, help remains accessible, original aliases are not registered')
 command('debug on'); command('debug on'); assert(WowVoiceDB.debug)
 command('diag')
 assert(has('бесплатный аудиопак: лицензия не требуется'))

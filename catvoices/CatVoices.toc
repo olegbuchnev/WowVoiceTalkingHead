@@ -5,3 +5,5 @@
 ## Notes: Russian Forever quest audio for WowVoice TalkingHead; quests already in the Classic pack are excluded.
 ## Author: Cathey (daniilcathey) - t.me/catheyco; WowVoice Forever adaptation
 ## Version: 0.2.0-wowvoice.1
+## X-Source-Version: 0.2.0
+## X-Source-TOC: CatQuest_Voices.toc

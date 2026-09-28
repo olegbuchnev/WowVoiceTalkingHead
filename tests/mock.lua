@@ -59,7 +59,7 @@ function tick(t)
     local f=frames.WowVoiceTicker
     if f.visible then f.scripts.OnUpdate() end
 end
-function command(s) SlashCmdList.WOWVOICE(s) end
+function command(s) SlashCmdList.WOWVOICETALKINGHEAD(s) end
 function has(s)
     for _,m in ipairs(messages) do if m:find(s,1,true) then return true end end
     return false

@@ -2,6 +2,36 @@
 local WV = _G.WowVoice
 local panel, category
 
+-- Previously published packs predate explicit upstream version metadata.
+local legacySourceVersions = {
+    WowVoiceSounds = { ["1.0.3-forever.1"] = "1.0.1" },
+    CatVoices = { ["0.2.0-wowvoice.1"] = "0.2.0" },
+}
+
+local function refreshVersions()
+    local metadata = (C_AddOns and C_AddOns.GetAddOnMetadata) or GetAddOnMetadata
+    local function field(addon, key)
+        local value = metadata and metadata(addon, key)
+        return type(value) == "string" and value ~= "" and value or nil
+    end
+    local width = 0
+    for addon, text in pairs(panel.VersionLabels) do
+        local installed = field(addon, "Version")
+        local version = installed
+        if legacySourceVersions[addon] then
+            version = field(addon, "X-Source-Version") or legacySourceVersions[addon][installed]
+        end
+        if not version then
+            version = metadata and not installed and not field(addon, "Title")
+                and "не установлен" or "версия не указана"
+        end
+        text:SetWidth(124)
+        text:SetText(version)
+        width = math.max(width, math.ceil(text:GetStringWidth()) + 2)
+    end
+    for _, text in pairs(panel.VersionLabels) do text:SetWidth(math.min(124, width)) end
+end
+
 local function status(text)
     panel.Status:SetText(text or "")
 end
@@ -84,10 +114,29 @@ local function createPanel()
         fs:SetText(text)
         return fs
     end
-    label(WV.displayName, "GameFontNormalLarge", 16, -16, 560, 28)
+    label(WV.displayName, "GameFontNormalLarge", 16, -16, 280, 28)
+    panel.VersionLabels = {}
+    for index, item in ipairs({
+        { "WowVoiceTalkingHead", "Аддон" },
+        { "WowVoiceSounds", "Озвучка WowVoice" },
+        { "CatVoices", "Озвучка Cathey" },
+    }) do
+        local text = label("", "GameFontHighlightSmall", 0, 0, 124, 12)
+        text:ClearAllPoints()
+        text:SetPoint("TOPRIGHT", content, "TOPRIGHT", 0, -16 - (index - 1) * 13)
+        text:SetJustifyH("LEFT")
+        text:SetTextColor(0.7, 0.7, 0.7)
+        local caption = label(item[2] .. ":", "GameFontHighlightSmall", 0, 0, 112, 12)
+        caption:ClearAllPoints()
+        caption:SetPoint("TOPRIGHT", text, "TOPLEFT", -8, 0)
+        caption:SetJustifyH("RIGHT")
+        caption:SetTextColor(0.7, 0.7, 0.7)
+        panel.VersionLabels[item[1]] = text
+    end
+    refreshVersions()
     label("При перетаскивании масштаба предпросмотр появится автоматически.\n"
         .. "«Тест / переместить» позволяет перетащить окно. Положение сохраняется.",
-        "GameFontHighlightSmall", 20, -52, 540, 32)
+        "GameFontHighlightSmall", 20, -58, 540, 28)
     local function section(text, y)
         label(text, "GameFontNormalLarge", 20, y, 540, 22)
         local line = content:CreateTexture(nil, "ARTWORK")
@@ -314,43 +363,44 @@ local function createPanel()
     button("applyPosition", "Задать", 478, 86, applyPosition, -245)
     panel.Status = label("", "GameFontHighlightSmall", 20, -408, 540, 36)
     panel.TrackerButtons = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
-    panel.TrackerButtons:SetPoint("TOPLEFT", content, "TOPLEFT", 12, -696)
+    panel.TrackerButtons:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -696)
     panel.TrackerButtons:SetSize(26, 26)
-    label("Кнопки озвучки в списке заданий", "GameFontHighlight", 44, -703, 510, 22)
+    label("Кнопки озвучки в списке заданий", "GameFontHighlight", 48, -703, 506, 22)
     panel.TrackerButtons:SetScript("OnClick", function(self)
         WV:SetTrackerButtonsEnabled(self:GetChecked() == true)
     end)
     panel.TrackerProgressPulse = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
-    panel.TrackerProgressPulse:SetPoint("TOPLEFT", content, "TOPLEFT", 38, -730)
+    panel.TrackerProgressPulse:SetPoint("TOPLEFT", content, "TOPLEFT", 42, -730)
     panel.TrackerProgressPulse:SetSize(26, 26)
     panel.TrackerProgressPulse.Label = label("Напоминать об озвучке при прогрессе",
-        "GameFontHighlight", 70, -737, 484, 22)
+        "GameFontHighlight", 74, -737, 480, 22)
     panel.TrackerProgressPulse.Description = label(
         "Подсветка кнопки и подсказка «Вспомнить задание».",
-        "GameFontHighlightSmall", 70, -765, 484, 32)
+        "GameFontHighlightSmall", 74, -765, 480, 32)
     panel.TrackerProgressPulse:SetScript("OnClick", function(self)
         WV:SetTrackerProgressPulseEnabled(self:GetChecked() == true)
     end)
     panel.AutoPlayAccept = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
-    panel.AutoPlayAccept:SetPoint("TOPLEFT", content, "TOPLEFT", 12, -496)
+    panel.AutoPlayAccept:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -496)
     panel.AutoPlayAccept:SetSize(26, 26)
-    label("При получении задания", "GameFontHighlight", 44, -503, 510, 22)
+    label("При получении задания", "GameFontHighlight", 48, -503, 506, 22)
     panel.AutoPlayAccept:SetScript("OnClick", function(self)
         WV:SetAutoPlayAcceptEnabled(self:GetChecked() == true)
     end)
     label("Если выключено, запускайте описание кнопкой в журнале или списке заданий.",
-        "GameFontHighlightSmall", 44, -531, 510, 32)
+        "GameFontHighlightSmall", 48, -531, 506, 32)
     panel.AutoPlayTurnIn = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
-    panel.AutoPlayTurnIn:SetPoint("TOPLEFT", content, "TOPLEFT", 12, -580)
+    panel.AutoPlayTurnIn:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -580)
     panel.AutoPlayTurnIn:SetSize(26, 26)
-    label("При сдаче задания", "GameFontHighlight", 44, -587, 510, 22)
+    label("При сдаче задания", "GameFontHighlight", 48, -587, 506, 22)
     panel.AutoPlayTurnIn:SetScript("OnClick", function(self)
         WV:SetAutoPlayTurnInEnabled(self:GetChecked() == true)
     end)
     label("Управляет всеми репликами сдачи: промежуточными и завершающей.",
-        "GameFontHighlightSmall", 44, -615, 510, 32)
+        "GameFontHighlightSmall", 48, -615, 506, 32)
     panel:SetScript("OnShow", function()
         panel.editingPosition = nil
+        refreshVersions()
         WV:RefreshHeadOptions()
         for _, b in pairs(panel.Buttons) do if WV.StyleButton then WV.StyleButton(b) end end
         status()

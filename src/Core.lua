@@ -35,7 +35,7 @@ local defaults = {
                          -- tests found 0.05 to match the end. OGG files have
                          -- no trailing silence, so this is purely an offset.
                          -- Larger values let PlayMusic loop and briefly
-                         -- repeat the start. Fine-tune with /wv tail 0.1
+                         -- repeat the start. Fine-tune with /thead tail 0.1
                          -- if the ending is cut off, or 0 if it repeats.
     debug    = false,
     ducknpc  = true,     -- Mute the NPC greeting on the Dialog channel
@@ -304,8 +304,8 @@ do
     ticker:Hide()
 
     --[[ Live testing on 3.3.5a showed that StopMusic() does not interrupt
-         a file started by PlayMusic. Select a workaround with /wv stopmode
-         and check it with /wv stoptest:
+         a file started by PlayMusic. Select a workaround with /thead stopmode
+         and check it with /thead stoptest:
            silence   replaces the current stream with a short silent file.
            cvar      briefly disables the music channel.
            stopmusic calls StopMusic() alone (does not work on Sirus).
@@ -701,7 +701,7 @@ end
 
 function WV:ReplayQuest(questId)
     if not (WowVoiceDB and WowVoiceDB.enabled) then
-        msg("озвучка выключена. Включить: /wv on")
+        msg("озвучка выключена. Включить: /thead on")
         return false
     end
     if not self:HasQuestAudio(questId) then
@@ -783,7 +783,7 @@ f:SetScript("OnEvent", function(self, event, arg1)
              endings), 0.3 (about 0.2 seconds of repeated audio), 0.1 (still
              slightly too long), then 0.05 (matched the ending by ear).
              Each migration changes ONLY the previous automatic value,
-             preserving manual /wv tail settings. The current default is 0.05.
+             preserving manual /thead tail settings. The current default is 0.05.
 ]]
         if not WowVoiceDB.tailMigrated then
             WowVoiceDB.tail = defaults.tail          -- 0 -> default (fresh installation)
@@ -832,7 +832,7 @@ end)
 
 --------------------------------------------------------------------- Commands
 
---[[ Donation link. WoW cannot open URLs from chat, so /wv boosty
+--[[ Donation link. WoW cannot open URLs from chat, so /thead boosty
      shows a selectable field for copying into a browser with Ctrl+C.
      Select its text automatically and undo edits to protect the address.
      The editBox location varies: 3.3.5a uses the global "<popup>EditBox",
@@ -868,9 +868,8 @@ StaticPopupDialogs["WOWVOICE_BOOSTY"] = {
     end,
 }
 
-SLASH_WOWVOICE1 = "/wv"
-SLASH_WOWVOICE2 = "/wowvoice"
-SlashCmdList["WOWVOICE"] = function(input)
+SLASH_WOWVOICETALKINGHEAD1 = "/thead"
+SlashCmdList["WOWVOICETALKINGHEAD"] = function(input)
     local cmd, rest = strsplit(" ", strtrim(input or ""), 2)
     cmd = strlower(cmd or "")
 
@@ -888,7 +887,7 @@ SlashCmdList["WOWVOICE"] = function(input)
         elseif value == "" or (id and id > 0 and id == math.floor(id)) then
             WV:TestQuestReminder(id)
         else
-            msg("тест напоминания: /wv remindertest [ID квеста] | off")
+            msg("тест напоминания: /thead remindertest [ID квеста] | off")
         end
 
     elseif cmd == "stop" then
@@ -923,7 +922,7 @@ SlashCmdList["WOWVOICE"] = function(input)
             WowVoiceDB.volume = v
             msg("множитель громкости диалогов: %.2f (применится к следующей реплике)", v)
         else
-            msg("множитель громкости диалогов: %.2f. Задать: /wv volume 0..1 (по умолчанию 1.0)",
+            msg("множитель громкости диалогов: %.2f. Задать: /thead volume 0..1 (по умолчанию 1.0)",
                 WowVoiceDB.volume)
         end
 
@@ -933,7 +932,7 @@ SlashCmdList["WOWVOICE"] = function(input)
             WowVoiceDB.tail = v
             msg("сдвиг остановки: %+.2f с (минус = раньше конца, против лупа)", v)
         else
-            msg("сдвиг остановки: %+.2f с. Задать: /wv tail 0.1 (дольше) / 0 (короче, против лупа)",
+            msg("сдвиг остановки: %+.2f с. Задать: /thead tail 0.1 (дольше) / 0 (короче, против лупа)",
                 WowVoiceDB.tail)
         end
 
@@ -971,7 +970,7 @@ SlashCmdList["WOWVOICE"] = function(input)
         if rest == "on" or rest == "off" then
             WowVoiceDB.ducknpc = (rest == "on")
         end
-        msg("глушение приветствия NPC: %s. Переключить: /wv duck on|off",
+        msg("глушение приветствия NPC: %s. Переключить: /thead duck on|off",
             WowVoiceDB.ducknpc and "вкл" or "выкл")
 
     elseif cmd == "debug" then
@@ -983,12 +982,12 @@ SlashCmdList["WOWVOICE"] = function(input)
         elseif rest == "" then
             WowVoiceDB.debug = not WowVoiceDB.debug
         else
-            msg("использование: /wv debug on|off")
+            msg("использование: /thead debug on|off")
             return
         end
         msg("отладка %s", WowVoiceDB.debug and "включена" or "выключена")
 
-    elseif cmd == "options" then
+    elseif cmd == "" or cmd == "options" then
         if WV.OpenOptions then WV:OpenOptions() end
 
     elseif cmd == "head" then
@@ -1049,18 +1048,18 @@ SlashCmdList["WOWVOICE"] = function(input)
                 dur and format("%.1f с", dur) or "длительность неизвестна")
             Playback:Play(path, dur)
         else
-            msg("использование: /wv test <quest_id>")
+            msg("использование: /thead test <quest_id>")
         end
 
     elseif cmd == "boosty" then
         StaticPopup_Show("WOWVOICE_BOOSTY")
 
     else
-        msg("команды: on | off | stop | boosty | diag | perf | debug <on|off> | duck <on|off> | test <quest_id> | stoptest")
+        msg("команды /thead: on | off | stop | boosty | diag | perf | debug <on|off> | duck <on|off> | test <quest_id> | stoptest")
         msg("         volume <0..1> | tail <сек>")
         msg("         channel <auto|sound|music> | ext <mp3|ogg>")
         msg("         stopmode <silence|cvar|stopmusic>")
-        msg("         options — настройки говорящей головы")
+        msg("/thead — настройки говорящей головы; /thead help — справка")
         msg("состояние: %s, канал %s (%s), формат %s, стоп %s, индекс %s",
             WowVoiceDB.enabled and "вкл" or "выкл",
             WowVoiceDB.channel, Playback:mode(), WowVoiceDB.ext,

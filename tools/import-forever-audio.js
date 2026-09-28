@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const lua = require('luaparse');
+const { writeSourceVersion } = require('./audio-source-version');
 
 function dataTable(file) {
   const ast = lua.parse(fs.readFileSync(file, 'latin1'), { encodingMode: 'pseudo-latin1' });
@@ -121,6 +122,8 @@ function importPack(source, root = path.resolve(__dirname, '..')) {
   fs.mkdirSync(path.join(root, 'docs', 'internal'), { recursive: true });
   fs.writeFileSync(path.join(root, 'docs', 'internal', 'forever-audio-manifest.json'),
     JSON.stringify(manifest, null, 2) + '\n');
+  const toc = path.join(destination, 'CatVoices.toc');
+  if (fs.existsSync(toc)) writeSourceVersion(toc, { version, toc: 'CatQuest_Voices.toc' });
   return manifest;
 }
 

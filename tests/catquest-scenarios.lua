@@ -93,7 +93,7 @@ WV:UpdateCatQuestIntegration() -- must retain the original visibility snapshot
 command('off')
 assert(quest.visible and journal.visible and not hidden.visible, 'restore exactly the prior shown state')
 journal:Hide(); journal:Show()
-assert(journal.visible, 'installed visibility hooks must be inactive after /wv off')
+assert(journal.visible, 'installed visibility hooks must be inactive after /thead off')
 command('on')
 event('PLAYER_LOGOUT')
 assert(quest.visible and journal.visible and not hidden.visible)

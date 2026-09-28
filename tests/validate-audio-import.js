@@ -1,11 +1,22 @@
 const assert = require('assert/strict');
 const fs = require('fs'), path = require('path'), os = require('os');
 const { importPack } = require('../tools/import-forever-audio');
+const { readSourceVersion, writeSourceVersion } = require('../tools/audio-source-version');
 const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'wowvoice-audio-import-'));
 try {
   const source = path.join(fixture, 'source'), root = path.join(fixture, 'repo');
   fs.mkdirSync(path.join(source, 'Sounds/q'), { recursive: true });
   fs.mkdirSync(path.join(root, 'src'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'catvoices'), { recursive: true });
+  const adaptedToc = path.join(root, 'catvoices/CatVoices.toc');
+  fs.writeFileSync(adaptedToc, '## Version: 0.2.0-wowvoice.1\n');
+  // A client-specific source TOC takes precedence over stale generic metadata.
+  fs.writeFileSync(path.join(source, 'WowVoiceSounds.toc'), '## Version: 0.1.0\n');
+  fs.writeFileSync(path.join(source, 'WowVoiceSounds_Vanilla.toc'), '## Version: 1.0.1\n');
+  const candidates = ['WowVoiceSounds_Vanilla.toc', 'WowVoiceSounds.toc'];
+  assert.deepEqual(readSourceVersion(source, candidates), { toc: candidates[0], version: '1.0.1' });
+  writeSourceVersion(path.join(source, candidates[0]), { toc: 'Original.toc', version: '2.0' });
+  assert.deepEqual(readSourceVersion(source, candidates), { toc: 'Original.toc', version: '2.0' });
   fs.writeFileSync(path.join(root, 'src/Durations.lua'), 'WowVoiceDur = {["179p"]=2}');
   fs.writeFileSync(path.join(source, 'CatQuest_Voices.toc'), '## Version: 0.2.0\n');
   fs.writeFileSync(path.join(source, 'Index.lua'),
@@ -21,6 +32,11 @@ try {
     fs.writeFileSync(path.join(source, 'Sounds/q', file), sample);
   }
   const manifest = importPack(source, root);
+  assert.match(fs.readFileSync(adaptedToc, 'utf8'), /## X-Source-Version: 0\.2\.0\n/);
+  assert.match(fs.readFileSync(adaptedToc, 'utf8'), /## Version: 0\.2\.0-wowvoice\.1\n/);
+  writeSourceVersion(adaptedToc, { toc: 'CatQuest_Voices.toc', version: '0.3.0' });
+  assert.equal((fs.readFileSync(adaptedToc, 'utf8').match(/X-Source-Version:/g) || []).length, 1);
+  assert.match(fs.readFileSync(adaptedToc, 'utf8'), /## X-Source-Version: 0\.3\.0\n/);
   assert.equal(manifest.version, '0.2.0');
   assert.equal(manifest.quests, 2);
   assert.deepEqual(manifest.sections, { a: 1, c: 1 });
@@ -47,7 +63,7 @@ try {
   const older = importPack(source, root);
   assert.equal(older.quests, 1);
   assert.deepEqual(older.jsonOnlyTurnIns, []);
-  assert.deepEqual(fs.readdirSync(path.join(root, 'catvoices')), ['490.ogg']);
+  assert.deepEqual(fs.readdirSync(path.join(root, 'catvoices')).sort(), ['490.ogg', 'CatVoices.toc']);
   console.log('PASS: audio import, Lua priority, turn-in-only JSON recovery, Classic exclusion, stream validation and older packs');
 } finally {
   assert.equal(path.dirname(fixture), path.resolve(os.tmpdir()));
