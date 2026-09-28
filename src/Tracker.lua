@@ -1,5 +1,5 @@
--- Small replay controls in Blizzard's on-screen quest tracker, including
--- EllesmereUI's skin. Keep our state outside Blizzard's pooled blocks.
+-- Small replay controls in Blizzard's tracker (including EllesmereUI) and
+-- Questie. Keep our state outside either tracker's pooled rows.
 local WV = _G.WowVoice
 local buttons, hooked = {}, {}
 local progress, pulses = {}, {}
@@ -284,8 +284,9 @@ local function updatePulse(play)
     play.ProgressAnts:Show()
 end
 
-local function makeButton(block)
-    local play = CreateFrame("Button", nil, block)
+local function makeButton(block, readQuestID, parent)
+    local play = CreateFrame("Button", nil, parent or block)
+    readQuestID = readQuestID or function() return block.id end
     play:SetSize(18, 18)
     play:SetFrameLevel(block:GetFrameLevel() + 5)
     play.Icon = play:CreateTexture(nil, "ARTWORK")
@@ -311,11 +312,12 @@ local function makeButton(block)
     play:SetAlpha(1)
     play.Icon:SetAlpha(0.7)
     play:SetScript("OnClick", function()
-        -- Read the current ID: Blizzard can reuse this block for another quest.
-        if enabled() and play.active and WV:HasQuestAudio(block.id) then
-            pulses[block.id] = nil
+        -- Resolve at click time: either tracker can recycle a row.
+        local id = readQuestID()
+        if enabled() and play.active and id and WV:HasQuestAudio(id) then
+            pulses[id] = nil
             stopPulse(play)
-            WV:ReplayQuest(block.id)
+            WV:ReplayQuest(id)
         end
     end)
     play:SetScript("OnEnter", function(self)
@@ -333,6 +335,126 @@ local function makeButton(block)
     play:SetScript("OnShow", updatePulse)
     buttons[block] = play
     return play
+end
+
+-- Questie's module iterator is the only source of rows; do not inspect its
+-- private pool, parse titles, reuse VoiceOver's buttons or change native layout.
+local questiePool
+local questieScrollHooks = {}
+local questieRefreshPending
+local function requestQuestieRefresh()
+    if questieRefreshPending then return end
+    if C_Timer and C_Timer.After then
+        questieRefreshPending = true
+        C_Timer.After(0, function()
+            questieRefreshPending = nil
+            WV:RefreshTrackerButtons()
+        end)
+    else
+        WV:RefreshTrackerButtons()
+    end
+end
+
+local function questieQuestID(line)
+    if line.mode == "quest" and type(line.Quest) == "table"
+        and type(line.Quest.Id) == "number" and line.Quest.Id > 0 then
+        return line.Quest.Id
+    end
+end
+
+local function questieScroll(line)
+    local parent = line:GetParent()
+    while parent do
+        if parent.IsObjectType and parent:IsObjectType("ScrollFrame") then return parent end
+        parent = parent:GetParent()
+    end
+end
+
+local function refreshQuestieLine(line)
+    local id = questieQuestID(line)
+    if not (id and line.label and line.expandQuest and line:IsVisible()
+        and WV:HasQuestAudio(id)) then return end
+    local scroll = questieScroll(line)
+    local host = scroll and scroll:GetParent() or line
+    local play = buttons[line]
+    if not play then
+        -- A sibling of the scroll frame avoids horizontal clipping of the new
+        -- column. Vertical clipping and row lifecycle are mirrored below.
+        play = makeButton(line, function() return questieQuestID(line) end, host)
+        play.questieLine = line
+        line:HookScript("OnHide", function() play.active = false; play:Hide() end)
+        line:HookScript("OnShow", requestQuestieRefresh)
+        -- Preserve Questie's hover/fade behavior when the cursor is over play.
+        for _, script in ipairs({"OnEnter", "OnLeave"}) do
+            play:HookScript(script, function()
+                local handler = line:GetScript(script)
+                if handler then handler(line) end
+            end)
+        end
+    elseif play:GetParent() ~= host then
+        play:SetParent(host)
+    end
+    if scroll and not questieScrollHooks[scroll] then
+        questieScrollHooks[scroll] = true
+        scroll:HookScript("OnVerticalScroll", requestQuestieRefresh)
+        scroll:HookScript("OnSizeChanged", requestQuestieRefresh)
+    end
+    play:SetScale(line:GetEffectiveScale() / host:GetEffectiveScale())
+    play:SetFrameLevel(line:GetFrameLevel() + 5)
+    play.questID = id
+    play:ClearAllPoints()
+    -- expandQuest retains its anchor even when Questie hides the minus on a
+    -- completed quest or replaces it with an item. Keep a fixed column.
+    local _, size = line.label:GetFont()
+    size = size or 14
+    local iconSize = math.max(12, size + 4)
+    if play.questieIconSize ~= iconSize then
+        play.questieIconSize = iconSize
+        play:SetSize(iconSize, iconSize)
+        play.Icon:SetSize(iconSize, iconSize)
+        play.ProgressGlow:SetSize(iconSize * 1.4, iconSize * 1.4)
+        play.ProgressAnts:SetSize(iconSize * 1.4 * 0.85, iconSize * 1.4 * 0.85)
+    end
+    play:SetPoint("RIGHT", line.expandQuest, "TOPLEFT", -math.max(2, size * 3 / 14), -size / 2)
+    if scroll then
+        local top, bottom = scroll:GetTop(), scroll:GetBottom()
+        local y = line.label:GetTop()
+        if not (top and bottom and y) then return end
+        local scale = line:GetEffectiveScale()
+        y = y * scale
+        local halfHeight = iconSize / 2
+        local center = y - size * scale / 2
+        if center + halfHeight * scale > top * scroll:GetEffectiveScale()
+            or center - halfHeight * scale < bottom * scroll:GetEffectiveScale() then return end
+    end
+    play.active = true
+    play:Show()
+    updatePulse(play)
+end
+
+local function setupQuestie()
+    local loader = _G.QuestieLoader
+    if not (loader and type(loader.ImportModule) == "function") then return end
+    local pool = loader:ImportModule("TrackerLinePool")
+    local tracker = loader:ImportModule("QuestieTracker")
+    if not (type(pool) == "table" and type(pool.UpdateQuestTitleLines) == "function"
+        and type(pool.ResetLinesForChange) == "function" and type(tracker) == "table"
+        and type(tracker.Update) == "function" and type(tracker.UpdateFormatting) == "function") then return end
+    questiePool = pool
+    if not hooked[tracker] then
+        hooked[tracker] = true
+        hooksecurefunc(tracker, "Update", requestQuestieRefresh)
+        hooksecurefunc(tracker, "UpdateFormatting", requestQuestieRefresh)
+        hooksecurefunc(pool, "ResetLinesForChange", function()
+            for line, play in pairs(buttons) do
+                if play.questieLine and not questieQuestID(line) then
+                    play.active = false
+                    play:Hide()
+                end
+            end
+        end)
+        requestQuestieRefresh()
+    end
 end
 
 function WV:RefreshTrackerButtons()
@@ -366,6 +488,9 @@ function WV:RefreshTrackerButtons()
                 end
             end
         end
+    end
+    if enabled() and questiePool then
+        questiePool.UpdateQuestTitleLines(refreshQuestieLine)
     end
     for _, play in pairs(buttons) do
         if not play.active then play:Hide() end
@@ -449,6 +574,7 @@ function WV:SetTrackerButtonsEnabled(value)
 end
 
 local function setup()
+    setupQuestie()
     local tracker = _G.QuestObjectiveTracker
     if tracker and hooked[tracker] then return end
     if tracker and not hooked[tracker] and type(tracker.Update) == "function"

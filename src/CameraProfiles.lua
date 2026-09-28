@@ -1,12 +1,14 @@
 -- Initial model-family framing, to be refined with in-game feedback.
 -- Offsets move the model, not the camera. Orc models without a dedicated
--- profile and all tauren variants retain the accepted original default.
+-- profile and tauren models without a dedicated profile retain the original default.
 local WV = WowVoice
 local profiles = {
     default = { distance = 1.1, y = 0, z = -0.025 },
     -- Female orcs lean down and right while talking; allow room for both poses.
     -- Reduced the leftward shift after feedback; confirmed for the tested model.
     orc_female = { distance = 1.35, y = -0.04, z = 0 },
+    -- Slightly lift female tauren; keep the accepted zoom and lateral position.
+    tauren_female = { distance = 1.1, y = 0, z = 0 },
     human = { distance = 1.15, y = 0, z = -0.025 },
     -- Lift male humans and shift slightly right within the portrait.
     human_male = { distance = 1.15, y = 0.02, z = 0 },
@@ -24,6 +26,10 @@ local profiles = {
     -- The revised framing was confirmed in game for the tested female blood elf.
     bloodelf_female = { distance = 1.45, y = 0, z = 0.025 },
     undead = { distance = 1.22, y = 0, z = 0.025 },
+    -- Lower male undead just enough to leave a small margin above the head.
+    undead_male = { distance = 1.22, y = 0, z = 0.015 },
+    -- Give female undead more room above the head and shift slightly right.
+    undead_female = { distance = 1.22, y = 0.02, z = 0 },
     draenei = { distance = 1.2, y = 0, z = -0.025 },
     worgen = { distance = 1.3, y = 0, z = 0.04 },
     pandaren = { distance = 1.22, y = 0, z = 0 },

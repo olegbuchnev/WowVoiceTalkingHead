@@ -242,6 +242,30 @@ titles. They replay the description using
 the current quest ID and leave the tracker layout unchanged. The options page
 can hide these controls independently of journal buttons and the talking head;
 `WowVoiceDB.trackerButtons` defaults to true.
+
+Questie support is optional and contained in Tracker.lua. The adapter imports
+only TrackerLinePool and QuestieTracker through QuestieLoader. It enumerates
+title rows through UpdateQuestTitleLines and reads mode, Quest.Id, label and
+expandQuest; it does not inspect the private pool, parse title text or replace
+Questie's VoiceOver integration. Post-hooks on Update/UpdateFormatting coalesce
+refreshes to the next frame. ResetLinesForChange and row visibility hooks prevent
+recycled objective/zone/achievement rows from retaining a play control. The click
+handler resolves the current quest ID again. Missing module methods disable the
+adapter without affecting Blizzard's tracker. No Questie files or saved settings
+are edited and no TOC dependency is added.
+
+The extra column is anchored left of expandQuest, whose anchor persists when the
+native minus is hidden for completed quests or item buttons. Quest names, item
+buttons, objective indents, wrapping widths and row heights are unchanged. Icons,
+gaps and reminder glows follow the actual title FontString font size on formatting
+updates; tracker scale is inherited, including a scaled scroll child. Controls
+are siblings of the nearest scroll frame to avoid horizontal clipping, and are
+hidden when their first-line hit rectangle crosses the viewport's top/bottom.
+Scrolling, resize and row show/hide refresh visibility without a permanent poll.
+Hover delegates to the row's existing enter/leave handlers for Questie's fading.
+Questie controls share availability, playback, options and progress reminders
+with the native controls. Visual placement still requires verification in-game.
+
 For the exact reminder decision order, saved-state semantics and examples, see
 [Алгоритм напоминаний об озвучке](QUEST_REMINDERS.md) (developer notes).
 «Напоминать об озвучке при прогрессе» enables both the silent gold glow around
@@ -519,7 +543,11 @@ blood elf models also have a separate, wider and higher framing to leave
 room for their talking animation in both directions, confirmed for the tested
 model. Female orcs have a separate profile with more distance and a small
 leftward and upward shift, also confirmed for the tested model.
-Other orc models and all tauren variants retain the accepted zoom, distance,
+Female tauren have a slight vertical lift with the original zoom and lateral position.
+Female undead have a slight downward and rightward correction with the shared
+profile's zoom. Male undead have a smaller downward correction to leave a margin
+above the head; other undead retain their existing framing.
+Other orc and tauren models retain the accepted zoom, distance,
 position and rotation. Camera profiles are estimates refined through in-game
 feedback, not Blizzard-authored cameras.
 Unrecognized models or unavailable APIs keep the original framing.
@@ -668,6 +696,40 @@ Some Forever turn-ins use temporary translations from English and may differ
 from the Russian client text, as documented by CatQuest's author.
 Source credit is preserved in `CatVoices/NOTICE.txt` and the user guide:
 CatQuest and CatQuest_Voices are by [Cathey](https://t.me/catheyco) (daniilcathey).
+
+## Optional CatQuest coexistence
+
+Core.lua temporarily suppresses CatQuest 0.2.0's `autoDetail`, `autoProgress`
+and `autoComplete` while WowVoice is enabled. The `readAfterAccept` path also
+checks `autoDetail`, so it cannot enqueue a duplicate reading. CatQuest retains
+books, location lore, NPC greetings/gossip, manual reading, UI and history.
+The separate Story modules are commented out in CatQuest's own 0.2.0 TOC.
+
+This uses CatQuest's initialized settings table, with no required/optional
+TOC dependency, private namespace access or upstream file edits. A late
+CatQuest ADDON_LOADED event defers synchronization until its handler finishes;
+PLAYER_LOGIN also synchronizes. `/wv off` and PLAYER_LOGOUT restore the original
+flags before serialization; `/wv on` captures and suppresses them again. Manual
+changes away from the temporary false value are preserved on restoration.
+CatQuest settings remain editable: manually re-enabling its quest autoplay can
+allow simultaneous playback until the next takeover/reload. Manual reading is
+independent and is not stopped when WowVoice starts. `/wv diag` reports takeover.
+
+Audio packs remain independent. WowVoice does not read CatQuest_Voices at runtime,
+and CatQuest does not use WowVoiceSounds/CatVoices. Either addon works alone.
+Tests cover absence, late loading, repeated initialization, enabled/disabled
+transitions, restored saves, independent book/lore preferences and database changes.
+
+Quest dialog and journal read buttons are hidden for the same interval. Discovery
+is limited to QuestFrame and modern/legacy journal containers: CatQuest's exposed
+catQuestButton reference and direct children with the exact CatQuest_Toggle or
+CatQuest_ReadQuestLog click handler. Text labels are never used as identity.
+ItemTextFrame and GossipFrame are excluded. Each button's IsShown flag is captured
+once and restored on release, including originally hidden buttons. OnShow hooks
+keep suppressed buttons hidden without replacing their scripts; those hooks are
+inert after release. Parent OnShow and deferred PLAYER_LOGIN/ADDON_LOADED scans
+cover both initialization orders and a lazily loaded journal. Only a few known
+containers are scanned; there is no frame enumeration or periodic polling.
 
 ## Sound pack source
 

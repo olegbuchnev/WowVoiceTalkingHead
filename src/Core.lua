@@ -46,6 +46,96 @@ local WV = {}
 WV.displayName = "WowVoice TalkingHead"
 _G.WowVoice = WV
 
+-- CatQuest shares its player between quests, books and location lore. Temporarily
+-- disable automatic quest reading and hide quest read buttons; leave its player
+-- and saved preferences intact. No dependency on its private namespace is required.
+local catQuestOverride
+local catQuestAutoKeys = {"autoDetail", "autoProgress", "autoComplete"}
+local catQuestButtonsActive, catQuestRefreshPending
+local catQuestButtonVisibility, catQuestButtonHooks, catQuestParentHooks = {}, {}, {}
+local function updateCatQuestButtons(active)
+    catQuestButtonsActive = active == true
+    if not active then
+        for button, shown in pairs(catQuestButtonVisibility) do
+            if shown then button:Show() end
+        end
+        catQuestButtonVisibility = {}
+        return
+    end
+    local function hideButton(button)
+        if not (button and button.GetScript) then return end
+        local click = button:GetScript("OnClick")
+        if type(click) ~= "function" or (click ~= _G.CatQuest_ReadQuestLog
+            and click ~= _G.CatQuest_Toggle) then return end
+        if catQuestButtonVisibility[button] == nil then
+            catQuestButtonVisibility[button] = button:IsShown()
+        end
+        if not catQuestButtonHooks[button] then
+            catQuestButtonHooks[button] = true
+            button:HookScript("OnShow", function(self)
+                if catQuestButtonsActive then self:Hide() end
+            end)
+        end
+        button:Hide()
+    end
+    -- Only quest surfaces. ItemTextFrame (books) and GossipFrame are independent.
+    -- CatQuest exposes the journal button; its quest-dialog button is anonymous.
+    for _, parent in pairs({_G.QuestFrame,
+        _G.QuestMapFrame and _G.QuestMapFrame.DetailsFrame,
+        _G.QuestLogDetailFrame, _G.QuestLogFrame}) do
+        if not catQuestParentHooks[parent] and parent.HookScript then
+            catQuestParentHooks[parent] = true
+            parent:HookScript("OnShow", function()
+                if catQuestButtonsActive then updateCatQuestButtons(true) end
+            end)
+        end
+        hideButton(parent.catQuestButton)
+        if parent.GetChildren then
+            for _, child in ipairs({parent:GetChildren()}) do hideButton(child) end
+        end
+    end
+end
+
+function WV:UpdateCatQuestIntegration(release)
+    local db = _G.CatQuestDB
+    local active = not release and WowVoiceDB and WowVoiceDB.enabled
+        and type(db) == "table"
+    if catQuestOverride and (not active or catQuestOverride.db ~= db) then
+        for key, value in pairs(catQuestOverride.values) do
+            -- Preserve edits made through CatQuest's own settings while active.
+            if catQuestOverride.db[key] == false then
+                catQuestOverride.db[key] = value
+            end
+        end
+        catQuestOverride = nil
+    end
+    updateCatQuestButtons(active == true)
+    if not active or catQuestOverride then return end
+    local values = {}
+    for _, key in ipairs(catQuestAutoKeys) do
+        if type(db[key]) == "boolean" then
+            values[key] = db[key]
+            db[key] = false
+        end
+    end
+    -- An ADDON_LOADED listener may run before CatQuest initializes its table.
+    -- Do not claim the override until its settings actually exist.
+    if next(values) then catQuestOverride = {db=db, values=values} end
+end
+
+function WV:IsCatQuestAutoplaySuppressed()
+    return catQuestOverride ~= nil
+end
+
+local function scheduleCatQuestIntegration()
+    if catQuestRefreshPending or not (C_Timer and C_Timer.After) then return end
+    catQuestRefreshPending = true
+    C_Timer.After(0, function()
+        catQuestRefreshPending = nil
+        WV:UpdateCatQuestIntegration()
+    end)
+end
+
 --------------------------------------------------------------------- Utilities
 
 local function msg(fmt, ...)
@@ -664,7 +754,14 @@ f:RegisterEvent("PLAYER_LOGOUT")
 
 f:SetScript("OnEvent", function(self, event, arg1)
     if event == "ADDON_LOADED" then
-        if arg1 ~= ADDON then return end
+        if arg1 ~= ADDON then
+            -- CatQuest and the quest journal can load in either order. Defer
+            -- until CatQuest's handler has initialized settings/created buttons.
+            if arg1 == "CatQuest" or type(_G.CatQuestDB) == "table" then
+                scheduleCatQuestIntegration()
+            end
+            return
+        end
         WowVoiceDB = WowVoiceDB or {}
         -- The talking head always uses Retail. Preserve its saved geometry.
         WowVoiceDB.headEnabled, WowVoiceDB.headPreset = nil, nil
@@ -705,9 +802,13 @@ f:SetScript("OnEvent", function(self, event, arg1)
             WowVoiceDB.tail3Migrated = true
         end
         WV.license = _G.WowVoiceLicense   -- Installer marker, or nil in development
+        WV:UpdateCatQuestIntegration()
         msg("На основе WowVoice. Озвучка: WowVoice — https://boosty.to/wowvoice; Cathey — https://boosty.to/cathey")
 
     elseif event == "PLAYER_LOGIN" then
+        WV:UpdateCatQuestIntegration()
+        -- CatQuest creates dialog buttons in its own PLAYER_LOGIN handler.
+        if type(_G.CatQuestDB) == "table" then scheduleCatQuestIntegration() end
         warnIfNoSounds()
 
     elseif event == "QUEST_DETAIL" then
@@ -723,6 +824,8 @@ f:SetScript("OnEvent", function(self, event, arg1)
         WV:Speak(SECTION.complete, GetTitleText(), GetRewardText(), event)
 
     elseif event == "PLAYER_LOGOUT" then
+        -- Restore before SavedVariables are serialized, also on /reload.
+        WV:UpdateCatQuestIntegration(true)
         WV:Silence("PLAYER_LOGOUT")
     end
 end)
@@ -773,6 +876,7 @@ SlashCmdList["WOWVOICE"] = function(input)
 
     if cmd == "on" or cmd == "off" then
         WowVoiceDB.enabled = (cmd == "on")
+        WV:UpdateCatQuestIntegration()
         if not WowVoiceDB.enabled then WV:Silence() end
         msg("озвучка %s", WowVoiceDB.enabled and "включена" or "выключена")
 
@@ -894,6 +998,8 @@ SlashCmdList["WOWVOICE"] = function(input)
         if WV.Work then WV.Work:Report() end
 
     elseif cmd == "diag" then
+        msg("CatQuest: автозапуск квестов %s; книги и лор управляются CatQuest",
+            WV:IsCatQuestAutoplaySuppressed() and "приостановлен" or "не изменён")
         local ver, build, _, iface = GetBuildInfo()
         local n = 0
         if _G.WowVoiceIndex then for _ in pairs(_G.WowVoiceIndex) do n = n + 1 end end

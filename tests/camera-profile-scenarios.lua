@@ -19,7 +19,7 @@ for id, key in pairs(WV.CameraModelProfiles) do
         protected=protected+1
     end
 end
-assert(count>1000 and protected>=60)
+assert(count>1000 and protected>=58)
 for _, family in ipairs({'goblin','troll','furbolg','murloc','centaur','dragon','ogre','quillboar'}) do
     assert(families[family])
 end
@@ -79,7 +79,7 @@ print('PASS: all model IDs resolve, female orcs have dedicated framing, other or
 
 WV:ToggleHeadPreview()
 local head=frames.WowVoiceTalkingHead
-for _, id in ipairs({119376,1838570,124224,119369,122560,122414,1018060,116921,1100258,1839709,117170,121087,949470,1838580,121287,122055,124225,125358,99999999}) do
+for _, id in ipairs({119376,1838570,124224,119369,122560,122414,1018060,116921,1100258,1839709,117170,121087,949470,1838580,121287,121961,986648,1839008,122055,121608,997378,1838582,121768,959310,1838584,124225,125358,99999999}) do
     head.Model.modelFileID=id
     head.Model:CompleteLoad(1234)
     local profile,key=WV:GetPortraitCameraProfile(head.Model)
