@@ -35,6 +35,7 @@ a:focus-visible { outline: 3px solid var(--focus); outline-offset: 5px; border-r
 .primary { background: var(--primary); border-color: var(--primary); color: #fff; }
 .primary:hover { background: var(--primary-hover); color: #fff; }
 .download-note { color: var(--muted); font-size: 14px; margin: 0 0 10px; }
+.version-help { border-top: 1px solid var(--line); padding-top: 10px; margin: 12px 0 0; }
 .artifact-meta { color: var(--muted); font-size: 14px; line-height: 1.7; margin: 0; }
 .artifact-meta a { font-size: 14px; font-weight: 600; text-decoration: none; }
 .artifact-meta a:hover { text-decoration: underline; }

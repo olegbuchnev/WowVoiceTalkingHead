@@ -157,7 +157,7 @@ function page(content, isGuide = false) {
         <div class="download-card" role="group" aria-label="Аддон с озвучкой WowVoice">
           <a class="button primary" href="${escape(fullInfo.url || full)}"><span>Скачать с озвучкой WowVoice <span class="artifact-size">${escape(fullInfo.size)}</span></span><span aria-hidden="true">↓</span></a>
           <div class="download-info">
-            <p class="download-note">Для первой установки: аддон и озвучка WowVoice.</p>
+            <p class="download-note">Для первой установки или обновления озвучки: аддон и база WowVoice.</p>
             ${fullInfo.html}
             <dl class="audio-versions" aria-label="Версии исходных паков озвучки в полном архиве">
               <dt>Озвучка WowVoice:</dt><dd>${escape(wowVoiceVersion)}</dd>
@@ -168,8 +168,9 @@ function page(content, isGuide = false) {
         <div class="download-card" role="group" aria-label="Обновление аддона без звуков">
           <a class="button" href="${escape(addonInfo.url || addon)}"><span>Скачать только аддон <span class="artifact-size">${escape(addonInfo.size)}</span></span><span aria-hidden="true">↓</span></a>
           <div class="download-info">
-            <p class="download-note">Только аддон · звуковая база WowVoice уже должна быть установлена.</p>
+            <p class="download-note">Для обновления аддона, если установлена озвучка WowVoice <strong>${escape(wowVoiceVersion)}</strong>.</p>
             ${addonInfo.html}
+            <p class="download-note version-help">Проверьте строку «Озвучка WowVoice» в настройках <code>/thead</code>. Если озвучки нет или версия старее, скачайте архив с озвучкой.</p>
           </div>
         </div>
         <div class="optional-voices">

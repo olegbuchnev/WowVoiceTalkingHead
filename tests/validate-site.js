@@ -61,7 +61,7 @@ const { spawnSync } = require('child_process');
         assert(!html.includes('555,6 МБ'));
         assert(html.includes('CatQuest Voices 0.2.2') && html.includes('curseforge.com/wow/addons/catquest'));
         assert(html.includes(`href="${urls.full}"`));
-        assert(html.includes('Зеркало полного комплекта'));
+        assert(html.includes('Зеркало на pCloud'));
       }
       const html=fs.readFileSync(path.join(fixture,'artifacts/site/index.html'),'utf8');
       assert(html.indexOf('class="voice-feature"') < html.indexOf('class="screenshots"'));
