@@ -47,7 +47,7 @@
 В плейлисте они сгруппированы по квестодателям: можно послушать задание сразу
 или поставить следующим.
 
-<p class="feature-image"><img src="docs/images/quest-playlist.png" width="320" alt="Плейлист заданий с группировкой по квестодателям"></p>
+<p class="feature-image"><img src="docs/images/quest-playlist.png" width="400" alt="Плейлист заданий с группировкой по квестодателям"></p>
 
 ## Совместимость с CatQuest
 
