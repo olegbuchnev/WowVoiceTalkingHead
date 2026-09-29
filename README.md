@@ -4,8 +4,8 @@
 Во время воспроизведения на экране отображаются портрет персонажа и текст реплики.
 Описание задания можно повторно прослушать кнопкой ▶ в журнале или списке заданий.
 
-**[Скачать полный архив](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.2.0-forever/WowVoiceTalkingHead-1.2.0-forever.zip)** ·
-**[Скачать addon-only](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.2.0-forever/WowVoiceTalkingHead-1.2.0-forever-addon-only.zip)** ·
+**[Скачать полный архив](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.2.1-forever/WowVoiceTalkingHead-1.2.1-forever.zip)** ·
+**[Скачать addon-only](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.2.1-forever/WowVoiceTalkingHead-1.2.1-forever-addon-only.zip)** ·
 [Инструкция](USER_README.md) ·
 [Сообщить об ошибке](https://github.com/olegbuchnev/WowVoiceTalkingHead/issues)
 
@@ -63,13 +63,13 @@ WowVoice TalkingHead. Автозапуск квестов и кнопки «Чи
 
 ## Установка
 
-1. **[Скачайте полный архив](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.2.0-forever/WowVoiceTalkingHead-1.2.0-forever.zip)** —
+1. **[Скачайте полный архив](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.2.1-forever/WowVoiceTalkingHead-1.2.1-forever.zip)** —
    основная звуковая база WowVoice уже внутри.
 2. **Закройте игру** и скопируйте из архива две папки — `WowVoiceTalkingHead`
    и `WowVoiceSounds` — в `_classic_beta_/Interface/AddOns/`.
 3. **Запустите игру**, включите аддоны в списке модификаций и откройте задание у NPC.
 
-**Обновление:** [скачайте addon-only](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.2.0-forever/WowVoiceTalkingHead-1.2.0-forever-addon-only.zip),
+**Обновление:** [скачайте addon-only](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.2.1-forever/WowVoiceTalkingHead-1.2.1-forever-addon-only.zip),
 замените папку `WowVoiceTalkingHead` и выполните `/reload`. Если в выпуске
 обновилась звуковая библиотека, понадобится полный архив и перезапуск игры.
 
