@@ -412,3 +412,45 @@ print('PASS: playlist coordinate entry, signed decimals, atomic validation, draf
 print('PASS: top-edge alignment, horizontal freedom, release threshold, saved placement, overlap exclusion and scale conversion')
 print('PASS: all four visible edges align from both sides, with correctly oriented guides and freedom along the other axis')
 print('PASS: playlist geometry, animated silent sample/giver preview, live queue isolation, master autoplay/manual replay and descriptions-only filter')
+
+-- DialogueUI fades UIParent, then hides it. Anchor targets do not inherit
+-- visibility; actual parents do. Exercise both modes with a normal UI control.
+local function visibleAlpha(frame)
+    return frame:IsVisible() and frame:GetEffectiveAlpha() or 0
+end
+local uiShown, uiAlpha, uiScale = UIParent:IsVisible(), UIParent.alpha, UIParent.scale
+local control = CreateFrame('Frame', nil, UIParent)
+local queueRoot = frames.WowVoiceQuestQueueRoot
+Lab:Reset()
+WV:SetAutoPlayEnabled(true)
+WV:SetAutoPlayAcceptEnabled(true)
+Lab:Accept(pool[1].id)
+Lab:Accept(pool[2].id)
+local current, count, soundCount = Q.current, Q:Count(), #plays
+local initialX, initialY = WV:GetQuestQueuePosition()
+UIParent:Show()
+UIParent:SetAlpha(0)
+assert(visibleAlpha(control) == 0 and visibleAlpha(player) > 0 and WowVoiceTalkingHead:IsVisible(),
+    'DialogueUI fade must not fade the playlist or talking head')
+UIParent:Hide()
+assert(visibleAlpha(control) == 0 and visibleAlpha(player) > 0,
+    'DialogueUI hiding UIParent must not hide the playlist')
+local x, y = WV:GetQuestQueuePosition()
+near(x, initialX); near(y, initialY)
+for _, scale in ipairs({0.75, 1}) do
+    UIParent.scale = scale
+    frames.WowVoiceHeadScaleEvents.scripts.OnEvent()
+    queueRoot.scripts.OnEvent()
+    near(player:GetEffectiveScale(), WowVoiceTalkingHead:GetEffectiveScale() * WV:GetQuestQueueScale())
+    assert(visibleAlpha(player) > 0)
+end
+assert(Q.current == current and Q:Count() == count and #plays == soundCount,
+    'UI hiding and scale changes must preserve queue playback')
+UIParent.scale = uiScale
+UIParent:SetAlpha(uiAlpha or 1)
+if uiShown then UIParent:Show() else UIParent:Hide() end
+frames.WowVoiceHeadScaleEvents.scripts.OnEvent()
+queueRoot.scripts.OnEvent()
+Lab:Reset()
+control:Hide()
+print('PASS: DialogueUI-style UIParent fade/hide preserves playlist visibility, placement, effective scale and active playback')

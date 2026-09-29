@@ -1,6 +1,6 @@
 local WV = WowVoice
 local Q = WV.questQueue
-local player, scroll, content, bar, controls
+local root, player, scroll, content, bar, controls
 local headers, rows, tiles = {}, {}, {}
 local offset, extent, updating, elapsed = 0, 0, false, 0
 local browsing, scrollAnchor = false, nil
@@ -95,6 +95,7 @@ end
 
 local function positionPlayer(head)
     if player.dragging then return end
+    root:SetScale(UIParent:GetEffectiveScale())
     local ratio = head:GetEffectiveScale() / UIParent:GetEffectiveScale() * WV:GetQuestQueueScale()
     player:SetScale(ratio)
     player:ClearAllPoints()
@@ -534,14 +535,21 @@ end
 
 local function create()
     if player then return end
-    player = CreateFrame("Frame", "WowVoiceQuestQueuePlayer", UIParent)
+    -- Match UIParent's coordinate scale without inheriting its visibility or
+    -- alpha (DialogueUI hides/fades it while the quest dialogue is open).
+    root = CreateFrame("Frame", "WowVoiceQuestQueueRoot")
+    root:SetScale(UIParent:GetEffectiveScale())
+    root:RegisterEvent("UI_SCALE_CHANGED")
+    root:RegisterEvent("DISPLAY_SIZE_CHANGED")
+    root:SetScript("OnEvent", function() root:SetScale(UIParent:GetEffectiveScale()) end)
+    player = CreateFrame("Frame", "WowVoiceQuestQueuePlayer", root)
     player:SetFrameStrata("FULLSCREEN_DIALOG")
     player:SetFrameLevel(WowVoiceTalkingHead:GetFrameLevel())
     player:SetClampedToScreen(true)
     -- Clamp to the tiles/edit outline, excluding the empty right margin.
     player:SetClampRectInsets(0, -PANEL_RIGHT, 0, 0)
     player:SetMovable(true)
-    local guide = CreateFrame("Frame", nil, UIParent)
+    local guide = CreateFrame("Frame", nil, root)
     player.AlignmentGuide = guide
     guide:SetFrameStrata("FULLSCREEN_DIALOG")
     guide:SetFrameLevel(player:GetFrameLevel() + 30)
