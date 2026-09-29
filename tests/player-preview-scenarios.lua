@@ -43,7 +43,9 @@ local function checkStopLayout()
     local closeLeft=head.width+close.points[1][4]-close.width
     assert(close.visible and close.points[1][1]=='TOPRIGHT')
     assert(head.Name.point[4]+head.Name.width<=closeLeft+2,'name must leave room for close artwork')
-    assert(progress.points[1][4]==8 and progress.width==head.width-16,'progress spans the bottom with equal insets')
+    local left, right = head.EditBorder.points[1][4], head.EditBorder.points[2][4]
+    assert(progress.points[1][4]==left and progress.width==head.width-left+right,
+        'progress aligns with both visible panel edges marked by the edit border')
     local progressTop=head.height-progress.points[1][5]-progress.height
     assert(-head.Model.points[1][5]+head.Model.height<progressTop,'portrait must clear progress')
     assert(-head.TextScroll.points[1][5]+head.TextScroll.height<progressTop,'text must clear progress')
@@ -98,8 +100,10 @@ for _, dimensions in ipairs({{360,600,1},{1000,140,1},{470,160,1.5},{1000,600,.5
     cameraRefreshes=model.cameraRefreshes
     previousSize=model.width
     local settings=WV:GetHeadSettings()
-    assert(math.abs(settings.x)+dimensions[1]*dimensions[3]/2<=UIParent:GetWidth()/2)
-    assert(math.abs(settings.y)+dimensions[2]*dimensions[3]/2<=UIParent:GetHeight()/2)
+    assert(settings.x+(dimensions[1]/2-13)*dimensions[3]<=UIParent:GetWidth()/2)
+    assert(settings.x-(dimensions[1]/2-15)*dimensions[3]>=-UIParent:GetWidth()/2)
+    assert(settings.y+(dimensions[2]/2-15)*dimensions[3]<=UIParent:GetHeight()/2)
+    assert(settings.y-dimensions[2]*dimensions[3]/2>=-UIParent:GetHeight()/2)
 end
 WV:HideHeadPreview()
 assert(#plays==0 and #stops==0)

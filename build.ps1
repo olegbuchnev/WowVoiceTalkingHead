@@ -5,7 +5,8 @@ param(
   [ValidateSet('ForeverBeta')]
   [string]$Target = 'ForeverBeta',
   [string]$ConfigPath,
-  [switch]$LocalDebug # Backward-compatible no-op: the voice catalogue now ships to everyone.
+  [switch]$LocalDebug, # Backward-compatible no-op: the voice catalogue now ships to everyone.
+  [switch]$QueueLab # Development-only simulated quest queue, never packaged.
 )
 
 Set-StrictMode -Version Latest
@@ -16,6 +17,10 @@ $SoundSource = Join-Path $RepoRoot 'soundpack'
 $LegacyDebugFiles = @('CatQuestComparison.lua', 'LocalDebug.lua')
 $ArtifactsRoot = Join-Path $RepoRoot 'artifacts'
 $SoundTocs = @('WowVoiceSounds.toc', 'WowVoiceSounds_Mainline.toc')
+$QueueLabModules = @('State.lua', 'Runtime.lua', 'Window.lua')
+if ($QueueLab -and $Task -notin @('Deploy', 'DeployAddon')) {
+  throw '-QueueLab is allowed only for local Deploy/DeployAddon, never release packaging.'
+}
 if ($LocalDebug -and $Task -notin @('Deploy', 'DeployAddon')) {
   throw '-LocalDebug is a legacy deployment flag. The voice catalogue is included in all builds.'
 }
@@ -101,7 +106,7 @@ function Test-AddonLayout {
     if (-not (Test-Path -LiteralPath $source -PathType Container)) { throw "Missing source: $source" }
     Assert-NoReparseTree $source
     foreach ($file in Get-ChildItem -LiteralPath $source -Recurse -Force) {
-      if ($file.Name -in (@('.git', '.idea', 'tests', 'dev', 'artifacts', 'backups', 'node_modules') + $LegacyDebugFiles) -or
+      if ($file.Name -in (@('.git', '.idea', 'tests', 'dev', 'artifacts', 'backups', 'node_modules', 'QueueLab') + $LegacyDebugFiles) -or
           $file.Extension -in @('.bak', '.tmp', '.log')) {
         throw "Non-runtime file in package source: $($file.FullName)"
       }
@@ -180,6 +185,15 @@ function Resolve-AddOnsDirectory {
 
 function Invoke-Deploy {
   param([switch]$AddonOnly)
+  $labSource = Join-Path $RepoRoot 'dev\queue-lab'
+  if ($QueueLab) {
+    Assert-NoReparseTree $labSource
+    foreach ($module in $QueueLabModules) {
+      if (-not (Test-Path -LiteralPath (Join-Path $labSource $module) -PathType Leaf)) {
+        throw "Missing QueueLab module: $module"
+      }
+    }
+  }
   $addons = Resolve-AddOnsDirectory
   $destination = Join-Path $addons 'WowVoiceTalkingHead'
   $sounds = Join-Path $addons 'WowVoiceSounds'
@@ -231,6 +245,24 @@ function Invoke-Deploy {
     if (@(Get-ChildItem -LiteralPath $dir.FullName -Force).Count -eq 0) {
       [IO.Directory]::Delete($dir.FullName)
     }
+  }
+  if ($QueueLab) {
+    $labDestination = Join-Path $destination 'QueueLab'
+    New-Item -ItemType Directory -Path $labDestination -Force | Out-Null
+    foreach ($module in $QueueLabModules) {
+      $sourceModule = Join-Path $labSource $module
+      $targetModule = Join-Path $labDestination $module
+      Copy-Item -LiteralPath $sourceModule -Destination $targetModule
+      if ((Get-FileHash -LiteralPath $sourceModule).Hash -ne (Get-FileHash -LiteralPath $targetModule).Hash) {
+        throw "QueueLab deployment mismatch: $module"
+      }
+    }
+    $entries = ($QueueLabModules | ForEach-Object { 'QueueLab\' + $_ }) -join "`r`n"
+    foreach ($toc in Get-ChildItem -LiteralPath $destination -Filter 'WowVoiceTalkingHead*.toc' -File) {
+      $contents = [IO.File]::ReadAllText($toc.FullName).TrimEnd() + "`r`n" + $entries + "`r`n"
+      [IO.File]::WriteAllText($toc.FullName, $contents, [Text.UTF8Encoding]::new($false))
+    }
+    Write-Host 'QueueLab enabled locally: /tt after /reload. Source TOCs and release packages unchanged.'
   }
   if ($AddonOnly) {
     Write-Host "Deployed WowVoice TalkingHead to ${Target}: $addons"

@@ -58,6 +58,7 @@ event('QUEST_DETAIL'); assert(#plays==count)
 for _,entry in ipairs({{'QUEST_PROGRESS','179p.ogg'},{'QUEST_COMPLETE','179c.ogg'}}) do
     event(entry[1])
     assert(plays[#plays].file:find(entry[2],1,true))
+    WV:Silence() -- Check each source in isolation; busy-player ordering is covered by the queue scenarios.
 end
 questID=3911
 event('QUEST_COMPLETE')

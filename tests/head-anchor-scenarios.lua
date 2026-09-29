@@ -15,9 +15,15 @@ local points = {
     {'LEFT', 0, 0.5}, {'CENTER', 0.5, 0.5}, {'RIGHT', 1, 0.5},
     {'TOPLEFT', 0, 1}, {'TOP', 0.5, 1}, {'TOPRIGHT', 1, 1},
 }
+local function visibleOffset(p)
+    local scale = anchor:GetWidth()/head:GetWidth()
+    return (p[2]-0.5)*(anchor:GetWidth()-28*scale)+scale,
+        (p[3]-0.5)*(anchor:GetHeight()-28*scale)-scale
+end
 local function location(p)
     local x, y = anchor:GetCenter()
-    return x + (p[2] - 0.5) * anchor:GetWidth(), y + (p[3] - 0.5) * anchor:GetHeight()
+    local ax, ay = visibleOffset(p)
+    return x + ax, y + ay
 end
 local function selected(point)
     local count = 0
@@ -38,8 +44,9 @@ for _, p in ipairs(points) do
     near(after.x, before.x, 'selecting a point must not move the panel')
     near(after.y, before.y)
     local shownX, shownY = WV:GetHeadAnchorPosition()
-    near(shownX, before.x + (p[2] - 0.5) * anchor:GetWidth(), 'all points must share the screen-center origin')
-    near(shownY, before.y + (p[3] - 0.5) * anchor:GetHeight())
+    local ax, ay = visibleOffset(p)
+    near(shownX, before.x + ax, 'all points must share the screen-center origin')
+    near(shownY, before.y + ay)
     assert(head:IsShown() and head.mouseEnabled, 'selecting an anchor opens an idle preview')
     assert(#plays == played and #stops == stopped)
     selected(p[1])
@@ -112,8 +119,9 @@ for _, p in ipairs(points) do
     UIParent:SetSize(2200, 1300)
     frames.WowVoiceHeadScaleEvents.scripts.OnEvent()
     x, y = location(p)
-    near(x, 2200 * p[2] + stored[3], 'screen resize must retain the chosen screen anchor')
-    near(y, 1300 * p[3] + stored[4])
+    ax, ay = visibleOffset(p)
+    near(x, 2200 * p[2] + stored[3] + ax - (p[2]-.5)*anchor:GetWidth(), 'legacy saved geometry stays unchanged')
+    near(y, 1300 * p[3] + stored[4] + ay - (p[3]-.5)*anchor:GetHeight())
     UIParent:SetSize(1920, 1080)
     frames.WowVoiceHeadScaleEvents.scripts.OnEvent()
     -- Moving in test mode must retain the choice and persist the new offsets.
@@ -124,9 +132,10 @@ for _, p in ipairs(points) do
     for _, center in ipairs({{45, -60}, {-110, 93}}) do
         anchor:ClearAllPoints(); anchor:SetPoint('CENTER', UIParent, 'CENTER', center[1], center[2])
         head.scripts.OnUpdate(head)
-        assert(math.abs(tonumber(panel.PositionX:GetText()) - (center[1] + (p[2]-0.5)*anchor:GetWidth())) <= 0.005001,
+        ax, ay = visibleOffset(p)
+        assert(math.abs(tonumber(panel.PositionX:GetText()) - (center[1] + ax)) <= 0.005001,
             'X must follow the selected point before mouse release')
-        assert(math.abs(tonumber(panel.PositionY:GetText()) - (center[2] + (p[3]-0.5)*anchor:GetHeight())) <= 0.005001,
+        assert(math.abs(tonumber(panel.PositionY:GetText()) - (center[2] + ay)) <= 0.005001,
             'Y must follow the selected point before mouse release')
         assert(WowVoiceDB.headPosition == storedBeforeMove, 'live display must not save position every frame')
     end
@@ -147,13 +156,14 @@ for _, p in ipairs(points) do
     head.scripts.OnDragStart()
     cursorX, cursorY = 737.5, 477.5 -- +50, -30 UI units at UI scale 0.75.
     head.scripts.OnUpdate(head)
-    assert(math.abs(tonumber(panel.PositionX:GetText()) - (50 + (p[2]-0.5)*anchor:GetWidth())) <= 0.005001)
-    assert(math.abs(tonumber(panel.PositionY:GetText()) - (33 + (p[3]-0.5)*anchor:GetHeight())) <= 0.005001)
+    ax, ay = visibleOffset(p)
+    assert(math.abs(tonumber(panel.PositionX:GetText()) - (50 + ax)) <= 0.005001)
+    assert(math.abs(tonumber(panel.PositionY:GetText()) - (33 + ay)) <= 0.005001)
     near(WV:GetHeadSettings().x, 0, 'fixture must keep native geometry stale during movement')
     cursorX, cursorY = 100000, -100000
     head.scripts.OnUpdate(head)
-    local clampedX = (UIParent:GetWidth()-anchor:GetWidth())/2 + (p[2]-0.5)*anchor:GetWidth()
-    local clampedY = -(UIParent:GetHeight()-anchor:GetHeight())/2 + (p[3]-0.5)*anchor:GetHeight()
+    local clampedX = (UIParent:GetWidth()-anchor:GetWidth())/2 + 13*head:GetScale() + ax
+    local clampedY = -(UIParent:GetHeight()-anchor:GetHeight())/2 + ay
     assert(math.abs(tonumber(panel.PositionX:GetText()) - clampedX) <= 0.005001)
     assert(math.abs(tonumber(panel.PositionY:GetText()) - clampedY) <= 0.005001)
     cursorX, cursorY = 737.5, 477.5
@@ -202,8 +212,9 @@ for _, p in ipairs(points) do
     before = WV:GetHeadSettings()
     panel.AnchorPoints.CENTER.scripts.OnClick()
     after = WV:GetHeadSettings(); near(after.x, before.x); near(after.y, before.y)
-    assert(math.abs(tonumber(panel.PositionX:GetText()) - after.x) <= 0.005001)
-    assert(math.abs(tonumber(panel.PositionY:GetText()) - after.y) <= 0.005001)
+    local centerX, centerY = visibleOffset({'CENTER', 0.5, 0.5})
+    assert(math.abs(tonumber(panel.PositionX:GetText()) - after.x - centerX) <= 0.005001)
+    assert(math.abs(tonumber(panel.PositionY:GetText()) - after.y - centerY) <= 0.005001)
     -- (0, 0) puts the chosen point at screen center, even for an edge or corner.
     WV:SetHeadAnchor(p[1])
     assert(WV:SetHeadAnchorPosition(0, 0))
@@ -221,8 +232,10 @@ local edge = WV:GetHeadSettings()
 WV:BeginHeadScalePreview()
 WV:SetHeadScale(1.5, true); head.scripts.OnUpdate(head)
 local bounds = WV:GetHeadSettings()
-assert(math.abs(bounds.x) + anchor:GetWidth()/2 <= UIParent:GetWidth()/2 + 0.00001)
-assert(math.abs(bounds.y) + anchor:GetHeight()/2 <= UIParent:GetHeight()/2 + 0.00001)
+assert(bounds.x + anchor:GetWidth()/2 - 13*bounds.scale <= UIParent:GetWidth()/2 + 0.00001)
+assert(bounds.x - anchor:GetWidth()/2 + 15*bounds.scale >= -UIParent:GetWidth()/2 - 0.00001)
+assert(bounds.y + anchor:GetHeight()/2 - 15*bounds.scale <= UIParent:GetHeight()/2 + 0.00001)
+assert(bounds.y - anchor:GetHeight()/2 >= -UIParent:GetHeight()/2 - 0.00001)
 WV:SetHeadScale(0.5, true); head.scripts.OnUpdate(head)
 local back = WV:GetHeadSettings(); near(back.x, edge.x); near(back.y, edge.y)
 WV:EndHeadScalePreview(true)
@@ -250,7 +263,7 @@ panel.Buttons.reset.scripts.OnClick()
 assert(WowVoiceDB.headPosition == nil and WowVoiceDB.headAnchor == nil)
 assert(WV:GetHeadScale() == 0.5 and WV:GetHeadAnchor() == 'BOTTOM')
 selected('BOTTOM')
-near(tonumber(panel.PositionX:GetText()), 0)
+near(tonumber(panel.PositionX:GetText()), head:GetScale())
 panel:Hide()
 assert(head:IsShown(), 'closing options must leave real playback running')
 WV:Silence()
@@ -263,13 +276,46 @@ near(offsetX, 0); near(offsetY, 120.5)
 panel.PositionX:SetText('99999'); panel.PositionY:SetText('-99999')
 panel.Buttons.applyPosition.scripts.OnClick()
 local clamped = WV:GetHeadSettings()
-assert(math.abs(clamped.x) + anchor:GetWidth()/2 <= UIParent:GetWidth()/2)
+assert(clamped.x + anchor:GetWidth()/2 - 13*clamped.scale <= UIParent:GetWidth()/2)
+assert(clamped.x - anchor:GetWidth()/2 + 15*clamped.scale >= -UIParent:GetWidth()/2)
 assert(math.abs(clamped.y) + anchor:GetHeight()/2 <= UIParent:GetHeight()/2)
 offsetX, offsetY = WV:GetHeadAnchorPosition()
 near(tonumber(panel.PositionX:GetText()), offsetX)
 near(tonumber(panel.PositionY:GetText()), offsetY)
 panel:Hide()
 Enum = oldEnum
+-- Dragging and numeric positioning use the visible top edge at every scale.
+for _, scale in ipairs({0.5, 1, 1.5}) do
+    WV:ApplyHeadSettings({width=570,height=155,scale=scale,x=0,y=100000})
+    local atTop = WV:GetHeadSettings()
+    local borderTop = -head.EditBorder.points[1][5] * scale
+    near(atTop.y + anchor:GetHeight()/2 - borderTop, UIParent:GetHeight()/2,
+        'the edit border must reach the screen top')
+    near(anchor.clampRectInsets[3], -borderTop, 'native dragging must use the same top edge')
+    assert(anchor.clampRectInsets[4] == 0, 'the bottom bound must keep the progress bar on screen')
+    WV:EnsureHeadPreview()
+    head.scripts.OnDragStart()
+    head.scripts.OnDragStop()
+    near(WV:GetHeadSettings().y, atTop.y, 'releasing the mouse must not pull the head down')
+    WV:HideHeadPreview()
+    WV:EnsureHeadPreview()
+    near(WV:GetHeadSettings().y, atTop.y, 'restoring the head must preserve the edge position')
+    for _, side in ipairs({-1, 1}) do
+        WV:ApplyHeadSettings({width=570,height=155,scale=scale,x=side*100000,y=atTop.y})
+        local atSide = WV:GetHeadSettings()
+        local inset = side == -1 and head.EditBorder.points[1][4] or -head.EditBorder.points[2][4]
+        near(atSide.x + side*(anchor:GetWidth()/2-inset*scale), side*UIParent:GetWidth()/2,
+            'the yellow side border must reach the screen edge')
+        near(anchor.clampRectInsets[side == -1 and 1 or 2], -side*inset*scale,
+            'native dragging must use the same side edge')
+        head.scripts.OnDragStart()
+        head.scripts.OnDragStop()
+        near(WV:GetHeadSettings().x, atSide.x, 'release must retain the side edge position')
+        WV:HideHeadPreview()
+        WV:EnsureHeadPreview()
+        near(WV:GetHeadSettings().x, atSide.x, 'restoring must retain the side edge position')
+    end
+end
 UIParent.scale = 1
 frames.WowVoiceHeadScaleEvents.scripts.OnEvent()
 WV:ResetHeadSettings()

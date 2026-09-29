@@ -57,10 +57,10 @@ local function finish(id)
 end
 command('options')
 local panel = frames.WowVoiceOptionsPanel
-assert(WowVoiceDB.trackerProgressPulse and panel.TrackerProgressPulse:GetChecked())
-WowVoiceDB.trackerProgressPulse=nil
+assert(not panel.TrackerProgressPulse and not panel.TrackerButtons)
+WowVoiceDB.trackerProgressPulse=false
 event('ADDON_LOADED')
-assert(WowVoiceDB.trackerProgressPulse, 'existing installations default on')
+assert(WowVoiceDB.trackerProgressPulse==nil, 'obsolete reminder opt-out is removed')
 send('PLAYER_LOGIN')
 send('QUEST_LOG_UPDATE')
 assert(not play.ProgressGlow.visible, 'initial snapshot is silent')
@@ -110,30 +110,16 @@ objectives[179]=nil; send('QUEST_LOG_UPDATE')
 objectives[179]={{text=''}}; send('QUEST_LOG_UPDATE')
 objectives[179]=saved; send('QUEST_LOG_UPDATE')
 assert(not play.ProgressGlow.visible, 'cache misses retain last valid snapshot')
-panel.TrackerProgressPulse:SetChecked(false)
-panel.TrackerProgressPulse.scripts.OnClick(panel.TrackerProgressPulse)
+-- Stale settings cannot suppress either the buttons or progress reminders.
+WowVoiceDB.trackerProgressPulse, WowVoiceDB.trackerButtons = false, false
 change(179, 4)
+assert(play.visible and play.ProgressGlow.visible)
 event('ADDON_LOADED')
-assert(not WowVoiceDB.trackerProgressPulse and not play.ProgressGlow.visible)
-panel.TrackerProgressPulse:SetChecked(true)
-panel.TrackerProgressPulse.scripts.OnClick(panel.TrackerProgressPulse)
-send('QUEST_LOG_UPDATE')
-assert(not play.ProgressGlow.visible, 'enabling does not replay old changes')
+assert(WowVoiceDB.trackerProgressPulse==nil and WowVoiceDB.trackerButtons==nil)
+advance(10)
 change(179, 5)
-WV:SetTrackerProgressPulseEnabled(false)
-assert(not play.ProgressGlow.visible and not play.scripts.OnUpdate, 'disable stops current pulse immediately')
-WV:SetTrackerProgressPulseEnabled(true)
-change(179, 6)
-WV:SetTrackerButtonsEnabled(false)
-assert(not play.visible and not play.ProgressGlow.visible)
-assert(not panel.TrackerProgressPulse:IsEnabled() and panel.TrackerProgressPulse.Label.alpha<1,
-    'parent option disables and dims the reminder sub-option')
-assert(panel.TrackerProgressPulse:GetChecked() and WowVoiceDB.trackerProgressPulse,
-    'disabling the parent preserves the saved reminder choice')
-WV:SetTrackerButtonsEnabled(true)
-assert(not play.ProgressGlow.visible)
-assert(panel.TrackerProgressPulse:IsEnabled() and panel.TrackerProgressPulse.Label.alpha==1,
-    'enabling the parent restores the reminder control')
+assert(play.ProgressGlow.visible)
+advance(10)
 change(90902, 1)
 assert(supplemental.ProgressGlow.visible, 'supplemental quests work too')
 tracker:FreeBlock(extra)
@@ -209,13 +195,12 @@ assert(WowVoiceDB.listenedQuests[playerGUID][90902], 'replaced playback still co
 print('PASS: manual and automatic descriptions share cooldown; duplicate events, failures and turn-in lines do not renew it')
 
 -- Actual options Test button previews every visible arrow, even heard quests
--- and when the preference is disabled, without changing either saved state.
-WV:SetTrackerProgressPulseEnabled(false)
+-- without changing listening history.
 local played, stopped=#plays, #stops
 panel.Buttons.test.scripts.OnClick()
 advance(0.6)
 assert(play.ProgressGlow.visible and other.ProgressGlow.visible)
-assert(not WowVoiceDB.trackerProgressPulse and WowVoiceDB.listenedQuests[playerGUID][179])
+assert(WowVoiceDB.listenedQuests[playerGUID][179])
 advance(2)
 assert(play.ProgressGlow.visible and play.ProgressGlow.alpha==1, 'preview has no pauses')
 advance(2.4)
@@ -236,7 +221,7 @@ WV:Silence()
 panel.Buttons.test.scripts.OnClick()
 frames.WowVoiceTalkingHead.Close.scripts.OnClick()
 assert(not play.ProgressGlow.visible and not other.scripts.OnUpdate, 'portrait close exits preview')
-assert(not WowVoiceDB.trackerProgressPulse, 'test never changes saved preference')
+assert(WowVoiceDB.trackerProgressPulse==nil, 'test must not recreate the removed setting')
 print('PASS: options test keeps all active arrows glowing; close, toggle and real playback clean up')
 
 -- Scale previews must not light the native quest buttons, from idle or Test.
@@ -264,7 +249,6 @@ assert(play.ProgressGlow.visible)
 WV:HideHeadPreview()
 
 -- A listening pause slides only while active and only for that quest's progress.
-WV:SetTrackerProgressPulseEnabled(true)
 assert(WV:ReplayQuest(179)); WV:Silence()
 local heardUntil = WowVoiceDB.listenedQuests[playerGUID][179]
 assert(heardUntil == serverNow + 1800)
@@ -472,20 +456,11 @@ objectives[192][1].numFulfilled = objectives[192][1].numFulfilled + 1
 send('QUEST_WATCH_UPDATE', 192)
 assert(notice.questID == 192 and play.ProgressGlow.visible and other.ProgressGlow.visible,
     'coalesced progress prefers the latest native event and glows both quests')
-panel.TrackerProgressPulse:SetChecked(false)
-panel.TrackerProgressPulse.scripts.OnClick(panel.TrackerProgressPulse)
-assert(not notice:IsShown() and not play.ProgressGlow.visible and not other.ProgressGlow.visible)
-increment(179)
-assert(not notice:IsShown())
-WV:SetTrackerProgressPulseEnabled(true)
-assert(not notice:IsShown(), 'enabling does not replay suppressed progress')
-increment(179)
-assert(notice:IsShown())
-WV:SetTrackerButtonsEnabled(false)
-assert(not notice:IsShown() and not panel.TrackerProgressPulse:IsEnabled())
-assert(panel.TrackerProgressPulse.Description.alpha < 1)
-WV:SetTrackerButtonsEnabled(true)
-increment(179)
+WowVoiceDB.trackerProgressPulse, WowVoiceDB.trackerButtons = false, false
+WV:RefreshTrackerButtons()
+assert(notice:IsShown() and play.ProgressGlow.visible and other.ProgressGlow.visible,
+    'obsolete opt-outs cannot stop active reminders')
+WowVoiceDB.trackerProgressPulse, WowVoiceDB.trackerButtons = nil, nil
 WowVoiceDB.enabled = false
 WV:RefreshTrackerButtons()
 assert(not notice:IsShown())
@@ -574,4 +549,4 @@ assert(not notice:IsShown(), 'removing the quest also removes its clickable noti
 increment(999999)
 assert(not notice:IsShown(), 'quests without audio remain silent')
 assert(WV.Work.errors == beforeErrors, 'production notifications must not fail inside the deferred scan')
-print('PASS: real reminder and glow share one option, no duplicate status/autoplay, renewal, hover target safety, native-event priority, lifecycle cleanup and listening cooldown')
+print('PASS: real reminder and glow are always available, no duplicate status/autoplay, renewal, hover target safety, native-event priority, lifecycle cleanup and listening cooldown')

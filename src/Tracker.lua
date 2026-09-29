@@ -12,11 +12,11 @@ local reminderTestQuest, reminderTestStarted
 local lastProgressQuest
 
 local function enabled()
-    return WowVoiceDB and WowVoiceDB.trackerButtons ~= false
+    return WowVoiceDB ~= nil
 end
 
 local function pulseEnabled()
-    return enabled() and WowVoiceDB.enabled ~= false and WowVoiceDB.trackerProgressPulse ~= false
+    return enabled() and WowVoiceDB.enabled ~= false
 end
 
 local function visibleTrackerQuest(play)
@@ -497,12 +497,6 @@ function WV:RefreshTrackerButtons()
     end
 end
 
-function WV:SetTrackerProgressPulseEnabled(value)
-    WowVoiceDB.trackerProgressPulse = value == true
-    self:RefreshTrackerButtons()
-    if self.RefreshHeadOptions then self:RefreshHeadOptions() end
-end
-
 function WV:SetTrackerPulsePreview(value)
     previewStarted = value and GetTime() or nil
     self:RefreshTrackerButtons()
@@ -565,12 +559,6 @@ local function scanProgress()
         showQuestReminder(reminderID, false)
     end
     WV:RefreshTrackerButtons()
-end
-
-function WV:SetTrackerButtonsEnabled(value)
-    WowVoiceDB.trackerButtons = value == true
-    self:RefreshTrackerButtons()
-    if self.RefreshHeadOptions then self:RefreshHeadOptions() end
 end
 
 local function setup()

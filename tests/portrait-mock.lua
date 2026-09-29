@@ -161,6 +161,7 @@ function CreateFrame(kind,name,parent,template)
     function f:SetEnabled(v) self.enabled=v end
     function f:IsEnabled() return self.enabled~=false end
     function f:SetClampedToScreen() end
+    function f:SetClampRectInsets(...) self.clampRectInsets={...} end
     function f:SetBackdrop(v) self.backdrop=v end
     function f:SetBackdropColor(...) self.backdropColor={...} end
     function f:SetBackdropBorderColor(...) self.backdropBorderColor={...} end

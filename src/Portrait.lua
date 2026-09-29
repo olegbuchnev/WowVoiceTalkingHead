@@ -3,6 +3,13 @@
 local WV = _G.WowVoice
 local pending, probe, request, head, anchor, active, transition
 local scalePreview
+local playlistHeadEditing
+local function refreshEditBorder()
+    if head and head.EditBorder then
+        if playlistHeadEditing or (active and active.preview) then head.EditBorder:Show()
+        else head.EditBorder:Hide() end
+    end
+end
 local scaleCapture, scaleSnapshot
 local scaleSnapshotStatus = "not requested"
 local textScalePreviewStatus = "not requested"
@@ -32,7 +39,7 @@ local function syncModelOpacity()
     if scalePreview and scalePreview.reparented then return end
     local model = head.Model
     local alpha = head.visualAlpha or 1
-    if transition then alpha = math.max(0, 1 - math.max(0, GetTime() - transition.startedAt)) end
+    if transition then alpha = math.max(0, 1 - math.max(0, GetTime() - transition.startedAt) / transition.duration) end
     if not active or not model.portraitReady or not head:IsVisible() then
         alpha = 0
     elseif model.SetModelAlpha then
@@ -46,17 +53,150 @@ end
 local SECTION = { a = "Описание задания", p = "Выполнение задания", c = "Завершение задания" }
 local FALLBACK_ICON = "Interface\\Icons\\INV_Misc_Note_01"
 local DEFAULT_WIDTH, DEFAULT_HEIGHT = 570, 155
+local PANEL_LEFT, PANEL_RIGHT = 15, 13
+local PANEL_TOP, PANEL_BOTTOM = 15, 13
 -- Retail TalkingHeadUI.xml fallback; managed layouts place it above action bars.
 local DEFAULT_BOTTOM_OFFSET = 96
 local TALKING_HEAD_TEXTURE = "Interface\\AddOns\\WowVoiceTalkingHead\\Media\\TalkingHeads"
 local CLOSE_UP = "Interface\\Buttons\\UI-Panel-MinimizeButton-Up"
-local CLOSE_DOWN = "Interface\\Buttons\\UI-Panel-MinimizeButton-Down"
+local function createCloseArtwork(close)
+    -- Native red fill and bevel match the queue prototype's Next button.
+    -- Keep the glyph separate so its texture cannot alter the panel shading.
+    local art = CreateFrame("Frame", nil, close)
+    art:SetAllPoints(close)
+    art:EnableMouse(false)
+    close.Stock = art
+    local parts = {}
+    local function piece(x, y, w, h, left, right, top, bottom, center)
+        local texture = art:CreateTexture(nil, "BACKGROUND")
+        texture:SetPoint("TOPLEFT", close, "TOPLEFT", 6 + x, -(7 + y - 2))
+        texture:SetSize(w, h)
+        texture:SetTexCoord(left, right, top, bottom)
+        parts[#parts + 1] = { texture = texture, center = center }
+    end
+    piece(4, 6, 11, 10, 12/128, 68/128, 5/32, 17/32, true)
+    piece(0, 2, 4, 4, 6/32, 10/32, 7/32, 11/32)
+    piece(15, 2, 4, 4, 21/32, 25/32, 7/32, 11/32)
+    piece(0, 16, 4, 4, 6/32, 10/32, 21/32, 25/32)
+    piece(15, 16, 4, 4, 21/32, 25/32, 21/32, 25/32)
+    piece(4, 2, 11, 4, 10/32, 21/32, 7/32, 11/32)
+    piece(4, 16, 11, 4, 10/32, 21/32, 21/32, 25/32)
+    piece(0, 6, 4, 10, 6/32, 10/32, 11/32, 21/32)
+    piece(15, 6, 4, 10, 21/32, 25/32, 11/32, 21/32)
+    art.Glyph = art:CreateTexture(nil, "ARTWORK")
+    art.Glyph:SetTexture("Interface\\AddOns\\WowVoiceTalkingHead\\Media\\CloseGlyph")
+    art.Glyph:SetTexCoord(2/512, 270/512, 2/512, 247/512)
+    art.Glyph:SetSize(19 * 268/416, 18 * 245/398)
+    close.Highlight = art:CreateTexture(nil, "OVERLAY")
+    close.Highlight:SetTexture("Interface\\Buttons\\UI-Panel-MinimizeButton-Highlight")
+    close.Highlight:SetBlendMode("ADD")
+    close.Highlight:SetAllPoints(close)
+    local function pressed(value)
+        for _, part in ipairs(parts) do
+            part.texture:SetTexture(part.center and
+                ("Interface\\Buttons\\UI-Panel-Button-" .. (value and "Down" or "Up")) or CLOSE_UP)
+            local shade = value and not part.center and 0.72 or 1
+            part.texture:SetVertexColor(shade, shade, shade)
+        end
+        local shade = value and 0.72 or 1
+        art.Glyph:SetVertexColor(shade, shade, shade)
+        art.Glyph:ClearAllPoints()
+        art.Glyph:SetPoint("TOPLEFT", close, "TOPLEFT",
+            6 + 73 * 19/416 + (value and 1 or 0),
+            -7 - 77 * 18/398 - (value and 1 or 0))
+    end
+    function close:ResetAppearance()
+        self.Highlight:Hide()
+        pressed(false)
+    end
+    close:SetScript("OnEnter", function() close.Highlight:Show() end)
+    close:SetScript("OnLeave", function() close:ResetAppearance() end)
+    close:SetScript("OnHide", function() close:ResetAppearance() end)
+    close:SetScript("OnMouseDown", function() pressed(true) end)
+    close:SetScript("OnMouseUp", function() pressed(false) end)
+    close:ResetAppearance()
+end
+function WV:CreateHeadStyleButton(parent, label, width, callback, name)
+    local button = CreateFrame("Button", name, parent)
+    button:SetSize(width, 22)
+    local parts, glows = {}, {}
+    local function piece(x, y, w, h, left, right, top, bottom, center)
+        local texture = button:CreateTexture(nil, "BACKGROUND")
+        texture:SetPoint("TOPLEFT", button, "TOPLEFT", x, -y)
+        texture:SetSize(w, h)
+        texture:SetTexCoord(left, right, top, bottom)
+        parts[#parts + 1] = { texture = texture, center = center }
+    end
+    -- The approved prototype: close-button bevel around a wider native red fill.
+    piece(4, 6, width - 8, 10, 12/128, 68/128, 5/32, 17/32, true)
+    piece(0, 2, 4, 4, 6/32, 10/32, 7/32, 11/32)
+    piece(width - 4, 2, 4, 4, 21/32, 25/32, 7/32, 11/32)
+    piece(0, 16, 4, 4, 6/32, 10/32, 21/32, 25/32)
+    piece(width - 4, 16, 4, 4, 21/32, 25/32, 21/32, 25/32)
+    piece(4, 2, width - 8, 4, 10/32, 21/32, 7/32, 11/32)
+    piece(4, 16, width - 8, 4, 10/32, 21/32, 21/32, 25/32)
+    piece(0, 6, 4, 10, 6/32, 10/32, 11/32, 21/32)
+    piece(width - 4, 6, 4, 10, 21/32, 25/32, 11/32, 21/32)
+    button.Label = button:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    button.Label:SetText(label)
+    local function glowPiece(x, width, left, right, leftAlpha, rightAlpha)
+        local glow = button:CreateTexture(nil, "OVERLAY", nil, 1)
+        glow:SetTexture("Interface\\Buttons\\UI-Panel-MinimizeButton-Highlight")
+        glow:SetTexCoord(left, right, 0, 1)
+        glow:SetPoint("TOPLEFT", button, "TOPLEFT", x, 5)
+        glow:SetSize(width, 32)
+        glow:SetBlendMode("ADD")
+        if glow.SetGradient and CreateColor then
+            glow:SetGradient("HORIZONTAL", CreateColor(1, 1, 1, leftAlpha), CreateColor(1, 1, 1, rightAlpha))
+        elseif glow.SetGradientAlpha then
+            glow:SetGradientAlpha("HORIZONTAL", 1, 1, 1, leftAlpha, 1, 1, 1, rightAlpha)
+        else glow:SetAlpha(math.min(leftAlpha, rightAlpha)) end
+        glows[#glows + 1] = glow
+    end
+    glowPiece(-6, 16, 0, 0.5, 0.65, 0.40)
+    glowPiece(10, width - 19, 15/32, 17/32, 0.40, 0.40)
+    glowPiece(width - 9, 16, 0.5, 1, 0.40, 0.65)
+    local function appearance(pressed)
+        for _, part in ipairs(parts) do
+            -- Down has a different inset: reusing the Up crop stretches its dark edge.
+            part.texture:SetTexture(part.center and "Interface\\Buttons\\UI-Panel-Button-Up" or CLOSE_UP)
+            local shade = pressed and 0.72 or 1
+            part.texture:SetVertexColor(shade, shade, shade)
+        end
+        button.Label:ClearAllPoints()
+        button.Label:SetPoint("CENTER", button, "CENTER", pressed and 1 or 0, pressed and -1 or 0)
+    end
+    local function reset()
+        for _, glow in ipairs(glows) do glow:Hide() end
+        button.Label:SetTextColor(1, 0.82, 0)
+        appearance(false)
+    end
+    button:SetScript("OnEnter", function() for _, glow in ipairs(glows) do glow:Show() end end)
+    button:SetScript("OnLeave", reset)
+    button:SetScript("OnHide", reset)
+    button:SetScript("OnMouseDown", function() appearance(true) end)
+    button:SetScript("OnMouseUp", function() appearance(false) end)
+    button:SetScript("OnClick", callback)
+    reset()
+    return button
+end
+
+local function createNextButton(parent)
+    local button = WV:CreateHeadStyleButton(parent, "Далее", 72, function()
+        local queue = WV.questQueue
+        if queue and queue.enabled and queue.current then queue:Next() end
+    end, "WowVoiceTalkingHeadNext")
+    button:SetPoint("RIGHT", parent.Close, "LEFT", -6, 0)
+    button:SetFrameLevel(parent:GetFrameLevel() + 10)
+    button:Hide()
+    return button
+end
+
 local function applyHeadAppearance()
     local close = head.Close
     close:SetSize(32, 32)
     close:SetPoint("TOPRIGHT", head, "TOPRIGHT", -12, -12)
-    close.Stock:SetTexture(CLOSE_UP)
-    close.Highlight:Hide()
+    close:ResetAppearance()
     head.Name:SetTextColor(1, 0.82, 0.02, 1)
     head.Body:SetTextColor(1, 1, 1, 1)
     head.IconBorder:SetColorTexture(0.65, 0.53, 0.25, 1)
@@ -227,6 +367,7 @@ local function replaySpeaker(questId, record, quests, snapshot)
 end
 
 local warmModels, warmList, warmRevision = {}, {}, 0
+local queuePortraitSpeakers, queuePortraitSignature = {}, ""
 local function portraitKey(speaker)
     if not speaker or speaker.itemID or speaker.objectID then return end
     if positive(speaker.displayID) then return "Display" .. speaker.displayID end
@@ -235,6 +376,19 @@ end
 local function cachedPortraitDisplay(speaker)
     local job = warmModels[portraitKey(speaker)]
     return job and job.displayID
+end
+
+function WV:GetQuestQueuePortraitDisplay(speaker)
+    if not speaker then return end
+    if positive(speaker.displayID) then return speaker.displayID end
+    local cached = cachedPortraitDisplay(speaker)
+    if positive(cached) then return cached end
+    -- The visible head may already have resolved an uncached NPC itself.
+    if head and active and not active.preview and head.Model.portraitReady
+        and portraitKey(speaker) and portraitKey(speaker) == portraitKey(active.context.speaker) then
+        local display = head.Model:GetDisplayInfo()
+        if positive(display) then return display end
+    end
 end
 local function createWarmModel(key, job)
     -- Lifetime ownership prevents late callbacks from impersonating another NPC.
@@ -301,13 +455,11 @@ local function warmPortraits()
     end
 end
 local function scanQuestPortraits()
-    local log = C_QuestLog
-    if not (log and log.GetNumQuestLogEntries and log.GetInfo) then return end
+    local log = C_QuestLog or {}
     prepareSpeakerIndex()
     local revision = warmRevision
     local snapshot = { items = {}, displays = {} }
-    local quests = characterQuests()
-    if not quests then return end
+    local quests = characterQuests() or {}
     -- One incremental inventory pass for the entire journal, not one per quest.
     local bags = C_Container
     if bags and bags.GetContainerItemQuestInfo and bags.GetContainerItemInfo and bags.GetContainerNumSlots then
@@ -336,7 +488,8 @@ local function scanQuestPortraits()
         if revision ~= warmRevision then return end
     end
     local wanted = {}
-    for index = 1, log.GetNumQuestLogEntries() do
+    local count = log.GetNumQuestLogEntries and log.GetInfo and log.GetNumQuestLogEntries() or 0
+    for index = 1, count do
         if revision ~= warmRevision then return end
         local info = log.GetInfo(index)
         if info and not info.isHeader and WV:HasQuestAudio(info.questID) then
@@ -347,6 +500,9 @@ local function scanQuestPortraits()
         coroutine.yield()
     end
     if revision ~= warmRevision then return end
+    -- Queue speakers include simulated quests and completed quests no longer
+    -- present in the real journal. Resolve them through the same bounded worker.
+    for key, speaker in pairs(queuePortraitSpeakers) do wanted[key] = speaker end
     -- Commit only a complete, current snapshot; live playback has priority.
     for _, job in ipairs(warmList) do
         job.wanted = wanted[job.key] ~= nil
@@ -375,6 +531,20 @@ end
 local function queueQuestPortraits()
     warmRevision = warmRevision + 1
     WV.Work:Queue("portrait-scan", scanQuestPortraits, 0.5, true)
+end
+
+function WV:PrepareQuestQueuePortraits(groups)
+    local wanted, keys = {}, {}
+    for _, group in ipairs(groups) do
+        local speaker = group.speaker
+        local key = portraitKey(speaker)
+        if key and not wanted[key] then wanted[key] = speaker; keys[#keys + 1] = key end
+    end
+    table.sort(keys)
+    local signature = table.concat(keys, ":")
+    if signature == queuePortraitSignature then return end
+    queuePortraitSpeakers, queuePortraitSignature = wanted, signature
+    queueQuestPortraits()
 end
 
 local function resetProbe()
@@ -529,10 +699,42 @@ local function centerPosition()
     return 0, -UIParent:GetHeight() / 2 + DEFAULT_BOTTOM_OFFSET + anchor:GetHeight() / 2
 end
 
+local function sizeHeadAnchor(width, height, scale)
+    -- Transparent margins may leave the screen; the visible panel may not.
+    anchor.headClampLeft = PANEL_LEFT * scale
+    anchor.headClampRight = PANEL_RIGHT * scale
+    anchor.headClampTop = PANEL_TOP * scale
+    anchor:SetClampRectInsets(anchor.headClampLeft, -anchor.headClampRight, -anchor.headClampTop, 0)
+    anchor:SetSize(width * scale, height * scale)
+end
+
 local function clampCenterPosition(x, y)
     local maxX = math.max(0, (UIParent:GetWidth() - anchor:GetWidth()) / 2)
     local maxY = math.max(0, (UIParent:GetHeight() - anchor:GetHeight()) / 2)
-    return math.max(-maxX, math.min(maxX, x)), math.max(-maxY, math.min(maxY, y))
+    return math.max(-maxX - (anchor.headClampLeft or 0), math.min(maxX + (anchor.headClampRight or 0), x)),
+        math.max(-maxY, math.min(maxY + (anchor.headClampTop or 0), y))
+end
+
+local function panelPointOffset(point)
+    -- UI coordinates and scale pivots follow the yellow outline. Saved frame
+    -- anchors retain their original geometry so existing placements do not move.
+    local scale = (anchor.headClampTop or 0) / PANEL_TOP
+    local left, right = PANEL_LEFT * scale, PANEL_RIGHT * scale
+    local top, bottom = PANEL_TOP * scale, PANEL_BOTTOM * scale
+    local x, y = pointOffset(point, anchor:GetWidth() - left - right, anchor:GetHeight() - top - bottom)
+    return x + (left - right)/2, y + (bottom - top)/2
+end
+
+function WV:GetTalkingHeadPanelBounds()
+    if not head or not head:IsShown() then return end
+    local x, y = anchor:GetCenter()
+    if not x or not y then return end
+    local ratio = anchor:GetEffectiveScale() / UIParent:GetEffectiveScale()
+    local scale = head:GetEffectiveScale() / UIParent:GetEffectiveScale()
+    return x * ratio - head:GetWidth() * scale / 2 + PANEL_LEFT * scale,
+        y * ratio + head:GetHeight() * scale / 2 - PANEL_TOP * scale,
+        x * ratio + head:GetWidth() * scale / 2 - PANEL_RIGHT * scale,
+        y * ratio - head:GetHeight() * scale / 2 + PANEL_BOTTOM * scale
 end
 
 local function setPosition(x, y, temporary)
@@ -730,7 +932,8 @@ local function layoutHead()
     local textLeft, textRight = 152, 42
     -- Retail composition: portrait on the left, name above
     -- the text on the right, and space reserved for the close button.
-    head.Name:SetWidth(width - textLeft - textRight)
+    local nameRight = head.Next and head.Next:IsShown() and 130 or textRight
+    head.Name:SetWidth(math.max(1, width - textLeft - nameRight))
     head.Name:SetHeight(0)
     local _, titleSize = head.Name:GetFont()
     local nameHeight = math.max(titleSize, head.Name:GetStringHeight())
@@ -743,7 +946,7 @@ local function layoutHead()
     head.Name:SetHeight(nameHeight)
     head:SetSize(width, height)
     -- Only the panel receives the saved scale; the anchor uses UIParent units.
-    anchor:SetSize(width * scale, height * scale)
+    sizeHeadAnchor(width, height, scale)
     local textWidth = width - textLeft - textRight
     -- The portrait camera expects a roughly square viewport. Panel height
     -- must not turn it into a narrow vertical strip or crop the head.
@@ -765,7 +968,7 @@ local function layoutHead()
     local iconSize = math.min(64, math.max(1, size - 8))
     head.Icon:SetSize(iconSize, iconSize)
     head.IconBorder:SetSize(iconSize + 2, iconSize + 2)
-    head.Progress:SetWidth(width - 16)
+    head.Progress:SetWidth(width - PANEL_LEFT - PANEL_RIGHT)
     head.TextContent:SetWidth(textWidth)
     head.Body:SetWidth(textWidth)
     local measure = head.TextMeasure
@@ -791,6 +994,16 @@ local function layoutHead()
     updatePlaybackText()
 end
 
+function WV:RefreshHeadQueueButton()
+    if not (head and head.Next) then return end
+    local queue = self.questQueue
+    local shown = active and not active.preview and (not active.closing or (queue and queue.gap))
+        and queue and queue.enabled and queue.current and queue:Waiting() ~= nil or false
+    if head.Next:IsShown() == shown then return end
+    if shown then head.Next:Show() else head.Next:Hide() end
+    layoutHead()
+end
+
 -- Keep model ancestors opaque: PlayerModel's rendered geometry needs its own
 -- opacity, rather than relying on a parent frame fade. Apply the same value to
 -- every visible component, without multiplying it again through its parents.
@@ -808,6 +1021,7 @@ local function setHeadOpacity(alpha)
     head.TextScroll:SetAlpha(alpha)
     head.Progress:SetAlpha(alpha)
     head.Close:SetAlpha(alpha)
+    if head.Next then head.Next:SetAlpha(alpha) end
     syncModelOpacity()
 end
 
@@ -816,8 +1030,8 @@ end
 local function updateHeadTransition()
     if not (head and transition) then return end
     local elapsed = math.max(0, GetTime() - transition.startedAt)
-    setHeadOpacity(math.max(0, 1 - elapsed))
-    if GetTime() >= transition.startedAt + 1 then WV:StopTalkingHead() end
+    setHeadOpacity(math.max(0, 1 - elapsed / transition.duration))
+    if GetTime() >= transition.startedAt + transition.duration then WV:StopTalkingHead() end
 end
 
 -- Match the normal UI's coordinate scale without inheriting its visibility.
@@ -865,8 +1079,8 @@ local function createHead()
     head:RegisterForDrag("LeftButton")
     head:RegisterForClicks("RightButtonUp")
     head:SetScript("OnDragStart", function()
-        if active and active.preview then
-            if active.autoPreview then WV:EnsureHeadPreview() end
+        if playlistHeadEditing or (active and active.preview) then
+            if active and active.autoPreview then WV:EnsureHeadPreview() end
             local x, y = centerPosition()
             local movement = { x = x, y = y, scale = anchor:GetEffectiveScale() }
             if GetCursorPosition then movement.cursorX, movement.cursorY = GetCursorPosition() end
@@ -878,7 +1092,7 @@ local function createHead()
     head:SetScript("OnDragStop", function()
         head.draggingPosition = nil
         anchor:StopMovingOrSizing()
-        if active and active.preview then
+        if playlistHeadEditing or (active and active.preview) then
             setPosition(centerPosition())
             if WV.RefreshHeadOptions then WV:RefreshHeadOptions() end
             WV:FinishAutoHeadPreview(2)
@@ -982,30 +1196,17 @@ local function createHead()
     head.TextMeasure:Hide()
     head.textRange = 0
     head.Progress = CreateFrame("StatusBar", nil, head)
-    head.Progress:SetPoint("BOTTOMLEFT", head, "BOTTOMLEFT", 8, 2)
+    head.Progress:SetPoint("BOTTOMLEFT", head, "BOTTOMLEFT", PANEL_LEFT, 2)
     head.Progress:SetSize(312, 2)
     head.Progress:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
     head.Progress:SetMinMaxValues(0, 1)
 
     -- The close button stops playback or closes the silent preview.
     local close = CreateFrame("Button", nil, head)
-    -- Own both artwork layers instead of clearing native Button texture slots:
-    -- an empty texture path can leave the previous stock artwork on screen.
-    close.Stock = close:CreateTexture(nil, "ARTWORK")
-    close.Stock:SetAllPoints(close)
-    close.Highlight = close:CreateTexture(nil, "OVERLAY")
-    close.Highlight:SetTexture("Interface\\Buttons\\UI-Panel-MinimizeButton-Highlight")
-    -- Stock highlight art has a black background and requires additive blending.
-    close.Highlight:SetBlendMode("ADD")
-    close.Highlight:SetAllPoints(close)
-    close:SetScript("OnEnter", function() close.Highlight:Show() end)
-    close:SetScript("OnLeave", function()
-        close.Highlight:Hide()
-        close.Stock:SetTexture(CLOSE_UP)
-    end)
-    close:SetScript("OnMouseDown", function() close.Stock:SetTexture(CLOSE_DOWN) end)
-    close:SetScript("OnMouseUp", function() close.Stock:SetTexture(CLOSE_UP) end)
+    createCloseArtwork(close)
     local function stopPlayback()
+        playlistHeadEditing = nil
+        refreshEditBorder()
         if active and active.preview then WV:StopTalkingHead()
         else WV:Silence("talking head button") end
     end
@@ -1014,6 +1215,17 @@ local function createHead()
         if button == "RightButton" then stopPlayback() end
     end)
     head.Close = close
+    head.Next = createNextButton(head)
+    head.EditBorder = CreateFrame("Frame", nil, head, "BackdropTemplate")
+    -- The TalkingHeads sheet has transparent/faded margins around the panel.
+    -- Outline the visible panel instead of the texture's full rectangle.
+    head.EditBorder:SetPoint("TOPLEFT", head, "TOPLEFT", PANEL_LEFT, -PANEL_TOP)
+    head.EditBorder:SetPoint("BOTTOMRIGHT", head, "BOTTOMRIGHT", -PANEL_RIGHT, PANEL_BOTTOM)
+    head.EditBorder:SetFrameLevel(head:GetFrameLevel() + 20)
+    head.EditBorder:SetBackdrop({ edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
+    head.EditBorder:SetBackdropBorderColor(1, 0.82, 0.25, 0.7)
+    head.EditBorder:EnableMouse(false)
+    head.EditBorder:Hide()
     head:SetScript("OnUpdate", updateHead)
     applyHeadAppearance()
     layoutHead()
@@ -1079,26 +1291,29 @@ function WV:StartTalkingHead(context, endsAt, duration, startedAt, preview)
     if (not text or text == "") and WowVoiceAudioSources then
         text = WowVoiceAudioSources.Text(context.questId, context.section)
     end
-    head.Body:SetText(text and text ~= "" and text or "Текст задания недоступен.")
+    head.Body:SetText(text and text ~= "" and text or (context.queueOwner and "" or "Текст задания недоступен."))
     layoutHead()
     restorePosition()
     self:RefreshTalkingHeadModel()
+    refreshEditBorder()
 end
 
 -- Audio has already stopped and Dialog has been restored by Core. Leave only
 -- the visual tail alive; it cannot keep talking or restart audio/model requests.
-function WV:FinishTalkingHead()
+function WV:FinishTalkingHead(forceFade)
     traceScaleEvent("finished")
     if not (active and head and head:IsShown()) or (active.preview and not active.autoPreview) then
         self:StopTalkingHead()
         return
     end
-    if active.closing then return end
+    if active.closing and not forceFade then return end
     updatePlaybackText()
     active.closing = true
     head.Model.talkAnimation = nil
     if head.Model.portraitReady then head.Model:SetAnimation(0) end
-    transition = { startedAt = GetTime() }
+    local gap = not forceFade and self.questQueue and self.questQueue.enabled and self.questQueue.gap
+    if gap and not gap.fadeDuration then transition = nil
+    else transition = { startedAt = GetTime(), duration = gap and gap.fadeDuration or 1 } end
 end
 
 function WV:StopTalkingHead()
@@ -1108,9 +1323,11 @@ function WV:StopTalkingHead()
     active = nil
     transition = nil
     if head then
+        local wasDragging = head.draggingPosition ~= nil
         head.draggingPosition = nil
         anchor:StopMovingOrSizing()
-        if wasPreview and WowVoiceDB.headPosition then setPosition(centerPosition()) end
+        if wasDragging or (wasPreview and WowVoiceDB.headPosition) then setPosition(centerPosition()) end
+        head.EditBorder:Hide()
         head:EnableMouse(false)
         head.Model.talkAnimation = nil
         head.Model.portraitReady = false
@@ -1152,7 +1369,7 @@ function WV:GetHeadAnchorPosition()
         end
     end
     local point = self:GetHeadAnchor()
-    local ax, ay = pointOffset(point, anchor:GetWidth(), anchor:GetHeight())
+    local ax, ay = panelPointOffset(point)
     -- All nine selected points share one coordinate origin: screen center.
     -- Saved placement may still use an edge-relative anchor for screen resizing.
     return x + ax, y + ay
@@ -1166,7 +1383,7 @@ function WV:SetHeadAnchorPosition(x, y)
     createHead()
     self:EndHeadScalePreview(true)
     local point = self:GetHeadAnchor()
-    local ax, ay = pointOffset(point, anchor:GetWidth(), anchor:GetHeight())
+    local ax, ay = panelPointOffset(point)
     WowVoiceDB.headAnchor = point
     setPosition(x - ax, y - ay)
     if self.RefreshHeadOptions then self:RefreshHeadOptions() end
@@ -1364,9 +1581,9 @@ updateScalePreviewVisual = function()
             end
         end
     end
-    anchor:SetSize(head:GetWidth() * scale, head:GetHeight() * scale)
+    sizeHeadAnchor(head:GetWidth(), head:GetHeight(), scale)
     if WowVoiceDB.headPosition then
-        local ax, ay = pointOffset(scalePreview.anchorPoint, anchor:GetWidth(), anchor:GetHeight())
+        local ax, ay = panelPointOffset(scalePreview.anchorPoint)
         setPosition(scalePreview.pivotX - ax, scalePreview.pivotY - ay, true)
     else restorePosition() end
     if scalePreview.vertexText then updateVertexTextPreview(scale) end
@@ -1536,7 +1753,7 @@ function WV:BeginHeadScalePreview()
         keepModel = head.Model.GetKeepModelOnHide and head.Model:GetKeepModelOnHide() or false,
         paused = head.Model.GetPaused and head.Model:GetPaused() or false }
     scalePreview.anchorPoint = self:GetHeadAnchor()
-    local ax, ay = pointOffset(scalePreview.anchorPoint, anchor:GetWidth(), anchor:GetHeight())
+    local ax, ay = panelPointOffset(scalePreview.anchorPoint)
     scalePreview.pivotX, scalePreview.pivotY = x + ax, y + ay
     scalePreview.trace = { source = active and (active.preview and "test" or "NPC") or "idle",
         from = head:GetScale(), display = head.Model:GetDisplayInfo(), lastDisplay = head.Model:GetDisplayInfo(),
@@ -1599,7 +1816,7 @@ function WV:EndHeadScalePreview(cancel)
         local changed = head:GetScale() ~= self:GetHeadScale()
         scale = self:GetHeadScale()
         head:SetScale(scale)
-        anchor:SetSize(head:GetWidth() * scale, head:GetHeight() * scale)
+        sizeHeadAnchor(head:GetWidth(), head:GetHeight(), scale)
         if changed and head.Model.portraitReady then updatePortraitCamera(head.Model) end
         restorePosition()
     elseif scale ~= self:GetHeadScale() or head:GetScale() ~= scale then
@@ -1608,7 +1825,7 @@ function WV:EndHeadScalePreview(cancel)
         -- Display bounds may have changed since the last accepted drag value.
         scale = self:GetHeadScale()
         head:SetScale(scale)
-        anchor:SetSize(head:GetWidth() * scale, head:GetHeight() * scale)
+        sizeHeadAnchor(head:GetWidth(), head:GetHeight(), scale)
         restorePosition()
         refreshHeadTextFonts()
         updatePlaybackText()
@@ -1640,7 +1857,7 @@ function WV:SetHeadScale(scale, temporary)
     local x, y = centerPosition()
     local positioned = WowVoiceDB.headPosition ~= nil
     local point = self:GetHeadAnchor()
-    local ax, ay = pointOffset(point, anchor:GetWidth(), anchor:GetHeight())
+    local ax, ay = panelPointOffset(point)
     local pivotX, pivotY = x + ax, y + ay
     WowVoiceDB.headScale = scale
     layoutHead()
@@ -1649,7 +1866,7 @@ function WV:SetHeadScale(scale, temporary)
     -- enlarged panel would otherwise extend offscreen. Automatic placement
     -- continues to follow the action bars until the user chooses a point.
     if positioned then
-        ax, ay = pointOffset(point, anchor:GetWidth(), anchor:GetHeight())
+        ax, ay = panelPointOffset(point)
         setPosition(pivotX - ax, pivotY - ay)
     else restorePosition() end
     if self.RefreshHeadOptions then self:RefreshHeadOptions() end
@@ -1710,18 +1927,8 @@ function WV:FinishAutoHeadPreview(delay)
     end
 end
 
-function WV:ToggleHeadPreview(suppressTrackerPulse)
-    -- Pressing Test during an automatic preview pins that same panel open.
-    if active and active.preview and active.autoPreview then
-        self:EnsureHeadPreview()
-        active.autoPreview, active.autoHideAt = nil, nil
-        if self.SetTrackerPulsePreview then self:SetTrackerPulsePreview(not suppressTrackerPulse) end
-        return true
-    end
-    if active and active.preview then self:StopTalkingHead(); return true end
-    -- Stop the audio and its timer, restoring Dialog before opening a silent preview.
-    self:Silence("talking head preview")
-    self:StartTalkingHead({ questId = 0, section = "a", title = "Тест говорящей головы",
+local function showSilentHeadPreview()
+    WV:StartTalkingHead({ questId = 0, section = "a", title = "Тест говорящей головы",
         speaker = { questId = 0, name = UnitName("player") or "Ваш персонаж" },
         text = "Это тест говорящей головы. Слева показана модель вашего персонажа. Звук в этом режиме не запускается.\n\n"
             .. "Здесь будет текст задания. Каждый блок остаётся неподвижным, пока идёт его чтение. "
@@ -1731,6 +1938,49 @@ function WV:ToggleHeadPreview(suppressTrackerPulse)
             .. "Только во время теста панель можно перемещать мышью. В обычном режиме её положение закреплено. "
             .. "Тест повторяется каждые 30 секунд и прекращается при закрытии настроек." },
         GetTime() + 30, 30, nil, true)
+end
+
+function WV:RefreshPlaylistHeadPreview()
+    if not playlistHeadEditing then return end
+    if not active then showSilentHeadPreview() end
+    if active and active.preview then
+        active.autoPreview, active.autoHideAt, active.closing, transition = nil, nil, nil, nil
+        setHeadOpacity(1)
+    end
+    refreshEditBorder()
+end
+
+function WV:SetPlaylistHeadEditing(enabled)
+    playlistHeadEditing = enabled == true or nil
+    if enabled then
+        self:RefreshPlaylistHeadPreview()
+    else
+        if head and head.draggingPosition then
+            head.draggingPosition = nil
+            anchor:StopMovingOrSizing()
+            setPosition(centerPosition())
+        end
+        self:HideHeadPreview()
+        refreshEditBorder()
+    end
+end
+
+function WV:ToggleHeadPreview(suppressTrackerPulse)
+    -- Pressing Test during an automatic preview pins that same panel open.
+    if active and active.preview and active.autoPreview then
+        self:EnsureHeadPreview()
+        active.autoPreview, active.autoHideAt = nil, nil
+        if self.SetTrackerPulsePreview then self:SetTrackerPulsePreview(not suppressTrackerPulse) end
+        return true
+    end
+    if active and active.preview then
+        playlistHeadEditing = nil
+        self:StopTalkingHead()
+        return true
+    end
+    -- Stop the audio and its timer, restoring Dialog before opening a silent preview.
+    self:Silence("talking head preview")
+    showSilentHeadPreview()
     if self.SetTrackerPulsePreview then self:SetTrackerPulsePreview(not suppressTrackerPulse) end
     return true
 end

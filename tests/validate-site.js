@@ -46,10 +46,12 @@ const { spawnSync } = require('child_process');
     fs.writeFileSync(path.join(fixture,'mock.mjs'),mock);
     const intro='# Test WowVoice\n\nDescription.\n\n';
     const body=`\n[Full](${urls.full})\n[Addon](${urls.addon})\n[Mirror](https://e.pcloud.link/example)\n\n`
-      + ['Две озвучки на выбор','Установка','Возможности','Настройки','Совместимость с CatQuest','Авторы и озвучка']
+      + ['Две озвучки на выбор','Установка','Возможности','Очередь озвучки','Настройки','Совместимость с CatQuest','Авторы и озвучка']
         .map(name=>`## ${name}\n\nContent. [Full](${urls.full}) [Addon](${urls.addon})\n`
-          + (name === 'Две озвучки на выбор' ? '\n![Head](docs/images/head.png)\n' : '')).join('\n');
+          + (name === 'Две озвучки на выбор' ? '\n![Head](docs/images/head.png)\n' : '')
+          + (name === 'Очередь озвучки' ? '\n<p class="feature-image"><img src="docs/images/queue.png" width="320" alt="Queue"></p>\n' : '')).join('\n');
     fs.writeFileSync(path.join(fixture,'docs/images/head.png'),Buffer.from([1]));
+    fs.writeFileSync(path.join(fixture,'docs/images/queue.png'),Buffer.from([2]));
     for (const withLite of [true,false]) {
       fs.writeFileSync(path.join(fixture,'README.md'),intro+(withLite?`[Lite](${urls.lite})\n`:'')+body);
       const result=spawnSync(process.execPath,['--import',require('url').pathToFileURL(path.join(fixture,'mock.mjs')).href,path.join(fixture,'tools/build-site.mjs')],{encoding:'utf8'});
@@ -67,7 +69,10 @@ const { spawnSync } = require('child_process');
       }
       const html=fs.readFileSync(path.join(fixture,'artifacts/site/index.html'),'utf8');
       assert(html.indexOf('class="voice-feature"') < html.indexOf('class="screenshots"'));
-      assert.equal((html.match(/<img /g)||[]).length,1,'Gallery image must not be duplicated inside feature section');
+      assert.equal((html.match(/<img /g)||[]).length,2,'Gallery and queue images must appear once each');
+      assert.match(html, /class="queue-feature"[\s\S]*src="images\/queue.png" width="320"/);
+      assert(!html.includes('src="docs/images/'), 'Inline README image paths must work on Pages');
+      assert.deepEqual(fs.readFileSync(path.join(fixture,'artifacts/site/images/queue.png')), Buffer.from([2]));
     }
     const run = (...args) => spawnSync(process.execPath,['--import',require('url').pathToFileURL(path.join(fixture,'mock.mjs')).href,path.join(fixture,'tools/build-site.mjs'),...args],{encoding:'utf8'});
     fs.writeFileSync(path.join(fixture,'mock.mjs'),mock.replace('X-Source-Version: 1.0.1','X-Source-Version: 9.0.0'));
@@ -91,7 +96,7 @@ const { spawnSync } = require('child_process');
     const previewHtml=fs.readFileSync(path.join(previewRoot,'index.html'),'utf8');
     assert(previewHtml.includes('Релиз ещё не опубликован') && previewHtml.includes('1,2 МБ') && previewHtml.includes('23,5 КБ'));
     assert(!previewHtml.includes(urls.full) && !previewHtml.includes(urls.addon));
-    assert.equal((previewHtml.match(new RegExp(`href="downloads/${preview.full}"`,'g'))||[]).length,7);
+    assert.equal((previewHtml.match(new RegExp(`href="downloads/${preview.full}"`,'g'))||[]).length,8);
     assert(previewHtml.includes(`href="downloads/${preview.addon}"`));
     console.log('PASS: two published downloads, exact artifact sizes, independent release metadata, legacy lite links ignored and optional external audio');
     console.log('PASS: incompatible published downloads rejected; offline preview uses local archive sizes and links');

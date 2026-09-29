@@ -28,6 +28,9 @@ const markdown = new Marked({
     else token.href = `${repository}/blob/main/${token.href}`;
   },
   renderer: {
+    html({ text }) {
+      return text.replace(/src="docs\/images\//g, 'src="images/');
+    },
     heading({ tokens, depth, text }) {
       const id = text.toLowerCase().replace(/[^\p{L}\p{N}\s_-]/gu, '').replace(/\s+/g, '-');
       return `<h${depth} id="${escape(id)}">${this.parser.parseInline(tokens)}</h${depth}>\n`;
@@ -220,6 +223,7 @@ const content = `<div class="intro"><p class="eyebrow">WoW Forever Beta</p><h1>�
   <div class="screenshots">${gallery}</div>
   ${section('Установка', 'installation')}
   ${section('Возможности', 'features')}
+  ${section('Очередь озвучки', 'quest-queue', 'queue-feature')}
   ${section('Настройки', 'settings')}
   ${section('Совместимость с CatQuest', 'catquest')}
   ${section('Авторы и озвучка', 'credits')}`;
@@ -227,8 +231,11 @@ await fs.mkdir(path.join(output, 'images'), { recursive: true });
 await fs.writeFile(path.join(output, 'index.html'), page(content));
 await fs.writeFile(path.join(output, 'guide.html'), page(markdown.parse(guide), true));
 await fs.copyFile(path.join(root, 'site/style.css'), path.join(output, 'style.css'));
-for (const screenshot of screenshots) {
-  const image = screenshot.tokens[0].href;
+const imagePaths = new Set([
+  ...screenshots.map(screenshot => screenshot.tokens[0].href),
+  ...[...readme.matchAll(/src="(docs\/images\/[^"\s]+)"/g)].map(match => match[1]),
+]);
+for (const image of imagePaths) {
   if (!/^docs\/images\/[^/]+\.png$/.test(image)) throw Error(`Unexpected screenshot path: ${image}`);
   await fs.copyFile(path.join(root, image), path.join(output, 'images', path.basename(image)));
 }

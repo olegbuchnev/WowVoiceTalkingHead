@@ -1,6 +1,6 @@
 event('ADDON_LOADED')
 local WV=WowVoice
-assert(WowVoiceDB.trackerButtons==true,'tracker replay defaults to enabled')
+assert(WowVoiceDB.trackerButtons==nil,'obsolete tracker preference is removed')
 assert(#plays==0)
 
 -- The tracker may load later than WowVoice. Use the same nested active-block
@@ -45,26 +45,18 @@ local old=plays[#plays].handle
 play.scripts.OnClick(play)
 assert(#plays==2 and stops[#stops]==old,'repeated click restarts description')
 
--- Exercise the actual settings control. Hiding replay buttons must leave
--- the current audio and portrait preference unchanged.
+-- Replay controls are always available, even with a stale saved opt-out.
 command('options')
 local panel=frames.WowVoiceOptionsPanel
-WV:RefreshHeadOptions()
-assert(panel.TrackerButtons:GetChecked())
-local headEnabled=WowVoiceDB.headEnabled
+assert(not panel.TrackerButtons and not panel.TrackerProgressPulse)
 local count,stopCount=#plays,#stops
-panel.TrackerButtons:SetChecked(false)
-panel.TrackerButtons.scripts.OnClick(panel.TrackerButtons)
-assert(WowVoiceDB.trackerButtons==false and not play.visible and not other.visible)
-assert(WowVoiceDB.headEnabled==headEnabled and #plays==count and #stops==stopCount)
+WowVoiceDB.trackerButtons=false
 tracker:Update()
-play.scripts.OnClick(play)
-assert(not play.visible and #plays==count,'hidden controls cannot start playback')
+assert(play.visible and other.visible and #plays==count and #stops==stopCount)
 event('ADDON_LOADED')
-assert(WowVoiceDB.trackerButtons==false,'saved opt-out must survive initialization')
-panel.TrackerButtons:SetChecked(true)
-panel.TrackerButtons.scripts.OnClick(panel.TrackerButtons)
-assert(play.visible and other.visible,'enabling restores existing buttons immediately')
+assert(WowVoiceDB.trackerButtons==nil)
+tracker:Update()
+assert(play.visible and other.visible)
 
 -- A released block may be reused by another tracker. Keep its button hidden
 -- until it belongs to the quest tracker again; never keep an old quest ID.
@@ -99,7 +91,7 @@ assert(hookCounts[tostring(tracker)..'.Update']==1 and hookCounts[tostring(track
 WV:Silence()
 restored('1','0.37')
 print('PASS: tracker replay, lazy loading, native layout, recycled blocks, missing audio, single hooks/buttons')
-print('PASS: tracker option defaults on, persists off, applies immediately and preserves audio/head settings')
+print('PASS: tracker controls always available, stale opt-out ignored and removed, audio/head settings preserved')
 
 other.scripts.OnEnter(other)
 assert(not GameTooltip.visible and panel.PlayTooltips==nil)

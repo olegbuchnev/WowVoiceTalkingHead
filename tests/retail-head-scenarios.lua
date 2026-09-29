@@ -3,13 +3,13 @@ for _, preset in ipairs({'classic','ellesmere'}) do
     WowVoiceDB = {headEnabled=false, headPreset=preset, headWidth=520,
         headHeight=200, headScale=1.2, headPosition={'CENTER','CENTER',123,-200},
         button='always', buttonPos={'CENTER','CENTER',0,100},
-        autoPlayAccept=false, autoPlayAcceptDefaultOnApplied=true,
+        autoPlayAccept=false, autoPlayAcceptDefaultOnApplied=true, playlistAutoPlayApplied=2,
         autoPlayTurnIn=false, trackerButtons=false, trackerProgressPulse=false}
     event('ADDON_LOADED')
     assert(WowVoiceDB.headEnabled==nil and WowVoiceDB.headPreset==nil)
     assert(WowVoiceDB.button==nil and WowVoiceDB.buttonPos==nil)
     assert(not WowVoiceDB.autoPlayAccept and not WowVoiceDB.autoPlayTurnIn
-        and not WowVoiceDB.trackerButtons and not WowVoiceDB.trackerProgressPulse)
+        and WowVoiceDB.trackerButtons==nil and WowVoiceDB.trackerProgressPulse==nil)
     assert(WowVoice:ReplayQuest(179))
     local head=frames.WowVoiceTalkingHead
     assert(head.visible and head.RetailBackground.visible and head.PortraitOverlay.visible)

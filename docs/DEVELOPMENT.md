@@ -7,7 +7,8 @@ outside the live World of Warcraft installation. Runtime addon files live under
 The runtime code is based on the Midnight version, while `Index.lua`,
 `Durations.lua` and the primary OGG audio come from the Russian Classic sound pack.
 An optional, separately installed CatQuest_Voices supplies quests absent from
-that pack. No CatQuest audio is copied or redistributed. Original WowVoice recordings always take priority.
+that pack and alternate recordings of shared quests. No CatQuest audio is copied
+or redistributed. Shared recordings use the source selected in options (WowVoice by default).
 This build targets **WoW Forever Beta, Interface 16001**.
 
 The in-game title is **WowVoice TalkingHead**, and its addon ID and folder are
@@ -260,25 +261,73 @@ Regression tests verify budget sharing, combat behavior, idle shutdown, native
 overrun reporting, and 100 inventory queries for 25 quests/100 slots (previously
 2,500). These are controlled mocks, not an in-game FPS benchmark.
 
+## Quest playback queue
+
+`src/QuestQueue.lua` owns the gameplay queue; `src/QuestQueuePlayer.lua` renders
+the grouped playlist and its layout preview. Both ship in the regular release.
+The optional `/tt` harness under `dev/queue-lab/` uses the same runtime handlers
+and is excluded from release archives. See [the harness guide](../dev/queue-lab/README.md).
+
+An idle `QUEST_DETAIL` starts playback immediately. If playback is busy or paused,
+the description is held as an offer and joins the waiting queue on `QUEST_ACCEPTED`.
+Groups belong to the quest giver, including quests turned in to another NPC;
+the talking head retains the actual speaker. Each quest keeps its stages together
+in `a`, `p`, `c` order. Abandoning a quest removes its pending stages, while
+`QUEST_TURNED_IN` distinguishes successful completion from abandonment.
+
+Manual Play starts the earliest pending stage of the selected quest and replaces
+the current line without discarding other waiting entries. Play-next moves the
+whole quest after the remaining stages of the current quest. The head's Next
+button skips one line; closing the head discards that line and pauses the rest.
+Playlist quest deletion removes all stages of that quest, and Clear-all stops
+queue playback and removes the queue. Journal, tracker and catalogue playback
+replace the current line; the remaining queue continues afterward. Catalogue
+playback does not change the saved audio-source preference.
+
+Natural transitions use a 1-second gap between quests (0.7-second head fade,
+then 0.3 seconds hidden) and a 0.4-second gap within one quest. Manual transitions
+start immediately. The playlist scrolls to the top when the active record changes.
+
+`WowVoiceQueueDB` is a per-character SavedVariable in all three TOCs. On
+`PLAYER_LOGOUT`, real queue entries are serialized before playback is stopped;
+lab records and layout samples are excluded. Restoration runs once on
+`PLAYER_ENTERING_WORLD`, accepting elapsed times from zero up to, but excluding,
+300 seconds. The current line restarts from the beginning; a paused queue stays
+paused. A completed line waiting in the transition gap is not replayed.
+There is no expiry during a continuous session. SavedVariables depend on the
+client writing them at logout/reload; arbitrary crashes are not guaranteed saves.
+
+Autoplay and descriptions-only preferences affect admission, not playback or
+restoration of existing entries. The migration and flags are described below.
+`tests/queue-session-scenarios.lua` covers migration, persistence and admission
+changes; queue settings and harness scenarios cover controls and event handling.
+Run `node tests/run.js` and `node tests/validate-queue-lab.js`. Packaging exclusion
+of the harness is checked by `tests/pipeline.ps1`.
+
 ## Appearance
 
 Quest descriptions play automatically by default. Disable
-«Озвучивать при получении задания» in the options page to opt out
-(`WowVoiceDB.autoPlayAccept`). A one-time migration enables this setting after
-the unreleased build that defaulted it off; later checkbox choices are preserved.
+«При получении задания» in the «Воспроизведение» options section to opt out
+(`WowVoiceDB.autoPlayAccept`). The one-time playlist migration
+(`playlistAutoPlayApplied = 2`) enables `autoPlay`, `autoPlayAccept` and
+`autoPlayTurnIn`, including saves with the earlier boolean migration marker.
+Subsequent checkbox choices are preserved.
 With autoplay disabled, quest giver and description capture still runs,
 and manual replay from the journal or tracker remains available.
-«Озвучивать при сдаче задания» independently controls all progress and completion
+«При сдаче задания» independently controls all progress and completion
 dialogue (`QUEST_PROGRESS` and `QUEST_COMPLETE`, sections `p` and `c`) for both
-audio packs. `WowVoiceDB.autoPlayTurnIn` defaults to true; a saved opt-out is
-preserved. Neither preference blocks manual description replay. Changing either
+audio packs. `WowVoiceDB.autoPlayTurnIn` defaults to true. Neither preference
+blocks manual description replay. Changing either
 preference does not interrupt or start the current recording.
+All autoplay switches and the descriptions-only filter govern new queue entries.
+Already queued lines retain manual and automatic playback and session persistence
+even when these switches are off. The master autoplay switch closes layout preview,
+but does not stop audio or clear the existing queue.
 
 The on-screen quest tracker has small replay arrows to the left of voiced quest
 titles. They replay the description using
-the current quest ID and leave the tracker layout unchanged. The options page
-can hide these controls independently of journal buttons and the talking head;
-`WowVoiceDB.trackerButtons` defaults to true.
+the current quest ID and leave the tracker layout unchanged. These controls are
+always available for voiced quests; there is no separate visibility preference.
 
 Questie support is optional and contained in Tracker.lua. The adapter imports
 only TrackerLinePool and QuestieTracker through QuestieLoader. It enumerates
@@ -300,15 +349,14 @@ are siblings of the nearest scroll frame to avoid horizontal clipping, and are
 hidden when their first-line hit rectangle crosses the viewport's top/bottom.
 Scrolling, resize and row show/hide refresh visibility without a permanent poll.
 Hover delegates to the row's existing enter/leave handlers for Questie's fading.
-Questie controls share availability, playback, options and progress reminders
+Questie controls share availability, playback and progress reminders
 with the native controls. Visual placement still requires verification in-game.
 
 For the exact reminder decision order, saved-state semantics and examples, see
 [Алгоритм напоминаний об озвучке](QUEST_REMINDERS.md) (developer notes).
-«Напоминать об озвучке при прогрессе» enables both the silent gold glow around
-those tracker buttons and the replay notification (`WowVoiceDB.trackerProgressPulse`, default
-true). Its checkbox is indented under the tracker-button option and disabled
-when the parent is off, preserving the saved reminder preference.
+The silent gold glow around tracker buttons and the replay notification are
+always available while the addon is enabled. Initialization removes the obsolete
+button and reminder preferences, including saved opt-outs.
 Each eligible objective change shows the standard gold ActionButton glow with its animated
 `IconAlertAnts` edge for 10 seconds. Size and opacity stay constant; there is no
 additional pulsing or fading.
@@ -321,9 +369,7 @@ shows a five-second clickable gold `Вспомнить задание` line belo
 visible message regions. Rendered FontString bounds account for wrapping and
 stacked messages, including messages that arrive later. The reminder only moves
 downward until hidden, so disappearing status text does not move the click target
-upward. A fresh appearance resets the offset. `Напоминать об озвучке при прогрессе` in `Кнопки и напоминания`
-controls both effects through the existing `trackerProgressPulse` preference.
-Hiding the controls or disabling the reminder immediately removes both effects.
+upward. A fresh appearance resets the offset.
 Neither starts playback automatically. Native progress text is never duplicated.
 Repeated progress refreshes the line; a hovered line keeps its quest click target
 even when another quest changes. Multiple changes prefer the latest
@@ -359,7 +405,7 @@ do not start audio do not renew it. Existing one-hour timestamps are shortened b
 30 minutes once for all characters, preserving their original start time; the
 `reminderCooldown30Minutes` flag prevents repeating the migration.
 «Тест / переместить» also previews the glow on all active tracker replay buttons,
-including heard quests and with the reminder preference disabled. The same animated
+including heard quests. The same animated
 glow stays visible until preview stops, options close, or real
 playback replaces the preview. Hidden tracker controls remain hidden.
 

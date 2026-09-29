@@ -9,7 +9,7 @@ plays, stops = {}, {}
 -- Correct the previous unreleased default once, preserving unrelated settings.
 WowVoiceDB = {autoPlayAccept=false, trackerButtons=false, volume=0.6}
 event('ADDON_LOADED')
-assert(WowVoiceDB.autoPlayAccept == true and WowVoiceDB.trackerButtons == false
+assert(WowVoiceDB.autoPlayAccept == true and WowVoiceDB.trackerButtons == nil
     and WowVoiceDB.volume == 0.6)
 command('options')
 local panel = frames.WowVoiceOptionsPanel

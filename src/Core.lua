@@ -20,10 +20,10 @@ local SECTION = { accept = "a", progress = "p", complete = "c" }
 
 local defaults = {
     enabled  = true,
+    autoPlay = true, -- Master switch; manual replay stays available
+    queueDescriptionsOnly = false,
     autoPlayAccept = true, -- Automatically play quest descriptions unless opted out
     autoPlayTurnIn = true, -- Both progress dialogue and the final quest reward dialogue
-    trackerButtons = true, -- Replay controls beside tracked quest titles
-    trackerProgressPulse = true, -- Silent replay reminder when quest objectives change
     channel  = "auto",   -- auto: Master with background sound, Music without it
     ext      = "ogg",    -- Sound pack format: ogg | mp3
     stopmode = "silence",-- Music silencing method: silence | cvar | stopmusic
@@ -365,6 +365,7 @@ do
         if not playing then
             -- The audio can already be over while its portrait is fading out.
             if WV.StopTalkingHead then WV:StopTalkingHead() end
+            if WV.questQueue and WV.questQueue.enabled then WV.questQueue:PlaybackStopped(reason) end
             return
         end
         playing = false
@@ -380,9 +381,16 @@ do
         end
         restoreCVar("Sound_MasterVolume")
         unduckNPC()                      -- Restore the Dialog channel (NPC greetings)
+        -- Decide the automatic gap before choosing the portrait's visual tail.
+        if reason == "duration timer" and WV.questQueue and WV.questQueue.enabled then
+            WV.questQueue:PlaybackStopped(reason)
+        end
         if reason == "duration timer" and WV.FinishTalkingHead then
             WV:FinishTalkingHead()
         elseif WV.StopTalkingHead then WV:StopTalkingHead() end
+        if reason ~= "duration timer" and WV.questQueue and WV.questQueue.enabled then
+            WV.questQueue:PlaybackStopped(reason)
+        end
     end
 
     -- duration: voice line length, or nil if unknown
@@ -411,6 +419,7 @@ do
             stopAt = GetTime() + (duration or FALLBACK_LIMIT) + tail
             ticker:Show()
             if WV.StartTalkingHead then WV:StartTalkingHead(context, stopAt, duration) end
+            if WV.questQueue and WV.questQueue.enabled then WV.questQueue:PlaybackStarted(context) end
             return true
         end
         self:Stop("new playback")
@@ -438,6 +447,7 @@ do
                 tostring(duration or FALLBACK_LIMIT), tail, stopAt)
             ticker:Show()
             if WV.StartTalkingHead then WV:StartTalkingHead(context, stopAt, duration) end
+            if WV.questQueue and WV.questQueue.enabled then WV.questQueue:PlaybackStarted(context) end
             return true
         end
         restoreCVar("Sound_MasterVolume")
@@ -633,6 +643,7 @@ function WV:Speak(section, title, text, event)
         dbg("Speak: пропущено, enabled=false")
         return
     end
+    if WowVoiceDB.autoPlay == false then return end
     if section == SECTION.accept and WowVoiceDB.autoPlayAccept ~= true then
         dbg("Speak: пропущено, autoPlayAccept=false")
         return
@@ -646,6 +657,10 @@ function WV:Speak(section, title, text, event)
     local path, dur = self:SoundPath(questId, section)
     if not path then
         dbg("нет записи для квеста %s, секция %s", tostring(questId), section)
+        return
+    end
+    if self.questQueue and self.questQueue.enabled then
+        self.questQueue:Offer(context or { questId = questId, section = section, title = title, text = text })
         return
     end
     dbg("выбор: event=%s questID=%s section=%s title=%s",
@@ -675,6 +690,32 @@ end
 function WV:SetAutoPlayAcceptEnabled(enabled)
     WowVoiceDB.autoPlayAccept = enabled == true
     if self.RefreshHeadOptions then self:RefreshHeadOptions() end
+end
+
+function WV:SetAutoPlayEnabled(enabled)
+    WowVoiceDB.autoPlay = enabled == true
+    if not enabled then
+        if self.PreviewQuestQueue then self:PreviewQuestQueue(false) end
+    end
+    if self.RefreshHeadOptions then self:RefreshHeadOptions() end
+end
+
+-- The queue chooses order; playback, source selection and timing stay here.
+function WV:PlayQueuedQuest(record)
+    local context = record.context
+    if not (WowVoiceDB and WowVoiceDB.enabled) then return false end
+    -- Per-type autoplay preferences gate new entries, not already queued lines.
+    local path, duration = self:SoundPath(context.questId, context.section)
+    if not path then return false end
+    dbg("очередь: questID=%s section=%s title=%s WowVoiceDur=%s path=%s", tostring(context.questId),
+        tostring(context.section), tostring(context.title), tostring(_G.WowVoiceDur ~= nil
+            and _G.WowVoiceDur[context.questId .. context.section] ~= nil), path)
+    local ok = Playback:Play(path, duration, context)
+    if not context.queueOwner then
+        if ok and context.section == "a" and self.MarkQuestListened then self:MarkQuestListened(context.questId) end
+        if context.section == "a" then self:SetQuestAudioAvailable(context.questId, ok) end
+    end
+    return ok
 end
 
 function WV:SetAutoPlayTurnInEnabled(enabled)
@@ -800,6 +841,7 @@ f:SetScript("OnEvent", function(self, event, arg1)
         WowVoiceDB.headEnabled, WowVoiceDB.headPreset = nil, nil
         WowVoiceDB.button, WowVoiceDB.buttonPos = nil, nil
         WowVoiceDB.playTooltips = nil -- Removed setting; our controls no longer show tooltips.
+        WowVoiceDB.trackerButtons, WowVoiceDB.trackerProgressPulse = nil, nil -- Always available now.
         WowVoiceDB.audioSource = nil -- Discard the obsolete bundled/external selector.
         if WowVoiceDB.sharedQuestVoice ~= "catquest" then WowVoiceDB.sharedQuestVoice = "wowvoice" end
         for k, v in pairs(defaults) do
@@ -810,6 +852,12 @@ f:SetScript("OnEvent", function(self, event, arg1)
         if not WowVoiceDB.autoPlayAcceptDefaultOnApplied then
             WowVoiceDB.autoPlayAccept = true
             WowVoiceDB.autoPlayAcceptDefaultOnApplied = true
+        end
+        -- Include turn-ins even for users who received the earlier partial migration.
+        -- Apply once; subsequent user opt-outs survive reloads and logins.
+        if WowVoiceDB.playlistAutoPlayApplied ~= 2 then
+            WowVoiceDB.autoPlay, WowVoiceDB.autoPlayAccept, WowVoiceDB.autoPlayTurnIn = true, true, true
+            WowVoiceDB.playlistAutoPlayApplied = 2
         end
         -- Diagnostics are enabled manually for the current session and reset
         -- after /reload or the next login.
@@ -860,6 +908,7 @@ f:SetScript("OnEvent", function(self, event, arg1)
         WV:Speak(SECTION.complete, GetTitleText(), GetRewardText(), event)
 
     elseif event == "PLAYER_LOGOUT" then
+        if WV.questQueue then WV.questQueue:SaveSession() end
         -- Restore before SavedVariables are serialized, also on /reload.
         WV:UpdateCatQuestIntegration(true)
         WV:Silence("PLAYER_LOGOUT")

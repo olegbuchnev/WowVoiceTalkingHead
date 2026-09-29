@@ -134,8 +134,9 @@ tracker:Update(); flush(); assert(not play.visible)
 first.Quest={Id=179}; tracker:Update(); flush()
 
 -- Common options, progress preview, failure handling and no duplicate hooks.
-WV:SetTrackerButtonsEnabled(false); assert(not play.visible)
-WV:SetTrackerButtonsEnabled(true); assert(play.visible)
+WowVoiceDB.trackerButtons=false
+WV:RefreshTrackerButtons(); assert(play.visible, 'obsolete opt-out cannot hide Questie buttons')
+WowVoiceDB.trackerButtons=nil
 WV:SetTrackerPulsePreview(true); assert(play.ProgressGlow.visible)
 WV:SetTrackerPulsePreview(false); assert(not play.ProgressGlow.visible)
 WV:OpenOptions()
@@ -157,12 +158,14 @@ for _, explicitTest in ipairs({false, true}) do
         WV:HideHeadPreview()
     end
 end
+flush() -- Drain portrait work scheduled by the now-public playlist before measuring redraw coalescing.
 local created=#allFrames
+local deferredBefore = #deferred
 for _=1,5 do
     events.scripts.OnEvent(events, 'ADDON_LOADED', 'OtherAddon')
     tracker:Update(); tracker:UpdateFormatting()
 end
-assert(#deferred==1, 'coalesce Questie redraw/formatting callbacks')
+assert(#deferred==deferredBefore + 1, 'coalesce Questie redraw/formatting callbacks')
 flush()
 assert(#allFrames==created)
 assert(hookCounts[tostring(tracker)..'.Update']==1)

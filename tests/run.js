@@ -21,6 +21,7 @@ for (const runner of [
   'validate-full.js', 'validate-portrait.js', 'validate-player-preview.js',
   'validate-block-scroll.js', 'validate-subtitles.js', 'validate-item-speaker.js',
   'validate-local-debug.js',
+  'validate-queue-lab.js',
 ]) {
   const result = spawnSync(process.execPath, [path.join(__dirname, runner), source], {
     cwd: root, stdio: 'inherit',

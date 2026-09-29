@@ -49,12 +49,15 @@ tick(now+22)
 assert(#stops==count+1)
 restored('1','0.37')
 print('PASS: Classic 861c remains active after 2 seconds and stops at Classic duration')
+WowVoice.questQueue:Clear() -- Start a separate quest interaction, with no completed-stage history.
 
 questID=179
 cvars.Sound_EnableDialog,cvars.Sound_DialogVolume='0','0.64'
 event('QUEST_DETAIL')
 local old=plays[#plays].handle
 event('QUEST_PROGRESS')
+assert(stops[#stops] ~= old, 'queued progress must not interrupt the description')
+WowVoice.questQueue:Next()
 assert(stops[#stops]==old)
 command('stop'); restored('0','0.64')
 cvars.Sound_EnableDialog,cvars.Sound_DialogVolume='1','0.37'

@@ -19,7 +19,7 @@ function Assert-Fails {
 }
 
 try {
-  foreach ($name in @('src', 'build.ps1', 'USER_README.md')) {
+  foreach ($name in @('src', 'dev', 'build.ps1', 'USER_README.md')) {
     Copy-Item -LiteralPath (Join-Path $project $name) -Destination $fixture -Recurse
   }
   # Exercise repeated packaging with a small, real-audio fixture. The full
@@ -314,6 +314,42 @@ try {
     $env:WOWVOICE_FOREVER_BETA_ADDONS = $previousAddonsEnvironment
   }
   Write-Host 'PASS: inherited and local environment deployment, missing/unsafe paths rejected, explicit config bypass, non-deploy tasks independent.'
+
+  # QueueLab is a Git-managed dev module, injected only into explicitly opted-in deployments.
+  foreach ($iteration in 1..2) {
+    & $build -Task DeployAddon -QueueLab -ConfigPath $config
+    foreach ($module in @('State.lua', 'Runtime.lua', 'Window.lua')) {
+      Assert-True ((Get-FileHash -LiteralPath (Join-Path $voice ('QueueLab\' + $module))).Hash -eq
+        (Get-FileHash -LiteralPath (Join-Path $fixture ('dev\queue-lab\' + $module))).Hash) 'QueueLab module mismatch.'
+    }
+    foreach ($toc in Get-ChildItem -LiteralPath $voice -Filter '*.toc') {
+      $entries = @(Get-Content -LiteralPath $toc.FullName | Where-Object { $_ -like 'QueueLab\*' })
+      Assert-True (($entries -join ',') -eq 'QueueLab\State.lua,QueueLab\Runtime.lua,QueueLab\Window.lua') 'QueueLab duplicate or wrong TOC order.'
+      Assert-True (-not ([IO.File]::ReadAllText((Join-Path $fixture ('src\' + $toc.Name))).Contains('QueueLab'))) 'QueueLab changed a source TOC.'
+    }
+  }
+  Assert-Fails { & $build -Task PackageAddon -QueueLab } 'Addon packaging accepted QueueLab.'
+  Assert-Fails { & $build -Task Package -QueueLab } 'Full packaging accepted QueueLab.'
+  & $build -Task PackageAddon
+  $archive = [IO.Compression.ZipFile]::OpenRead($updateZip)
+  try {
+    Assert-True (@($archive.Entries | Where-Object { $_.FullName -match 'QueueLab|queue-lab' }).Count -eq 0) 'QueueLab leaked into release ZIP.'
+    foreach ($entry in $archive.Entries | Where-Object { $_.FullName -like '*.toc' }) {
+      $reader = [IO.StreamReader]::new($entry.Open())
+      try { Assert-True (-not $reader.ReadToEnd().Contains('QueueLab')) 'QueueLab loader leaked into release TOC.' }
+      finally { $reader.Dispose() }
+    }
+  } finally { $archive.Dispose() }
+  & $build -Task DeployAddon -ConfigPath $config
+  Assert-True (-not (Test-Path -LiteralPath (Join-Path $voice 'QueueLab'))) 'Plain deployment left QueueLab files installed.'
+  foreach ($toc in Get-ChildItem -LiteralPath $voice -Filter '*.toc') {
+    Assert-True (-not ([IO.File]::ReadAllText($toc.FullName).Contains('QueueLab'))) 'Plain deploy kept QueueLab loader.'
+  }
+  $contaminatedSource = Join-Path $fixture 'src\QueueLab'
+  New-Item -ItemType Directory -Path $contaminatedSource | Out-Null
+  try { Assert-Fails { & $build -Task PackageAddon } 'Package validation accepted a dev directory in src.' }
+  finally { [IO.Directory]::Delete($contaminatedSource) }
+  Write-Host 'PASS: QueueLab opt-in, repeated deploy, source TOC isolation, release exclusion and clean removal.'
 }
 finally {
   # Only this uniquely named temporary fixture can be recursively removed.

@@ -87,16 +87,31 @@ local function refreshScale()
     panel.refreshingScale = false
 end
 
+local function coordinate(value)
+    if math.abs(value) < 0.005 then value = 0 end
+    return string.format("%.2f", value):gsub("0+$", ""):gsub("%.$", "")
+end
+
 local function refreshPosition(force)
     if panel.editingPosition and not force then return end
     local x, y = WV:GetHeadAnchorPosition()
-    local function coordinate(value)
-        if math.abs(value) < 0.005 then value = 0 end
-        return string.format("%.2f", value):gsub("0+$", ""):gsub("%.$", "")
-    end
     x, y = coordinate(x), coordinate(y)
     if panel.PositionX:GetText() ~= x then panel.PositionX:SetText(x) end
     if panel.PositionY:GetText() ~= y then panel.PositionY:SetText(y) end
+end
+
+function WV:RefreshQuestQueuePositionOptions(force)
+    if not panel or not panel:IsShown() or not panel.QueuePositionX then return end
+    if panel.editingQueuePosition and not force then return end
+    if force then
+        panel.editingQueuePosition = nil
+        panel.QueuePositionX:ClearFocus()
+        panel.QueuePositionY:ClearFocus()
+    end
+    local x, y = self:GetQuestQueuePosition()
+    x, y = coordinate(x), coordinate(y)
+    if panel.QueuePositionX:GetText() ~= x then panel.QueuePositionX:SetText(x) end
+    if panel.QueuePositionY:GetText() ~= y then panel.QueuePositionY:SetText(y) end
 end
 
 function WV:RefreshHeadPositionOptions()
@@ -121,15 +136,39 @@ function WV:RefreshHeadOptions()
         else dot.Border:SetVertexColor(0.6, 0.6, 0.6) end
     end
     refreshPosition()
-    local trackerEnabled = WowVoiceDB.trackerButtons ~= false
-    panel.TrackerButtons:SetChecked(trackerEnabled)
-    panel.TrackerProgressPulse:SetChecked(WowVoiceDB.trackerProgressPulse ~= false)
-    panel.TrackerProgressPulse:SetEnabled(trackerEnabled)
-    panel.TrackerProgressPulse:SetAlpha(trackerEnabled and 1 or 0.45)
-    panel.TrackerProgressPulse.Label:SetAlpha(trackerEnabled and 1 or 0.45)
-    panel.TrackerProgressPulse.Description:SetAlpha(trackerEnabled and 1 or 0.45)
     panel.AutoPlayAccept:SetChecked(WowVoiceDB.autoPlayAccept == true)
     panel.AutoPlayTurnIn:SetChecked(WowVoiceDB.autoPlayTurnIn ~= false)
+    local autoPlay = WowVoiceDB.autoPlay ~= false
+    panel.AutoPlay:SetChecked(autoPlay)
+    for _, control in ipairs({ panel.AutoPlayAccept, panel.AutoPlayTurnIn }) do
+        control:SetEnabled(autoPlay)
+        control:SetAlpha(autoPlay and 1 or 0.45)
+        control.Label:SetAlpha(autoPlay and 1 or 0.45)
+        control.Description:SetAlpha(autoPlay and 1 or 0.45)
+    end
+    if panel.QueueHeight then
+        panel.QueueDescriptionsOnly:SetChecked(WowVoiceDB.queueDescriptionsOnly == true)
+        for _, control in ipairs({ panel.QueueDescriptionsOnly, panel.QueueHeight, panel.QueueScale,
+            panel.Buttons.queueMove, panel.Buttons.queueReset, panel.Buttons.applyQueuePosition }) do
+            control:SetEnabled(autoPlay)
+            control:SetAlpha(autoPlay and 1 or 0.45)
+        end
+        for _, label in ipairs(panel.QueueLabels) do label:SetAlpha(autoPlay and 1 or 0.45) end
+        for _, field in ipairs({ panel.QueueHeightInput, panel.QueueScaleInput, panel.QueuePositionX, panel.QueuePositionY }) do
+            field:EnableMouse(autoPlay)
+            field:SetAlpha(autoPlay and 1 or 0.45)
+            if not autoPlay then field:ClearFocus() end
+        end
+        panel.refreshingQueue = true
+        panel.QueueHeight:SetValue(WV:GetQuestQueueHeight())
+        panel.QueueHeightInput:SetText(tostring(WV:GetQuestQueueHeight()))
+        local percent = math.floor(WV:GetQuestQueueScale() * 100 + 0.5)
+        panel.QueueScale:SetValue(percent)
+        panel.QueueScaleInput:SetText(tostring(percent))
+        panel.refreshingQueue = nil
+        panel.Buttons.queueMove:SetText(WV:IsQuestQueuePreview() and "Готово" or "Переместить")
+        self:RefreshQuestQueuePositionOptions(not autoPlay)
+    end
 end
 
 local function createPanel()
@@ -140,7 +179,9 @@ local function createPanel()
     scroll:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
     scroll:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -28, 0)
     local content = CreateFrame("Frame", nil, scroll)
-    content:SetSize(584, 970)
+    local queueOptions = WV.questQueue and WV.questQueue.enabled
+    local lowerOffset = 40 + (queueOptions and 424 or 0)
+    content:SetSize(584, 818 + lowerOffset)
     scroll:SetScrollChild(content)
     scroll:SetScript("OnSizeChanged", function(self, width)
         content:SetWidth(math.max(584, width))
@@ -206,11 +247,10 @@ local function createPanel()
         line:SetColorTexture(0.6, 0.52, 0.32, 0.45)
         line:SetSize(544, 1)
         line:SetPoint("TOPLEFT", content, "TOPLEFT", 20, y - 24)
-        return heading
+        return heading, line
     end
-    section("Положение и масштаб", -94)
-    section("Автозапуск озвучки", -460)
-    section("Кнопки и напоминания", -660)
+    section("Говорящая голова", -94)
+    section("Воспроизведение", -460)
 
     local function discardPosition()
         panel.editingPosition = nil
@@ -426,53 +466,164 @@ local function createPanel()
     panel.PositionY:SetScript("OnTabPressed", function(self) self:ClearFocus(); panel.PositionX:SetFocus() end)
     button("applyPosition", "Задать", 478, 86, applyPosition, -245)
     panel.Status = label("", "GameFontHighlightSmall", 20, -408, 540, 36)
-    panel.TrackerButtons = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
-    panel.TrackerButtons:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -696)
-    panel.TrackerButtons:SetSize(26, 26)
-    label("Кнопки озвучки в списке заданий", "GameFontHighlight", 48, -703, 506, 22)
-    panel.TrackerButtons:SetScript("OnClick", function(self)
-        WV:SetTrackerButtonsEnabled(self:GetChecked() == true)
-    end)
-    panel.TrackerProgressPulse = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
-    panel.TrackerProgressPulse:SetPoint("TOPLEFT", content, "TOPLEFT", 42, -730)
-    panel.TrackerProgressPulse:SetSize(26, 26)
-    panel.TrackerProgressPulse.Label = label("Напоминать об озвучке при прогрессе",
-        "GameFontHighlight", 74, -737, 480, 22)
-    panel.TrackerProgressPulse.Description = label(
-        "Подсветка кнопки и подсказка «Вспомнить задание».",
-        "GameFontHighlightSmall", 74, -765, 480, 32)
-    panel.TrackerProgressPulse:SetScript("OnClick", function(self)
-        WV:SetTrackerProgressPulseEnabled(self:GetChecked() == true)
-    end)
+    panel.AutoPlay = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
+    panel.AutoPlay:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -496)
+    panel.AutoPlay:SetSize(26, 26)
+    label("Автозапуск озвучки", "GameFontHighlight", 48, -503, 506, 22)
+    panel.AutoPlay:SetScript("OnClick", function(self) WV:SetAutoPlayEnabled(self:GetChecked() == true) end)
     panel.AutoPlayAccept = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
-    panel.AutoPlayAccept:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -496)
+    panel.AutoPlayAccept:SetPoint("TOPLEFT", content, "TOPLEFT", 42, -536)
     panel.AutoPlayAccept:SetSize(26, 26)
-    label("При получении задания", "GameFontHighlight", 48, -503, 506, 22)
+    panel.AutoPlayAccept.Label = label("При получении задания", "GameFontHighlight", 74, -543, 480, 22)
     panel.AutoPlayAccept:SetScript("OnClick", function(self)
         WV:SetAutoPlayAcceptEnabled(self:GetChecked() == true)
     end)
-    label("Если выключено, запускайте описание кнопкой в журнале или списке заданий.",
-        "GameFontHighlightSmall", 48, -531, 506, 32)
+    panel.AutoPlayAccept.Description = label("Если выключено, запускайте описание кнопкой в журнале или списке заданий.",
+        "GameFontHighlightSmall", 74, -571, 480, 32)
     panel.AutoPlayTurnIn = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
-    panel.AutoPlayTurnIn:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -580)
+    panel.AutoPlayTurnIn:SetPoint("TOPLEFT", content, "TOPLEFT", 42, -620)
     panel.AutoPlayTurnIn:SetSize(26, 26)
-    label("При сдаче задания", "GameFontHighlight", 48, -587, 506, 22)
+    panel.AutoPlayTurnIn.Label = label("При сдаче задания", "GameFontHighlight", 74, -627, 480, 22)
     panel.AutoPlayTurnIn:SetScript("OnClick", function(self)
         WV:SetAutoPlayTurnInEnabled(self:GetChecked() == true)
     end)
-    label("Управляет всеми репликами сдачи: промежуточными и завершающей.",
-        "GameFontHighlightSmall", 48, -615, 506, 32)
-    local voiceHeading = section("Выбор озвучки", -812)
+    panel.AutoPlayTurnIn.Description = label("Управляет всеми репликами сдачи: промежуточными и завершающей.",
+        "GameFontHighlightSmall", 74, -655, 480, 32)
+    if queueOptions then
+        panel.QueueHeading, panel.QueueDivider = section("Плейлист", -700)
+        panel.QueueDescriptionsOnly = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
+        panel.QueueDescriptionsOnly:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -736)
+        panel.QueueDescriptionsOnly:SetSize(26, 26)
+        panel.QueueDescriptionsOnly.Label = label("Только описания заданий", "GameFontHighlight", 48, -743, 506, 22)
+        panel.QueueDescriptionsOnly.Description = label("Не добавлять реплики выполнения и завершения заданий.",
+            "GameFontHighlightSmall", 48, -771, 506, 28)
+        panel.QueueDescriptionsOnly:SetScript("OnClick", function(self)
+            WV:SetQueueDescriptionsOnly(self:GetChecked() == true)
+        end)
+        button("queueMove", "Переместить", 20, 170, function()
+            WV:PreviewQuestQueue(not WV:IsQuestQueuePreview())
+            WV:RefreshHeadOptions()
+        end, -808)
+        button("queueReset", "Сбросить", 202, 170, function()
+            WV:ResetQuestQueueLayout()
+            WV:PreviewQuestQueue(true)
+            WV:RefreshQuestQueuePositionOptions(true)
+            WV:RefreshHeadOptions()
+        end, -808)
+        local heightCaption = label("Максимальная высота", "GameFontNormal", 20, -850, 280, 20)
+        panel.QueueHeight = CreateFrame("Slider", "WowVoiceQueueHeightSlider", content, "OptionsSliderTemplate")
+        local heightSlider = panel.QueueHeight
+        heightSlider:SetPoint("TOPLEFT", content, "TOPLEFT", 24, -880)
+        heightSlider:SetSize(260, 17)
+        heightSlider:SetMinMaxValues(280, 600)
+        heightSlider:SetValueStep(1)
+        heightSlider:SetObeyStepOnDrag(true)
+        for _, suffix in ipairs({ "Low", "High", "Text" }) do
+            local fs = heightSlider[suffix] or _G["WowVoiceQueueHeightSlider" .. suffix]
+            if fs then fs:Hide() end
+        end
+        local low = label("280", "GameFontHighlightSmall", 20, -903, 60, 16)
+        local high = label("600", "GameFontHighlightSmall", 228, -903, 60, 16)
+        high:SetJustifyH("RIGHT")
+        panel.QueueLabels = { panel.QueueHeading, panel.QueueDivider, panel.QueueDescriptionsOnly.Label,
+            panel.QueueDescriptionsOnly.Description, heightCaption, low, high }
+        panel.QueueHeightInput = numericField(58, 308, -878)
+        local heightInput = panel.QueueHeightInput
+        heightInput:SetNumeric(true)
+        heightInput:SetMaxLetters(3)
+        local function applyHeight(value)
+            if WowVoiceDB.autoPlay == false then return false end
+            local ok, reason = WV:SetQuestQueueHeight(value)
+            status(reason)
+            if ok then WV:PreviewQuestQueue(true); WV:RefreshHeadOptions() end
+            return ok
+        end
+        heightSlider:SetScript("OnValueChanged", function(_, value)
+            if not panel.refreshingQueue then applyHeight(math.floor(value + 0.5)) end
+        end)
+        heightInput:SetScript("OnEnterPressed", function(self)
+            if applyHeight(tonumber(self:GetText())) then self:ClearFocus() end
+        end)
+        heightInput:SetScript("OnEscapePressed", function(self) self:ClearFocus(); WV:RefreshHeadOptions(); status() end)
+        heightInput:SetScript("OnEditFocusLost", function() WV:RefreshHeadOptions() end)
+        local scaleCaption = label("Масштаб плейлиста", "GameFontNormal", 20, -942, 280, 20)
+        panel.QueueScale = CreateFrame("Slider", "WowVoiceQueueScaleSlider", content, "OptionsSliderTemplate")
+        local scaleSlider = panel.QueueScale
+        scaleSlider:SetPoint("TOPLEFT", content, "TOPLEFT", 24, -972)
+        scaleSlider:SetSize(260, 17)
+        scaleSlider:SetMinMaxValues(80, 120)
+        scaleSlider:SetValueStep(1)
+        scaleSlider:SetObeyStepOnDrag(true)
+        for _, suffix in ipairs({ "Low", "High", "Text" }) do
+            local fs = scaleSlider[suffix] or _G["WowVoiceQueueScaleSlider" .. suffix]
+            if fs then fs:Hide() end
+        end
+        local scaleLow = label("80%", "GameFontHighlightSmall", 20, -995, 60, 16)
+        local scaleHigh = label("120%", "GameFontHighlightSmall", 228, -995, 60, 16)
+        scaleHigh:SetJustifyH("RIGHT")
+        local percentLabel = label("%", "GameFontHighlight", 374, -973, 20, 20)
+        for _, fs in ipairs({ scaleCaption, scaleLow, scaleHigh, percentLabel }) do
+            panel.QueueLabels[#panel.QueueLabels + 1] = fs
+        end
+        panel.QueueScaleInput = numericField(58, 308, -970)
+        local scaleInput = panel.QueueScaleInput
+        scaleInput:SetNumeric(true)
+        scaleInput:SetMaxLetters(3)
+        local function applyQueueScale(percent)
+            if WowVoiceDB.autoPlay == false then return false end
+            local ok, reason = WV:SetQuestQueueScale(percent and percent / 100)
+            status(reason)
+            if ok then WV:PreviewQuestQueue(true); WV:RefreshHeadOptions() end
+            return ok
+        end
+        scaleSlider:SetScript("OnValueChanged", function(_, value)
+            if not panel.refreshingQueue then applyQueueScale(math.floor(value + 0.5)) end
+        end)
+        scaleInput:SetScript("OnEnterPressed", function(self)
+            if applyQueueScale(tonumber(self:GetText())) then self:ClearFocus() end
+        end)
+        scaleInput:SetScript("OnEscapePressed", function(self) self:ClearFocus(); WV:RefreshHeadOptions(); status() end)
+        scaleInput:SetScript("OnEditFocusLost", function() WV:RefreshHeadOptions() end)
+        panel.QueueLabels[#panel.QueueLabels + 1] = label("Координаты верхнего левого угла", "GameFontNormal", 20, -1030, 540, 20)
+        local function applyQueuePosition()
+            if WowVoiceDB.autoPlay == false then return end
+            local function number(text)
+                text = text:match("^%s*(.-)%s*$"):gsub(",", ".")
+                return text:match("^[+-]?%d*%.?%d+$") and tonumber(text)
+            end
+            local x, y = number(panel.QueuePositionX:GetText()), number(panel.QueuePositionY:GetText())
+            if not x or not y then status("Введите числа в поля X и Y. Например: -120 или 35,5."); return end
+            WV:PreviewQuestQueue(true)
+            local ok, reason = WV:SetQuestQueuePosition(x, y)
+            status(ok and "" or reason)
+            WV:RefreshHeadOptions()
+        end
+        local function positionField(key, caption, x)
+            panel.QueueLabels[#panel.QueueLabels + 1] = label(caption, "GameFontHighlightSmall", x, -1064, 20, 20)
+            local field = numericField(78, x + 24, -1060)
+            field:SetMaxLetters(12)
+            field:SetScript("OnEditFocusGained", function() panel.editingQueuePosition = true end)
+            field:SetScript("OnEnterPressed", applyQueuePosition)
+            field:SetScript("OnEscapePressed", function() WV:RefreshQuestQueuePositionOptions(true); status() end)
+            panel[key] = field
+        end
+        positionField("QueuePositionX", "X", 20)
+        positionField("QueuePositionY", "Y", 130)
+        panel.QueuePositionX:SetScript("OnTabPressed", function(self) self:ClearFocus(); panel.QueuePositionY:SetFocus() end)
+        panel.QueuePositionY:SetScript("OnTabPressed", function(self) self:ClearFocus(); panel.QueuePositionX:SetFocus() end)
+        button("applyQueuePosition", "Задать", 244, 86, applyQueuePosition, -1057)
+    end
+    local voiceHeading = section("Выбор озвучки", -660 - lowerOffset)
     -- Let the font string size itself at the current UI scale. Measuring it
     -- while the settings panel is hidden can leave the title truncated.
     voiceHeading:SetWordWrap(false)
     voiceHeading:SetSize(0, 0)
-    panel.SharedVoiceCaption = label("Если доступны обе озвучки", "GameFontHighlight", 20, -850, 540, 22)
+    panel.SharedVoiceCaption = label("Если доступны обе озвучки", "GameFontHighlight", 20, -698 - lowerOffset, 540, 22)
     panel.SharedVoiceButtons = {}
     for index, item in ipairs({ { "wowvoice", "WowVoice" }, { "catquest", "CatQuest" } }) do
         local choice = CreateFrame("CheckButton", nil, content)
         choice:SetSize(160, 26)
-        choice:SetPoint("TOPLEFT", content, "TOPLEFT", 20 + (index - 1) * 180, -878)
+        choice:SetPoint("TOPLEFT", content, "TOPLEFT", 20 + (index - 1) * 180, -726 - lowerOffset)
         -- Like Details/Plater's circular switches: scale a smooth client mask,
         -- rather than enlarging the old 16px radio texture sheet.
         local function circle(size, layer, r, g, b, alpha)
@@ -528,11 +679,12 @@ local function createPanel()
     hint:SetScript("OnLeave", hideVoiceTooltip)
     hint:SetScript("OnHide", hideVoiceTooltip)
     panel.SharedVoiceTooltip = hint
-    button("compareVoices", "Послушать озвучку", 20, 180, function() WV:OpenVoiceComparison() end, -918)
+    button("compareVoices", "Послушать озвучку", 20, 180, function() WV:OpenVoiceComparison() end, -766 - lowerOffset)
     panel.VoiceComparisonButton = panel.Buttons.compareVoices
     refreshVoicePreference()
     panel:SetScript("OnShow", function()
         panel.editingPosition = nil
+        panel.editingQueuePosition = nil
         refreshVersions()
         WV:RefreshHeadOptions()
         for _, b in pairs(panel.Buttons) do if WV.StyleButton then WV.StyleButton(b) end end
@@ -545,6 +697,9 @@ local function createPanel()
         input:ClearFocus()
         refreshScale()
         WV:HideHeadPreview()
+        if WV.PreviewQuestQueue then WV:PreviewQuestQueue(false) end
+        panel.editingQueuePosition = nil
+        if panel.QueuePositionX then panel.QueuePositionX:ClearFocus(); panel.QueuePositionY:ClearFocus() end
     end)
 end
 

@@ -34,9 +34,11 @@ print('PASS: exact quest text, initial/final holds, midpoint scrolling, options 
 GetProgressText=function() return 'Short progress text.' end
 GetRewardText=function() return 'Reward text.' end
 event('QUEST_PROGRESS')
+WV.questQueue:Next()
 assert(head.Body.text=='Short progress text.' and head.textRange==0 and head.TextScroll.scroll==0)
 now=now+2; head.scripts.OnUpdate(); assert(head.TextScroll.scroll==0)
 event('QUEST_COMPLETE')
+WV.questQueue:Next()
 assert(head.Body.text=='Reward text.' and questCache()[179].description==description)
 WV:Silence()
 -- Existing accepted quest, cached before subtitles existed: use exact journal index.
@@ -105,7 +107,7 @@ assert(WowVoiceDB.headPosition==unchanged and head.scale==1.25)
 assert(not fill(1000,600,200,0,0))
 assert(WowVoiceDB.headPosition==unchanged,'oversized panel must be rejected')
 fill(520,260,125,999999,-999999)
-assert(WowVoiceDB.headPosition[3]==(1920-anchor.width)/2)
+assert(WowVoiceDB.headPosition[3]==(1920-anchor.width)/2+13*head.scale)
 assert(WowVoiceDB.headPosition[4]==-(1080-anchor.height)/2)
 fill(520,260,125,125.5,-250.25)
 panel.Buttons.reset.scripts.OnClick()
