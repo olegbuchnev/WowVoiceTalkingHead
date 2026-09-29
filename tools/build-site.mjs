@@ -115,6 +115,22 @@ async function publishedAudioVersion(file, legacyVersions) {
 }
 const wowVoiceVersion = previewMode ? preview.wowVoiceVersion
   : await publishedAudioVersion('soundpack/WowVoiceSounds.toc', { '1.0.3-forever.1': '1.0.1' });
+// This is the verified upstream pack's publication date, not a rebuilt ZIP's
+// upload date. Only look up the audio version included in the downloadable pack.
+const audioReleases = JSON.parse(await fs.readFile(path.join(root, 'site/audio-releases.json'), 'utf8'));
+const audioRelease = audioReleases.wowvoice?.[wowVoiceVersion];
+let audioDateHtml = 'Дата не указана';
+if (audioRelease) {
+  const date = new Date(`${audioRelease.releasedOn}T00:00:00Z`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(audioRelease.releasedOn)
+      || !Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== audioRelease.releasedOn) {
+    throw Error(`Invalid upstream audio date for WowVoice ${wowVoiceVersion}`);
+  }
+  const dateText = new Intl.DateTimeFormat('ru-RU', {
+    day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC',
+  }).format(date);
+  audioDateHtml = `<time datetime="${escape(audioRelease.releasedOn)}">${dateText}</time>`;
+}
 const screenshots = tokens.filter(token => token.type === 'paragraph' && token.tokens?.[0]?.type === 'image');
 if (!screenshots.length) throw Error('README is missing screenshots');
 const sections = new Map();
@@ -158,9 +174,9 @@ function page(content, isGuide = false) {
           <a class="button primary" href="${escape(fullInfo.url || full)}"><span>Скачать с озвучкой WowVoice <span class="artifact-size">${escape(fullInfo.size)}</span></span><span aria-hidden="true">↓</span></a>
           <div class="download-info">
             <p class="download-note">Для первой установки или обновления озвучки: аддон и база WowVoice.</p>
-            ${fullInfo.html}
             <dl class="audio-versions" aria-label="Версии исходных паков озвучки в полном архиве">
               <dt>Озвучка WowVoice:</dt><dd>${escape(wowVoiceVersion)}</dd>
+              <dt>Выпуск базы:</dt><dd>${audioDateHtml}</dd>
             </dl>
             ${previewMode ? '<p class="download-note">Зеркало на pCloud появится после публикации.</p>' : `<a class="mirror" href="${escape(mirror)}">Зеркало на pCloud ↗</a>`}
           </div>

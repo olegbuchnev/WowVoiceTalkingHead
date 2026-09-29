@@ -1,0 +1,9 @@
+{
+  "wowvoice": {
+    "1.0.1": {
+      "releasedOn": "2026-08-13",
+      "sourceUrl": "https://github.com/HappyDridex/wowvoice/releases/download/v1.0/WowVoice-classic-1.15.zip",
+      "sourceSha256": "72a56917473756cd853c4cef7e8feb91b663aeee55c743cdd78f484016858133"
+    }
+  }
+}

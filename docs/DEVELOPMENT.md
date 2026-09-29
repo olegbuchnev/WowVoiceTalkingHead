@@ -775,6 +775,15 @@ Unknown versions are not guessed by stripping suffixes. Labels use the installed
 WowVoiceSounds and CatQuest_Voices packs, never the CatQuest player or the
 latest online release. There is no separate combined database revision.
 
+The website records verified upstream audio publication dates in
+`site/audio-releases.json`, keyed by the upstream audio version. Each entry
+includes the source archive URL and SHA-256. The full download card shows this
+date; only the addon-only card shows the addon's update date. Repacking unchanged
+audio must not advance its date. When importing a new audio version, verify its
+source archive and add its publication date; an unknown version shows no guessed
+date. The current Classic 1.0.1 archive was published on 2026-08-13 (GitHub asset
+upload date), independently of the original v1.0 release's earlier creation date.
+
 Package creates a ZIP archive, using the version from `src/WowVoiceTalkingHead.toc`:
 
 ```text

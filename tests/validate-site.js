@@ -16,7 +16,7 @@ const { spawnSync } = require('child_process');
   const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'wowvoice-site-'));
   try {
     for (const dir of ['tools', 'site', 'docs/images']) fs.mkdirSync(path.join(fixture, dir), {recursive:true});
-    for (const file of ['tools/build-site.mjs', 'tools/release-assets.mjs', 'site/style.css', 'USER_README.md']) {
+    for (const file of ['tools/build-site.mjs', 'tools/release-assets.mjs', 'site/style.css', 'site/audio-releases.json', 'USER_README.md']) {
       let text = fs.readFileSync(path.join(root, file), 'utf8');
       if (file.endsWith('build-site.mjs')) {
         // Resolve the real dependency without copying node_modules or using a junction.
@@ -40,7 +40,7 @@ const { spawnSync } = require('child_process');
         if (!u.includes('/v1/') && !u.includes('/v2/')) throw Error('wrong compatibility tag');
         return new Response('WowVoiceCatQuestAudio = {sourceVersion = "0.2.2"}');
       }
-      if (u.includes('/v1/') && u.endsWith('.toc')) return new Response('## X-Source-Version: 0.2.0');
+      if (u.includes('/v1/') && u.endsWith('.toc')) return new Response('## X-Source-Version: 1.0.1');
       throw Error('Unexpected network request '+u);
     };`;
     fs.writeFileSync(path.join(fixture,'mock.mjs'),mock);
@@ -62,12 +62,19 @@ const { spawnSync } = require('child_process');
         assert(html.includes('CatQuest Voices 0.2.2') && html.includes('curseforge.com/wow/addons/catquest'));
         assert(html.includes(`href="${urls.full}"`));
         assert(html.includes('Зеркало на pCloud'));
+        assert(html.includes('<time datetime="2026-08-13">13.08.2026</time>'), 'Audio release date must not follow artifact uploads');
+        assert.equal((html.match(/Обновлён <time/g) || []).length, 1, 'Only the addon card shows the addon update date');
       }
       const html=fs.readFileSync(path.join(fixture,'artifacts/site/index.html'),'utf8');
       assert(html.indexOf('class="voice-feature"') < html.indexOf('class="screenshots"'));
       assert.equal((html.match(/<img /g)||[]).length,1,'Gallery image must not be duplicated inside feature section');
     }
     const run = (...args) => spawnSync(process.execPath,['--import',require('url').pathToFileURL(path.join(fixture,'mock.mjs')).href,path.join(fixture,'tools/build-site.mjs'),...args],{encoding:'utf8'});
+    fs.writeFileSync(path.join(fixture,'mock.mjs'),mock.replace('X-Source-Version: 1.0.1','X-Source-Version: 9.0.0'));
+    const unknownAudio = run();
+    assert.equal(unknownAudio.status,0,unknownAudio.stderr);
+    const unknownHtml = fs.readFileSync(path.join(fixture,'artifacts/site/index.html'),'utf8');
+    assert(unknownHtml.includes('Дата не указана') && !unknownHtml.includes('13.08.2026'), 'Unknown audio must not inherit another version date');
     fs.writeFileSync(path.join(fixture,'mock.mjs'),mock.replace("return new Response('WowVoiceCatQuestAudio", "if (u.includes('/v1/')) return new Response('', {status:404}); return new Response('WowVoiceCatQuestAudio"));
     assert.match(run().stderr,/Cannot verify CatQuest integration in v1/);
     fs.writeFileSync(path.join(fixture,'mock.mjs'),mock.replace("return new Response('WowVoiceCatQuestAudio", "if (u.includes('/v1/')) return new Response('sourceVersion = \"0.2.0\"'); return new Response('WowVoiceCatQuestAudio"));
