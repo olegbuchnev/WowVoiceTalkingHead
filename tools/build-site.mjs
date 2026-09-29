@@ -154,15 +154,15 @@ function page(content, isGuide = false) {
       <a class="brand" href="index.html">WowVoice<span>TalkingHead</span></a>
       <p class="tagline">Русская озвучка квестов<br>для WoW Forever Beta</p>
       <div class="downloads" aria-label="Скачать аддон">
-        <div class="download-card" role="group" aria-label="Полный архив со звуками">
-          <a class="button primary" href="${escape(fullInfo.url || full)}"><span>Скачать полный комплект <span class="artifact-size">${escape(fullInfo.size)}</span></span><span aria-hidden="true">↓</span></a>
+        <div class="download-card" role="group" aria-label="Аддон с озвучкой WowVoice">
+          <a class="button primary" href="${escape(fullInfo.url || full)}"><span>Скачать с озвучкой WowVoice <span class="artifact-size">${escape(fullInfo.size)}</span></span><span aria-hidden="true">↓</span></a>
           <div class="download-info">
-            <p class="download-note">Для первой установки · аддон и основная озвучка WowVoice.</p>
+            <p class="download-note">Для первой установки: аддон и озвучка WowVoice.</p>
             ${fullInfo.html}
             <dl class="audio-versions" aria-label="Версии исходных паков озвучки в полном архиве">
               <dt>Озвучка WowVoice:</dt><dd>${escape(wowVoiceVersion)}</dd>
             </dl>
-            ${previewMode ? '<p class="download-note">Зеркало на pCloud появится после публикации.</p>' : `<a class="mirror" href="${escape(mirror)}">Зеркало полного комплекта на pCloud ↗</a>`}
+            ${previewMode ? '<p class="download-note">Зеркало на pCloud появится после публикации.</p>' : `<a class="mirror" href="${escape(mirror)}">Зеркало на pCloud ↗</a>`}
           </div>
         </div>
         <div class="download-card" role="group" aria-label="Обновление аддона без звуков">
