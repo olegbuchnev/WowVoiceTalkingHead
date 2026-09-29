@@ -1,10 +1,9 @@
-// Import only quests absent from WowVoice's Classic pack.
+// Import metadata for external CatQuest Voices and all transcripts; never copy audio.
 // Parse the Lua index as data; never execute third-party addon code.
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const lua = require('luaparse');
-const { writeSourceVersion } = require('./audio-source-version');
 
 function dataTable(file) {
   const ast = lua.parse(fs.readFileSync(file, 'latin1'), { encodingMode: 'pseudo-latin1' });
@@ -13,12 +12,36 @@ function dataTable(file) {
   if (!assignment) throw new Error(`Missing data table: ${file}`);
   function decode(node) {
     if (node.type === 'TableConstructorExpression') {
+      let arrayIndex = 0;
       return Object.fromEntries(node.fields.map(field =>
-        [field.key?.name ?? field.key?.value, decode(field.value)]));
+        [field.key?.name ?? field.key?.value ?? ++arrayIndex, decode(field.value)]));
     }
+    // luaparse sees byte strings in pseudo-latin1 mode; recover UTF-8 text.
+    if (typeof node.value === 'string') return Buffer.from(node.value, 'latin1').toString('utf8');
     return node.value;
   }
   return decode(assignment.init[0]);
+}
+
+function luaString(value) {
+  return '"' + value.replace(/[\\"\x00-\x1f\x7f]/g, ch => {
+    if (ch === '\\' || ch === '"') return '\\' + ch;
+    return '\\' + ch.charCodeAt(0).toString().padStart(3, '0');
+  }) + '"';
+}
+
+function subtitleText(entry) {
+  const variants = entry.g ? [['male', 'm'], ['female', 'f']] : [['common', 'x']];
+  const fields = [];
+  for (const [name, key] of variants) {
+    const cues = entry.c?.[key];
+    if (!cues) continue;
+    const lines = Object.values(cues).map(cue => Array.isArray(cue) ? cue[1] : cue[2]);
+    // Missing/broken cues must not produce a misleading partial transcript.
+    if (!lines.length || lines.some(line => typeof line !== 'string' || !line.trim())) continue;
+    fields.push(`${name} = ${luaString(lines.map(line => line.trim()).join(' '))}`);
+  }
+  return fields.length ? { record: `{ ${fields.join(', ')} }`, variants: fields.length } : null;
 }
 
 // The pack stores the longer duration for gender variants. Read each actual
@@ -57,7 +80,7 @@ function importPack(source, root = path.resolve(__dirname, '..')) {
     .match(/^##\s*Version:\s*(\S+)/m)?.[1];
   if (!version) throw new Error('Missing CatQuest_Voices version');
   const pack = dataTable(path.join(source, 'Index.lua'));
-  // CatQuest 0.2.0 omits quests without descriptions from its Lua index.
+  // CatQuest 0.2.0 and 0.2.2 omit quests without descriptions from the Lua index.
   // Recover only JSON-only turn-ins; never override loaded Lua entries or import
   // unreferenced files just because they happen to be in the sound directory.
   const jsonPath = path.join(source, 'index.json');
@@ -72,15 +95,27 @@ function importPack(source, root = path.resolve(__dirname, '..')) {
       }
     }
   }
-  const classic = dataTable(path.join(root, 'src', 'Durations.lua'));
-  const originalQuests = new Set(Object.keys(classic).map(key => key.replace(/[apc]$/, '')));
-  const selected = Object.keys(pack).filter(id => /^\d+$/.test(id)
-    && !originalQuests.has(id)).sort((a, b) => Number(a) - Number(b));
-  const files = [], records = [], sections = { a: 0, c: 0 };
+  const allIDs = Object.keys(pack).filter(id => /^\d+$/.test(id)).sort((a, b) => Number(a) - Number(b));
+  const transcripts = [], textQuests = new Set();
+  const textStats = { quests: 0, sections: { a: 0, c: 0 }, variants: 0 };
+  // Text coverage is independent of audio selection and has no Classic exclusion.
+  for (const id of allIDs) {
+    for (const [section, entry] of [['a', pack[id]], ['c', pack[id].t]]) {
+      const text = entry && subtitleText(entry);
+      if (!text) continue;
+      transcripts.push(`    ["${id}${section}"] = ${text.record},`);
+      textQuests.add(id);
+      textStats.sections[section]++;
+      textStats.variants += text.variants;
+    }
+  }
+  textStats.quests = textQuests.size;
+  const selected = allIDs;
+  const files = [], external = [], sections = { a: 0, c: 0 };
   function audio(file) {
     const buffer = fs.readFileSync(path.join(source, 'Sounds', 'q', file));
     const seconds = duration(buffer);
-    files.push({ file, buffer, duration: seconds,
+    files.push({ file, bytes: buffer.length, duration: seconds,
       sha256: crypto.createHash('sha256').update(buffer).digest('hex') });
     return `{ file = "${file}", duration = ${seconds} }`;
   }
@@ -91,46 +126,42 @@ function importPack(source, root = path.resolve(__dirname, '..')) {
       const record = entry.g
         ? `{ male = ${audio(stem + '_m.ogg')}, female = ${audio(stem + '_f.ogg')} }`
         : audio(stem + '.ogg');
-      records.push(`    ["${id}${section}"] = ${record},`);
+      external.push(`    ["${id}${section}"] = { indexDuration = ${entry.d}, gender = ${!!entry.g},`
+        + ` voice = ${JSON.stringify(entry.v || '')}, jsonOnly = ${recoveredTurnIns.includes(id)}, audio = ${record} },`);
       sections[section]++;
     }
   }
   if (!files.length) throw new Error('No new Forever audio found');
 
-  // All source streams have been validated before modifying the output.
-  const destination = path.join(root, 'catvoices');
-  fs.mkdirSync(destination, { recursive: true });
-  for (const file of files) fs.writeFileSync(path.join(destination, file.file), file.buffer);
-  const wanted = new Set(files.map(file => file.file));
-  for (const name of fs.readdirSync(destination)) {
-    if (/^\d+(?:_t)?(?:_[mf])?\.ogg$/.test(name) && !wanted.has(name)) {
-      fs.unlinkSync(path.join(destination, name));
-    }
-  }
-  fs.writeFileSync(path.join(root, 'src', 'ForeverAudio.lua'),
-    '-- Generated by tools/import-forever-audio.js from CatQuest_Voices.\n'
-    + '-- Quests absent from Classic only; Classic recordings always take priority.\n'
-    + 'WowVoiceForeverAudio = {\n' + records.join('\n') + '\n}\n');
+  // Validate all source streams before replacing metadata. No audio pack is generated.
+  fs.writeFileSync(path.join(root, 'src', 'CatQuestAudio.lua'),
+    '-- Generated compatibility metadata; transcripts are in CatQuestTexts.lua.\n'
+    + `WowVoiceCatQuestAudio = { schemaVersion = 1, sourceVersion = ${JSON.stringify(version)}, entries = {\n`
+    + external.join('\n') + '\n} }\n');
+  fs.writeFileSync(path.join(root, 'src', 'CatQuestTexts.lua'),
+    '-- Generated by tools/import-forever-audio.js from CatQuest_Voices subtitles.\n'
+    + '-- Source: Cathey (daniilcathey), https://t.me/catheyco. Includes Classic overlaps.\n'
+    + `WowVoiceCatQuestTexts = { schemaVersion = 1, sourceVersion = ${JSON.stringify(version)}, entries = {\n`
+    + transcripts.join('\n') + '\n} }\n');
   const manifest = {
     source: 'CatQuest_Voices', author: 'Cathey (daniilcathey)',
     authorUrl: 'https://t.me/catheyco', version,
-    selection: 'Loaded Lua index plus JSON-only turn-ins without descriptions; entire quest absent from WowVoiceDur (all sections)',
-    jsonOnlyTurnIns: recoveredTurnIns.filter(id => !originalQuests.has(id)).sort((a, b) => Number(a) - Number(b)),
-    quests: selected.length, sections,
-    files: files.map(({ buffer, ...file }) => ({ ...file, bytes: buffer.length })),
+    selection: 'Complete loaded Lua index plus JSON-only turn-ins without descriptions; includes WowVoice overlaps',
+    jsonOnlyTurnIns: recoveredTurnIns.sort((a, b) => Number(a) - Number(b)),
+    quests: selected.length, sections, texts: textStats,
+    files,
   };
   fs.mkdirSync(path.join(root, 'docs', 'internal'), { recursive: true });
   fs.writeFileSync(path.join(root, 'docs', 'internal', 'forever-audio-manifest.json'),
     JSON.stringify(manifest, null, 2) + '\n');
-  const toc = path.join(destination, 'CatVoices.toc');
-  if (fs.existsSync(toc)) writeSourceVersion(toc, { version, toc: 'CatQuest_Voices.toc' });
   return manifest;
 }
 
-module.exports = { importPack };
+module.exports = { importPack, dataTable, subtitleText, duration };
 if (require.main === module) {
   if (!process.argv[2]) throw new Error('Usage: node tools/import-forever-audio.js <CatQuest_Voices directory>');
   const manifest = importPack(process.argv[2]);
-  console.log(`Imported CatQuest ${manifest.version}: ${manifest.quests} quests, ${manifest.files.length} OGG files, `
+  console.log(`Indexed external CatQuest ${manifest.version}: ${manifest.quests} quests, ${manifest.files.length} OGG files, `
     + `${manifest.files.reduce((sum, f) => sum + f.bytes, 0)} bytes; sections: ${JSON.stringify(manifest.sections)}`);
+  console.log(`Texts: ${manifest.texts.quests} quests; sections: ${JSON.stringify(manifest.texts.sections)}; ${manifest.texts.variants} variants`);
 }

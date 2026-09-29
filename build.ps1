@@ -4,7 +4,8 @@ param(
   [string]$Task = 'Validate',
   [ValidateSet('ForeverBeta')]
   [string]$Target = 'ForeverBeta',
-  [string]$ConfigPath
+  [string]$ConfigPath,
+  [switch]$LocalDebug # Backward-compatible no-op: the voice catalogue now ships to everyone.
 )
 
 Set-StrictMode -Version Latest
@@ -12,11 +13,11 @@ $ErrorActionPreference = 'Stop'
 $RepoRoot = [IO.Path]::GetFullPath($PSScriptRoot)
 $AddonSource = Join-Path $RepoRoot 'src'
 $SoundSource = Join-Path $RepoRoot 'soundpack'
-$CatSource = Join-Path $RepoRoot 'catvoices'
+$LegacyDebugFiles = @('CatQuestComparison.lua', 'LocalDebug.lua')
 $ArtifactsRoot = Join-Path $RepoRoot 'artifacts'
 $SoundTocs = @('WowVoiceSounds.toc', 'WowVoiceSounds_Mainline.toc')
-if (-not $ConfigPath) {
-  $ConfigPath = Join-Path $RepoRoot 'config\deploy.targets.local.psd1'
+if ($LocalDebug -and $Task -notin @('Deploy', 'DeployAddon')) {
+  throw '-LocalDebug is a legacy deployment flag. The voice catalogue is included in all builds.'
 }
 
 function Test-PathEquals {
@@ -83,18 +84,6 @@ function Test-AddonLayout {
   if (-not (Test-Path -LiteralPath (Join-Path $RepoRoot $guideName) -PathType Leaf)) {
     throw "Missing $guideName for the release archive."
   }
-  $foreverDirectory = $CatSource
-  $foreverIndex = Join-Path $AddonSource 'ForeverAudio.lua'
-  $foreverFiles = @{}
-  foreach ($match in [regex]::Matches([IO.File]::ReadAllText($foreverIndex), 'file = "([0-9]+(?:_t)?(?:_[mf])?\.ogg)"')) {
-    $name = $match.Groups[1].Value
-    $foreverFiles[$name] = $true
-    $audio = Join-Path $foreverDirectory $name
-    if (-not $AddonOnly -and (-not (Test-Path -LiteralPath $audio -PathType Leaf) -or (Get-Item -LiteralPath $audio).Length -eq 0)) {
-      throw "Missing supplemental audio: $name"
-    }
-  }
-  if ($foreverFiles.Count -eq 0) { throw 'Empty Forever audio index.' }
   $classicFiles = @{}
   $classicQuests = @{}
   foreach ($match in [regex]::Matches([IO.File]::ReadAllText((Join-Path $AddonSource 'Durations.lua')), '\["([0-9]+[apc])"\]')) {
@@ -107,24 +96,18 @@ function Test-AddonLayout {
     }
   }
   if ($classicFiles.Count -eq 0) { throw 'Empty Classic audio index.' }
-  foreach ($match in [regex]::Matches([IO.File]::ReadAllText($foreverIndex), '\["([0-9]+)[ac]"\]')) {
-    if ($classicQuests.ContainsKey($match.Groups[1].Value)) {
-      throw "Supplement duplicates Classic quest: $($match.Groups[1].Value). Reimport CatVoices."
-    }
-  }
-  $sources = if ($AddonOnly) { @($AddonSource) } else { @($AddonSource, $SoundSource, $CatSource) }
+  $sources = if ($AddonOnly) { @($AddonSource) } else { @($AddonSource, $SoundSource) }
   foreach ($source in $sources) {
     if (-not (Test-Path -LiteralPath $source -PathType Container)) { throw "Missing source: $source" }
     Assert-NoReparseTree $source
     foreach ($file in Get-ChildItem -LiteralPath $source -Recurse -Force) {
-      if ($file.Name -in @('.git', '.idea', 'tests', 'artifacts', 'backups', 'node_modules') -or
+      if ($file.Name -in (@('.git', '.idea', 'tests', 'dev', 'artifacts', 'backups', 'node_modules') + $LegacyDebugFiles) -or
           $file.Extension -in @('.bak', '.tmp', '.log')) {
         throw "Non-runtime file in package source: $($file.FullName)"
       }
       if ($file.Extension -eq '.ogg') {
         $isClassic = (Test-PathEquals $file.DirectoryName $SoundSource) -and $classicFiles.ContainsKey($file.Name)
-        $isSupplement = (Test-PathEquals $file.DirectoryName $foreverDirectory) -and $foreverFiles.ContainsKey($file.Name)
-        if (-not ($isClassic -or $isSupplement)) { throw "Unexpected audio in package source: $($file.FullName)" }
+        if (-not $isClassic) { throw "Unexpected audio in package source: $($file.FullName)" }
       }
     }
   }
@@ -159,25 +142,27 @@ function Test-AddonLayout {
       throw "Sound TOC must contain metadata only: $name"
     }
   }
-  $catToc = Join-Path $CatSource 'CatVoices.toc'
-  $catLines = @(Get-Content -LiteralPath $catToc -Encoding UTF8)
-  if (-not ($catLines -match '^## Interface: 16001\s*$') -or
-      @($catLines | Where-Object { $_.Trim() -and -not $_.Trim().StartsWith('#') }).Count) {
-    throw 'CatVoices TOC must contain Forever metadata only.'
-  }
-  if (@(Get-ChildItem -LiteralPath $CatSource -Force).Count -ne ($foreverFiles.Count + 2) -or
-      -not (Test-Path -LiteralPath (Join-Path $CatSource 'NOTICE.txt') -PathType Leaf)) {
-    throw 'catvoices must contain indexed supplemental audio, CatVoices.toc and NOTICE.txt only.'
-  }
-  Write-Host "Validated WowVoice TalkingHead $(Get-AddonVersion), $($classicFiles.Count) Classic and $($foreverFiles.Count) supplemental recordings."
+  Write-Host "Validated WowVoice TalkingHead $(Get-AddonVersion) and $($classicFiles.Count) Classic recordings."
 }
 
 function Resolve-AddOnsDirectory {
-  if (-not (Test-Path -LiteralPath $ConfigPath -PathType Leaf)) {
-    throw "Missing '$ConfigPath'. Copy config\deploy.targets.example.psd1 and edit it."
+  if ($ConfigPath) {
+    # Explicit configuration remains available for isolated tests and automation.
+    if (-not (Test-Path -LiteralPath $ConfigPath -PathType Leaf)) {
+      throw "Missing deployment configuration: $ConfigPath"
+    }
+    $targets = Import-PowerShellDataFile -LiteralPath $ConfigPath
+    $configured = $targets[$Target]
+  } else {
+    $localEnvironment = Join-Path $RepoRoot 'config\build.env.local.ps1'
+    if (Test-Path -LiteralPath $localEnvironment -PathType Leaf) {
+      . $localEnvironment
+    }
+    $configured = $env:WOWVOICE_FOREVER_BETA_ADDONS
+    if ([string]::IsNullOrWhiteSpace($configured)) {
+      throw 'Set WOWVOICE_FOREVER_BETA_ADDONS. Copy config\build.env.example.ps1 to config\build.env.local.ps1 and edit the path.'
+    }
   }
-  $targets = Import-PowerShellDataFile -LiteralPath $ConfigPath
-  $configured = $targets[$Target]
   if (-not $configured -or -not (Test-Path -LiteralPath $configured -PathType Container)) {
     throw "Missing or invalid AddOns directory for $Target."
   }
@@ -198,14 +183,11 @@ function Invoke-Deploy {
   $addons = Resolve-AddOnsDirectory
   $destination = Join-Path $addons 'WowVoiceTalkingHead'
   $sounds = Join-Path $addons 'WowVoiceSounds'
-  $catSounds = Join-Path $addons 'CatVoices'
   Assert-DirectChildPath $destination $addons 'WowVoiceTalkingHead'
   Assert-DirectChildPath $sounds $addons 'WowVoiceSounds'
-  Assert-DirectChildPath $catSounds $addons 'CatVoices'
   Assert-NoReparseTree $destination
   if (-not $AddonOnly) {
     Assert-NoReparseTree $sounds
-    Assert-NoReparseTree $catSounds
   }
 
   # Back up before the first write. Classic audio is restored from the source
@@ -219,9 +201,6 @@ function Invoke-Deploy {
     Copy-Item -LiteralPath $destination -Destination (Join-Path $backup 'WowVoiceTalkingHead') -Recurse
   }
   if (-not $AddonOnly) {
-    if (Test-Path -LiteralPath $catSounds) {
-      Copy-Item -LiteralPath $catSounds -Destination (Join-Path $backup 'CatVoices') -Recurse
-    }
     New-Item -ItemType Directory -Path (Join-Path $backup 'WowVoiceSounds') | Out-Null
     foreach ($name in $SoundTocs) {
       $file = Join-Path $sounds $name
@@ -262,11 +241,7 @@ function Invoke-Deploy {
   foreach ($file in Get-ChildItem -LiteralPath $SoundSource -File) {
     Copy-Item -LiteralPath $file.FullName -Destination (Join-Path $sounds $file.Name) -Force
   }
-  New-Item -ItemType Directory -Path $catSounds -Force | Out-Null
-  foreach ($file in Get-ChildItem -LiteralPath $CatSource -File) {
-    Copy-Item -LiteralPath $file.FullName -Destination (Join-Path $catSounds $file.Name) -Force
-  }
-  Write-Host "Deployed WowVoice TalkingHead, WowVoiceSounds and CatVoices to ${Target}: $addons"
+  Write-Host "Deployed WowVoice TalkingHead and WowVoiceSounds to ${Target}: $addons"
   Write-Host 'Fully restart the game to load newly added audio.'
 }
 
@@ -287,8 +262,7 @@ function Invoke-Package {
     $packagePaths = @((Join-Path $stage 'WowVoiceTalkingHead'))
     if (-not $AddonOnly) {
       Copy-Item -LiteralPath $SoundSource -Destination (Join-Path $stage 'WowVoiceSounds') -Recurse
-      Copy-Item -LiteralPath $CatSource -Destination (Join-Path $stage 'CatVoices') -Recurse
-      $packagePaths += @((Join-Path $stage 'WowVoiceSounds'), (Join-Path $stage 'CatVoices'))
+      $packagePaths += (Join-Path $stage 'WowVoiceSounds')
     }
     # Convert the guide's Markdown to plain text for opening in Notepad.
     $guide = [IO.File]::ReadAllText((Join-Path $RepoRoot 'USER_README.md'))
@@ -312,7 +286,9 @@ function Invoke-Package {
     }
     foreach ($directory in @($ArtifactsRoot, $release)) {
       foreach ($old in Get-ChildItem -LiteralPath $directory -Filter '*.zip' -File) {
-        $sameKind = ($old.Name -like '*-addon-only.zip') -eq [bool]$AddonOnly
+        $oldKind = if ($old.Name -like '*-addon-only.zip') { 'addon' } elseif ($old.Name -like '*-lite.zip') { 'lite' } else { 'full' }
+        $kind = if ($AddonOnly) { 'addon' } else { 'full' }
+        $sameKind = $oldKind -eq $kind
         if ($sameKind -and -not (Test-PathEquals $old.FullName $zip)) {
           Remove-Item -LiteralPath $old.FullName
         }
@@ -383,6 +359,7 @@ function Invoke-Tests {
     & (Join-Path $nodeDir 'node.exe') (Join-Path $RepoRoot 'tests\run.js')
     if ($LASTEXITCODE -ne 0) { throw 'Lua validation/tests failed.' }
     & (Join-Path $RepoRoot 'tests\pipeline.ps1')
+    & (Join-Path $RepoRoot 'tests\release-stats.ps1')
   }
   finally { Pop-Location; $env:Path = $previousPath }
 }

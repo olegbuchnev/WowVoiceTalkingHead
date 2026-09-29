@@ -138,6 +138,25 @@ WV:SetTrackerButtonsEnabled(false); assert(not play.visible)
 WV:SetTrackerButtonsEnabled(true); assert(play.visible)
 WV:SetTrackerPulsePreview(true); assert(play.ProgressGlow.visible)
 WV:SetTrackerPulsePreview(false); assert(not play.ProgressGlow.visible)
+WV:OpenOptions()
+local options = frames.WowVoiceOptionsPanel
+for _, explicitTest in ipairs({false, true}) do
+    for _, numeric in ipairs({false, true}) do
+        WV:HideHeadPreview()
+        if explicitTest then options.Buttons.test.scripts.OnClick(); assert(play.ProgressGlow.visible) end
+        if numeric then
+            options.ScaleInput:SetText('110')
+            options.ScaleInput.scripts.OnEnterPressed(options.ScaleInput)
+        else
+            options.ScaleSlider.scripts.OnMouseDown(options.ScaleSlider, 'LeftButton')
+            options.ScaleSlider:SetValue(115)
+        end
+        assert(not play.ProgressGlow.visible and not done.ProgressGlow.visible, 'Scaling lit Questie buttons')
+        if not numeric then options.ScaleSlider.scripts.OnMouseUp(options.ScaleSlider, 'LeftButton') end
+        assert(not play.ProgressGlow.visible)
+        WV:HideHeadPreview()
+    end
+end
 local created=#allFrames
 for _=1,5 do
     events.scripts.OnEvent(events, 'ADDON_LOADED', 'OtherAddon')

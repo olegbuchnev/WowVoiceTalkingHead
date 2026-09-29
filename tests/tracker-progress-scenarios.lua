@@ -239,6 +239,30 @@ assert(not play.ProgressGlow.visible and not other.scripts.OnUpdate, 'portrait c
 assert(not WowVoiceDB.trackerProgressPulse, 'test never changes saved preference')
 print('PASS: options test keeps all active arrows glowing; close, toggle and real playback clean up')
 
+-- Scale previews must not light the native quest buttons, from idle or Test.
+for _, explicitTest in ipairs({false, true}) do
+    for _, numeric in ipairs({false, true}) do
+        WV:HideHeadPreview()
+        if explicitTest then panel.Buttons.test.scripts.OnClick(); assert(play.ProgressGlow.visible) end
+        if numeric then
+            panel.ScaleInput:SetText('110')
+            panel.ScaleInput.scripts.OnEnterPressed(panel.ScaleInput)
+        else
+            panel.ScaleSlider.scripts.OnMouseDown(panel.ScaleSlider, 'LeftButton')
+            panel.ScaleSlider:SetValue(115)
+        end
+        assert(not play.ProgressGlow.visible and not other.ProgressGlow.visible, 'Scaling lit native tracker buttons')
+        if not numeric then panel.ScaleSlider.scripts.OnMouseUp(panel.ScaleSlider, 'LeftButton') end
+        assert(not play.ProgressGlow.visible)
+        WV:HideHeadPreview()
+    end
+end
+-- Explicit Test still enables the demonstration when pinning an automatic preview.
+panel.ScaleInput:SetText('105'); panel.ScaleInput.scripts.OnEnterPressed(panel.ScaleInput)
+panel.Buttons.test.scripts.OnClick()
+assert(play.ProgressGlow.visible)
+WV:HideHeadPreview()
+
 -- A listening pause slides only while active and only for that quest's progress.
 WV:SetTrackerProgressPulseEnabled(true)
 assert(WV:ReplayQuest(179)); WV:Silence()

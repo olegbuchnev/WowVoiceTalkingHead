@@ -4,16 +4,20 @@
 ## IconTexture: Interface\AddOns\WowVoiceTalkingHead\Media\VoiceChat-Active.tga
 ## Notes: Говорящие головы и озвучка заданий WoW Forever на основе WowVoice.
 ## Author: wowvoice
-## Version: 1.1.0-forever.1
+## Version: 1.2.0-forever
 ## SavedVariables: WowVoiceDB
 ## X-Sounds-Addon: WowVoiceSounds
+## OptionalDeps: CatQuest_Voices
 
 License.lua
 Hash.lua
 Index.lua
 Durations.lua
-ForeverAudio.lua
+CatQuestAudio.lua
+CatQuestTexts.lua
+AudioSources.lua
 ForeverSpeakers.lua
+CatQuestSpeakers.lua
 Core.lua
 Work.lua
 CameraModels.lua
@@ -22,3 +26,5 @@ UI.lua
 Tracker.lua
 Portrait.lua
 Options.lua
+Comparison.lua
+VoiceComparison.lua

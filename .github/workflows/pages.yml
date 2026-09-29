@@ -9,6 +9,7 @@ on:
       - 'docs/images/**'
       - 'site/**'
       - 'tools/build-site.mjs'
+      - 'tools/release-assets.mjs'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/pages.yml'

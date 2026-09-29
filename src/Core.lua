@@ -538,33 +538,41 @@ end
 ]]
 WV._nameCache = {}
 local function foreverAudio(questId, section)
-    local key = tostring(questId) .. section
-    -- Never replace a recording from the original pack, even if an imported
-    -- entry overlaps after a future pack update.
-    if _G.WowVoiceDur and _G.WowVoiceDur[key] then return nil end
-    local entries = _G.WowVoiceForeverAudio
-    local entry = entries and entries[key]
-    if not entry then return nil end
-    if entry.male then
-        return (type(UnitSex) == "function" and UnitSex("player") == 3)
-            and entry.female or entry.male
-    end
-    return entry
+    return WowVoiceAudioSources.Resolve(questId, section)
 end
 
 function WV:SoundPath(questId, section)
+    local duration = _G.WowVoiceDur and _G.WowVoiceDur[tostring(questId) .. section]
+    if not duration or self:GetSharedQuestVoice() == "catquest" then
+        local extra = foreverAudio(questId, section)
+        if extra then return extra.path, extra.duration, extra.sourceVersion end
+    end
+    return self:ClassicSoundPath(questId, section)
+end
+
+function WV:GetSharedQuestVoice()
+    if WowVoiceDB and WowVoiceDB.sharedQuestVoice == "catquest" then
+        if WowVoiceAudioSources.Status() then return "catquest" end
+        -- Keep the saved selection and radio buttons aligned with the fallback.
+        WowVoiceDB.sharedQuestVoice = "wowvoice"
+    end
+    return "wowvoice"
+end
+
+function WV:SetSharedQuestVoice(source)
+    if source ~= "wowvoice" and source ~= "catquest" then return false end
+    if source == "catquest" and not WowVoiceAudioSources.Status() then return false end
+    WowVoiceDB.sharedQuestVoice = source
+    self:RefreshAudioSources()
+    return true
+end
+
+-- Explicit WowVoice previews must remain independent of the saved preference.
+function WV:ClassicSoundPath(questId, section)
     local key = tostring(questId) .. section
     local duration = _G.WowVoiceDur and _G.WowVoiceDur[key]
-    local extra = foreverAudio(questId, section)
-    if extra then
-        return "Interface\\AddOns\\CatVoices\\" .. extra.file, extra.duration
-    end
-    if not duration and _G.WowVoiceForeverAudio
-        and (_G.WowVoiceForeverAudio[questId .. "a"] or _G.WowVoiceForeverAudio[questId .. "c"]) then
-        -- A supplemental quest may have only a turn-in. Missing sections stay
-        -- silent instead of attempting a nonexistent Classic recording.
-        return nil
-    end
+    -- A known supplemental source cannot turn an absent section into a Classic path.
+    if not duration and WowVoiceAudioSources.IsSupplement(questId) then return nil end
     local secret = WV.license and WV.license.content_key
     if secret and secret ~= "" and WowVoiceHash then
         local name = WV._nameCache[key]
@@ -684,7 +692,24 @@ end
 -- Keep runtime failures out of SavedVariables: repaired files can be retried
 -- after reload, or restored by a successful automatic description playback.
 local unavailableQuestAudio = {}
+local function availabilityKey(questId)
+    local path, duration, version = WV:SoundPath(questId, "a")
+    return tostring(questId) .. ":" .. tostring(path) .. ":" .. tostring(duration) .. ":" .. tostring(version)
+end
+
+function WV:RefreshAudioSources()
+    self:GetSharedQuestVoice()
+    unavailableQuestAudio = {}
+    self.audioRevision = (self.audioRevision or 0) + 1
+    self.lastKey = nil
+    if self.RefreshAudioSourceOptions then self:RefreshAudioSourceOptions() end
+    if self.RefreshAudioSourceDebug then self:RefreshAudioSourceDebug() end
+    if self.RefreshJournalButtons then self:RefreshJournalButtons() end
+    if self.RefreshTrackerButtons then self:RefreshTrackerButtons() end
+end
+
 function WV:SetQuestAudioAvailable(questId, available)
+    questId = availabilityKey(questId)
     local unavailable = not available or nil
     if unavailableQuestAudio[questId] == unavailable then return end
     unavailableQuestAudio[questId] = unavailable
@@ -694,7 +719,7 @@ end
 
 function WV:HasQuestAudio(questId)
     return type(questId) == "number" and questId > 0
-        and not unavailableQuestAudio[questId]
+        and not unavailableQuestAudio[availabilityKey(questId)]
         and ((_G.WowVoiceDur ~= nil and _G.WowVoiceDur[questId .. "a"] ~= nil)
             or foreverAudio(questId, "a") ~= nil)
 end
@@ -730,18 +755,23 @@ end
 
 --------------------------------------------------------------------- Events
 
---[[ The complete release contains both sound folders. If a folder's
-     marker addon is missing/disabled, explain how to reinstall the bundle.
-     Check at PLAYER_LOGIN, after all addons have loaded, to avoid false
-     warnings caused by addon load order.
-]]
+-- Shared transport for local A/B listening. It uses our portrait/timer but
+-- does not change the normal source policy, reminder cooldowns or failure cache.
+function WV:PreviewQuestAudio(questId, path, duration, text)
+    if not (WowVoiceDB and WowVoiceDB.enabled) then return false end
+    local context = self.GetReplaySpeaker and self:GetReplaySpeaker(questId)
+    if context and text then context.text = text end
+    return Playback:Play(path, duration, context)
+end
+
+-- CatQuest Voices is optional; only warn when the primary WowVoice pack is missing.
 local function warnIfNoSounds()
     local isLoaded = (C_AddOns and C_AddOns.IsAddOnLoaded) or IsAddOnLoaded
     if not isLoaded then return end
-    if isLoaded(SOUND_ADDON) and isLoaded("CatVoices") then return end
-    msg("|cffff2020Не все звуковые паки установлены или включены.|r")
-    msg("Скопируйте из архива все три папки: WowVoiceTalkingHead, WowVoiceSounds и CatVoices в _classic_beta_\\Interface\\AddOns.")
-    msg("Включите их в списке модификаций и полностью перезапустите игру.")
+    if isLoaded(SOUND_ADDON) then return end
+    msg("|cffff2020Не загружена основная база WowVoiceSounds.|r")
+    msg("Установите комплект WowVoice со звуковой базой.")
+    msg("Включите звуковые паки в списке модификаций и полностью перезапустите игру.")
 end
 
 local f = CreateFrame("Frame", "WowVoiceFrame")
@@ -755,6 +785,9 @@ f:RegisterEvent("PLAYER_LOGOUT")
 f:SetScript("OnEvent", function(self, event, arg1)
     if event == "ADDON_LOADED" then
         if arg1 ~= ADDON then
+            if arg1 == "CatQuest_Voices" or arg1 == SOUND_ADDON then
+                WV:RefreshAudioSources()
+            end
             -- CatQuest and the quest journal can load in either order. Defer
             -- until CatQuest's handler has initialized settings/created buttons.
             if arg1 == "CatQuest" or type(_G.CatQuestDB) == "table" then
@@ -767,6 +800,8 @@ f:SetScript("OnEvent", function(self, event, arg1)
         WowVoiceDB.headEnabled, WowVoiceDB.headPreset = nil, nil
         WowVoiceDB.button, WowVoiceDB.buttonPos = nil, nil
         WowVoiceDB.playTooltips = nil -- Removed setting; our controls no longer show tooltips.
+        WowVoiceDB.audioSource = nil -- Discard the obsolete bundled/external selector.
+        if WowVoiceDB.sharedQuestVoice ~= "catquest" then WowVoiceDB.sharedQuestVoice = "wowvoice" end
         for k, v in pairs(defaults) do
             if WowVoiceDB[k] == nil then WowVoiceDB[k] = v end
         end
@@ -806,6 +841,7 @@ f:SetScript("OnEvent", function(self, event, arg1)
         msg("На основе WowVoice. Озвучка: WowVoice — https://boosty.to/wowvoice; Cathey — https://boosty.to/cathey")
 
     elseif event == "PLAYER_LOGIN" then
+        WV:RefreshAudioSources()
         WV:UpdateCatQuestIntegration()
         -- CatQuest creates dialog buttons in its own PLAYER_LOGIN handler.
         if type(_G.CatQuestDB) == "table" then scheduleCatQuestIntegration() end
@@ -996,7 +1032,13 @@ SlashCmdList["WOWVOICETALKINGHEAD"] = function(input)
     elseif cmd == "perf" then
         if WV.Work then WV.Work:Report() end
 
+    elseif cmd == "source" then
+        local source, reason = WowVoiceAudioSources.Status()
+        msg("Дополнительная озвучка выбирается автоматически: %s", source and (source.id .. " " .. source.version) or reason)
+
     elseif cmd == "diag" then
+        local source, reason = WowVoiceAudioSources.Status()
+        msg("Дополнительная озвучка (автоматически): %s", source and (source.id .. " " .. source.version) or reason)
         msg("CatQuest: автозапуск квестов %s; книги и лор управляются CatQuest",
             WV:IsCatQuestAutoplaySuppressed() and "приостановлен" or "не изменён")
         local ver, build, _, iface = GetBuildInfo()

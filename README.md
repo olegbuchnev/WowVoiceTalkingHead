@@ -4,10 +4,26 @@
 Во время воспроизведения на экране отображаются портрет персонажа и текст реплики.
 Описание задания можно повторно прослушать кнопкой ▶ в журнале или списке заданий.
 
-**[Скачать полный архив](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.1.0-forever.1/WowVoiceTalkingHead-1.1.0-forever.1.zip)** ·
-**[Скачать addon-only](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.1.0-forever.1/WowVoiceTalkingHead-1.1.0-forever.1-addon-only.zip)** ·
+**[Скачать полный архив](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.2.0-forever/WowVoiceTalkingHead-1.2.0-forever.zip)** ·
+**[Скачать addon-only](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.2.0-forever/WowVoiceTalkingHead-1.2.0-forever-addon-only.zip)** ·
 [Инструкция](USER_README.md) ·
 [Сообщить об ошибке](https://github.com/olegbuchnev/WowVoiceTalkingHead/issues)
+
+## Две озвучки на выбор
+
+Для заданий, озвученных в обеих библиотеках, можно выбрать WowVoice или CatQuest
+в разделе «Выбор озвучки» настроек `/thead`. Выбранный источник используется
+при получении и сдаче заданий, а также при запуске из журнала и трекера.
+Если нужная запись есть только у одного источника, она выбирается автоматически.
+
+Кнопка «Послушать озвучку» открывает каталог
+с поиском по ID задания. Голубая кнопка запускает WowVoice, оранжевая — CatQuest:
+можно сразу переключаться между записями с одной и той же говорящей головой.
+Прослушивание не меняет источник, выбранный для игры.
+
+Для озвучки CatQuest нужен **CatQuest Voices 0.2.2**.
+Для работы пака также требуется **CatQuest**.
+Без него работает WowVoice, а каталог показывает только его записи.
 
 ![Говорящая голова: Опекун Илталайн](docs/images/talking-head-night-elf.png)
 
@@ -22,7 +38,8 @@
   Девять точек на схеме задают привязку и неподвижную точку при масштабировании.
   Поля X/Y позволяют точно задать её смещение относительно экрана.
 - **Более 4 900 заданий с озвучкой.** Классические истории и дополнительные квесты
-  Forever из библиотек WowVoice и Cathey. Набор записей зависит от задания:
+  Forever при установленном CatQuest Voices; основная база WowVoice содержит
+  4 205 заданий. Набор записей зависит от задания:
   озвучены не все этапы и реплики.
 - **Настраиваемый автозапуск.** Озвучку при получении и сдаче задания можно
   отключить независимо друг от друга и запускать описание вручную.
@@ -37,29 +54,38 @@
 WowVoice TalkingHead. Автозапуск квестов и кнопки «Читать» CatQuest в окне
 квеста и журнале временно отключаются; чтение книг и лор мест остаются доступны.
 При отключении WowVoice исходные настройки и кнопки CatQuest восстанавливаются.
-
-Аддоны используют независимые звуковые паки и могут устанавливаться отдельно.
+Для прямого использования записей поддерживается **CatQuest Voices 0.2.2**.
+По умолчанию общие записи воспроизводятся из WowVoice; в настройках можно
+выбрать CatQuest. Для записей, которые есть только в одной библиотеке, источник
+выбирается автоматически. Без CatQuest Voices недоступны только его уникальные
+записи, а общие задания используют WowVoice.
 
 ## Установка
 
-1. **[Скачайте полный архив](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.1.0-forever.1/WowVoiceTalkingHead-1.1.0-forever.1.zip)** —
-   все необходимые звуки уже внутри.
-2. **Закройте игру** и скопируйте из архива три папки — `WowVoiceTalkingHead`,
-   `WowVoiceSounds` и `CatVoices` — в `_classic_beta_/Interface/AddOns/`.
+1. **[Скачайте полный архив](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.2.0-forever/WowVoiceTalkingHead-1.2.0-forever.zip)** —
+   основная звуковая база WowVoice уже внутри.
+2. **Закройте игру** и скопируйте из архива две папки — `WowVoiceTalkingHead`
+   и `WowVoiceSounds` — в `_classic_beta_/Interface/AddOns/`.
 3. **Запустите игру**, включите аддоны в списке модификаций и откройте задание у NPC.
 
-**Обновление:** [скачайте addon-only](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.1.0-forever.1/WowVoiceTalkingHead-1.1.0-forever.1-addon-only.zip),
+**Обновление:** [скачайте addon-only](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.2.0-forever/WowVoiceTalkingHead-1.2.0-forever-addon-only.zip),
 замените папку `WowVoiceTalkingHead` и выполните `/reload`. Если в выпуске
 обновилась звуковая библиотека, понадобится полный архив и перезапуск игры.
 
-**[Зеркало на pCloud](https://e.pcloud.link/publink/show?code=ju6y6alK)** — полный комплект со звуковыми
-библиотеками и отдельный архив для обновления аддона.
+**[Зеркало на pCloud](https://e.pcloud.link/publink/show?code=ju6y6alK)** — полный комплект с основной
+озвучкой WowVoice и отдельный архив для обновления аддона.
+
+Дополнительная озвучка: **CatQuest Voices 0.2.2**.
+Для работы пака также нужен **CatQuest**.
+Скачать можно со [страницы CatQuest на CurseForge](https://www.curseforge.com/wow/addons/catquest).
+Эти записи не входят в наш архив.
 
 ## Настройки
 
 Введите **`/thead`** или откройте **Параметры → Модификации → WowVoice TalkingHead**,
 чтобы выбрать автозапуск при получении и сдаче заданий, настроить напоминания
-или изменить положение и масштаб панели. Чтобы остановить реплику,
+и источник общих записей или изменить положение и масштаб панели. В разделе
+«Выбор озвучки» также доступен каталог «Послушать озвучку». Чтобы остановить реплику,
 нажмите крестик на панели. Повторить описание можно кнопкой ▶ у задания.
 
 Подробнее о настройках, звуке и решении проблем — в [инструкции](USER_README.md).
@@ -75,7 +101,7 @@ WowVoice TalkingHead. Автозапуск квестов и кнопки «Чи
 и использует озвучку двух авторов:
 
 - **[WowVoice](https://boosty.to/wowvoice)** — основной пакет классических заданий.
-- **[Cathey](https://boosty.to/cathey)** — дополнительные задания Forever из CatQuest.
+- **[Cathey](https://boosty.to/cathey)** — альтернативная озвучка общих заданий и дополнительные квесты Forever из CatQuest.
 
 Поддержать авторов озвучки можно по ссылкам выше.
 WowVoice TalkingHead — изменённая сборка с собственным интерфейсом и доработками

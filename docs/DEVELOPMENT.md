@@ -6,14 +6,13 @@ outside the live World of Warcraft installation. Runtime addon files live under
 `src/`; tests and build tools stay outside that directory and are never deployed.
 The runtime code is based on the Midnight version, while `Index.lua`,
 `Durations.lua` and the primary OGG audio come from the Russian Classic sound pack.
-The release also bundles supplemental CatQuest recordings for quests absent from
-that pack. Original WowVoice recordings always take priority.
+An optional, separately installed CatQuest_Voices supplies quests absent from
+that pack. No CatQuest audio is copied or redistributed. Original WowVoice recordings always take priority.
 This build targets **WoW Forever Beta, Interface 16001**.
 
 The in-game title is **WowVoice TalkingHead**, and its addon ID and folder are
 `WowVoiceTalkingHead`. The command `/thead` opens settings; `/thead help` lists commands.
-The original `/wv` and `/wowvoice` aliases are not registered; audio folders are `WowVoiceSounds`
-and `CatVoices`.
+The original `/wv` and `/wowvoice` aliases are not registered; the bundled audio folder is `WowVoiceSounds`.
 The cloud sync directory also retains its existing name and shared link.
 
 For installation and in-game usage, see the [user guide in Russian](../USER_README.md).
@@ -29,9 +28,8 @@ from release archives.
 ```text
 src/                             Runtime files copied to AddOns/WowVoiceTalkingHead
 soundpack/                       Complete Classic audio and two Forever TOCs
-catvoices/                       Filtered CatQuest audio, metadata and attribution
 tests/                           Lua tests with WoW API mocks and pipeline checks
-config/deploy.targets.local.psd1  Local Forever Beta path (gitignored)
+config/build.env.local.ps1      Local environment variables (gitignored)
 build.ps1 / build.cmd             Validate, test, deploy and package pipeline
 USER_README.md                   Russian user guide; converted to README.txt for packaging
 artifacts/WoWVoice/              Latest full and addon-only ZIPs; stable cloud sync folder (gitignored)
@@ -41,9 +39,10 @@ backups/                         Backups created before deployment (gitignored)
 Edit `src/`, then run Deploy. The installed `AddOns\WowVoiceTalkingHead` directory is a
 deployment destination, not the project's source directory. OGG files are local
 build inputs (gitignored) and are included in the complete release archive.
-Populate them with `tools/import-classic-audio.js <WowVoiceSounds directory>` and
-`tools/import-forever-audio.js <CatQuest_Voices directory>` using Node.js after
-`npm ci`. Both tools read already extracted local sound packs.
+Populate Classic audio with `tools/import-classic-audio.js <WowVoiceSounds directory>`.
+`tools/import-forever-audio.js <CatQuest_Voices directory>` reads external streams
+to generate compatibility metadata, transcripts and hashes only; it never copies audio.
+Both tools require Node.js and `npm ci`.
 
 ## Commands
 
@@ -93,7 +92,7 @@ Creates `artifacts/WoWVoice/WowVoiceTalkingHead-<version>-addon-only.zip` contai
 `WowVoiceTalkingHead/` and the same plain-text `README.txt` from `USER_README.md` as the full archive. Use it to
 deliver code fixes to users who already have the full sound library installed.
 It includes the entire runtime addon, including textures and audio indexes,
-and can be built without local `soundpack/` or `catvoices/` directories.
+and can be built without a local `soundpack/` directory.
 Runtime layout and TOC checks still run. The version is not changed.
 
 The shared folder retains one full release and one addon-only update. Building
@@ -165,6 +164,15 @@ the opening links and the installation/update instructions) to the published
 assets. Verify both URLs before pushing the approved README. Keep the previous
 working links until the replacement assets are published; do not change the
 addon version merely to refresh these links.
+
+For a local download report, run `stats.cmd` (or `stats.cmd -NoOpen` without
+opening the browser). `tools/release-stats.ps1` reads the public GitHub API,
+paginates releases and assets, and writes HTML, CSV and JSON to the gitignored
+`artifacts/stats/` directory, outside the pCloud release sync folder. It needs no
+token or extra dependencies. Run it again to refresh the snapshot. Counts cover
+existing full and addon-only ZIP assets only, including repeated/test downloads; they do not measure
+unique users, website clicks or pCloud downloads. The report stays local, while
+the underlying public-repository counters remain public. No site analytics is added.
 
 Release assets include `SHA256SUMS.txt` for download integrity checks. Checksums
 verify that a download matches the published files; they are not an antivirus
@@ -614,7 +622,7 @@ Unavailable metadata or models leave the document icon visible while audio
 continues. No external addon or database download is required.
 
 `ForeverSpeakers.lua` bundles 3,765 confirmed single-NPC quest starters, including
-455 of the 703 supplemental voiced quests. It also marks 316 confirmed object or
+455 of the original 703 supplemental voiced quests (the 0.2.0 snapshot). It also marks 316 confirmed object or
 multiple-starter quests so they cannot accidentally inherit a Classic NPC guess.
 Captured identities and exact quest-starting items take priority. Missing records
 still fall back to the Classic index. No internet connection or other addon is
@@ -652,22 +660,91 @@ cause an initial delay.
 
 ## Local configuration
 
-`config/deploy.targets.local.psd1` is intentionally not committed. Start from
-`config/deploy.targets.example.psd1` if the local file does not exist, and set
-the Forever Beta AddOns directory:
+`BUILD.local.md` is a tracked command guide without personal paths.
+Copy `config/build.env.example.ps1` to `config/build.env.local.ps1` (gitignored)
+and set the Forever Beta AddOns directory. The example uses a fictional path:
 
 ```powershell
-@{
-  ForeverBeta = 'C:\Games\World of Warcraft\_classic_beta_\Interface\AddOns'
-}
+$env:WOWVOICE_FOREVER_BETA_ADDONS = 'D:\ExampleWoW\_classic_beta_\Interface\AddOns'
 ```
 
+Deploy and DeployAddon load this file automatically in the build process only.
+Its assignments override inherited environment variables; without the file,
+the inherited variable is used. Windows user/system environment settings are
+not modified. Other tasks do not load or require the local environment file.
+Repository paths are derived from the script location.
+
 `ForeverBeta` is the only supported deployment target; PTR, Retail and All are
-not supported. Use `-ConfigPath` to load a configuration file from another
-location. The destination must exist and end in
+not supported. The old `config/deploy.targets.local.psd1` is no longer read
+automatically. Explicit `-ConfigPath` still accepts the PSD1 format shown in
+`config/deploy.targets.example.psd1` and bypasses the local environment file.
+The destination must exist and end in
 `_classic_beta_\Interface\AddOns`. Deployment rejects junctions and symlinks.
 
 ## Deployment and backups
+
+### Local debug panel
+
+`src/CatQuestSpeakers.lua` contains the complete CatQuest NPC database and quest
+giver/finisher maps, imported as data by `tools/import-catquest-speakers.js`.
+Its header records the upstream version and file SHA-256. Description portraits
+use giver metadata only when the existing indexes lack an NPC; live captures,
+item/object identities and explicit ambiguous-starter exclusions retain priority.
+Imported identities stay transient. All packages carry this database.
+
+Run `node tools/audit-catquest.js <CatQuest directory> <CatQuest_Voices directory>`
+after imports. This read-only audit compares every NPC/giver/finisher record,
+all subtitle variants, complete compatibility metadata and external file
+hashes, including Classic overlaps. Any mismatch produces a nonzero exit code.
+`upstreamGaps` lists absent upstream quest data separately;
+books and zone lore are outside this quest database audit.
+
+The public voice catalogue ships in every build through `src/Comparison.lua` and
+`src/VoiceComparison.lua`, listed in all three TOCs. Open options and choose
+«Послушать озвучку» in the «Выбор озвучки» section. The section uses the standard
+heading/divider, smooth circle radio choices with centered clickable captions,
+and a dedicated Blizzard help-i tooltip target. No tooltip overlays the heading or choices.
+The catalogue replaces the settings content inside the same category.
+The page has an «Озвучка заданий» heading, the quest ID field
+with the ID range alongside and a Back button
+beside the heading. Back or closing/reopening Settings returns to the main
+view and preserves its scroll position. Back and closing Settings clear the catalogue filter and selection,
+so returning shows the full catalogue from the top.
+`/wvvoices` opens this view; `/wvdebug` remains an alias. The quest field uses coordinate-field styling.
+The catalogue contains only quests with known description audio in the Classic
+and CatQuest indexes. Typing filters these IDs by prefix, numerically
+sorted in a grid spanning the page width (8 columns at normal width, up to 12).
+The grid fills the remaining page width and height; all results remain available
+through the scrollbar/mouse wheel. Only visible cells are pooled, so a broad
+prefix does not create thousands of buttons. Each 52-pixel tile has the quest ID
+and two fixed play slots: blue WowVoice on the left, orange CatQuest on the right.
+A missing source recording leaves its slot empty. A known recording unavailable
+in the installed packs is disabled and grey. A legend sits above the grid.
+If CatQuest_Voices or its live index is not loaded, hide its buttons and legend,
+exclude CatQuest-only quests, and show only the WowVoice count in the footer.
+Late loading restores its catalogue and controls. A loaded but incompatible pack
+still has disabled controls, matching the version warning in the options.
+Clicking an icon immediately replaces
+playback through our talking head, preserving the filter, results and scroll.
+Only the clicked play button has a bright filled selection; tiles have no selection outline.
+Selection follows both quest ID and source as cells are reused. Focus loss, Escape and
+playback leave the grid visible; Escape only clears input focus. Empty input shows
+the entire catalogue. Enter replays the entered ID; empty/invalid input is ignored.
+`/wvdebug 179` opens it with a quest ID filled in. Playback uses the normal
+audio transport without requiring the quest in the log. Comparison does not update
+normal availability, source preferences or reminder cooldowns. Missing quest text or speaker metadata
+uses the normal fallback. The reminder test still requires a visible tracked quest.
+
+The extra stop, reminder, preview, logging and diagnostics buttons and their
+page-specific handlers have been removed. Shared runtime commands remain available.
+CatQuest previews use the same complete `src/CatQuestAudio.lua` index and resolver as
+normal playback, including exact durations for both sexes and compatibility guards.
+No separate comparison metadata or importer is required.
+Only compatible external CatQuest_Voices can supply the CatQuest button.
+The source version and live duration/voice/sex metadata must match. Failures disable
+only the affected file in the comparison view. Normal playback retains its own policy.
+Both release archive types include the catalogue. The old deployment flag `-LocalDebug`
+is accepted as a no-op; ordinary deployment removes obsolete local panel/index files.
 
 Before writing any files, Deploy creates `backups/<timestamp-id>/` containing
 the existing `WowVoiceTalkingHead` directory and the two sound pack TOC files it will
@@ -675,16 +752,12 @@ replace. It then synchronizes `src/` into `AddOns\WowVoiceTalkingHead`, removing
 that are no longer present in the source. Existing IDE workspace state under
 the installed addon's `.idea` directory is preserved.
 
-The complete Classic audio and its two TOCs are copied into `WowVoiceSounds`;
-filtered supplemental audio is copied into `CatVoices`. Existing extra files in
-the sound directories are preserved. The current `CatVoices` folder is also
-backed up when present; the large Classic audio library is not backed up.
-Other addons and `WTF` are not modified. Fully restart the game after deployment
-so the client can discover newly added sounds.
-
-To roll back, restore `WowVoiceTalkingHead`, the two TOC files and, if present, `CatVoices`
-from the appropriate backup directory. Its `destination.txt` records the AddOns
-destination. Restore older Classic audio from its original archive if needed.
+The complete Classic audio and its two TOCs are copied into WowVoiceSounds.
+Existing extra files are preserved. CatVoices, CatQuest and CatQuest_Voices
+are never changed by deployment. The large Classic audio library is not backed up.
+Other addons and WTF are not modified. Fully restart after adding new sounds.
+To roll back, restore WowVoiceTalkingHead and sound TOCs from the backup;
+destination.txt records the target directory.
 
 ## Release package
 
@@ -694,12 +767,12 @@ copy this field from the original TOC and preserve its filename in `X-Source-TOC
 Classic imports prefer `WowVoiceSounds_Vanilla.toc` over the generic TOC; the
 original Classic 1.15 archive has version 1.0.1 in that client-specific TOC and
 0.1.0 in the generic one. All 10,891 bundled Classic recordings match that archive
-byte-for-byte. Cathey's supplemental recordings come from CatQuest_Voices 0.2.0.
+byte-for-byte. Cathey's supplemental recordings come from CatQuest_Voices 0.2.2.
 
 Older published packs without source metadata are recognized by their exact
-adaptation versions (WowVoiceSounds 1.0.3-forever.1 and CatVoices 0.2.0-wowvoice.1).
+adaptation versions (WowVoiceSounds 1.0.3-forever.1).
 Unknown versions are not guessed by stripping suffixes. Labels use the installed
-WowVoiceSounds/CatVoices packs, never a separately installed CatQuest addon or the
+WowVoiceSounds and CatQuest_Voices packs, never the CatQuest player or the
 latest online release. There is no separate combined database revision.
 
 Package creates a ZIP archive, using the version from `src/WowVoiceTalkingHead.toc`:
@@ -713,7 +786,6 @@ The ZIP contains:
 ```text
 WowVoiceTalkingHead/              Complete addon from src/
 WowVoiceSounds/                   Complete Classic audio and two Forever TOCs
-CatVoices/                       Additional audio, metadata and attribution
 README.txt                        Plain-text Russian user guide from USER_README.md
 ```
 
@@ -721,35 +793,43 @@ Tests, development tools, IDE settings, backups and internal manifests are exclu
 Maintain the installation and usage instructions in [USER_README.md](../USER_README.md)
 in Russian; the repository README presents the addon to players. This document contains development details.
 
-The bundle includes 10,891 Classic recordings and 1,497 supplemental recordings
-from CatQuest_Voices 0.2.0 for 703 additional quests (702 descriptions and 433
-turn-ins, including gender variants). Filtering excludes an entire CatQuest quest if any section of that
-quest exists in the Classic duration index. CatQuest itself is not required.
-`ForeverAudio.lua` supplies the additional filenames and exact durations read
-from each OGG stream. Runtime selection also gives Classic entries priority.
+The bundle includes 10,891 Classic recordings. External CatQuest Voices 0.2.2
+adds 738 quests (737 descriptions, 464 turn-ins, 1,678 files with gender variants).
+The runtime index now includes the complete CatQuest library: 1,979 quests,
+1,978 descriptions, 1,687 turn-ins and 4,895 files. Saved `sharedQuestVoice`
+selects WowVoice (default) or CatQuest for overlapping recordings. Routing is
+per section: a recording available from only one source uses that source.
+Unavailable/incompatible CatQuest resets the saved preference to WowVoice.
+Restoring the library enables selection again without automatically selecting CatQuest.
+The options radio buttons are disabled with an explanatory tooltip in this case.
+Changing preference invalidates availability caches without interrupting playback.
+Catalogue A/B buttons use explicit sources independently of this preference.
+CatQuest audio is read directly from CatQuest_Voices/Sounds/q; the legacy CatVoices
+pack and ForeverAudio.lua are no longer used.
 The import manifest and SHA-256 hashes are retained in
 `docs/internal/forever-audio-manifest.json`, outside the release. The supplied
 CatQuest pack's loaded Lua index takes priority. JSON-only entries are recovered
 only when they contain a turn-in without a description, which the upstream Lua
-index omits (quest 99080 in 0.2.0). Every referenced OGG must exist and pass stream
+index omits (quest 99080 in both 0.2.0 and 0.2.2). Every referenced OGG must exist and pass stream
 validation before outputs are replaced. Such quests get completion playback but
 no description replay button; missing sections remain silent. The manifest records
 the recovered IDs and reads the source version from its TOC.
 Some Forever turn-ins use temporary translations from English and may differ
 from the Russian client text, as documented by CatQuest's author.
-Source credit is preserved in `CatVoices/NOTICE.txt` and the user guide:
+Source credit is preserved in generated metadata and the user guide:
 CatQuest and CatQuest_Voices are by [Cathey](https://t.me/catheyco) (daniilcathey).
 
 ## Optional CatQuest coexistence
 
-Core.lua temporarily suppresses CatQuest 0.2.0's `autoDetail`, `autoProgress`
+Core.lua temporarily suppresses CatQuest 0.2.0/0.2.2's `autoDetail`, `autoProgress`
 and `autoComplete` while WowVoice is enabled. The `readAfterAccept` path also
 checks `autoDetail`, so it cannot enqueue a duplicate reading. CatQuest retains
 books, location lore, NPC greetings/gossip, manual reading, UI and history.
-The separate Story modules are commented out in CatQuest's own 0.2.0 TOC.
+The separate Story modules are commented out in CatQuest's own 0.2.2 TOC.
 
-This uses CatQuest's initialized settings table, with no required/optional
-TOC dependency, private namespace access or upstream file edits. A late
+This uses CatQuest's initialized settings table without private namespace access
+or upstream file edits. WowVoice has optional TOC dependencies on the two audio
+packs; the original CatQuest_Voices itself requires CatQuest. A late
 CatQuest ADDON_LOADED event defers synchronization until its handler finishes;
 PLAYER_LOGIN also synchronizes. `/thead off` and PLAYER_LOGOUT restore the original
 flags before serialization; `/thead on` captures and suppresses them again. Manual
@@ -758,47 +838,57 @@ CatQuest settings remain editable: manually re-enabling its quest autoplay can
 allow simultaneous playback until the next takeover/reload. Manual reading is
 independent and is not stopped when WowVoice starts. `/thead diag` reports takeover.
 
-Audio packs remain independent. WowVoice does not read CatQuest_Voices at runtime,
-and CatQuest does not use WowVoiceSounds/CatVoices. Either addon works alone.
+AudioSources.lua resolves supplemental recordings independently of either player's UI.
+Only a loaded, supported CatQuest_Voices can supply supplemental recordings.
+Without it, supplemental quests play no sound and show no head. Classic remains
+independent. An old manually installed CatVoices is ignored. The old bundled/external
+selector is removed; the new preference only selects overlapping recordings. Old `audioSource` saves
+are discarded on load. `/thead source` (including old arguments) reports status
+without changing it; `/thead diag` gives detailed diagnostics. The options header
+shows the active source version as "Озвучка CatQuest". Classic remains unchanged.
+CatQuest does not use our packs.
+
+The importer also generates src/CatQuestAudio.lua for the exact external 0.2.2
+release, including per-file durations and JSON-only recovery. At runtime the
+external TOC version and each live entry's duration, gender flag and voice must
+match this metadata. Unknown releases or changed entries are unavailable, not
+played with stale timings. These checks cannot detect an OGG replaced under the
+same version and identical Lua metadata: only the offline importer verifies hashes.
+ADDON_LOADED/PLAYER_LOGIN refresh source-dependent UI and failure caches without
+interrupting active sound. Availability failures are keyed by path, version and duration.
 Tests cover absence, late loading, repeated initialization, enabled/disabled
 transitions, restored saves, independent book/lore preferences and database changes.
 
-Quest dialog and journal read buttons are hidden for the same interval. Discovery
-is limited to QuestFrame and modern/legacy journal containers: CatQuest's exposed
-catQuestButton reference and direct children with the exact CatQuest_Toggle or
-CatQuest_ReadQuestLog click handler. Text labels are never used as identity.
-ItemTextFrame and GossipFrame are excluded. Each button's IsShown flag is captured
-once and restored on release, including originally hidden buttons. OnShow hooks
-keep suppressed buttons hidden without replacing their scripts; those hooks are
-inert after release. Parent OnShow and deferred PLAYER_LOGIN/ADDON_LOADED scans
-cover both initialization orders and a lazily loaded journal. Only a few known
-containers are scanned; there is no frame enumeration or periodic polling.
+All available quest transcripts are imported from CatQuest's `c.x/m/f` subtitle
+sentences into `src/CatQuestTexts.lua`. Both text and audio metadata include
+Classic overlaps. The three TOCs load the same standalone text
+database in full and addon-only packages. Text lookup is independent of
+installed audio sources and their versions, with variants selected by player
+gender. `CatQuestAudio.lua` contains only audio compatibility metadata.
 
-## Sound pack source
+The talking head uses this database only when the playback context has no text;
+captured/game journal text stays authoritative and fallback text is not saved
+into character data. This includes debug playback outside the journal and
+Classic playback without CatQuest installed. CatQuest's wording may differ from
+Classic recordings or the game. Timing-based subtitle scrolling is unchanged;
+only sentence text is imported here.
 
-Original project: [HappyDridex/wowvoice, release v1.0](https://github.com/HappyDridex/wowvoice/releases/tag/v1.0).
-The required archive is [WowVoice-classic-1.15.zip](https://github.com/HappyDridex/wowvoice/releases/download/v1.0/WowVoice-classic-1.15.zip).
-The recorded SHA-256 from the verification on September 26, 2026 is:
+The 0.2.2 snapshot contains 1,978 quests, with 1,978 descriptions and 1,686 turn-ins
+(4,893 text variants). These include 1,241 Classic quests. Recovered JSON-only
+turn-in 99080 has no source transcript, so it retains the no-text message when
+the game has not supplied text. Other quests absent from this text database
+also retain their existing game/journal lookup. Import reports text coverage
+separately in `forever-audio-manifest.json` so updates can be compared.
 
-```text
-72a56917473756cd853c4cef7e8feb91b663aeee55c743cdd78f484016858133
-```
+## Two release packages and website metadata
 
-That verification found all 10,891 installed OGG files identical to the archive
-by SHA-256. The repository's `Index.lua` and `Durations.lua` also matched the
-archive. Sound pack changes are limited to the TOC files for Interface 16001.
-Keep the Classic duration table; do not replace it with the Midnight version.
+Package contains WowVoiceTalkingHead and WowVoiceSounds. PackageAddon contains
+only WowVoiceTalkingHead. Both include the same text, NPC and compatibility data.
+PackageLite was removed because it would now duplicate Package. Neither build
+needs a local catvoices directory; existing legacy audio is not deleted automatically.
 
-## IntelliJ IDEA run configurations
-
-Create a **Shell Script** run configuration for each desired task:
-
-- Script path: `$ProjectFileDir$\build.ps1`
-- Interpreter path: `C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe`
-- Interpreter options: `-NoProfile -ExecutionPolicy Bypass -File`
-- Working directory: `$ProjectFileDir$`
-- Script options: `-Task Validate`, `-Task Test`,
-  `-Task Deploy -Target ForeverBeta` or `-Task Package`.
-
-If **Shell Script** is not listed, enable JetBrains' Shell Script plugin. IDEA
-can then store selected configurations as project files under `.run/`.
+Pages shows two download cards with actual GitHub asset sizes, versions and dates.
+A separate CurseForge link explains optional CatQuest Voices installation; the
+supported version is read from CatQuestAudio.lua at the downloadable addon tag.
+Historical lite archives remain identifiable in download statistics. No release
+archive or public website is published by routine deployment.

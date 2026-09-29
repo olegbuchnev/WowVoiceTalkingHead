@@ -4,7 +4,7 @@ Internal development checklist. This file is not included in the release ZIP or
 deployed to the game: the build copies only `src/`, the sound-pack TOCs and
 `USER_README.md`.
 
-Last updated: 2026-09-28.
+Last updated: 2026-09-29.
 
 ## Confirmed in game
 
@@ -52,11 +52,38 @@ the same profile.
 
 ## Awaiting in-game confirmation
 
+- [ ] Human — child. Raised on Shawn feedback: profile `human_child`,
+  vertical offset `-0.025` → `0.08`, distance `1.15`, lateral `0`.
+  Covers human boy/girl models and their variants; inspect both upright and
+  downward talking poses. Adult human profiles remain separate.
+
+- [ ] Human — female. Raised on Priestess Josetta feedback: profile `human_female`,
+  vertical offset `-0.025` → `0.025`, distance `1.15`, lateral `0`.
+  Applies to standard, HD and SDR character variants; visual confirmation pending.
+
+- [ ] Gnomes. Lowered on Narain Soothfancy feedback: vertical offset `0.08` → `0`,
+  distance `1.25`, lateral `0`. Applies to the `gnome` profile; visual confirmation pending.
+
+- [ ] Skyborne — female. Model file ID `7478494`, profile `skyborne_female`
+  applied as a per-model override (`model:7478494` in diagnostics).
+  Refined on Ayessa Dawnsinger feedback (quest `95349`): vertical offset
+  `0.025` → `0.015` for slightly more room above the hair after the initial lift
+  from `-0.025`. Distance `1.1`, lateral `0`. Identity comes from the
+  locally installed `CatQuest/RaceModels.lua`; live model ID and visual result
+  are not yet confirmed. Male model `7478487` keeps the fallback framing.
+
 - [ ] Undead — male. Profile: `undead_male`. Reopened after feedback on
   Deathguard Kristof: lowered very slightly, vertical offset `0.025` → `0.015`,
   distance `1.22`, lateral `0`. Previously confirmed framing used the shared
   `undead` profile. Applies to standard, HD and HD SDR male undead; the tested
   model file ID was not reported.
+
+- [x] Night elf — female. User confirmed framing on Sentinel Kyra Starsong:
+  profile `nightelf_female`, vertical offset `0.025` → `0.015` to leave room
+  above the hair after the initial lift from `-0.025`. Distance `1.18`,
+  lateral `0`. Standard (`120590`), HD (`921844`) and HD SDR (`1838574`)
+  variants are mapped. The tested model file ID was not reported;
+  other variants remain individually unverified.
 
 ## Maintenance
 

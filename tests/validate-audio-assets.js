@@ -2,8 +2,8 @@ const fs = require('fs'), path = require('path'), assert = require('assert');
 const crypto = require('crypto'), lua = require('luaparse');
 const root = path.resolve(__dirname, '..');
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'docs/internal/forever-audio-manifest.json'), 'utf8'));
-const index = lua.parse(fs.readFileSync(path.join(root, 'src/ForeverAudio.lua'), 'utf8'),
-  {encodingMode:'pseudo-latin1'}).body.find(n => n.type === 'AssignmentStatement').init[0];
+const index = lua.parse(fs.readFileSync(path.join(root, 'src/CatQuestAudio.lua'), 'utf8'),
+  {encodingMode:'pseudo-latin1'}).body.find(n => n.type === 'AssignmentStatement').init[0].fields.find(f => f.key.name === 'entries').value;
 const classic = new Set([...fs.readFileSync(path.join(root, 'src/Durations.lua'), 'utf8')
   .matchAll(/\["(\d+[apc])"\]/g)].map(m => m[1]));
 const quests = new Set([...classic].map(k => k.slice(0, -1)));
@@ -22,27 +22,18 @@ function record(table) {
 for (const field of index.fields) {
   const key = field.key.value, id = key.slice(0, -1);
   assert(/^\d+[ac]$/.test(key));
-  assert(!quests.has(id), `Classic quest duplicated in supplement: ${id}`);
   newQuests.add(id);
   sections[key.slice(-1)]++;
-  record(field.value);
+  record(field.value.fields.find(f => f.key.name === 'audio').value);
 }
 assert.strictEqual(newQuests.size, manifest.quests);
 assert.deepStrictEqual(sections, manifest.sections);
 assert.deepStrictEqual([...indexed].sort(), [...expected.keys()].sort());
-assert.deepStrictEqual(fs.readdirSync(path.join(root, 'catvoices')).filter(f => f.endsWith('.ogg')).sort(),
-  [...indexed].sort());
-for (const file of manifest.files) {
-  const buffer = fs.readFileSync(path.join(root, 'catvoices', file.file));
-  assert.strictEqual(buffer.length, file.bytes);
-  assert.strictEqual(buffer.toString('ascii', 0, 4), 'OggS');
-  assert.strictEqual(crypto.createHash('sha256').update(buffer).digest('hex'), file.sha256,
-    `Changed recording: ${file.file}`);
-}
 assert.deepStrictEqual(fs.readdirSync(path.join(root, 'soundpack')).filter(f => f.endsWith('.ogg')).sort(),
   [...classic].map(k => k + '.ogg').sort());
 for (const key of classic) {
   const buffer = fs.readFileSync(path.join(root, 'soundpack', key + '.ogg'));
   assert.strictEqual(buffer.toString('ascii', 0, 4), 'OggS');
 }
-console.log(`PASS: ${classic.size} Classic files; ${indexed.size} supplemental files for ${newQuests.size} disjoint quests, verified SHA-256 and durations`);
+assert([...newQuests].some(id => quests.has(id)), 'External index must include shared quests');
+console.log(`PASS: ${classic.size} Classic files; ${indexed.size} external audio references for ${newQuests.size} quests, verified metadata coverage and durations`);

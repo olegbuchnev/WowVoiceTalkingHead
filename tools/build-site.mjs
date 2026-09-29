@@ -2,9 +2,12 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Marked } from 'marked';
+import { artifactKind, formatArtifactSize } from './release-assets.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const output = path.join(root, 'artifacts/site');
+const previewMode = process.argv.includes('--preview');
+const output = path.join(root, previewMode ? 'artifacts/site-preview' : 'artifacts/site');
+const preview = previewMode ? JSON.parse(await fs.readFile(path.join(output, 'preview.json'), 'utf8')) : null;
 const repository = 'https://github.com/olegbuchnev/WowVoiceTalkingHead';
 const readme = await fs.readFile(path.join(root, 'README.md'), 'utf8');
 const guide = await fs.readFile(path.join(root, 'USER_README.md'), 'utf8');
@@ -14,6 +17,11 @@ const escape = text => text.replace(/[&<>"']/g, char => ({
 const markdown = new Marked({
   walkTokens(token) {
     if (token.type !== 'link' && token.type !== 'image') return;
+    if (previewMode && token.type === 'link') {
+      if (token.href === full) token.href = fullInfo.url;
+      else if (token.href === addon) token.href = addonInfo.url;
+      if (token.href.startsWith('downloads/')) return;
+    }
     if (/^(?:https?:|mailto:|#)/.test(token.href)) return;
     if (token.href.startsWith('docs/images/')) token.href = token.href.replace('docs/', '');
     else if (token.href === 'USER_README.md') token.href = 'guide.html';
@@ -30,8 +38,10 @@ const tokens = markdown.lexer(readme);
 const title = tokens.find(token => token.type === 'heading' && token.depth === 1)?.text;
 const intro = tokens.find(token => token.type === 'paragraph')?.raw;
 const links = [...readme.matchAll(/\]\((https:\/\/[^\s)]+)\)/g)].map(match => match[1]);
-const full = links.find(link => /\/releases\/download\/[^/]+\/[^/]+\.zip$/.test(link) && !link.endsWith('-addon-only.zip'));
-const addon = links.find(link => link.endsWith('-addon-only.zip'));
+const download = kind => links.find(link => link.startsWith(`${repository}/releases/download/`)
+  && artifactKind(link.split('/').at(-1)) === kind);
+const full = download('full');
+const addon = download('addon');
 const mirror = links.find(link => link.startsWith('https://e.pcloud.link/'));
 if (!title || !intro || !full || !addon || !mirror) throw Error('README is missing the title, introduction or download links');
 // Resolve metadata for the exact downloads in README, which may use different releases.
@@ -62,10 +72,34 @@ async function artifactInfo(url) {
   const dateText = new Intl.DateTimeFormat('ru-RU', {
     day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC',
   }).format(date);
-  return { tag, html: `<p class="artifact-meta"><a href="${escape(`${repository}/releases/tag/${encodeURIComponent(tag)}`)}" aria-label="Изменения в версии ${escape(tag.replace(/^v/, ''))}">Аддон: ${escape(tag.replace(/^v/, ''))}</a><br>Обновлён <time datetime="${date.toISOString()}">${dateText}</time></p>` };
+  return { tag, size: formatArtifactSize(asset.size), html: `<p class="artifact-meta"><a href="${escape(`${repository}/releases/tag/${encodeURIComponent(tag)}`)}" aria-label="Изменения в версии ${escape(tag.replace(/^v/, ''))}">Аддон: ${escape(tag.replace(/^v/, ''))}</a><br>Обновлён <time datetime="${date.toISOString()}">${dateText}</time></p>` };
 }
-const fullInfo = await artifactInfo(full);
-const addonInfo = await artifactInfo(addon);
+async function previewArtifact(kind) {
+  const name = preview[kind];
+  if (typeof name !== 'string' || path.basename(name) !== name || artifactKind(name) !== kind) {
+    throw Error(`Invalid preview archive: ${kind}`);
+  }
+  const stat = await fs.stat(path.join(output, 'downloads', name));
+  return { tag: preview.version, url: 'downloads/' + name, size: formatArtifactSize(stat.size),
+    html: '<p class="artifact-meta">Локальная тестовая сборка<br>Размер готового ZIP</p>' };
+}
+const fullInfo = previewMode ? await previewArtifact('full') : await artifactInfo(full);
+const addonInfo = previewMode ? await previewArtifact('addon') : await artifactInfo(addon);
+// Compatibility is tied to the downloadable addon, not unpublished main metadata.
+async function compatibilityVersion() {
+  if (previewMode) return preview.catQuestVersion;
+  const versions = new Set();
+  for (const tag of new Set([fullInfo.tag, addonInfo.tag])) {
+    const response = await fetch(`https://raw.githubusercontent.com/olegbuchnev/WowVoiceTalkingHead/${encodeURIComponent(tag)}/src/CatQuestAudio.lua`, {signal: AbortSignal.timeout(15000)});
+    if (!response.ok) throw Error(`Cannot verify CatQuest integration in ${tag}: HTTP ${response.status}. Update README release links after publishing, or use --preview locally.`);
+    const version = /sourceVersion\s*=\s*"([^"]+)"/.exec(await response.text())?.[1];
+    if (!version) throw Error(`Published CatQuest compatibility version is missing in ${tag}`);
+    versions.add(version);
+  }
+  if (versions.size !== 1) throw Error('Full and addon-only downloads support different CatQuest versions');
+  return [...versions][0];
+}
+const catQuestVersion = await compatibilityVersion();
 async function publishedAudioVersion(file, legacyVersions) {
   // Read the source tagged for the downloadable FULL release, not main: an
   // unreleased import or a newer addon-only build must not change these labels.
@@ -79,10 +113,8 @@ async function publishedAudioVersion(file, legacyVersions) {
   if (!version) throw Error(`Unknown upstream audio version in ${fullInfo.tag}/${file}`);
   return version;
 }
-const [wowVoiceVersion, catheyVersion] = await Promise.all([
-  publishedAudioVersion('soundpack/WowVoiceSounds.toc', { '1.0.3-forever.1': '1.0.1' }),
-  publishedAudioVersion('catvoices/CatVoices.toc', { '0.2.0-wowvoice.1': '0.2.0' }),
-]);
+const wowVoiceVersion = previewMode ? preview.wowVoiceVersion
+  : await publishedAudioVersion('soundpack/WowVoiceSounds.toc', { '1.0.3-forever.1': '1.0.1' });
 const screenshots = tokens.filter(token => token.type === 'paragraph' && token.tokens?.[0]?.type === 'image');
 if (!screenshots.length) throw Error('README is missing screenshots');
 const sections = new Map();
@@ -92,11 +124,15 @@ for (const token of tokens) {
     current = token.text;
     sections.set(current, []);
   } else if (token.type === 'hr') current = undefined;
-  else if (current) sections.get(current).push(token.raw);
+  else if (current) {
+    if (screenshots.includes(token)) continue;
+    if (previewMode && token.type === 'paragraph' && token.raw.includes(mirror)) continue;
+    sections.get(current).push(token.raw);
+  }
 }
-function section(name, id) {
+function section(name, id, className = '') {
   if (!sections.has(name)) throw Error(`README section missing: ${name}`);
-  return `<section aria-labelledby="${id}"><h2 id="${id}">${escape(name)}</h2>${markdown.parse(sections.get(name).join(''))}</section>`;
+  return `<section${className ? ` class="${className}"` : ''} aria-labelledby="${id}"><h2 id="${id}">${escape(name)}</h2>${markdown.parse(sections.get(name).join(''))}</section>`;
 }
 function page(content, isGuide = false) {
   return `<!doctype html>
@@ -105,40 +141,50 @@ function page(content, isGuide = false) {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Русская озвучка квестов для WoW Forever Beta. Скачать WowVoice TalkingHead, установить аддон и настроить воспроизведение.">
-  <meta name="theme-color" content="#ffffff">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#181a1b">
   <title>${isGuide ? 'Инструкция — ' : ''}${escape(title)}</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  ${previewMode ? '<aside class="preview-banner">Предпросмотр следующего выпуска. Кнопки скачивают локальные тестовые ZIP. Релиз ещё не опубликован.</aside>' : ''}
   <a class="skip-link" href="#content">Перейти к содержанию</a>
   <div class="layout">
     <header class="sidebar">
-      <a class="brand" href="./">WowVoice<span>TalkingHead</span></a>
+      <a class="brand" href="index.html">WowVoice<span>TalkingHead</span></a>
       <p class="tagline">Русская озвучка квестов<br>для WoW Forever Beta</p>
       <div class="downloads" aria-label="Скачать аддон">
         <div class="download-card" role="group" aria-label="Полный архив со звуками">
-          <a class="button primary" href="${escape(full)}">Скачать полный архив <span aria-hidden="true">↓</span></a>
+          <a class="button primary" href="${escape(fullInfo.url || full)}"><span>Скачать полный комплект <span class="artifact-size">${escape(fullInfo.size)}</span></span><span aria-hidden="true">↓</span></a>
           <div class="download-info">
-            <p class="download-note">Для первой установки · со звуками</p>
+            <p class="download-note">Для первой установки · аддон и основная озвучка WowVoice.</p>
             ${fullInfo.html}
             <dl class="audio-versions" aria-label="Версии исходных паков озвучки в полном архиве">
               <dt>Озвучка WowVoice:</dt><dd>${escape(wowVoiceVersion)}</dd>
-              <dt>Озвучка Cathey:</dt><dd>${escape(catheyVersion)}</dd>
             </dl>
+            ${previewMode ? '<p class="download-note">Зеркало на pCloud появится после публикации.</p>' : `<a class="mirror" href="${escape(mirror)}">Зеркало полного комплекта на pCloud ↗</a>`}
           </div>
         </div>
         <div class="download-card" role="group" aria-label="Обновление аддона без звуков">
-          <a class="button" href="${escape(addon)}">Обновить аддон <span aria-hidden="true">↓</span></a>
+          <a class="button" href="${escape(addonInfo.url || addon)}"><span>Скачать только аддон <span class="artifact-size">${escape(addonInfo.size)}</span></span><span aria-hidden="true">↓</span></a>
           <div class="download-info">
-            <p class="download-note">Без звуков · addon-only</p>
+            <p class="download-note">Только аддон · звуковая база WowVoice уже должна быть установлена.</p>
             ${addonInfo.html}
           </div>
         </div>
-        <a class="mirror" href="${escape(mirror)}">Зеркало на pCloud ↗</a>
+        <div class="optional-voices">
+          <p class="optional-title">Озвучка CatQuest</p>
+          <p class="download-note">Дополнительная озвучка: CatQuest Voices ${escape(catQuestVersion)}. Для работы пака также нужен CatQuest.</p>
+          <div class="curseforge-links">
+            <a class="mirror" href="https://www.curseforge.com/wow/addons/catquest">CatQuest на CurseForge ↗</a>
+            <a class="mirror" href="https://www.curseforge.com/projects/1715207">CatQuest Voices на CurseForge ↗</a>
+          </div>
+        </div>
       </div>
       <nav aria-label="Разделы сайта">
-        <a href="${isGuide ? './' : ''}#installation">Установка</a>
-        <a href="${isGuide ? './' : ''}#features">Возможности</a>
+        <a href="${isGuide ? 'index.html' : ''}#voice-choice">Выбор озвучки</a>
+        <a href="${isGuide ? 'index.html' : ''}#installation">Установка</a>
+        <a href="${isGuide ? 'index.html' : ''}#features">Возможности</a>
         <a href="guide.html"${isGuide ? ' aria-current="page"' : ''}>Подробная инструкция</a>
       </nav>
       <a class="source-link" href="${repository}">Проект на GitHub ↗</a>
@@ -153,6 +199,7 @@ function page(content, isGuide = false) {
 }
 const gallery = markdown.parse(screenshots.map(token => token.raw).join('\n\n'));
 const content = `<div class="intro"><p class="eyebrow">WoW Forever Beta</p><h1>Квесты с русской озвучкой</h1>${markdown.parse(intro)}</div>
+  ${section('Две озвучки на выбор', 'voice-choice', 'voice-feature')}
   <div class="screenshots">${gallery}</div>
   ${section('Установка', 'installation')}
   ${section('Возможности', 'features')}

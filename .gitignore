@@ -6,7 +6,8 @@
 /soundpack/*.ogg
 /catvoices/*.ogg
 /config/deploy.targets.local.psd1
-/BUILD.local.md
+/config/build.env.local.ps1
+/docs/internal/catquest-update.local.md
 *.bak
 *.log
 *.tmp

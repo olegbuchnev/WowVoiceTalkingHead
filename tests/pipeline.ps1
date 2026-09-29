@@ -24,7 +24,7 @@ try {
   }
   # Exercise repeated packaging with a small, real-audio fixture. The full
   # production library and its disjoint quest sets are checked by the JS suite.
-  foreach ($name in @('soundpack', 'catvoices')) {
+  foreach ($name in @('soundpack')) {
     $dest = Join-Path $fixture $name
     New-Item -ItemType Directory -Path $dest | Out-Null
     foreach ($file in Get-ChildItem -LiteralPath (Join-Path $project $name) -File) {
@@ -33,11 +33,6 @@ try {
   }
   Copy-Item -LiteralPath (Join-Path $project 'soundpack\179a.ogg') -Destination (Join-Path $fixture 'soundpack')
   'WowVoiceDur = { ["179a"] = 12.5 }' | Set-Content -LiteralPath (Join-Path $fixture 'src\Durations.lua')
-  $catSample = Get-ChildItem -LiteralPath (Join-Path $project 'catvoices') -Filter '*.ogg' -File | Select-Object -First 1
-  Copy-Item -LiteralPath $catSample.FullName -Destination (Join-Path $fixture 'catvoices')
-  $sampleId = $catSample.BaseName -replace '_.*$', ''
-  ('WowVoiceForeverAudio = { ["' + $sampleId + 'a"] = { file = "' + $catSample.Name + '", duration = 12.5 } }') |
-    Set-Content -LiteralPath (Join-Path $fixture 'src\ForeverAudio.lua')
   $build = Join-Path $fixture 'build.ps1'
   $addons = Join-Path $fixture 'game\_classic_beta_\Interface\AddOns'
   $voice = Join-Path $addons 'WowVoiceTalkingHead'
@@ -52,7 +47,7 @@ try {
   'workspace' | Set-Content -LiteralPath (Join-Path $voice '.idea\workspace.xml')
   Copy-Item -LiteralPath (Join-Path $fixture 'soundpack\179a.ogg') -Destination $sounds
   'extra user audio' | Set-Content -LiteralPath (Join-Path $sounds 'custom.ogg')
-  'old supplemental audio' | Set-Content -LiteralPath (Join-Path $catSounds $catSample.Name)
+  'old supplemental audio' | Set-Content -LiteralPath (Join-Path $catSounds 'keep.ogg')
   'old TOC' | Set-Content -LiteralPath (Join-Path $sounds 'WowVoiceSounds.toc')
   'vanilla sentinel' | Set-Content -LiteralPath (Join-Path $sounds 'WowVoiceSounds_Vanilla.toc')
   'unrelated' | Set-Content -LiteralPath (Join-Path $addons 'Unrelated\keep.txt')
@@ -71,10 +66,6 @@ try {
   Assert-True (Test-Path -LiteralPath (Join-Path $voice '.idea\workspace.xml')) 'IDE state was removed.'
   Assert-True ((Get-FileHash -LiteralPath (Join-Path $sounds '179a.ogg')).Hash -eq $soundHash) 'OGG changed.'
   Assert-True ((Get-Content -LiteralPath (Join-Path $sounds 'custom.ogg') -Raw).Trim() -eq 'extra user audio') 'Extra user audio changed.'
-  foreach ($file in Get-ChildItem -LiteralPath (Join-Path $fixture 'catvoices') -File) {
-    Assert-True ((Get-FileHash -LiteralPath $file.FullName).Hash -eq
-      (Get-FileHash -LiteralPath (Join-Path $catSounds $file.Name)).Hash) "Supplement deployment mismatch: $($file.Name)"
-  }
   Assert-True (Test-Path -LiteralPath (Join-Path $sounds 'WowVoiceSounds_Vanilla.toc')) 'Other sound TOC was removed.'
   Assert-True (Test-Path -LiteralPath (Join-Path $addons 'Unrelated\keep.txt')) 'Sibling addon was touched.'
   $backups = @(Get-ChildItem -LiteralPath (Join-Path $fixture 'backups') -Directory)
@@ -82,8 +73,23 @@ try {
   Assert-True ((Get-Content -LiteralPath (Join-Path $backups[0].FullName 'WowVoiceTalkingHead\Core.lua') -Raw).Trim() -eq 'old core') 'Backup did not preserve old code.'
   Assert-True ((Get-Content -LiteralPath (Join-Path $backups[0].FullName 'WowVoiceSounds\WowVoiceSounds.toc') -Raw).Trim() -eq 'old TOC') 'Backup did not preserve old TOC.'
   Assert-True (-not (Test-Path -LiteralPath (Join-Path $backups[0].FullName 'WowVoiceSounds\179a.ogg'))) 'Backup copied sound library.'
-  Assert-True ((Get-Content -LiteralPath (Join-Path $backups[0].FullName ('CatVoices\' + $catSample.Name)) -Raw).Trim() -eq 'old supplemental audio') 'Backup did not preserve supplemental audio.'
-  Write-Host 'PASS: three-folder deploy, pre-write backups, Classic/extra audio/other addons/IDE state preserved.'
+  Assert-True ((Get-Content -LiteralPath (Join-Path $catSounds 'keep.ogg') -Raw).Trim() -eq 'old supplemental audio') 'Legacy CatVoices must not be modified.'
+  Write-Host 'PASS: two-folder deploy, pre-write backups, Classic/extra audio/other addons/IDE state preserved.'
+
+  foreach ($taskName in @('Deploy', 'DeployAddon')) {
+    & $build -Task $taskName -LocalDebug -ConfigPath $config
+    foreach ($module in @('Comparison.lua', 'VoiceComparison.lua')) {
+      Assert-True ((Get-FileHash -LiteralPath (Join-Path $voice $module)).Hash -eq
+        (Get-FileHash -LiteralPath (Join-Path $fixture ('src\' + $module))).Hash) 'Public comparison module was not deployed.'
+    }
+    foreach ($toc in Get-ChildItem -LiteralPath $voice -Filter '*.toc') {
+      $entries = @(Get-Content -LiteralPath $toc.FullName | Where-Object { $_ -in @('Comparison.lua', 'VoiceComparison.lua') })
+      Assert-True (($entries -join ',') -eq 'Comparison.lua,VoiceComparison.lua') 'Incorrect public catalogue load order.'
+      Assert-True ((Get-FileHash -LiteralPath $toc.FullName).Hash -eq
+        (Get-FileHash -LiteralPath (Join-Path $fixture ('src\' + $toc.Name))).Hash) 'Deployment changed source TOCs.'
+    }
+  }
+  Write-Host 'PASS: voice catalogue always included; legacy flag leaves runtime and source TOCs identical.'
 
   $retail = Join-Path $fixture 'game\_retail_\Interface\AddOns'
   New-Item -ItemType Directory -Path $retail -Force | Out-Null
@@ -101,20 +107,13 @@ try {
   'not allowed' | Set-Content -LiteralPath $accidentalOgg
   Assert-Fails { & $build -Task Package } 'Unindexed OGG was allowed in release sources.'
   Remove-Item -LiteralPath $accidentalOgg
-  foreach ($audio in @((Join-Path $fixture 'soundpack\179a.ogg'), (Join-Path $fixture ('catvoices\' + $catSample.Name)))) {
+  foreach ($audio in @((Join-Path $fixture 'soundpack\179a.ogg'))) {
     $saved = Join-Path $fixture 'temporarily-held-audio.ogg'
     Move-Item -LiteralPath $audio -Destination $saved
     try { Assert-Fails { & $build -Task Package } 'Missing indexed audio was allowed in a complete release.' }
     finally { Move-Item -LiteralPath $saved -Destination $audio }
   }
   Write-Host 'PASS: wrong client/target, escaping TOC paths, unindexed and missing audio are rejected.'
-  $supplementIndex = Join-Path $fixture 'src\ForeverAudio.lua'
-  $originalSupplement = [IO.File]::ReadAllText($supplementIndex)
-  [IO.File]::WriteAllText($supplementIndex, $originalSupplement.Replace($sampleId + 'a', '179a'))
-  try { Assert-Fails { & $build -Task Package } 'A Classic quest was duplicated in CatVoices.' }
-  finally { [IO.File]::WriteAllText($supplementIndex, $originalSupplement) }
-  Write-Host 'PASS: overlapping quest IDs cannot enter the release.'
-
   & $build -Task Package
   $artifacts = Join-Path $fixture 'artifacts'
   $release = Join-Path $artifacts 'WoWVoice'
@@ -151,9 +150,6 @@ try {
   foreach ($file in Get-ChildItem -LiteralPath (Join-Path $fixture 'soundpack') -File) {
     $expected['WowVoiceSounds/' + $file.Name] = $file.FullName
   }
-  foreach ($file in Get-ChildItem -LiteralPath (Join-Path $fixture 'catvoices') -File) {
-    $expected['CatVoices/' + $file.Name] = $file.FullName
-  }
   $expected['README.txt'] = $null
   Add-Type -AssemblyName System.IO.Compression.FileSystem
   $archive = [IO.Compression.ZipFile]::OpenRead($archives[0].FullName)
@@ -185,13 +181,13 @@ try {
   finally { $sha.Dispose(); $archive.Dispose() }
   Assert-True (@(Get-ChildItem -LiteralPath $artifacts -Force).Count -eq 1) 'Expected only the shared folder in artifacts.'
   Assert-True (@(Get-ChildItem -LiteralPath $release -Force).Count -eq 1) 'Expected only the latest ZIP in the shared folder.'
-  Write-Host 'PASS: ZIP contains exactly WowVoiceTalkingHead, both audio folders and plain-text README; runtime hashes match.'
+  Write-Host 'PASS: ZIP contains exactly WowVoiceTalkingHead, the Classic audio folder and plain-text README; runtime hashes match.'
   Write-Host 'PASS: stable shared folder, version replacement, legacy ZIP cleanup and failed-build preservation.'
 
   $fullZip = $archives[0].FullName
   $fullHash = (Get-FileHash -LiteralPath $fullZip).Hash
-  # Exercise an update build with both sound source directories absent.
-  foreach ($name in @('soundpack', 'catvoices')) {
+  # Exercise an update build with the Classic sound source directory absent.
+  foreach ($name in @('soundpack')) {
     $from = [IO.Path]::GetFullPath((Join-Path $fixture $name))
     $held = [IO.Path]::GetFullPath((Join-Path $fixture ($name + '-held')))
     Assert-True ((Split-Path -Parent $from) -eq $fixture -and (Split-Path -Parent $held) -eq $fixture) 'Unsafe fixture rename.'
@@ -214,6 +210,9 @@ try {
         (Get-FileHash -LiteralPath (Join-Path $voice $relative)).Hash) "Addon-only deployment mismatch: $relative"
     }
     Assert-True (-not (Test-Path -LiteralPath (Join-Path $voice 'obsolete.lua'))) 'Addon-only deploy kept stale code.'
+    Assert-True (-not (Test-Path -LiteralPath (Join-Path $voice 'LocalDebug.lua'))) 'Normal deploy kept local debug code.'
+    Assert-True (Test-Path -LiteralPath (Join-Path $voice 'Comparison.lua')) 'Normal deploy missed comparison code.'
+    Assert-True (-not (Test-Path -LiteralPath (Join-Path $voice 'CatQuestComparison.lua'))) 'Normal deploy kept comparison metadata.'
     Assert-True (Test-Path -LiteralPath (Join-Path $voice '.idea\workspace.xml')) 'Addon-only deploy removed IDE state.'
     $audioAfter = @(Get-ChildItem -LiteralPath $sounds, $catSounds -File -Recurse)
     Assert-True ($audioAfter.Count -eq $audioBefore.Count) 'Addon-only deploy changed audio file count.'
@@ -273,7 +272,7 @@ try {
     $updateHash = (Get-FileHash -LiteralPath $updateZip).Hash
   }
   finally {
-    foreach ($name in @('soundpack', 'catvoices')) {
+    foreach ($name in @('soundpack')) {
       Rename-Item -LiteralPath (Join-Path $fixture ($name + '-held')) -NewName $name
     }
   }
@@ -282,6 +281,39 @@ try {
   Assert-True (@(Get-ChildItem -LiteralPath $release -Filter '*.zip' -File).Count -eq 2) 'Expected one full release and one update.'
   Assert-True ([IO.Directory]::GetCreationTimeUtc($release) -eq $folderCreated) 'Addon packaging recreated shared folder.'
   Write-Host 'PASS: addon-only build without audio sources, runtime hashes, update guide, validation, failed-build preservation and independent archive replacement.'
+  # Exercise environment-based deployment only inside the temporary fixture.
+  $previousAddonsEnvironment = $env:WOWVOICE_FOREVER_BETA_ADDONS
+  $fixtureConfig = Join-Path $fixture 'config'
+  New-Item -ItemType Directory -Path $fixtureConfig -Force | Out-Null
+  $fixtureEnvironment = Join-Path $fixtureConfig 'build.env.local.ps1'
+  try {
+    $env:WOWVOICE_FOREVER_BETA_ADDONS = $null
+    Assert-Fails { & $build -Task DeployAddon } 'Deployment accepted missing environment configuration.'
+    $env:WOWVOICE_FOREVER_BETA_ADDONS = $retail
+    Assert-Fails { & $build -Task DeployAddon } 'Environment deployment accepted Retail path.'
+    $env:WOWVOICE_FOREVER_BETA_ADDONS = $addons
+    & $build -Task DeployAddon
+    Assert-True ((Get-FileHash -LiteralPath $oldCore).Hash -eq
+      (Get-FileHash -LiteralPath (Join-Path $fixture 'src\Core.lua')).Hash) 'Inherited environment deployment failed.'
+
+    $environmentLine = '$env:WOWVOICE_FOREVER_BETA_ADDONS = ' + "'" + $addons.Replace("'", "''") + "'"
+    $environmentLine | Set-Content -LiteralPath $fixtureEnvironment -Encoding UTF8
+    $env:WOWVOICE_FOREVER_BETA_ADDONS = $retail
+    & $build -Task Deploy -LocalDebug
+    Assert-True ($env:WOWVOICE_FOREVER_BETA_ADDONS -eq $addons) 'Local file did not override inherited environment.'
+    Assert-True (Test-Path -LiteralPath (Join-Path $voice 'VoiceComparison.lua')) 'Environment deployment missed public voice catalogue.'
+
+    # Non-deploy tasks and explicit PSD1 configuration must not execute this file.
+    "throw 'Local environment must not be loaded here.'" | Set-Content -LiteralPath $fixtureEnvironment
+    & $build -Task Validate
+    & $build -Task PackageAddon
+    "@{ ForeverBeta = '$($addons.Replace("'", "''"))' }" | Set-Content -LiteralPath $config
+    & $build -Task DeployAddon -ConfigPath $config
+    Assert-True (@(Get-ChildItem -LiteralPath $retail -Force).Count -eq 0) 'Environment tests wrote to rejected destination.'
+  } finally {
+    $env:WOWVOICE_FOREVER_BETA_ADDONS = $previousAddonsEnvironment
+  }
+  Write-Host 'PASS: inherited and local environment deployment, missing/unsafe paths rejected, explicit config bypass, non-deploy tasks independent.'
 }
 finally {
   # Only this uniquely named temporary fixture can be recursively removed.

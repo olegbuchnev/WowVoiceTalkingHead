@@ -183,6 +183,13 @@ local function recoverQuestNPC(questId, record, quests, snapshot)
     -- different/partial Classic giver. Captured identity and exact items win.
     if indexed == false then return record end
     indexed = indexed or indexedSpeaker(questId)
+    local database = _G.WowVoiceCatQuestSpeakers
+    local catID = database and database.schemaVersion == 1 and database.givers[questId]
+    local npc = catID and database.npcs[catID]
+    local cat = positive(catID) and { npcID = catID,
+        name = npc and type(npc[4]) == "string" and npc[4] or nil,
+        displayID = npc and npc[3] } or nil
+    if not (indexed and positive(indexed.npcID)) then indexed = cat end
     if not (indexed and positive(indexed.npcID)) then return record end
     local recovered = {}
     if record then for key, value in pairs(record) do recovered[key] = value end end
@@ -191,6 +198,10 @@ local function recoverQuestNPC(questId, record, quests, snapshot)
     recovered.title = recovered.title or indexed.title
     if snapshot then recovered.displayID = snapshot.displays[indexed.npcID] or nil
     else recovered.displayID = knownDisplay(quests, indexed.npcID) end
+    if indexed == cat then
+        recovered.name = recovered.name or cat.name
+        recovered.displayID = recovered.displayID or (positive(cat.displayID) and cat.displayID or nil)
+    end
     -- Inferred identity stays transient, so updated metadata can correct it.
     debugLog("recovered quest=" .. questId .. " npc=" .. indexed.npcID)
     return recovered
@@ -1056,12 +1067,18 @@ function WV:StartTalkingHead(context, endsAt, duration, startedAt, preview)
     head:SetAlpha(1)
     setHeadOpacity(1)
     local speaker = context.speaker
-    head.Name:SetText(speaker and speaker.name or "Описание задания")
+    local name = speaker and speaker.name or "Описание задания"
+    -- Some imported NPC names have enclosing brackets. Keep the source intact
+    -- and remove only that outer wrapper from the displayed heading.
+    head.Name:SetText(name:match("^%[([^%[%]]+)%]$") or name)
     head.Title:SetText(context.title or ("Квест " .. context.questId))
     head.Section:SetText(SECTION[context.section] or "")
     head.Progress:SetValue(0)
     head:Show()
     local text = context.text
+    if (not text or text == "") and WowVoiceAudioSources then
+        text = WowVoiceAudioSources.Text(context.questId, context.section)
+    end
     head.Body:SetText(text and text ~= "" and text or "Текст задания недоступен.")
     layoutHead()
     restorePosition()
@@ -1661,7 +1678,9 @@ function WV:ApplyHeadSettings(settings)
     return true
 end
 
-function WV:EnsureHeadPreview()
+function WV:EnsureHeadPreview(suppressTrackerPulse)
+    -- Scale controls preview only the head, even when reusing an explicit test.
+    if suppressTrackerPulse and self.SetTrackerPulsePreview then self:SetTrackerPulsePreview(false) end
     -- Reusing an automatic preview cancels its old deadline/fade without
     -- reloading the model. Real playback and an explicit test remain independent.
     if active and active.preview and active.autoPreview then
@@ -1677,7 +1696,7 @@ function WV:EnsureHeadPreview()
         return true
     end
     if active and not active.closing then return true end
-    local ok, reason = self:ToggleHeadPreview()
+    local ok, reason = self:ToggleHeadPreview(suppressTrackerPulse)
     if ok and active and active.preview then active.autoPreview = true end
     return ok, reason
 end
@@ -1691,11 +1710,12 @@ function WV:FinishAutoHeadPreview(delay)
     end
 end
 
-function WV:ToggleHeadPreview()
+function WV:ToggleHeadPreview(suppressTrackerPulse)
     -- Pressing Test during an automatic preview pins that same panel open.
     if active and active.preview and active.autoPreview then
         self:EnsureHeadPreview()
         active.autoPreview, active.autoHideAt = nil, nil
+        if self.SetTrackerPulsePreview then self:SetTrackerPulsePreview(not suppressTrackerPulse) end
         return true
     end
     if active and active.preview then self:StopTalkingHead(); return true end
@@ -1711,7 +1731,7 @@ function WV:ToggleHeadPreview()
             .. "Только во время теста панель можно перемещать мышью. В обычном режиме её положение закреплено. "
             .. "Тест повторяется каждые 30 секунд и прекращается при закрытии настроек." },
         GetTime() + 30, 30, nil, true)
-    if self.SetTrackerPulsePreview then self:SetTrackerPulsePreview(true) end
+    if self.SetTrackerPulsePreview then self:SetTrackerPulsePreview(not suppressTrackerPulse) end
     return true
 end
 

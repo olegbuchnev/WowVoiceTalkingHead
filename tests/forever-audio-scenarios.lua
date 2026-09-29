@@ -1,22 +1,26 @@
 event('ADDON_LOADED')
 WowVoiceDB.autoPlayAccept = true
 local WV = WowVoice
-assert(CatQuestVoicePack == nil, 'supplement must work without CatQuest loaded')
+assert(CatQuestVoicePack, 'external voice index must be loaded')
+local externalAudio = {}
+for key, entry in pairs(WowVoiceCatQuestAudio.entries) do
+    if not WowVoiceAudioSources.IsClassic(tonumber(key:match('^(%d+)'))) then externalAudio[key] = entry.audio end
+end
 local plainID, genderID, turninID
-for key, entry in pairs(WowVoiceForeverAudio) do
+for key, entry in pairs(externalAudio) do
     local id, section = key:match('^(%d+)([ac])$')
     if section == 'a' then
         if entry.male then genderID = tonumber(id) else plainID = tonumber(id) end
     else turninID = tonumber(id) end
 end
 assert(plainID and genderID and turninID)
-local prefix = 'Interface\\AddOns\\CatVoices\\'
+local prefix = 'Interface\\AddOns\\CatQuest_Voices\\Sounds\\q\\'
 local sex = 2
 function UnitSex(unit) assert(unit == 'player'); return sex end
 
 -- Real event playback and timer, with our own head/text and no CatQuest code.
 questID = plainID
-local entry = WowVoiceForeverAudio[plainID .. 'a']
+local entry = externalAudio[plainID .. 'a']
 event('QUEST_DETAIL')
 local play = plays[#plays]
 assert(play.file == prefix .. entry.file and play.channel == 'Master')
@@ -31,7 +35,7 @@ assert(stops[#stops] == play.handle)
 restored('1', '0.37')
 
 -- The selected gender controls both the file and its actual duration.
-entry = WowVoiceForeverAudio[genderID .. 'a']
+entry = externalAudio[genderID .. 'a']
 for _, variant in ipairs({{2, entry.male}, {3, entry.female}}) do
     sex = variant[1]
     local file, duration = WV:SoundPath(genderID, 'a')
@@ -67,7 +71,7 @@ WV:Silence()
 assert(WV:SoundPath(plainID, 'p') == nil)
 count = #plays
 event('QUEST_PROGRESS'); assert(#plays == count)
-if not WowVoiceForeverAudio[plainID .. 'c'] then
+if not externalAudio[plainID .. 'c'] then
     event('QUEST_COMPLETE'); assert(#plays == count)
 end
 questID = turninID
@@ -88,7 +92,7 @@ WowVoiceDur[plainID .. 'a'] = old
 -- Supplemental OGG paths are independent of legacy filename/activation settings.
 WowVoiceDB.ext = 'mp3'
 WV.license = {content_key = 'unused-for-supplement'}
-assert(WV:SoundPath(plainID, 'a') == prefix .. WowVoiceForeverAudio[plainID .. 'a'].file)
+assert(WV:SoundPath(plainID, 'a') == prefix .. externalAudio[plainID .. 'a'].file)
 WV.license = nil
 WowVoiceDB.ext = 'ogg'
 
@@ -100,16 +104,21 @@ WowVoiceDB.enabled = false
 count = #plays
 assert(not WV:ReplayQuest(plainID) and #plays == count)
 WowVoiceDB.enabled = true
-local supplemental = WowVoiceForeverAudio
-WowVoiceForeverAudio = nil
+local supplemental = CatQuestVoicePack
+CatQuestVoicePack = nil
 assert(not WV:HasQuestAudio(plainID) and WV:HasQuestAudio(179))
-WowVoiceForeverAudio = supplemental
+CatQuestVoicePack = supplemental
 local loaded = C_AddOns.IsAddOnLoaded
-C_AddOns.IsAddOnLoaded = function(name) return name ~= 'CatVoices' end
+C_AddOns.IsAddOnLoaded = function(name) return name ~= 'CatQuest_Voices' end
 messages = {}
 event('PLAYER_LOGIN')
-assert(has('CatVoices') and has('полностью перезапустите игру'))
-assert(not has('github.com') and not has('CurseForge'), 'complete bundle must not send users to download another pack')
+assert(not has('Не все звуковые паки'), 'Missing optional CatQuest must not warn at login')
+assert(not WV:HasQuestAudio(plainID) and WV:HasQuestAudio(179))
+WV:Silence()
+local before = #plays
+questID = plainID
+event('QUEST_DETAIL'); event('QUEST_PROGRESS'); event('QUEST_COMPLETE')
+assert(#plays == before and not frames.WowVoiceTalkingHead:IsShown(), 'Missing external audio must show no head and play no audio')
 C_AddOns.IsAddOnLoaded = loaded
 print('PASS: supplemental events, own portrait, timing, gender, missing sections, Classic priority and failure restoration')
 

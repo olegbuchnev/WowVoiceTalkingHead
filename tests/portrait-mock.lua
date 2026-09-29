@@ -49,6 +49,7 @@ local function region(fontObject,parent)
     function t:SetBlendMode(mode) self.blendMode=mode end
     function t:SetAtlas(s) self.atlas=s end
     function t:SetVertexColor(...) self.vertexColor={...} end
+    function t:SetDesaturated(value) self.desaturated=value end
     function t:SetTexCoord(...) self.texCoord={...} end
     function t:SetText(s) self.text=s end
     function t:SetTextColor(...) self.textColor={...} end

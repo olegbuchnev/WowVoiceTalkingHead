@@ -5,25 +5,63 @@ local panel, category
 -- Previously published packs predate explicit upstream version metadata.
 local legacySourceVersions = {
     WowVoiceSounds = { ["1.0.3-forever.1"] = "1.0.1" },
-    CatVoices = { ["0.2.0-wowvoice.1"] = "0.2.0" },
 }
 
+local function refreshVoicePreference()
+    if not panel.SharedVoiceButtons then return end
+    local source, reason = WowVoiceAudioSources.Status()
+    panel.SharedVoiceCaption:SetAlpha(source and 1 or 0.45)
+    for id, button in pairs(panel.SharedVoiceButtons) do
+        button:SetChecked(WV:GetSharedQuestVoice() == id)
+        button:SetEnabled(source ~= nil)
+        button:SetAlpha(source and 1 or 0.45)
+        local selected = WV:GetSharedQuestVoice() == id
+        button.Border:SetVertexColor(selected and 1 or 0.6, selected and 0.82 or 0.6, selected and 0.25 or 0.6)
+    end
+    panel.SharedVoiceTooltip.message = source
+        and "Выбранная озвучка используется при получении и сдаче заданий, а также в журнале и списке заданий. Если запись есть только у одного источника, используется она."
+        or ("Для выбора установите и включите CatQuest Voices "
+            .. tostring(WowVoiceCatQuestAudio and WowVoiceCatQuestAudio.sourceVersion or "")
+            .. ". Сейчас используется WowVoice.\n" .. tostring(reason or ""))
+end
+
 local function refreshVersions()
+    refreshVoicePreference()
+    local source = WowVoiceAudioSources.Status()
+    panel.AudioSourceCaption:SetText("Озвучка CatQuest:")
+    panel.AudioSourceCaption:SetWidth(math.ceil(panel.AudioSourceCaption:GetStringWidth()) + 2)
     local metadata = (C_AddOns and C_AddOns.GetAddOnMetadata) or GetAddOnMetadata
     local function field(addon, key)
         local value = metadata and metadata(addon, key)
         return type(value) == "string" and value ~= "" and value or nil
     end
+    local installed = field("CatQuest_Voices", "Version")
+    local supported = WowVoiceCatQuestAudio and WowVoiceCatQuestAudio.sourceVersion
+    local incompatible = not source and WowVoiceAudioSources.Loaded("CatQuest_Voices")
+        and installed and supported and installed ~= supported
+    local warning = panel.AudioSourceWarning
+    if GameTooltip and GameTooltip:IsOwned(warning) then GameTooltip:Hide() end
+    warning.message = incompatible and ("Установлена: " .. installed .. ". Поддерживается: " .. supported
+        .. ".\nДополнительная озвучка недоступна.\nУстановите совместимую версию CatQuest Voices"
+        .. " или обновите WowVoice Talking Head до версии с её поддержкой.") or nil
+    if incompatible then warning:Show() else warning:Hide() end
     local width = 0
     for addon, text in pairs(panel.VersionLabels) do
-        local installed = field(addon, "Version")
-        local version = installed
-        if legacySourceVersions[addon] then
-            version = field(addon, "X-Source-Version") or legacySourceVersions[addon][installed]
-        end
-        if not version then
-            version = metadata and not installed and not field(addon, "Title")
-                and "не установлен" or "версия не указана"
+        local version
+        if addon == "AudioSource" then
+            version = source and source.version or (incompatible and installed) or "недоступна"
+            if incompatible then text:SetTextColor(1, 0.25, 0.25)
+            else text:SetTextColor(0.7, 0.7, 0.7) end
+        else
+            local installed = field(addon, "Version")
+            version = installed
+            if legacySourceVersions[addon] then
+                version = field(addon, "X-Source-Version") or legacySourceVersions[addon][installed]
+            end
+            if not version then
+                version = metadata and not installed and not field(addon, "Title")
+                    and "не установлен" or "версия не указана"
+            end
         end
         text:SetWidth(124)
         text:SetText(version)
@@ -34,6 +72,10 @@ end
 
 local function status(text)
     panel.Status:SetText(text or "")
+end
+
+function WV:RefreshAudioSourceOptions()
+    if panel and panel:IsShown() then refreshVersions() end
 end
 
 local function refreshScale()
@@ -98,7 +140,7 @@ local function createPanel()
     scroll:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
     scroll:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -28, 0)
     local content = CreateFrame("Frame", nil, scroll)
-    content:SetSize(584, 820)
+    content:SetSize(584, 970)
     scroll:SetScrollChild(content)
     scroll:SetScript("OnSizeChanged", function(self, width)
         content:SetWidth(math.max(584, width))
@@ -119,7 +161,7 @@ local function createPanel()
     for index, item in ipairs({
         { "WowVoiceTalkingHead", "Аддон" },
         { "WowVoiceSounds", "Озвучка WowVoice" },
-        { "CatVoices", "Озвучка Cathey" },
+        { "AudioSource", "Доп. озвучка" },
     }) do
         local text = label("", "GameFontHighlightSmall", 0, 0, 124, 12)
         text:ClearAllPoints()
@@ -132,17 +174,39 @@ local function createPanel()
         caption:SetJustifyH("RIGHT")
         caption:SetTextColor(0.7, 0.7, 0.7)
         panel.VersionLabels[item[1]] = text
+        if item[1] == "AudioSource" then
+            caption:SetWordWrap(false)
+            panel.AudioSourceCaption = caption
+            local warning = CreateFrame("Frame", nil, content)
+            warning:SetPoint("TOPLEFT", caption, "TOPLEFT", -2, 2)
+            warning:SetPoint("BOTTOMRIGHT", text, "BOTTOMRIGHT", 2, -2)
+            warning:EnableMouse(true)
+            warning:SetScript("OnEnter", function(self)
+                if not self.message then return end
+                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                GameTooltip:AddLine("Несовместимая версия CatQuest Voices", 1, 0.25, 0.25)
+                GameTooltip:AddLine(self.message, 1, 1, 1, true)
+                GameTooltip:Show()
+            end)
+            local function hideTooltip(self)
+                if GameTooltip:IsOwned(self) then GameTooltip:Hide() end
+            end
+            warning:SetScript("OnLeave", hideTooltip)
+            warning:SetScript("OnHide", hideTooltip)
+            panel.AudioSourceWarning = warning
+        end
     end
     refreshVersions()
     label("При перетаскивании масштаба предпросмотр появится автоматически.\n"
         .. "«Тест / переместить» позволяет перетащить окно. Положение сохраняется.",
         "GameFontHighlightSmall", 20, -58, 540, 28)
     local function section(text, y)
-        label(text, "GameFontNormalLarge", 20, y, 540, 22)
+        local heading = label(text, "GameFontNormalLarge", 20, y, 540, 22)
         local line = content:CreateTexture(nil, "ARTWORK")
         line:SetColorTexture(0.6, 0.52, 0.32, 0.45)
         line:SetSize(544, 1)
         line:SetPoint("TOPLEFT", content, "TOPLEFT", 20, y - 24)
+        return heading
     end
     section("Положение и масштаб", -94)
     section("Автозапуск озвучки", -460)
@@ -219,7 +283,7 @@ local function createPanel()
         discardPosition()
         if percent ~= math.floor(WV:GetHeadScale() * 100 + 0.5) then
             local ok, reason = WV:SetHeadScale(percent / 100)
-            if ok then WV:EnsureHeadPreview(); WV:FinishAutoHeadPreview(2) end
+            if ok then WV:EnsureHeadPreview(true); WV:FinishAutoHeadPreview(2) end
             status(ok and "" or reason)
         else
             status()
@@ -237,7 +301,7 @@ local function createPanel()
     local function beginScaleDrag()
         if panel.draggingScale then return end
         discardPosition()
-        WV:EnsureHeadPreview()
+        WV:EnsureHeadPreview(true)
         panel.draggingScale = true
         WV:BeginHeadScalePreview()
         input:ClearFocus()
@@ -278,7 +342,7 @@ local function createPanel()
         end
         discardPosition()
         local ok, reason = WV:SetHeadScale(percent / 100)
-        if ok then WV:EnsureHeadPreview(); WV:FinishAutoHeadPreview(2) end
+        if ok then WV:EnsureHeadPreview(true); WV:FinishAutoHeadPreview(2) end
         status(ok and "" or reason)
         self:ClearFocus()
     end)
@@ -398,6 +462,73 @@ local function createPanel()
     end)
     label("Управляет всеми репликами сдачи: промежуточными и завершающей.",
         "GameFontHighlightSmall", 48, -615, 506, 32)
+    local voiceHeading = section("Выбор озвучки", -812)
+    voiceHeading:SetWidth(voiceHeading:GetStringWidth() + 4)
+    voiceHeading:SetHeight(voiceHeading:GetStringHeight())
+    panel.SharedVoiceCaption = label("Если доступны обе озвучки", "GameFontHighlight", 20, -850, 540, 22)
+    panel.SharedVoiceButtons = {}
+    for index, item in ipairs({ { "wowvoice", "WowVoice" }, { "catquest", "CatQuest" } }) do
+        local choice = CreateFrame("CheckButton", nil, content)
+        choice:SetSize(160, 26)
+        choice:SetPoint("TOPLEFT", content, "TOPLEFT", 20 + (index - 1) * 180, -878)
+        -- Like Details/Plater's circular switches: scale a smooth client mask,
+        -- rather than enlarging the old 16px radio texture sheet.
+        local function circle(size, layer, r, g, b, alpha)
+            local texture = choice:CreateTexture(nil, layer)
+            texture:SetPoint("CENTER", choice, "LEFT", 12, 0)
+            texture:SetSize(size, size)
+            texture:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask")
+            texture:SetVertexColor(r, g, b, alpha or 1)
+            return texture
+        end
+        choice.Border = circle(18, "BACKGROUND", 0.6, 0.6, 0.6)
+        circle(14, "BORDER", 0.06, 0.06, 0.06)
+        choice:SetCheckedTexture(circle(8, "ARTWORK", 1, 0.82, 0.25))
+        choice:SetHighlightTexture(circle(20, "HIGHLIGHT", 1, 0.82, 0.25, 0.22), "ADD")
+        choice.Label = choice:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+        choice.Label:SetPoint("LEFT", choice, "LEFT", 32, 0)
+        choice.Label:SetSize(128, 24)
+        choice.Label:SetJustifyH("LEFT")
+        choice.Label:SetJustifyV("MIDDLE")
+        choice.Label:SetText(item[2])
+        choice:SetScript("OnClick", function()
+            WV:SetSharedQuestVoice(item[1])
+            refreshVoicePreference()
+        end)
+        panel.SharedVoiceButtons[item[1]] = choice
+    end
+    -- Only this explicit help icon owns the tooltip, even with disabled choices.
+    local hint = CreateFrame("Button", nil, content)
+    hint:SetPoint("LEFT", voiceHeading, "RIGHT", 6, 0)
+    hint:SetSize(22, 22)
+    hint:EnableMouse(true)
+    -- Blizzard's info art, also used by Burstik and OPie. Crop its empty border.
+    local function infoIcon(layer)
+        local icon = hint:CreateTexture(nil, layer)
+        icon:SetPoint("CENTER", hint, "CENTER", 0, 0)
+        icon:SetSize(16, 16)
+        icon:SetTexture("Interface\\COMMON\\help-i")
+        icon:SetTexCoord(0.25, 0.75, 0.25, 0.75)
+        return icon
+    end
+    hint.Icon = infoIcon("ARTWORK")
+    hint:SetHighlightTexture(infoIcon("HIGHLIGHT"), "ADD")
+    local function showVoiceTooltip(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Выбор озвучки", 1, 0.82, 0)
+        GameTooltip:AddLine(hint.message, 1, 1, 1, true)
+        GameTooltip:Show()
+    end
+    local function hideVoiceTooltip(self)
+        if GameTooltip:IsOwned(self) then GameTooltip:Hide() end
+    end
+    hint:SetScript("OnEnter", showVoiceTooltip)
+    hint:SetScript("OnLeave", hideVoiceTooltip)
+    hint:SetScript("OnHide", hideVoiceTooltip)
+    panel.SharedVoiceTooltip = hint
+    button("compareVoices", "Послушать озвучку", 20, 180, function() WV:OpenVoiceComparison() end, -918)
+    panel.VoiceComparisonButton = panel.Buttons.compareVoices
+    refreshVoicePreference()
     panel:SetScript("OnShow", function()
         panel.editingPosition = nil
         refreshVersions()

@@ -55,7 +55,14 @@ WV:Silence()
 C_QuestLog.GetLogIndexForQuestID=function() return nil end
 GetQuestLogQuestText=function() error('Never read selected quest with nil index') end
 WV:ReplayQuest(861)
+assert(head.Body.text==WowVoiceAudioSources.Text(861,'a'), 'missing journal text must use bundled transcript')
+assert(not questCache()[861] or not questCache()[861].description, 'fallback must not be saved as game text')
+WV:Silence()
+local transcript=WowVoiceCatQuestTexts.entries['861a']
+WowVoiceCatQuestTexts.entries['861a']=nil
+WV:ReplayQuest(861)
 assert(head.Body.text=='Текст задания недоступен.' and head.TextScroll.scroll==0)
+WowVoiceCatQuestTexts.entries['861a']=transcript
 WV:Silence()
 print('PASS: independent a/p/c text, short text stays still, old quests read exact journal index, missing text clears previous text')
 

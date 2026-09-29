@@ -42,7 +42,7 @@ count=#plays
 event('QUEST_DETAIL'); event('QUEST_PROGRESS'); event('QUEST_COMPLETE')
 assert(#plays==count)
 assert(WV:ReplayQuest(179) and WV:ReplayQuest(3911))
-assert(plays[#plays].file:find('CatVoices\\3911.ogg',1,true))
+assert(plays[#plays].file:find('CatQuest_Voices\\Sounds\\q\\3911.ogg',1,true))
 WV:Silence()
 
 -- Re-enable turn-in only: both Classic stages and supplemental completion work.
@@ -61,7 +61,7 @@ for _,entry in ipairs({{'QUEST_PROGRESS','179p.ogg'},{'QUEST_COMPLETE','179c.ogg
 end
 questID=3911
 event('QUEST_COMPLETE')
-assert(plays[#plays].file:find('CatVoices\\3911_t.ogg',1,true))
+assert(plays[#plays].file:find('CatQuest_Voices\\Sounds\\q\\3911_t.ogg',1,true))
 count,stopped=#plays,#stops
 WV:SetAutoPlayTurnInEnabled(false)
 event('QUEST_PROGRESS'); event('QUEST_COMPLETE')
