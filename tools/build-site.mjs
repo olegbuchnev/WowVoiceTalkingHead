@@ -174,7 +174,7 @@ function page(content, isGuide = false) {
         </div>
         <div class="optional-voices">
           <p class="optional-title">Озвучка CatQuest</p>
-          <p class="download-note">Дополнительная озвучка: CatQuest Voices ${escape(catQuestVersion)}. Для работы пака также нужен CatQuest.</p>
+          <p class="download-note">Для дополнительной озвучки нужны CatQuest и CatQuest Voices ${escape(catQuestVersion)}. Основная озвучка WowVoice работает без них.</p>
           <div class="curseforge-links">
             <a class="mirror" href="https://www.curseforge.com/wow/addons/catquest">CatQuest на CurseForge ↗</a>
             <a class="mirror" href="https://www.curseforge.com/projects/1715207">CatQuest Voices на CurseForge ↗</a>
