@@ -463,8 +463,10 @@ local function createPanel()
     label("Управляет всеми репликами сдачи: промежуточными и завершающей.",
         "GameFontHighlightSmall", 48, -615, 506, 32)
     local voiceHeading = section("Выбор озвучки", -812)
-    voiceHeading:SetWidth(voiceHeading:GetStringWidth() + 4)
-    voiceHeading:SetHeight(voiceHeading:GetStringHeight())
+    -- Let the font string size itself at the current UI scale. Measuring it
+    -- while the settings panel is hidden can leave the title truncated.
+    voiceHeading:SetWordWrap(false)
+    voiceHeading:SetSize(0, 0)
     panel.SharedVoiceCaption = label("Если доступны обе озвучки", "GameFontHighlight", 20, -850, 540, 22)
     panel.SharedVoiceButtons = {}
     for index, item in ipairs({ { "wowvoice", "WowVoice" }, { "catquest", "CatQuest" } }) do
