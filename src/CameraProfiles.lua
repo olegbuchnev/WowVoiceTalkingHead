@@ -17,6 +17,8 @@ local profiles = {
     -- Lift male humans and shift slightly right within the portrait.
     human_male = { distance = 1.15, y = 0.02, z = 0 },
     dwarf = { distance = 1.2, y = 0, z = 0.025 },
+    -- Lower adult female dwarves to leave room above their hair while talking.
+    dwarf_female = { distance = 1.2, y = 0, z = 0 },
     -- Lower gnomes to leave room above the head during the talking animation.
     gnome = { distance = 1.25, y = 0, z = 0 },
     goblin = { distance = 1.3, y = 0, z = 0.04 },
@@ -34,6 +36,8 @@ local profiles = {
     bloodelf_female = { distance = 1.45, y = 0, z = 0.025 },
     -- Keep the lift for female Skyborne, with a little more room above the hair.
     skyborne_female = { distance = 1.1, y = 0, z = 0.015 },
+    -- A 0.025 offset clipped the hair; use half the lift from the default.
+    skyborne_male = { distance = 1.1, y = 0, z = 0 },
     undead = { distance = 1.22, y = 0, z = 0.025 },
     -- Lower male undead just enough to leave a small margin above the head.
     undead_male = { distance = 1.22, y = 0, z = 0.015 },
@@ -46,7 +50,8 @@ local profiles = {
     dracthyr = { distance = 1.3, y = 0, z = 0 },
     ogre = { distance = 1.35, y = 0, z = 0 },
     giant = { distance = 1.4, y = 0, z = 0 },
-    furbolg = { distance = 1.32, y = 0, z = 0.04 },
+    -- Lower furbolgs so the upper face stays inside the portrait.
+    furbolg = { distance = 1.32, y = 0, z = -0.04 },
     gnoll = { distance = 1.3, y = 0, z = 0.04 },
     murloc = { distance = 1.35, y = 0, z = 0.06 },
     kobold = { distance = 1.3, y = 0, z = 0.08 },
@@ -84,7 +89,8 @@ WV.PortraitCameraProfiles = profiles
 -- Keys are model file IDs, never NPC IDs or creature display IDs.
 WV.PortraitCameraOverrides = {
     -- Forever model absent from the generated listfile mapping. Identity is
-    -- recorded in the locally installed CatQuest/RaceModels.lua (female Skyborne).
+    -- recorded in the locally installed CatQuest/RaceModels.lua (Skyborne).
+    [7478487] = profiles.skyborne_male,
     [7478494] = profiles.skyborne_female,
 }
 

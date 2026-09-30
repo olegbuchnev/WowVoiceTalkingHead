@@ -80,7 +80,7 @@ function importPack(source, root = path.resolve(__dirname, '..')) {
     .match(/^##\s*Version:\s*(\S+)/m)?.[1];
   if (!version) throw new Error('Missing CatQuest_Voices version');
   const pack = dataTable(path.join(source, 'Index.lua'));
-  // CatQuest 0.2.0 and 0.2.2 omit quests without descriptions from the Lua index.
+  // CatQuest 0.2.0, 0.2.2 and 0.3.0 omit quests without descriptions from the Lua index.
   // Recover only JSON-only turn-ins; never override loaded Lua entries or import
   // unreferenced files just because they happen to be in the sound directory.
   const jsonPath = path.join(source, 'index.json');

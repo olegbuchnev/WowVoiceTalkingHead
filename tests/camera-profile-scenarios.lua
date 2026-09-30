@@ -25,6 +25,18 @@ for _, family in ipairs({'goblin','troll','furbolg','murloc','centaur','dragon',
 end
 assert(WV.CameraModelProfiles[125358]=='aquatic', 'orcas are not orcs')
 assert(WV.CameraModelProfiles[124225]=='construct', 'goblin shredders are machines')
+for _, id in ipairs({118135,950080,1838562,1890763,1892825,5548259,2123288}) do
+    model.id=id
+    local profile,key=WV:GetPortraitCameraProfile(model)
+    local male=WV.PortraitCameraProfiles.dwarf
+    assert(key=='dwarf_female' and profile.z<male.z and profile.distance==male.distance and profile.y==male.y,
+        'adult female dwarf variants need a lower profile with the same zoom and lateral position')
+end
+for _, id in ipairs({118355,878772,1838560,1890765,1892543,5548261,2123291}) do
+    model.id=id
+    local profile,key=WV:GetPortraitCameraProfile(model)
+    assert(key=='dwarf' and profile.z==.025, 'female dwarf correction must not affect male dwarves')
+end
 for _, id in ipairs({121087,949470,1838580}) do
     model.id=id
     local profile,key=WV:GetPortraitCameraProfile(model)
@@ -86,9 +98,14 @@ assert(head.Model.cameraProfile=='model:7478494' and head.Model.modelPosition[3]
     'female Skyborne need a lift even though their model is absent from the generated listfile')
 head.Model.modelFileID=7478487
 head.Model:CompleteLoad(1234)
-assert(head.Model.cameraProfile=='default' and head.Model.modelPosition[3]==-.025,
-    'female Skyborne lift must not carry over to the male model')
-for _, id in ipairs({119376,1838570,124224,119369,122560,122414,1018060,116921,1100258,1839709,117170,121087,949470,1838580,121287,121961,986648,1839008,122055,121608,997378,1838582,121768,959310,1838584,124225,125358,99999999}) do
+assert(head.Model.cameraProfile=='model:7478487' and head.Model.modelPosition[3]==0
+    and head.Model.cameraDistanceScale==1.1 and head.Model.modelPosition[2]==0,
+    'male Skyborne need their own lift with the original zoom and lateral position')
+head.Model.modelFileID=7478494
+head.Model:CompleteLoad(1234)
+assert(head.Model.cameraProfile=='model:7478494' and head.Model.modelPosition[3]==.015,
+    'male Skyborne correction must not replace the female framing')
+for _, id in ipairs({118135,118355,950080,878772,124118,4066013,4074868,119376,1838570,124224,119369,122560,122414,1018060,116921,1100258,1839709,117170,121087,949470,1838580,121287,121961,986648,1839008,122055,121608,997378,1838582,121768,959310,1838584,124225,125358,99999999}) do
     head.Model.modelFileID=id
     head.Model:CompleteLoad(1234)
     local profile,key=WV:GetPortraitCameraProfile(head.Model)

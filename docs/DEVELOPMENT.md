@@ -123,6 +123,10 @@ The player website is hosted at https://olegbuchnev.github.io/WowVoiceTalkingHea
 Run `npm run build:site` (Node.js 24) to generate `artifacts/site/` locally.
 `tools/build-site.mjs` builds the landing page from README.md and the full guide
 from USER_README.md; download URLs and screenshots come from README.md as well.
+Local PNG assets referenced in either document are emitted as
+`images/<name>.<sha256>.png`. Markdown and inline HTML use the same hashed URL;
+replacing bytes changes the URL automatically in both published and preview builds.
+Source image names can remain stable; unchanged images keep their cacheable URLs.
 Keep its named sections (Installation, Features, Settings, CatQuest compatibility,
 and Credits, using their current Russian headings), or update the generator when
 renaming them. Presentation lives in `site/style.css`.
@@ -277,8 +281,9 @@ in `a`, `p`, `c` order. Abandoning a quest removes its pending stages, while
 
 Manual Play starts the earliest pending stage of the selected quest and replaces
 the current line without discarding other waiting entries. Play-next moves the
-whole quest after the remaining stages of the current quest. The head's Next
-button skips one line; closing the head discards that line and pauses the rest.
+whole quest after the remaining stages of the current quest. The playlist's Next
+button skips or starts one line, preserving the autoplay choice. Closing the head
+discards that line and pauses the rest.
 Playlist quest deletion removes all stages of that quest, and Clear-all stops
 queue playback and removes the queue. Journal, tracker and catalogue playback
 replace the current line; the remaining queue continues afterward. Catalogue
@@ -638,6 +643,13 @@ Female tauren have a slight vertical lift with the original zoom and lateral pos
 Female undead have a slight downward and rightward correction with the shared
 profile's zoom. Male undead have a smaller downward correction to leave a margin
 above the head; other undead retain their existing framing.
+Female dwarves have a separate, slightly lowered profile that preserves the
+shared dwarf zoom and lateral position. Furbolgs are lowered to keep the upper
+face within the portrait. Both corrections are confirmed in game for the tested
+NPCs; other model variants remain unverified.
+Male Skyborne have a separate per-model lift for file ID `7478487`, preserving
+the original zoom and lateral position and the female Skyborne correction.
+This lift is confirmed in game on Raan Wildwind (quest `96646`).
 Other orc and tauren models retain the accepted zoom, distance,
 position and rotation. Camera profiles are estimates refined through in-game
 feedback, not Blizzard-authored cameras.
@@ -782,8 +794,9 @@ A missing source recording leaves its slot empty. A known recording unavailable
 in the installed packs is disabled and grey. A legend sits above the grid.
 If CatQuest_Voices or its live index is not loaded, hide its buttons and legend,
 exclude CatQuest-only quests, and show only the WowVoice count in the footer.
-Late loading restores its catalogue and controls. A loaded but incompatible pack
-still has disabled controls, matching the version warning in the options.
+Late loading restores its catalogue and controls. An updated pack keeps compatible
+recordings enabled; changed recordings stay grey. An unusable live index disables
+the source, matching the warning in the options.
 Clicking an icon immediately replaces
 playback through our talking head, preserving the filter, results and scroll.
 Only the clicked play button has a bright filled selection; tiles have no selection outline.
@@ -801,7 +814,8 @@ CatQuest previews use the same complete `src/CatQuestAudio.lua` index and resolv
 normal playback, including exact durations for both sexes and compatibility guards.
 No separate comparison metadata or importer is required.
 Only compatible external CatQuest_Voices can supply the CatQuest button.
-The source version and live duration/voice/sex metadata must match. Failures disable
+Live duration/voice/sex metadata must match the snapshot; an updated pack also
+checks available transcripts. Failures disable
 only the affected file in the comparison view. Normal playback retains its own policy.
 Both release archive types include the catalogue. The old deployment flag `-LocalDebug`
 is accepted as a no-op; ordinary deployment removes obsolete local panel/index files.
@@ -827,7 +841,7 @@ copy this field from the original TOC and preserve its filename in `X-Source-TOC
 Classic imports prefer `WowVoiceSounds_Vanilla.toc` over the generic TOC; the
 original Classic 1.15 archive has version 1.0.1 in that client-specific TOC and
 0.1.0 in the generic one. All 10,891 bundled Classic recordings match that archive
-byte-for-byte. Cathey's supplemental recordings come from CatQuest_Voices 0.2.2.
+byte-for-byte. Cathey's supplemental recordings come from CatQuest_Voices 0.3.0.
 
 Older published packs without source metadata are recognized by their exact
 adaptation versions (WowVoiceSounds 1.0.3-forever.1).
@@ -862,10 +876,10 @@ Tests, development tools, IDE settings, backups and internal manifests are exclu
 Maintain the installation and usage instructions in [USER_README.md](../USER_README.md)
 in Russian; the repository README presents the addon to players. This document contains development details.
 
-The bundle includes 10,891 Classic recordings. External CatQuest Voices 0.2.2
+The bundle includes 10,891 Classic recordings. External CatQuest Voices 0.3.0
 adds 738 quests (737 descriptions, 464 turn-ins, 1,678 files with gender variants).
 The runtime index now includes the complete CatQuest library: 1,979 quests,
-1,978 descriptions, 1,687 turn-ins and 4,895 files. Saved `sharedQuestVoice`
+1,978 descriptions, 1,687 turn-ins and 4,864 files. Saved `sharedQuestVoice`
 selects WowVoice (default) or CatQuest for overlapping recordings. Routing is
 per section: a recording available from only one source uses that source.
 Unavailable/incompatible CatQuest resets the saved preference to WowVoice.
@@ -879,7 +893,7 @@ The import manifest and SHA-256 hashes are retained in
 `docs/internal/forever-audio-manifest.json`, outside the release. The supplied
 CatQuest pack's loaded Lua index takes priority. JSON-only entries are recovered
 only when they contain a turn-in without a description, which the upstream Lua
-index omits (quest 99080 in both 0.2.0 and 0.2.2). Every referenced OGG must exist and pass stream
+index omits (quest 99080 in 0.2.0, 0.2.2 and 0.3.0). Every referenced OGG must exist and pass stream
 validation before outputs are replaced. Such quests get completion playback but
 no description replay button; missing sections remain silent. The manifest records
 the recovered IDs and reads the source version from its TOC.
@@ -890,11 +904,12 @@ CatQuest and CatQuest_Voices are by [Cathey](https://t.me/catheyco) (daniilcathe
 
 ## Optional CatQuest coexistence
 
-Core.lua temporarily suppresses CatQuest 0.2.0/0.2.2's `autoDetail`, `autoProgress`
+Core.lua temporarily suppresses CatQuest's `autoDetail`, `autoProgress`
 and `autoComplete` while WowVoice is enabled. The `readAfterAccept` path also
 checks `autoDetail`, so it cannot enqueue a duplicate reading. CatQuest retains
 books, location lore, NPC greetings/gossip, manual reading, UI and history.
-The separate Story modules are commented out in CatQuest's own 0.2.2 TOC.
+These integration points remain unchanged in the verified CatQuest 0.3.1.
+The separate Story modules are commented out in CatQuest's own 0.3.1 TOC.
 
 This uses CatQuest's initialized settings table without private namespace access
 or upstream file edits. WowVoice has optional TOC dependencies on the two audio
@@ -917,12 +932,25 @@ without changing it; `/thead diag` gives detailed diagnostics. The options heade
 shows the active source version as "Озвучка CatQuest". Classic remains unchanged.
 CatQuest does not use our packs.
 
-The importer also generates src/CatQuestAudio.lua for the exact external 0.2.2
-release, including per-file durations and JSON-only recovery. At runtime the
-external TOC version and each live entry's duration, gender flag and voice must
-match this metadata. Unknown releases or changed entries are unavailable, not
-played with stale timings. These checks cannot detect an OGG replaced under the
-same version and identical Lua metadata: only the offline importer verifies hashes.
+The importer also generates src/CatQuestAudio.lua for the audited external 0.3.0
+release, including per-file durations and JSON-only recovery. Runtime compatibility
+is checked per recording: live duration, gender flag and voice must match this
+metadata. A different or absent TOC version does not disable the whole library or
+reset its saved source preference. Unknown and changed entries remain unavailable;
+Classic playback supplies its own stage when possible. JSON-only recovery remains
+limited to the audited version because a later release may have removed its files.
+On another release, available snapshot transcripts must match the selected live
+subtitle variant. Playback uses the live maximum duration plus 0.1 seconds for
+rounding, rather than stale exact OGG timings. This can leave extra silence after
+the shorter sex variant; a full metadata import restores exact per-file timing.
+These checks cannot verify file hashes inside WoW. A replaced OGG under the same
+version and identical Lua metadata is detectable only by offline auditing.
+Options show an updated pack in yellow with a partial-support explanation; a
+missing or unusable live index stays unavailable. Runtime checks never change the metadata snapshot.
+`node tools/check-catquest-compatibility.js <voices directory> [previous voices directory]`
+parses the external Lua as data and runs the actual resolver for both sexes. It
+checks eligible OGG streams and timer bounds without importing metadata or running
+foreign addon code; the report is saved in artifacts/review/catquest-compatibility.json.
 ADDON_LOADED/PLAYER_LOGIN refresh source-dependent UI and failure caches without
 interrupting active sound. Availability failures are keyed by path, version and duration.
 Tests cover absence, late loading, repeated initialization, enabled/disabled
@@ -942,8 +970,8 @@ Classic playback without CatQuest installed. CatQuest's wording may differ from
 Classic recordings or the game. Timing-based subtitle scrolling is unchanged;
 only sentence text is imported here.
 
-The 0.2.2 snapshot contains 1,978 quests, with 1,978 descriptions and 1,686 turn-ins
-(4,893 text variants). These include 1,241 Classic quests. Recovered JSON-only
+The 0.3.0 text snapshot contains 1,978 quests, with 1,978 descriptions and 1,686 turn-ins
+(4,862 text variants). These include 1,241 Classic quests. Recovered JSON-only
 turn-in 99080 has no source transcript, so it retains the no-text message when
 the game has not supplied text. Other quests absent from this text database
 also retain their existing game/journal lookup. Import reports text coverage

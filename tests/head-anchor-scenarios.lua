@@ -147,8 +147,13 @@ for _, p in ipairs(points) do
     near(after.x, -82); near(after.y, 63)
     assert(WowVoiceDB.headPosition[1] == p[1] and WowVoiceDB.headAnchor == p[1])
     panel.Buttons.center.scripts.OnClick()
-    after = WV:GetHeadSettings(); near(after.x, 0); near(after.y, 63)
+    after = WV:GetHeadSettings(); near(after.x, -head:GetScale()); near(after.y, 63)
+    local visibleCenterX = location({'CENTER', 0.5, 0.5})
+    near(visibleCenterX, UIParent:GetWidth()/2, 'center button must center the visible panel')
+    if p[2] == 0.5 then near(tonumber(panel.PositionX:GetText()), 0) end
     selected(p[1])
+    -- Set up the independent cursor-drag fixture at the native frame center.
+    assert(WV:ApplyHeadSettings({width=after.width,height=after.height,scale=after.scale,x=0,y=63}))
     -- The native frame rectangle may lag while StartMoving is active. Keep it
     -- unchanged here and require live coordinates from physical cursor pixels.
     local oldCursor = GetCursorPosition
@@ -323,6 +328,8 @@ for _, scale in ipairs({0.5, 1, 1.5}) do
 end
 UIParent.scale = 1
 frames.WowVoiceHeadScaleEvents.scripts.OnEvent()
+near(head.EditBorder.backdrop.edgeSize*head.EditBorder:GetEffectiveScale(), 1,
+    'changing UI scale must retain a one-pixel edit outline')
 WV:ResetHeadSettings()
 WV:SetWindowsUnlocked(false)
 print('PASS: nine anchor points, exclusive selection, fixed pivots, fractional drag/release, numeric input, cancellation, screen resize, movement, bounds, reset and uninterrupted playback')

@@ -4,7 +4,7 @@ Internal development checklist. This file is not included in the release ZIP or
 deployed to the game: the build copies only `src/`, the sound-pack TOCs and
 `USER_README.md`.
 
-Last updated: 2026-09-29.
+Last updated: 2026-10-01.
 
 ## Confirmed in game
 
@@ -50,6 +50,24 @@ the same profile.
   lateral `0.02`. The tested model file ID was not reported; other standard,
   HD and HD SDR female variants remain unverified.
 
+- [x] Furbolg — male. User confirmed the lowered framing on Krolg (quest `1046`):
+  profile `furbolg`, vertical offset `0.04` → `-0.04`, distance `1.32`, lateral `0`.
+  The tested model file ID was not reported; other variants remain unverified.
+  CatQuest's NPC record `3897` labels Krolg as `tauren`, `male`; that race field
+  does not identify the actual furbolg model used for camera selection.
+
+- [x] Dwarf — female. User confirmed the lowered framing on Mountaineer Pebblebitty
+  (quest `3182`): profile `dwarf_female`, vertical offset `0.025` → `0`, distance
+  `1.2`, lateral `0`. The tested model file ID was not reported; other standard,
+  HD, SDR, Dark Iron, Earthen and female rifleman variants remain unverified.
+
+- [x] Skyborne — male. User confirmed the revised framing on Raan Wildwind
+  (quest `96646`, NPC `263664`): profile `skyborne_male`, vertical offset `0`,
+  distance `1.1`, lateral `0`. Applied to model file ID `7478487` as a per-model
+  override (`model:7478487` in diagnostics). Identity comes from the locally
+  installed `CatQuest/RaceModels.lua`; the live model ID was not reported.
+  Female model `7478494` retains its existing framing.
+
 ## Awaiting in-game confirmation
 
 - [ ] Human — child. Raised on Shawn feedback: profile `human_child`,
@@ -70,7 +88,7 @@ the same profile.
   `0.025` → `0.015` for slightly more room above the hair after the initial lift
   from `-0.025`. Distance `1.1`, lateral `0`. Identity comes from the
   locally installed `CatQuest/RaceModels.lua`; live model ID and visual result
-  are not yet confirmed. Male model `7478487` keeps the fallback framing.
+  are not yet confirmed. Male model `7478487` uses a separate correction below.
 
 - [ ] Undead — male. Profile: `undead_male`. Reopened after feedback on
   Deathguard Kristof: lowered very slightly, vertical offset `0.025` → `0.015`,

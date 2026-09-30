@@ -40,12 +40,13 @@ local function external()
     if type(pack) ~= "table" or type(pack.quests) ~= "table" then
         return nil, "индекс CatQuest_Voices не загружен"
     end
-    local version = Sources.Metadata("CatQuest_Voices", "Version")
-    if type(compat) ~= "table" or compat.schemaVersion ~= 1 or type(compat.entries) ~= "table"
-        or not version or version ~= compat.sourceVersion then
-        return nil, "CatQuest_Voices: неподдерживаемая версия " .. tostring(version or "не указана")
+    if type(compat) ~= "table" or compat.schemaVersion ~= 1 or type(compat.entries) ~= "table" then
+        return nil, "метаданные совместимости CatQuest Voices недоступны"
     end
-    return { id = "catquest", version = version, entries = compat.entries, quests = pack.quests,
+    local version = Sources.Metadata("CatQuest_Voices", "Version")
+    if type(version) ~= "string" or version == "" then version = nil end
+    return { id = "catquest", version = version or "не указана", indexedVersion = compat.sourceVersion,
+        updated = version ~= compat.sourceVersion, entries = compat.entries, quests = pack.quests,
         prefix = "Interface\\AddOns\\CatQuest_Voices\\Sounds\\q\\" }
 end
 
@@ -60,18 +61,20 @@ function Sources.Resolve(id, section)
     if not source then return nil end
     local entry = source.entries[id .. section]
     if type(entry) ~= "table" then return nil end
-    local cues
+    local cues, indexDuration
     if source.id == "catquest" then
         local liveQuest = source.quests[id]
         local live = type(liveQuest) == "table" and (section == "a" and liveQuest or liveQuest.t) or nil
         if entry.jsonOnly then
             -- Recovery is valid only while upstream still omits this quest entirely.
-            if liveQuest ~= nil then return nil end
+            -- A newer pack may have removed the file as well as its index entry.
+            if source.updated or liveQuest ~= nil then return nil end
         elseif type(live) ~= "table" or live.d ~= entry.indexDuration
             or (not not live.g) ~= entry.gender or (live.v or "") ~= entry.voice then
             return nil
         end
         cues = live and live.c
+        indexDuration = live and live.d
         entry = entry.audio
     end
     if type(entry) ~= "table" then return nil end
@@ -83,9 +86,29 @@ function Sources.Resolve(id, section)
     local stem = tostring(id) .. (section == "c" and "_t" or "")
     local expected = stem .. (variant == "x" and "" or "_" .. variant) .. ".ogg"
     if section == "p" or entry.file ~= expected then return nil end
-    return { path = source.prefix .. entry.file, duration = entry.duration,
+    local selectedCues = type(cues) == "table" and cues[variant] or nil
+    local seconds = entry.duration
+    if source.updated then
+        -- Matching voice/sex/duration is required even on an unfamiliar release.
+        -- Changed wording with the same rounded duration is a different record.
+        local text = Sources.Text(id, section)
+        if text then
+            if type(selectedCues) ~= "table" or #selectedCues == 0 then return nil end
+            local parts = {}
+            for _, cue in ipairs(selectedCues) do
+                if type(cue) ~= "table" or type(cue[2]) ~= "string" then return nil end
+                parts[#parts + 1] = cue[2]:match("^%s*(.-)%s*$")
+            end
+            if table.concat(parts, " ") ~= text then return nil end
+        end
+        -- The OGG may have been re-encoded even when rounded metadata matches.
+        -- Use the live maximum (including sex variants) plus rounding allowance;
+        -- exact per-file timing returns after importing that release's metadata.
+        seconds = indexDuration + 0.1
+    end
+    return { path = source.prefix .. entry.file, duration = seconds,
         sourceID = source.id, sourceVersion = source.version, variant = variant,
-        cues = type(cues) == "table" and cues[variant] or nil }
+        cues = selectedCues }
 end
 
 -- Transcripts ship with the addon itself, so every package has the same fallback.

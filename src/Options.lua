@@ -20,14 +20,13 @@ local function refreshVoicePreference()
     end
     panel.SharedVoiceTooltip.message = source
         and "Выбранная озвучка используется при получении и сдаче заданий, а также в журнале и списке заданий. Если запись есть только у одного источника, используется она."
-        or ("Для выбора установите и включите CatQuest Voices "
-            .. tostring(WowVoiceCatQuestAudio and WowVoiceCatQuestAudio.sourceVersion or "")
-            .. ". Сейчас используется WowVoice.\n" .. tostring(reason or ""))
+        or ("Для выбора установите и включите CatQuest Voices. Сейчас используется WowVoice.\n"
+            .. tostring(reason or ""))
 end
 
 local function refreshVersions()
     refreshVoicePreference()
-    local source = WowVoiceAudioSources.Status()
+    local source, reason = WowVoiceAudioSources.Status()
     panel.AudioSourceCaption:SetText("Озвучка CatQuest:")
     panel.AudioSourceCaption:SetWidth(math.ceil(panel.AudioSourceCaption:GetStringWidth()) + 2)
     local metadata = (C_AddOns and C_AddOns.GetAddOnMetadata) or GetAddOnMetadata
@@ -38,19 +37,22 @@ local function refreshVersions()
     local installed = field("CatQuest_Voices", "Version")
     local supported = WowVoiceCatQuestAudio and WowVoiceCatQuestAudio.sourceVersion
     local incompatible = not source and WowVoiceAudioSources.Loaded("CatQuest_Voices")
-        and installed and supported and installed ~= supported
+    local updated = source and source.updated
     local warning = panel.AudioSourceWarning
     if GameTooltip and GameTooltip:IsOwned(warning) then GameTooltip:Hide() end
-    warning.message = incompatible and ("Установлена: " .. installed .. ". Поддерживается: " .. supported
-        .. ".\nДополнительная озвучка недоступна.\nУстановите совместимую версию CatQuest Voices"
-        .. " или обновите WowVoice Talking Head до версии с её поддержкой.") or nil
-    if incompatible then warning:Show() else warning:Hide() end
+    warning.title = incompatible and "Озвучка CatQuest недоступна" or "Обновлённая озвучка CatQuest"
+    warning.message = incompatible and tostring(reason or "Индекс озвучки недоступен.")
+        or updated and ("Установлена: " .. source.version .. ". Полностью проверена: " .. tostring(supported)
+            .. ".\nСовместимые записи продолжают работать. Изменённые и новые записи пока недоступны."
+            .. "\nОбновление WowVoice TalkingHead добавит их поддержку.") or nil
+    if incompatible or updated then warning:Show() else warning:Hide() end
     local width = 0
     for addon, text in pairs(panel.VersionLabels) do
         local version
         if addon == "AudioSource" then
             version = source and source.version or (incompatible and installed) or "недоступна"
             if incompatible then text:SetTextColor(1, 0.25, 0.25)
+            elseif updated then text:SetTextColor(1, 0.82, 0.25)
             else text:SetTextColor(0.7, 0.7, 0.7) end
         else
             local installed = field(addon, "Version")
@@ -229,7 +231,7 @@ local function createPanel()
             warning:SetScript("OnEnter", function(self)
                 if not self.message then return end
                 GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-                GameTooltip:AddLine("Несовместимая версия CatQuest Voices", 1, 0.25, 0.25)
+                GameTooltip:AddLine(self.title, 1, 0.82, 0.25)
                 GameTooltip:AddLine(self.message, 1, 1, 1, true)
                 GameTooltip:Show()
             end)

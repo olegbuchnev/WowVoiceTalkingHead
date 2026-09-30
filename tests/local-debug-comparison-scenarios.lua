@@ -2,7 +2,8 @@ local C, panel = WowVoiceComparison, WowVoiceLocalDebugPanel
 local popup = panel.Suggestions
 local loadedAPI, metadataAPI, sexAPI = C_AddOns.IsAddOnLoaded, C_AddOns.GetAddOnMetadata, UnitSex
 local loaded = {WowVoiceSounds=true, CatVoices=true, CatQuest_Voices=true}
-local version = '0.2.2'
+local auditedVersion = WowVoiceCatQuestAudio.sourceVersion
+local version = auditedVersion
 C_AddOns.IsAddOnLoaded = function(name) return loaded[name] == true end
 C_AddOns.GetAddOnMetadata = function(name, field)
     if name == 'CatQuest_Voices' and field == 'Version' then return version end
@@ -12,6 +13,10 @@ CatQuestVoicePack = {quests={
     [6]={d=23.2,g=1,v='human-male'},
     [98246]={d=28.9,v='dwarf-male'},
 }}
+for id, entry in pairs(CatQuestVoicePack.quests) do
+    local texts = WowVoiceCatQuestTexts.entries[id .. 'a']
+    entry.c = entry.g and {m={{0,texts.male}},f={{0,texts.female}}} or {x={{0,texts.common}}}
+end
 local function tile(id)
     WV:RefreshAudioSources()
     panel.QuestID:SetText(tostring(id))
@@ -121,10 +126,10 @@ assert(row.PlayButtons.wowvoice:IsShown() and not row.PlayButtons.catquest:IsSho
     'Absent CatQuest recording must leave the right side empty')
 loaded.CatVoices = false
 loaded.CatQuest_Voices = true
-version = '0.2.3'
+version = '0.4.0'
 row = tile(179)
-assert(not row.PlayButtons.catquest:IsEnabled(), 'Unsupported full pack must be disabled')
-version = '0.2.2'
+assert(row.PlayButtons.catquest:IsEnabled(), 'An updated pack keeps compatible comparison recordings')
+version = auditedVersion
 row = tile(179)
 assert(row.PlayButtons.catquest:IsEnabled())
 for _, element in ipairs(panel.CatQuestLegend) do assert(element.visible) end

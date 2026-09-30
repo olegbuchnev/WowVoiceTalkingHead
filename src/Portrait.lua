@@ -6,6 +6,7 @@ local scalePreview
 local playlistHeadEditing
 local function refreshEditBorder()
     if head and head.EditBorder then
+        WV:UpdateFrameEditBorder(head.EditBorder)
         if playlistHeadEditing or (active and active.preview and not active.autoPreview) then head.EditBorder:Show()
         else head.EditBorder:Hide() end
     end
@@ -853,6 +854,7 @@ local function layoutHead()
     local height = (WowVoiceDB and WowVoiceDB.headHeight) or DEFAULT_HEIGHT
     local scale = WV:GetHeadScale()
     head:SetScale(scale)
+    if head.EditBorder then WV:UpdateFrameEditBorder(head.EditBorder) end
     refreshHeadTextFonts()
     local textLeft, textRight = 152, 42
     -- Retail composition: portrait on the left, name above
@@ -951,6 +953,7 @@ end
 local function refreshHeadScale()
     if not anchor then return end
     anchor:SetScale(UIParent:GetEffectiveScale())
+    if head and head.EditBorder then WV:UpdateFrameEditBorder(head.EditBorder) end
     if head and head.Model.portraitReady then updatePortraitCamera(head.Model) end
 end
 
@@ -1135,8 +1138,7 @@ local function createHead()
     head.EditBorder:SetPoint("TOPLEFT", head, "TOPLEFT", PANEL_LEFT, -PANEL_TOP)
     head.EditBorder:SetPoint("BOTTOMRIGHT", head, "BOTTOMRIGHT", -PANEL_RIGHT, PANEL_BOTTOM)
     head.EditBorder:SetFrameLevel(head:GetFrameLevel() + 20)
-    head.EditBorder:SetBackdrop({ edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
-    head.EditBorder:SetBackdropBorderColor(1, 0.82, 0.25, 0.7)
+    WV:UpdateFrameEditBorder(head.EditBorder)
     head.EditBorder:EnableMouse(false)
     head.EditBorder:Hide()
     head:SetScript("OnUpdate", updateHead)
@@ -1305,8 +1307,11 @@ end
 
 function WV:CenterTalkingHead()
     createHead()
+    self:EndHeadScalePreview(true)
     local _, y = centerPosition()
-    setPosition(0, y)
+    -- Center the visible panel, whose transparent margins are asymmetric.
+    local x = panelPointOffset("CENTER")
+    setPosition(-x, y)
     if self.RefreshHeadOptions then self:RefreshHeadOptions() end
 end
 

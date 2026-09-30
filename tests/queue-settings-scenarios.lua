@@ -264,12 +264,18 @@ local function near(a, b) assert(math.abs(a-b) < 0.00001, tostring(a)..' ~= '..t
 for _, uiScale in ipairs({1, 0.75}) do
     UIParent.scale = uiScale
     frames.WowVoiceHeadScaleEvents.scripts.OnEvent()
+    frames.WowVoiceQuestQueueRoot.scripts.OnEvent()
+    near(player.EditOverlay.backdrop.edgeSize*player.EditOverlay:GetEffectiveScale(), 1)
     for _, scale in ipairs({0.8, 1.2}) do
         WV:ApplyHeadSettings({width=570,height=155,scale=1,x=300,y=150})
         WV:SetHeadAnchor('TOPLEFT')
         WV:SetQuestQueueScale(scale)
         WV:PreviewQuestQueue(true)
         local left, top = WV:GetTalkingHeadPanelBounds()
+        for _, border in ipairs({player.EditOverlay, frames.WowVoiceTalkingHead.EditBorder}) do
+            near(border.backdrop.edgeSize*border:GetEffectiveScale(), 1)
+            assert(border.backdropBorderColor[4] == 1, 'edit outlines must have the same color on different backgrounds')
+        end
         local ratio = player:GetEffectiveScale()/UIParent:GetEffectiveScale()
         local width = (player:GetWidth()-12)*ratio
         assert(100+width < left)

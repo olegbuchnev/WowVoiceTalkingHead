@@ -96,7 +96,8 @@ assert(head.width==520 and head.height==260 and head.scale==1.25)
 assert(anchor.width==650 and anchor.height==325)
 assert(head.TextScroll.width==326 and head.TextScroll.height==195)
 panel.Buttons.center.scripts.OnClick()
-assert(WowVoiceDB.headPosition[3]==0 and WowVoiceDB.headPosition[4]==-250.25)
+assert(WowVoiceDB.headPosition[3]==-1.25 and WowVoiceDB.headPosition[4]==-250.25)
+assert(select(1,WV:GetHeadAnchorPosition())==0, 'horizontal center uses the visible panel at any scale')
 local unchanged=WowVoiceDB.headPosition
 for _,bad in ipairs({'bad','',math.huge}) do
     assert(not fill(520,260,125,bad,0))

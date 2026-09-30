@@ -80,10 +80,14 @@ async function main() {
                 || filename === 'creature/goblin/goblin.m2';
             const femaleOrc = filename.startsWith('character/orc/female/');
             const femaleTauren = filename.startsWith('character/tauren/female/');
+            const femaleDwarf = filename.startsWith('character/dwarf/female/')
+                || filename.startsWith('character/darkirondwarf/female/')
+                || filename === 'character/earthendwarf/earthendwarffemale.m2'
+                || filename === 'creature/dwarfrifleman_f/dwarfrifleman_f.m2';
             const femaleUndead = filename.startsWith('character/scourge/female/');
             const maleUndead = filename.startsWith('character/scourge/male/');
             const family = femaleOrc ? 'orc_female' : maleGoblin ? 'goblin_male' : femaleBloodElf ? 'bloodelf_female'
-                : femaleTauren ? 'tauren_female' : femaleUndead ? 'undead_female'
+                : femaleTauren ? 'tauren_female' : femaleDwarf ? 'dwarf_female' : femaleUndead ? 'undead_female'
                 : maleUndead ? 'undead_male' : maleNightElf ? 'nightelf_male'
                 : femaleNightElf ? 'nightelf_female'
                 : maleHuman ? 'human_male' : femaleHuman ? 'human_female' : humanChild ? 'human_child'

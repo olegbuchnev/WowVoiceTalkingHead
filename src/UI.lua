@@ -2,6 +2,15 @@
 local WV = _G.WowVoice
 if not WV then return end
 
+-- Edit outlines use physical pixels, independently of either window's scale.
+function WV:UpdateFrameEditBorder(border)
+    local scale = border:GetEffectiveScale()
+    if border.editBorderScale == scale then return end
+    border:SetBackdrop({ edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 / scale })
+    border:SetBackdropBorderColor(1, 0.82, 0.25, 1)
+    border.editBorderScale = scale
+end
+
 -- Style only our own buttons, and leave them unchanged without EllesmereUI.
 -- Preserve click handlers and dragging behavior.
 local buttonSkins = {}

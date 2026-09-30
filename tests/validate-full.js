@@ -14,5 +14,6 @@ for (const scenario of ['catquest-speakers-scenarios.lua','audio-sources-scenari
     for (const file of toc.split(/\r?\n/).filter(s=>s.endsWith('.lua'))) run(path.join(root,file));
     run(path.join(__dirname, "catquest-pack-mock.lua"));
     run(path.join(__dirname,scenario));
+    if (scenario === 'audio-sources-scenarios.lua') run(path.join(__dirname, 'catquest-update-scenarios.lua'));
     lua.lua_close(L);
 }

@@ -1,6 +1,7 @@
 const assert = require('assert/strict');
 const fs = require('fs'), path = require('path'), os = require('os');
 const { spawnSync } = require('child_process');
+const { createHash } = require('crypto');
 
 (async () => {
   const { artifactKind, formatArtifactSize } = await import('../tools/release-assets.mjs');
@@ -52,6 +53,9 @@ const { spawnSync } = require('child_process');
           + (name === 'Очередь озвучки' ? '\n<p class="feature-image"><img src="docs/images/queue.png" width="320" alt="Queue"></p>\n' : '')).join('\n');
     fs.writeFileSync(path.join(fixture,'docs/images/head.png'),Buffer.from([1]));
     fs.writeFileSync(path.join(fixture,'docs/images/queue.png'),Buffer.from([2]));
+    const imageURL = (name, bytes) => `images/${name}.${createHash('sha256').update(Buffer.from(bytes)).digest('hex')}.png`;
+    const headURL = imageURL('head', [1]), queueURL = imageURL('queue', [2]);
+    fs.appendFileSync(path.join(fixture,'USER_README.md'), '\n\n![Head](docs/images/head.png)\n\n<img src=\'docs/images/queue.png\' alt="Queue">\n');
     for (const withLite of [true,false]) {
       fs.writeFileSync(path.join(fixture,'README.md'),intro+(withLite?`[Lite](${urls.lite})\n`:'')+body);
       const result=spawnSync(process.execPath,['--import',require('url').pathToFileURL(path.join(fixture,'mock.mjs')).href,path.join(fixture,'tools/build-site.mjs')],{encoding:'utf8'});
@@ -70,11 +74,23 @@ const { spawnSync } = require('child_process');
       const html=fs.readFileSync(path.join(fixture,'artifacts/site/index.html'),'utf8');
       assert(html.indexOf('class="voice-feature"') < html.indexOf('class="screenshots"'));
       assert.equal((html.match(/<img /g)||[]).length,2,'Gallery and queue images must appear once each');
-      assert.match(html, /class="queue-feature"[\s\S]*src="images\/queue.png" width="320"/);
+      assert(html.includes(`src="${headURL}"`), 'Markdown screenshots must use content-addressed filenames');
+      assert(html.includes(`src="${queueURL}" width="320"`), 'Inline HTML screenshots must use the same hashed assets');
       assert(!html.includes('src="docs/images/'), 'Inline README image paths must work on Pages');
-      assert.deepEqual(fs.readFileSync(path.join(fixture,'artifacts/site/images/queue.png')), Buffer.from([2]));
+      assert.deepEqual(fs.readFileSync(path.join(fixture,'artifacts/site',queueURL)), Buffer.from([2]));
+      const guideHtml = fs.readFileSync(path.join(fixture,'artifacts/site/guide.html'), 'utf8');
+      assert(guideHtml.includes(`src="${headURL}"`) && guideHtml.includes(`src='${queueURL}'`), 'The guide must share hashed Markdown and HTML images');
     }
     const run = (...args) => spawnSync(process.execPath,['--import',require('url').pathToFileURL(path.join(fixture,'mock.mjs')).href,path.join(fixture,'tools/build-site.mjs'),...args],{encoding:'utf8'});
+    // Replace bytes at the same source path: only this image gets a new URL.
+    fs.writeFileSync(path.join(fixture,'docs/images/queue.png'), Buffer.from([3]));
+    const changed = run();
+    assert.equal(changed.status, 0, changed.stderr);
+    const changedURL = imageURL('queue', [3]);
+    const changedHtml = fs.readFileSync(path.join(fixture,'artifacts/site/index.html'), 'utf8');
+    assert(changedHtml.includes(`src="${changedURL}"`) && !changedHtml.includes(queueURL));
+    assert(changedHtml.includes(`src="${headURL}"`), 'An unchanged image keeps its URL between builds');
+    assert.deepEqual(fs.readFileSync(path.join(fixture,'artifacts/site',changedURL)), Buffer.from([3]));
     fs.writeFileSync(path.join(fixture,'mock.mjs'),mock.replace('X-Source-Version: 1.0.1','X-Source-Version: 9.0.0'));
     const unknownAudio = run();
     assert.equal(unknownAudio.status,0,unknownAudio.stderr);
@@ -98,8 +114,11 @@ const { spawnSync } = require('child_process');
     assert(!previewHtml.includes(urls.full) && !previewHtml.includes(urls.addon));
     assert.equal((previewHtml.match(new RegExp(`href="downloads/${preview.full}"`,'g'))||[]).length,8);
     assert(previewHtml.includes(`href="downloads/${preview.addon}"`));
+    assert(previewHtml.includes(`src="${changedURL}"`) && previewHtml.includes(`src="${headURL}"`));
+    assert.deepEqual(fs.readFileSync(path.join(previewRoot,changedURL)), Buffer.from([3]));
     console.log('PASS: two published downloads, exact artifact sizes, independent release metadata, legacy lite links ignored and optional external audio');
     console.log('PASS: incompatible published downloads rejected; offline preview uses local archive sizes and links');
+    console.log('PASS: Markdown/HTML/guide screenshots use hashed filenames; replacing image bytes changes its URL in published and preview builds');
   } finally {
     assert.equal(path.dirname(fixture),path.resolve(os.tmpdir()));
     assert(path.basename(fixture).startsWith('wowvoice-site-'));

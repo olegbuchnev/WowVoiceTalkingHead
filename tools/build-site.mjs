@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { Marked } from 'marked';
 import { artifactKind, formatArtifactSize } from './release-assets.mjs';
@@ -14,6 +15,12 @@ const guide = await fs.readFile(path.join(root, 'USER_README.md'), 'utf8');
 const escape = text => text.replace(/[&<>"']/g, char => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
 }[char]));
+const imageAssets = new Map();
+const imageURL = source => {
+  const asset = imageAssets.get(source);
+  if (!asset) throw Error(`Unindexed screenshot: ${source}`);
+  return asset.url;
+};
 const markdown = new Marked({
   walkTokens(token) {
     if (token.type !== 'link' && token.type !== 'image') return;
@@ -23,13 +30,14 @@ const markdown = new Marked({
       if (token.href.startsWith('downloads/')) return;
     }
     if (/^(?:https?:|mailto:|#)/.test(token.href)) return;
-    if (token.href.startsWith('docs/images/')) token.href = token.href.replace('docs/', '');
+    if (token.href.startsWith('docs/images/')) token.href = imageURL(token.href);
     else if (token.href === 'USER_README.md') token.href = 'guide.html';
     else token.href = `${repository}/blob/main/${token.href}`;
   },
   renderer: {
     html({ text }) {
-      return text.replace(/src="docs\/images\//g, 'src="images/');
+      return text.replace(/\bsrc=(["'])(docs\/images\/[^"']+)\1/g,
+        (_, quote, source) => `src=${quote}${escape(imageURL(source))}${quote}`);
     },
     heading({ tokens, depth, text }) {
       const id = text.toLowerCase().replace(/[^\p{L}\p{N}\s_-]/gu, '').replace(/\s+/g, '-');
@@ -38,6 +46,22 @@ const markdown = new Marked({
   },
 });
 const tokens = markdown.lexer(readme);
+const imagePaths = new Set();
+markdown.walkTokens([...tokens, ...markdown.lexer(guide)], token => {
+  if ((token.type === 'image' || token.type === 'link') && token.href.startsWith('docs/images/')) {
+    imagePaths.add(token.href);
+  }
+  if (token.type === 'html') {
+    for (const match of token.text.matchAll(/\bsrc=(["'])(docs\/images\/[^"']+)\1/g)) imagePaths.add(match[2]);
+  }
+});
+for (const image of imagePaths) {
+  if (!/^docs\/images\/[^/]+\.png$/.test(image)) throw Error(`Unexpected screenshot path: ${image}`);
+  const bytes = await fs.readFile(path.join(root, image));
+  const hash = createHash('sha256').update(bytes).digest('hex');
+  const name = `${path.basename(image, '.png')}.${hash}.png`;
+  imageAssets.set(image, { url: `images/${name}`, bytes });
+}
 const title = tokens.find(token => token.type === 'heading' && token.depth === 1)?.text;
 const intro = tokens.find(token => token.type === 'paragraph')?.raw;
 const links = [...readme.matchAll(/\]\((https:\/\/[^\s)]+)\)/g)].map(match => match[1]);
@@ -151,7 +175,12 @@ for (const token of tokens) {
 }
 function section(name, id, className = '') {
   if (!sections.has(name)) throw Error(`README section missing: ${name}`);
-  return `<section${className ? ` class="${className}"` : ''} aria-labelledby="${id}"><h2 id="${id}">${escape(name)}</h2>${markdown.parse(sections.get(name).join(''))}</section>`;
+  const entries = sections.get(name);
+  const image = className === 'queue-feature'
+    ? entries.find(entry => entry.trim().startsWith('<p class="feature-image">')) : null;
+  const content = `<h2 id="${id}">${escape(name)}</h2>${markdown.parse(entries.filter(entry => entry !== image).join(''))}`;
+  return `<section${className ? ` class="${className}"` : ''} aria-labelledby="${id}">${image
+    ? `<div class="queue-copy">${content}</div>${markdown.parse(image)}` : content}</section>`;
 }
 function page(content, isGuide = false) {
   return `<!doctype html>
@@ -231,12 +260,7 @@ await fs.mkdir(path.join(output, 'images'), { recursive: true });
 await fs.writeFile(path.join(output, 'index.html'), page(content));
 await fs.writeFile(path.join(output, 'guide.html'), page(markdown.parse(guide), true));
 await fs.copyFile(path.join(root, 'site/style.css'), path.join(output, 'style.css'));
-const imagePaths = new Set([
-  ...screenshots.map(screenshot => screenshot.tokens[0].href),
-  ...[...readme.matchAll(/src="(docs\/images\/[^"\s]+)"/g)].map(match => match[1]),
-]);
-for (const image of imagePaths) {
-  if (!/^docs\/images\/[^/]+\.png$/.test(image)) throw Error(`Unexpected screenshot path: ${image}`);
-  await fs.copyFile(path.join(root, image), path.join(output, 'images', path.basename(image)));
+for (const asset of imageAssets.values()) {
+  await fs.writeFile(path.join(output, asset.url), asset.bytes);
 }
 console.log(`Built GitHub Pages site: ${output}`);
