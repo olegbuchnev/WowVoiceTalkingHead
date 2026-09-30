@@ -126,8 +126,13 @@ function WV:RefreshHeadPositionOptions()
     refreshPosition(true)
 end
 
+function WV:RefreshFrameLockOption()
+    if panel and panel.LockFrames then panel.LockFrames:SetChecked(not self:IsWindowsUnlocked()) end
+end
+
 function WV:RefreshHeadOptions()
     if not panel or not panel:IsShown() then return end
+    self:RefreshFrameLockOption()
     refreshScale()
     local selected = WV:GetHeadAnchor()
     for point, dot in pairs(panel.AnchorPoints) do
@@ -149,7 +154,7 @@ function WV:RefreshHeadOptions()
     if panel.QueueHeight then
         panel.QueueDescriptionsOnly:SetChecked(WowVoiceDB.queueDescriptionsOnly == true)
         for _, control in ipairs({ panel.QueueDescriptionsOnly, panel.QueueHeight, panel.QueueScale,
-            panel.Buttons.queueMove, panel.Buttons.queueReset, panel.Buttons.applyQueuePosition }) do
+            panel.Buttons.queueReset, panel.Buttons.applyQueuePosition }) do
             control:SetEnabled(autoPlay)
             control:SetAlpha(autoPlay and 1 or 0.45)
         end
@@ -166,7 +171,6 @@ function WV:RefreshHeadOptions()
         panel.QueueScale:SetValue(percent)
         panel.QueueScaleInput:SetText(tostring(percent))
         panel.refreshingQueue = nil
-        panel.Buttons.queueMove:SetText(WV:IsQuestQueuePreview() and "Готово" or "Переместить")
         self:RefreshQuestQueuePositionOptions(not autoPlay)
     end
 end
@@ -238,9 +242,13 @@ local function createPanel()
         end
     end
     refreshVersions()
-    label("При перетаскивании масштаба предпросмотр появится автоматически.\n"
-        .. "«Тест / переместить» позволяет перетащить окно. Положение сохраняется.",
-        "GameFontHighlightSmall", 20, -58, 540, 28)
+    panel.LockFrames = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
+    panel.LockFrames:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -58)
+    panel.LockFrames:SetSize(26, 26)
+    panel.LockFrames.Label = label("Заблокировать фреймы", "GameFontHighlight", 48, -65, 506, 22)
+    panel.LockFrames:SetScript("OnClick", function(self)
+        WV:SetWindowsUnlocked(not self:GetChecked())
+    end)
     local function section(text, y)
         local heading = label(text, "GameFontNormalLarge", 20, y, 540, 22)
         local line = content:CreateTexture(nil, "ARTWORK")
@@ -285,16 +293,12 @@ local function createPanel()
         field:SetScript("OnLeave", function(self) self:SetBackdropBorderColor(0.3, 0.3, 0.3, 0.8) end)
         return field
     end
-    button("test", "Тест / переместить", 20, 170, function()
-        local ok, reason = WV:ToggleHeadPreview()
-        status(ok and "Тест без звука: перетащите окно и оцените подсветку кнопок озвучки. Повторное нажатие остановит тест." or reason)
-    end)
-    button("center", "Центр по горизонтали", 202, 170, function()
+    button("center", "Центр по горизонтали", 20, 170, function()
         discardPosition()
         WV:CenterTalkingHead()
         status("Окно выровнено по центру по горизонтали.")
     end)
-    button("reset", "Сбросить положение", 384, 180, function()
+    button("reset", "Сбросить положение", 202, 180, function()
         discardPosition()
         WV:ResetHeadPosition()
         status("Положение сброшено: автоматическая привязка снизу над панелью действий.")
@@ -490,23 +494,19 @@ local function createPanel()
     panel.AutoPlayTurnIn.Description = label("Управляет всеми репликами сдачи: промежуточными и завершающей.",
         "GameFontHighlightSmall", 74, -655, 480, 32)
     if queueOptions then
-        panel.QueueHeading, panel.QueueDivider = section("Плейлист", -700)
+        panel.QueueHeading, panel.QueueDivider = section("Очередь озвучки", -700)
         panel.QueueDescriptionsOnly = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
         panel.QueueDescriptionsOnly:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -736)
         panel.QueueDescriptionsOnly:SetSize(26, 26)
         panel.QueueDescriptionsOnly.Label = label("Только описания заданий", "GameFontHighlight", 48, -743, 506, 22)
-        panel.QueueDescriptionsOnly.Description = label("Не добавлять реплики выполнения и завершения заданий.",
+        panel.QueueDescriptionsOnly.Description = label("Не добавлять реплики выполнения и завершения заданий в очередь воспроизведения.",
             "GameFontHighlightSmall", 48, -771, 506, 28)
         panel.QueueDescriptionsOnly:SetScript("OnClick", function(self)
             WV:SetQueueDescriptionsOnly(self:GetChecked() == true)
         end)
-        button("queueMove", "Переместить", 20, 170, function()
-            WV:PreviewQuestQueue(not WV:IsQuestQueuePreview())
-            WV:RefreshHeadOptions()
-        end, -808)
-        button("queueReset", "Сбросить", 202, 170, function()
+        button("queueReset", "Сбросить", 20, 170, function()
             WV:ResetQuestQueueLayout()
-            WV:PreviewQuestQueue(true)
+            WV:EnsureQuestQueuePreview(); WV:FinishAutoQuestQueuePreview(2)
             WV:RefreshQuestQueuePositionOptions(true)
             WV:RefreshHeadOptions()
         end, -808)
@@ -535,7 +535,7 @@ local function createPanel()
             if WowVoiceDB.autoPlay == false then return false end
             local ok, reason = WV:SetQuestQueueHeight(value)
             status(reason)
-            if ok then WV:PreviewQuestQueue(true); WV:RefreshHeadOptions() end
+            if ok then WV:EnsureQuestQueuePreview(); WV:FinishAutoQuestQueuePreview(2); WV:RefreshHeadOptions() end
             return ok
         end
         heightSlider:SetScript("OnValueChanged", function(_, value)
@@ -546,7 +546,7 @@ local function createPanel()
         end)
         heightInput:SetScript("OnEscapePressed", function(self) self:ClearFocus(); WV:RefreshHeadOptions(); status() end)
         heightInput:SetScript("OnEditFocusLost", function() WV:RefreshHeadOptions() end)
-        local scaleCaption = label("Масштаб плейлиста", "GameFontNormal", 20, -942, 280, 20)
+        local scaleCaption = label("Масштаб очереди", "GameFontNormal", 20, -942, 280, 20)
         panel.QueueScale = CreateFrame("Slider", "WowVoiceQueueScaleSlider", content, "OptionsSliderTemplate")
         local scaleSlider = panel.QueueScale
         scaleSlider:SetPoint("TOPLEFT", content, "TOPLEFT", 24, -972)
@@ -573,11 +573,25 @@ local function createPanel()
             if WowVoiceDB.autoPlay == false then return false end
             local ok, reason = WV:SetQuestQueueScale(percent and percent / 100)
             status(reason)
-            if ok then WV:PreviewQuestQueue(true); WV:RefreshHeadOptions() end
+            if ok then
+                WV:EnsureQuestQueuePreview()
+                if not panel.draggingQueueScale then WV:FinishAutoQuestQueuePreview(2) end
+                WV:RefreshHeadOptions()
+            end
             return ok
         end
         scaleSlider:SetScript("OnValueChanged", function(_, value)
             if not panel.refreshingQueue then applyQueueScale(math.floor(value + 0.5)) end
+        end)
+        scaleSlider:SetScript("OnMouseDown", function(_, button)
+            if button ~= "LeftButton" or WowVoiceDB.autoPlay == false then return end
+            panel.draggingQueueScale = true
+            WV:EnsureQuestQueuePreview()
+        end)
+        scaleSlider:SetScript("OnMouseUp", function()
+            if not panel.draggingQueueScale then return end
+            panel.draggingQueueScale = nil
+            WV:FinishAutoQuestQueuePreview(2)
         end)
         scaleInput:SetScript("OnEnterPressed", function(self)
             if applyQueueScale(tonumber(self:GetText())) then self:ClearFocus() end
@@ -592,8 +606,8 @@ local function createPanel()
                 return text:match("^[+-]?%d*%.?%d+$") and tonumber(text)
             end
             local x, y = number(panel.QueuePositionX:GetText()), number(panel.QueuePositionY:GetText())
-            if not x or not y then status("Введите числа в поля X и Y. Например: -120 или 35,5."); return end
-            WV:PreviewQuestQueue(true)
+            if not x or not y then status("Введите числа в поля X и Y. Например: -160 или 35,5."); return end
+            WV:EnsureQuestQueuePreview(); WV:FinishAutoQuestQueuePreview(2)
             local ok, reason = WV:SetQuestQueuePosition(x, y)
             status(ok and "" or reason)
             WV:RefreshHeadOptions()
@@ -696,8 +710,9 @@ local function createPanel()
         discardPosition()
         input:ClearFocus()
         refreshScale()
+        panel.draggingQueueScale = nil
+        WV:SetWindowsUnlocked(false)
         WV:HideHeadPreview()
-        if WV.PreviewQuestQueue then WV:PreviewQuestQueue(false) end
         panel.editingQueuePosition = nil
         if panel.QueuePositionX then panel.QueuePositionX:ClearFocus(); panel.QueuePositionY:ClearFocus() end
     end)

@@ -2,6 +2,11 @@ local WV, Q, Lab = WowVoice, WowVoice.questQueue, WowVoiceQueueLab
 Lab:Reset()
 WV:OpenOptions()
 local panel, pool = frames.WowVoiceOptionsPanel, Lab:Pool()
+local function toggleFrames()
+    panel.LockFrames:SetChecked(WV:IsWindowsUnlocked())
+    panel.LockFrames.scripts.OnClick(panel.LockFrames)
+end
+assert(panel.LockFrames:GetChecked() and not panel.Buttons.test and not panel.Buttons.queueMove)
 assert(panel.QueueHeight and panel.QueueDescriptionsOnly)
 assert(panel.QueueHeight.minValue == 280 and panel.QueueHeight.maxValue == 600)
 assert(panel.QueueScale.minValue == 80 and panel.QueueScale.maxValue == 120)
@@ -18,7 +23,7 @@ local originalChat = ChatFrame1
 ChatFrame1 = CreateFrame('Frame', nil, UIParent)
 ChatFrame1:SetSize(420, 180)
 ChatFrame1:SetPoint('BOTTOMLEFT', UIParent, 'BOTTOMLEFT', 20, 40)
-panel.Buttons.queueMove.scripts.OnClick()
+toggleFrames()
 local player = frames.WowVoiceQuestQueuePlayer
 local anchorPoint, relative, relativePoint, dx, dy = player:GetPoint()
 assert(anchorPoint == 'TOPLEFT' and relative == ChatFrame1 and relativePoint == 'TOPLEFT')
@@ -32,7 +37,7 @@ assert(player.clampRectInsets[2] == player.EditOverlay.points[2][4]
     'native dragging must let the yellow right edge reach the screen edge')
 assert(WowVoiceTalkingHead:IsShown() and WowVoiceTalkingHead.EditBorder:IsShown(),
     'unlocking the playlist also opens a framed, silent head preview')
-assert(panel.Buttons.queueMove.text == 'Готово')
+assert(not panel.LockFrames:GetChecked())
 local preview = player.preview
 assert(preview and #preview.groups == 6 and preview.current.status == 'playing')
 for _, frame in ipairs(allFrames) do
@@ -59,6 +64,10 @@ for _, frame in ipairs(allFrames) do
     if frame.record == survivor and frame.Title then moving, sampleRow = frame.motion, frame end
 end
 assert(moving and moving.from > moving.target, 'surviving rows should slide upward')
+local previewViewport = sampleRow:GetParent():GetParent()
+assert(math.abs(select(2, previewViewport:GetCenter()) - previewViewport:GetHeight()/2
+    - (select(2, player:GetCenter()) - player:GetHeight()/2)) < 0.00001,
+    'the edit outline ends exactly at the visible viewport bottom')
 assert(moving.elapsed == 0 and sampleRow.viewY == moving.from,
     'the triggering frame predates the animation, even if its dt exceeds the slide duration')
 assert(Q:Count() == 0 and #plays == sounds and player:GetHeight() == 280)
@@ -107,6 +116,7 @@ assert(WV:GetQuestQueueHeight() == 520 and player:GetHeight() == 520)
 panel:Hide()
 assert(not WV:IsQuestQueuePreview() and not player:IsShown() and Q:Count() == 0 and #plays == sounds)
 assert(not player.preview, 'closing options discards preview records and their timer')
+assert(panel.LockFrames:GetChecked() and not WV:IsWindowsUnlocked(), 'closing options locks both frames')
 assert(not WowVoiceTalkingHead:IsShown() and not WowVoiceTalkingHead.EditBorder:IsShown())
 event('ADDON_LOADED')
 assert(WV:GetQuestQueueHeight() == 520 and WowVoiceDB.queuePosition.y == 750,
@@ -118,7 +128,7 @@ Lab:Accept(pool[1].id); Lab:Accept(pool[2].id)
 local current = Q.current
 sounds = #plays
 WV:OpenOptions()
-panel.Buttons.queueMove.scripts.OnClick()
+toggleFrames()
 panel.QueueHeight:SetValue(600)
 assert(player:GetHeight() == 600 and Q.current == current and #plays == sounds)
 local realCount = Q:Count()
@@ -129,13 +139,17 @@ assert(WowVoiceTalkingHead.EditBorder:IsShown())
 WowVoiceTalkingHead.scripts.OnDragStart()
 assert(frames.WowVoiceTalkingHeadAnchor.moving and WowVoiceTalkingHead.draggingPosition,
     'the linked head is movable even during live audio')
-panel.Buttons.queueMove.scripts.OnClick()
+toggleFrames()
 assert(not player.editing and player:GetHeight() < 600 and Q.current == current)
 assert(not WowVoiceTalkingHead.EditBorder:IsShown() and not WowVoiceTalkingHead.draggingPosition
     and not frames.WowVoiceTalkingHeadAnchor.moving and WowVoiceTalkingHead:IsShown(),
     'locking the playlist finishes the head drag while preserving live playback')
 WowVoiceTalkingHead.scripts.OnDragStart()
 assert(not WowVoiceTalkingHead.draggingPosition, 'the live head must be locked again')
+toggleFrames()
+WowVoiceTalkingHead.Close.scripts.OnClick()
+assert(panel.LockFrames:GetChecked() and not player.editing and Q.current == current and #plays == sounds,
+    'closing an unlocked head locks both frames without stopping current audio')
 local onlyDescriptions = WowVoiceDB.queueDescriptionsOnly
 panel.Buttons.queueReset.scripts.OnClick()
 assert(WV:GetQuestQueueHeight() == 280 and player:GetHeight() == 280)
@@ -150,6 +164,7 @@ WV:OpenOptions()
 Lab:Accept(pool[1].id); Lab:Accept(pool[2].id)
 local acceptPreference, turnInPreference = WowVoiceDB.autoPlayAccept, WowVoiceDB.autoPlayTurnIn
 panel.QueueHeight:SetValue(460)
+toggleFrames()
 player.EditOverlay.scripts.OnDragStart()
 player:ClearAllPoints()
 player:SetPoint('TOPLEFT', UIParent, 'BOTTOMLEFT', 220, 790)
@@ -166,11 +181,16 @@ assert(not panel.QueueHeightInput.mouseEnabled and panel.QueueHeightInput.alpha 
 assert(not panel.QueueScaleInput.mouseEnabled and panel.QueueScaleInput.alpha == 0.45)
 assert(not panel.QueuePositionX.mouseEnabled and not panel.QueuePositionY.mouseEnabled
     and not panel.Buttons.applyQueuePosition:IsEnabled())
-for _, control in ipairs({panel.QueueHeight, panel.QueueScale, panel.Buttons.queueMove, panel.Buttons.queueReset}) do
+for _, control in ipairs({panel.QueueHeight, panel.QueueScale, panel.Buttons.queueReset}) do
     assert(not control:IsEnabled() and control.alpha == 0.45)
 end
 for _, label in ipairs(panel.QueueLabels) do assert(label.alpha == 0.45) end
-assert(panel.Buttons.queueMove.text == 'Переместить')
+assert(panel.LockFrames:GetChecked())
+toggleFrames()
+assert(player.editing and WowVoiceTalkingHead.EditBorder:IsShown() and not panel.LockFrames:GetChecked()
+    and #plays == queuedSounds, 'the common lock can position both frames while automatic startup is disabled')
+toggleFrames()
+assert(not player.editing and panel.LockFrames:GetChecked() and not WowVoiceTalkingHead.EditBorder:IsShown())
 WV:PreviewQuestQueue(true)
 assert(not player.editing, 'stale preview requests must not reopen editing while autoplay is off')
 player.EditOverlay.scripts.OnDragStop()
@@ -197,7 +217,7 @@ assert(WV:GetQuestQueueHeight() == 460 and WowVoiceDB.queuePosition.y == 790)
 for _, label in ipairs(panel.QueueLabels) do assert(label.alpha == 1) end
 assert(not WV:IsQuestQueuePreview(), 're-enabling should not reopen the editor automatically')
 -- Also preserve a position from a completed drag, while the editor is still open.
-panel.Buttons.queueMove.scripts.OnClick()
+toggleFrames()
 assert(player:IsShown() and player:GetPoint() == 'TOPLEFT')
 WV:SetAutoPlayEnabled(false)
 assert(not player:IsShown() and not player.editing and WowVoiceDB.queuePosition.y == 790)
@@ -264,6 +284,12 @@ for _, uiScale in ipairs({1, 0.75}) do
             'coordinates must show the snapped position before releasing the mouse')
         near(player.dragging.finalY, top)
         near(player.dragging.finalX, 100)
+        local toolbar = player.Next:GetParent()
+        near(select(2, toolbar:GetCenter()) + toolbar:GetHeight()/2,
+            select(2, player:GetCenter()) + player:GetHeight()/2)
+        near(select(2, previewViewport:GetCenter()) - previewViewport:GetHeight()/2,
+            select(2, player:GetCenter()) - player:GetHeight()/2)
+        near(player:GetHeight(), WV:GetQuestQueueHeight())
         local _, headTopCoordinate = WV:GetHeadAnchorPosition()
         local _, queueTopCoordinate = WV:GetQuestQueuePosition()
         near(headTopCoordinate, queueTopCoordinate)
@@ -361,7 +387,7 @@ panel.QueuePositionY.scripts.OnEnterPressed()
 local nx, ny = WV:GetQuestQueuePosition()
 near(nx, -120.5); near(ny, 200.25)
 assert(not panel.QueuePositionX.focus and not panel.QueuePositionY.focus and not panel.editingQueuePosition)
-assert(player.editing)
+assert(player.autoPreview and not player.editing and panel.LockFrames:GetChecked())
 panel.QueuePositionX:SetFocus(); panel.QueuePositionX:SetText('999')
 panel.QueuePositionX.scripts.OnEscapePressed()
 near(tonumber(panel.QueuePositionX:GetText()), nx)

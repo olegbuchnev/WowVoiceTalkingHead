@@ -42,7 +42,7 @@ function Q:Changed(layoutMode)
         driver:Hide()
         if WV.FinishTalkingHead then WV:FinishTalkingHead(true) end
     end
-    if WV.RefreshHeadQueueButton then WV:RefreshHeadQueueButton() end
+    if self:Count() == 0 then self.paused = false end
     if WV.PrepareQuestQueuePortraits then WV:PrepareQuestQueuePortraits(self.groups) end
     if WV.RefreshQuestQueuePlayer then WV:RefreshQuestQueuePlayer(layoutMode) end
     if self.observer then self.observer() end
@@ -176,11 +176,26 @@ function Q:Schedule()
     if self.enabled and not self.paused and (self.gap or not self.current) and self:Waiting() then driver:Show() end
 end
 
-function Q:Start(record)
+function Q:SetPaused(paused)
+    self.paused = paused == true and self:Count() > 0
+    -- A pause during the automatic gap must release the finished line and
+    -- its head; resuming then starts the next waiting line, never the old one.
+    if self.paused and self.gap then
+        self:Remove(self.current, "done")
+        self.current, self.gap = nil, nil
+        if WV.FinishTalkingHead then WV:FinishTalkingHead(true) end
+    end
+    if self.paused then
+        if not next(self.removals) then driver:Hide() end
+    elseif not self.current then self:Next() end
+    self:Changed("instant")
+end
+
+function Q:Start(record, keepPaused)
     if not record then return false end
     record = self:ReadyRecord(record)
     self.gap = nil
-    self.paused, self.starting = false, record
+    self.paused, self.starting = keepPaused == true and self.paused, record
     driver:Hide()
     local ok = WV:PlayQueuedQuest(record)
     self.starting = nil
@@ -304,7 +319,10 @@ function Q:PlaybackStarted(context)
     self.current, record.status, record.started = record, "playing", true
     self:OrderQuestStages(record)
     if self.nextRecord == record then self.nextRecord = nil end
-    self.paused = false
+    -- A new queue still starts its first line. The remembered mode controls
+    -- advancement, including explicit playback from the journal or tracker.
+    self.paused = (WowVoiceDB and WowVoiceDB.queueAutoPlay == false)
+        or (self.starting ~= nil and self.paused) or false
     local previousRefresh = self.forceRefresh
     self.forceRefresh = true
     self:Changed("advance")
@@ -314,7 +332,7 @@ end
 function Q:PlaybackStopped(reason)
     local hadCurrent = self.current ~= nil
     local nextRecord = self:Waiting()
-    if reason == "duration timer" and self.current and nextRecord then
+    if reason == "duration timer" and not self.paused and self.current and nextRecord then
         local sameQuest = questKey(self.current.context.questId, self.current.context.queueOwner)
             == questKey(nextRecord.context.questId, nextRecord.context.queueOwner)
         self.current.status = "done"
@@ -477,6 +495,11 @@ end
 function WV:SetQueueDescriptionsOnly(enabled)
     WowVoiceDB.queueDescriptionsOnly = enabled == true
     if self.RefreshHeadOptions then self:RefreshHeadOptions() end
+end
+
+function WV:SetQueueAutoPlay(enabled)
+    WowVoiceDB.queueAutoPlay = enabled == true
+    Q:SetPaused(not WowVoiceDB.queueAutoPlay)
 end
 
 function Q:Event(event, id, owner)

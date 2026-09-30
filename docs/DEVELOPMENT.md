@@ -340,9 +340,15 @@ handler resolves the current quest ID again. Missing module methods disable the
 adapter without affecting Blizzard's tracker. No Questie files or saved settings
 are edited and no TOC dependency is added.
 
-The extra column is anchored left of expandQuest, whose anchor persists when the
-native minus is hidden for completed quests or item buttons. Quest names, item
-buttons, objective indents, wrapping widths and row heights are unchanged. Icons,
+Replay anchors directly before the title when neither an item nor the minus is
+shown, including completed quests. A shown minus reserves its native slot, with
+replay anchored to its left. If a row has a shown quest item, replay anchors left
+of the row's TOPLEFT, before both item buttons. Detection reads direct children
+with matching questID, positive itemId and active item action attributes; hidden,
+detached and stale pooled items are ignored. Alpha does not affect placement, so
+hover fading cannot move replay. Item/minus OnShow/OnHide hooks coalesce refreshes.
+Quest names, item buttons, objective indents, wrapping widths and row heights are
+unchanged. Icons,
 gaps and reminder glows follow the actual title FontString font size on formatting
 updates; tracker scale is inherited, including a scaled scroll child. Controls
 are siblings of the nearest scroll frame to avoid horizontal clipping, and are
@@ -404,10 +410,12 @@ and `ReplayQuest`, independently of the portrait. Duplicate dialogue events that
 do not start audio do not renew it. Existing one-hour timestamps are shortened by
 30 minutes once for all characters, preserving their original start time; the
 `reminderCooldown30Minutes` flag prevents repeating the migration.
-«Тест / переместить» also previews the glow on all active tracker replay buttons,
-including heard quests. The same animated
-glow stays visible until preview stops, options close, or real
-playback replaces the preview. Hidden tracker controls remain hidden.
+The shared «Заблокировать фреймы» checkbox at the top of options locks the head
+and queue together. Unchecking it opens silent layout samples while preserving
+live audio; checking it, closing the unlocked head, or closing options finishes
+both drags and saves positions. Layout editing does not enable tracker glow.
+The explicit `ToggleHeadPreview` API still supports the separate glow preview;
+hidden tracker controls remain hidden.
 
 `/thead remindertest [questID]` previews the same replay notification below
 `UIErrorsFrame`, together with a yellow test message showing that quest's first
@@ -719,6 +727,12 @@ Its assignments override inherited environment variables; without the file,
 the inherited variable is used. Windows user/system environment settings are
 not modified. Other tasks do not load or require the local environment file.
 Repository paths are derived from the script location.
+
+Set `$env:WOWVOICE_QUEUE_LAB = '1'` in the local environment file to include
+the `/tt` harness on every Deploy/DeployAddon. The default is off.
+Explicit `-QueueLab` or `-QueueLab:$false` overrides this preference.
+Explicit `-ConfigPath` deployment ignores the environment preference;
+release packages always exclude the harness.
 
 `ForeverBeta` is the only supported deployment target; PTR, Retail and All are
 not supported. The old `config/deploy.targets.local.psd1` is no longer read

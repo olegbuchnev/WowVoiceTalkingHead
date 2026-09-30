@@ -341,6 +341,7 @@ end
 -- private pool, parse titles, reuse VoiceOver's buttons or change native layout.
 local questiePool
 local questieScrollHooks = {}
+local questieItemHooks = setmetatable({}, { __mode = "k" })
 local questieRefreshPending
 local function requestQuestieRefresh()
     if questieRefreshPending then return end
@@ -370,6 +371,25 @@ local function questieScroll(line)
     end
 end
 
+local function questieHasItem(line, id)
+    local shown = false
+    for _, child in ipairs({ line:GetChildren() }) do
+        -- Read the actual item controls, including their current pooled identity.
+        -- Alpha is deliberately ignored: hover fading must not move play.
+        if child.questID == id and type(child.itemId) == "number" and child.itemId > 0
+            and child.GetAttribute and child:GetAttribute("type1") == "item"
+            and child:GetAttribute("item1") then
+            if not questieItemHooks[child] then
+                questieItemHooks[child] = true
+                child:HookScript("OnShow", requestQuestieRefresh)
+                child:HookScript("OnHide", requestQuestieRefresh)
+            end
+            if child:IsShown() then shown = true end
+        end
+    end
+    return shown
+end
+
 local function refreshQuestieLine(line)
     local id = questieQuestID(line)
     if not (id and line.label and line.expandQuest and line:IsVisible()
@@ -384,6 +404,8 @@ local function refreshQuestieLine(line)
         play.questieLine = line
         line:HookScript("OnHide", function() play.active = false; play:Hide() end)
         line:HookScript("OnShow", requestQuestieRefresh)
+        line.expandQuest:HookScript("OnShow", requestQuestieRefresh)
+        line.expandQuest:HookScript("OnHide", requestQuestieRefresh)
         -- Preserve Questie's hover/fade behavior when the cursor is over play.
         for _, script in ipairs({"OnEnter", "OnLeave"}) do
             play:HookScript(script, function()
@@ -403,8 +425,8 @@ local function refreshQuestieLine(line)
     play:SetFrameLevel(line:GetFrameLevel() + 5)
     play.questID = id
     play:ClearAllPoints()
-    -- expandQuest retains its anchor even when Questie hides the minus on a
-    -- completed quest or replaces it with an item. Keep a fixed column.
+    -- Reserve space only for actual item/minus controls. Completed quests hide
+    -- the minus; anchoring to it would leave a vacant slot before the title.
     local _, size = line.label:GetFont()
     size = size or 14
     local iconSize = math.max(12, size + 4)
@@ -415,7 +437,13 @@ local function refreshQuestieLine(line)
         play.ProgressGlow:SetSize(iconSize * 1.4, iconSize * 1.4)
         play.ProgressAnts:SetSize(iconSize * 1.4 * 0.85, iconSize * 1.4 * 0.85)
     end
-    play:SetPoint("RIGHT", line.expandQuest, "TOPLEFT", -math.max(2, size * 3 / 14), -size / 2)
+    local anchor = line.label
+    if questieHasItem(line, id) then
+        anchor = line
+    elseif line.expandQuest:IsShown() then
+        anchor = line.expandQuest
+    end
+    play:SetPoint("RIGHT", anchor, "TOPLEFT", -math.max(2, size * 3 / 14), -size / 2)
     if scroll then
         local top, bottom = scroll:GetTop(), scroll:GetBottom()
         local y = line.label:GetTop()

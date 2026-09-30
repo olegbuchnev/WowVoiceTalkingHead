@@ -1,6 +1,10 @@
 local WV = WowVoice
 local panel, head = frames.WowVoiceOptionsPanel, frames.WowVoiceTalkingHead
 local slider, input = panel.ScaleSlider, panel.ScaleInput
+local function toggleFrames()
+    panel.LockFrames:SetChecked(WV:IsWindowsUnlocked())
+    panel.LockFrames.scripts.OnClick(panel.LockFrames)
+end
 local oldEnum = Enum
 Enum = { FontStringScaleAnimationMode = { Vertex = 1 } }
 panel:Show()
@@ -29,6 +33,9 @@ local played, stopped = #plays, #stops
 -- An automatic slider preview starts fading on release, without a two-second hold.
 slider.scripts.OnMouseDown(slider, 'LeftButton')
 slider:SetValue(112.3); head.scripts.OnUpdate(head)
+head.scripts.OnDragStart()
+assert(not head.draggingPosition and not frames.WowVoiceTalkingHeadAnchor.moving,
+    'a scale preview cannot move a frame while the common lock is checked')
 advance(4); opaque()
 slider.scripts.OnMouseUp(slider, 'LeftButton')
 advance(0.5); fading()
@@ -60,7 +67,7 @@ assert(reloads == 0, 'reviving an automatic preview must not reload its portrait
 slider.scripts.OnMouseUp(slider, 'LeftButton')
 advance(0.5); fading()
 -- Pressing Test during the fade pins the panel without reloading it.
-panel.Buttons.test.scripts.OnClick()
+toggleFrames()
 advance(4); opaque()
 assert(reloads == 0)
 head.Model.SetUnit = setUnit
@@ -69,11 +76,11 @@ slider.scripts.OnMouseDown(slider, 'LeftButton')
 slider:SetValue(102); head.scripts.OnUpdate(head)
 slider.scripts.OnMouseUp(slider, 'LeftButton')
 advance(4); opaque()
-panel.Buttons.test.scripts.OnClick(); assert(not head:IsShown())
+toggleFrames(); assert(not head:IsShown())
 -- Explicit Test opened from idle also remains visible after all setting changes.
-panel.Buttons.test.scripts.OnClick()
+toggleFrames()
 scale(92); position(10, 20); advance(4); opaque()
-panel.Buttons.test.scripts.OnClick(); assert(not head:IsShown())
+toggleFrames(); assert(not head:IsShown())
 -- Invalid input cannot create a preview, and page close cancels pending expiry.
 scale(999); assert(not head:IsShown())
 position('wrong', 5); assert(not head:IsShown())

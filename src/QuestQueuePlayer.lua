@@ -11,9 +11,11 @@ local HIDE_DURATION = 0.25
 local MIN_HEIGHT, MAX_HEIGHT = 280, 600
 local TILE_GAP, TILE_PADDING, TILE_INSET = 8, 6, 8
 local PANEL_RIGHT = 12
+local SCROLL_TOP = 28
 local refreshScrollLayout
 local MAX_EDGE_TRIM = 24
 local PREVIEW_INTERVAL = 6
+local AUTO_PREVIEW_FADE = 1
 local SNAP_ENTER, SNAP_LEAVE = 10, 16
 local previewPool
 
@@ -72,6 +74,11 @@ local function newPreview()
         return count
     end
     function preview:CanSelect(record) return record ~= self.current end
+    function preview:Waiting()
+        for _, group in ipairs(self.groups) do
+            for _, record in ipairs(group.records) do if record ~= self.current then return record end end
+        end
+    end
     function preview:CanPlayNext(record)
         local nextRecord = self.groups[1] and (self.groups[1].records[2]
             or self.groups[2] and self.groups[2].records[1])
@@ -284,17 +291,33 @@ local function button(parent, label, width, callback)
         local r, g, blue = 0.78, 0.68, 0.44
         if hovered then r, g, blue = 1, 0.85, 0.4 end
         if pressed then r, g, blue = 0.65, 0.55, 0.3 end
+        if not b:IsEnabled() then r, g, blue = 0.39, 0.34, 0.22 end
         b.Label:SetTextColor(r, g, blue)
         b.Underline:SetColorTexture(r, g, blue, hovered and 0.85 or 0.5)
+        for _, part in ipairs(b.ColorParts or {}) do part:SetVertexColor(r, g, blue, 1) end
     end
-    b:SetScript("OnEnter", function(self) self.hovered = true; appearance(true) end)
-    b:SetScript("OnLeave", function(self) self.hovered = false; appearance(false) end)
-    b:SetScript("OnHide", function(self) self.hovered = false; appearance(false) end)
-    b:SetScript("OnMouseDown", function(self) appearance(self.hovered, true) end)
-    b:SetScript("OnMouseUp", function(self) appearance(self.hovered) end)
+    b:SetScript("OnEnter", function(self) self.hovered = true; self:RefreshAppearance() end)
+    b:SetScript("OnLeave", function(self) self.hovered = false; self:RefreshAppearance() end)
+    b:SetScript("OnHide", function(self) self.hovered, self.pressed = false, false; self:RefreshAppearance() end)
+    b:SetScript("OnMouseDown", function(self) self.pressed = true; self:RefreshAppearance() end)
+    b:SetScript("OnMouseUp", function(self) self.pressed = false; self:RefreshAppearance() end)
     b:SetScript("OnClick", callback)
+    b.RefreshAppearance = function(self) appearance(self.hovered or self.Check and self.Check.hovered, self.pressed) end
     appearance(false)
     return b
+end
+
+local function refreshControls(view, editing)
+    local b = controls.Autoplay
+    b.Check:SetChecked(not view.paused)
+    b.Check.Mark:SetShown(not view.paused)
+    b:SetEnabled(not editing)
+    b.Check:SetEnabled(not editing)
+    b:RefreshAppearance()
+    controls.Next:SetEnabled(not editing and view:Waiting() ~= nil)
+    controls.Clear:SetEnabled(not editing)
+    controls.Next:RefreshAppearance()
+    controls.Clear:RefreshAppearance()
 end
 
 local function fitTitle(label, value, availableWidth)
@@ -400,13 +423,12 @@ local function visibleContentHeight()
 end
 
 local function layoutViewport(width, height, contentHeight)
-    if player.editing then height = WV:GetQuestQueueHeight() - 46 end
-    -- Keep the footer at the untrimmed edge. Only the scroll viewport adapts
-    -- to tile boundaries, so scrolling never moves the Clear all click target.
-    local panelHeight = height + 46
+    if player.preview then height = WV:GetQuestQueueHeight() - SCROLL_TOP end
+    -- Controls stay at the fixed top edge while the scroll viewport adapts
+    -- to tile boundaries and the remaining queue gets shorter.
     -- Trim small fragments at the bottom to the last complete giver tile.
     -- The configured maximum stays a ceiling; large tiles still scroll normally.
-    if not player.fading and contentHeight > height then
+    if not player.preview and not player.fading and contentHeight > height then
         local viewOffset = browsing and scrollAnchor and scrollAnchor.frame.viewY - scrollAnchor.screenY or offset
         viewOffset = math.max(0, math.min(viewOffset, contentHeight - height))
         local boundary = viewOffset + height
@@ -421,11 +443,15 @@ local function layoutViewport(width, height, contentHeight)
             height = lastBottom - viewOffset
         end
     end
-    player:SetHeight(panelHeight)
+    -- The viewport's bottom is the visible panel bottom, including after trimming.
+    player:SetHeight(height + SCROLL_TOP)
     scroll:SetSize(width - 36, height)
     content:SetSize(width - 36, contentHeight)
     updateTiles()
-    controls:SetWidth(width - 20)
+    controls:SetWidth(width - 36)
+    controls.Autoplay:SetWidth(math.ceil(controls.Autoplay.Label:GetStringWidth()) + 28)
+    controls.Next:SetWidth(math.max(72, math.ceil(controls.Next.Label:GetStringWidth()) + 24))
+    controls.Clear:SetWidth(math.ceil(controls.Clear.Label:GetStringWidth()) + 8)
     extent = math.max(0, contentHeight - height)
     updating = true
     bar:SetHeight(math.max(1, height))
@@ -437,9 +463,9 @@ local function layoutViewport(width, height, contentHeight)
 end
 
 refreshScrollLayout = function()
-    if not player or not player:IsShown() or player.editing or player.fading then return end
+    if not player or not player:IsShown() or player.preview or player.fading then return end
     local height = visibleContentHeight()
-    layoutViewport(player:GetWidth(), math.min(WV:GetQuestQueueHeight() - 46, height), height)
+    layoutViewport(player:GetWidth(), math.min(WV:GetQuestQueueHeight() - SCROLL_TOP, height), height)
 end
 
 local function header(index)
@@ -469,6 +495,23 @@ local function setPortrait(h, speaker)
     end
 end
 
+local function captureRowPress(control, record)
+    control.cancelledPress = player.preview ~= nil
+    control.pressedRecord = not control.cancelledPress and record or nil
+end
+
+local function cancelRowPress(control)
+    if control.pressedRecord then control.cancelledPress = true end
+    control.pressedRecord = nil
+end
+
+local function takeRowPress(control, currentRecord)
+    local cancelled, record = control.cancelledPress, control.pressedRecord or currentRecord
+    control.cancelledPress, control.pressedRecord = nil, nil
+    if cancelled or player.preview or not record or record.context.queueOwner == "preview" then return end
+    return record
+end
+
 local function row(index)
     if rows[index] then return rows[index] end
     local r = CreateFrame("Button", nil, content)
@@ -479,13 +522,12 @@ local function row(index)
     r.Title = text(r)
     r.Title:SetPoint("LEFT", r, "LEFT", 64, 0)
     r.Remove = removeButton(r, function(self)
-        if player.editing then return end
-        local record = self.target or r.record
-        self.target = nil
-        Q:DeleteQuest(record)
+        local record = takeRowPress(self, r.record)
+        if record then Q:DeleteQuest(record) end
     end)
     r.Remove:SetPoint("LEFT", r, "LEFT", 0, 0)
-    r.Remove:SetScript("OnMouseDown", function(self) self.target = r.record end)
+    r.Remove:SetScript("OnMouseDown", function(self) captureRowPress(self, r.record) end)
+    r.Remove:HookScript("OnHide", cancelRowPress)
     r.Bars = {}
     for i = 1, 3 do
         local t = r:CreateTexture(nil, "OVERLAY")
@@ -496,14 +538,12 @@ local function row(index)
         r.Bars[i] = t
     end
     r.Next = button(r, "Следующим", 84, function(self)
-        if player.editing then return end
-        local record = self.pressedRecord or r.record
-        self.pressedRecord = nil
+        local record = takeRowPress(self, r.record)
         if Q:CanPlayNext(record) then Q:PlayNext(record) end
     end)
     r.Next:SetPoint("LEFT", r.Title, "RIGHT", 6, 0)
-    r.Next:HookScript("OnMouseDown", function(self) self.pressedRecord = r.record end)
-    r.Next:HookScript("OnHide", function(self) self.pressedRecord = nil end)
+    r.Next:HookScript("OnMouseDown", function(self) captureRowPress(self, r.record) end)
+    r.Next:HookScript("OnHide", cancelRowPress)
     r.Play = CreateFrame("Button", nil, r)
     r.Play:SetSize(22, 22)
     r.Play:SetPoint("LEFT", r, "LEFT", 20, 0)
@@ -514,20 +554,17 @@ local function row(index)
     r.Play:SetAlpha(0.7)
     r.Play:SetScript("OnEnter", function(self) self:SetAlpha(1) end)
     r.Play:SetScript("OnLeave", function(self) self:SetAlpha(0.7) end)
-    r.Play:SetScript("OnHide", function(self) self.pressedRecord = nil; self:SetAlpha(0.7) end)
-    r.Play:SetScript("OnMouseDown", function(self) self.pressedRecord = r.record end)
+    r.Play:SetScript("OnHide", function(self) cancelRowPress(self); self:SetAlpha(0.7) end)
+    r.Play:SetScript("OnMouseDown", function(self) captureRowPress(self, r.record) end)
     r.Play:SetScript("OnClick", function(self)
-        if player.editing then return end
-        local record = self.pressedRecord or r.record
-        self.pressedRecord = nil
-        if Q:CanSelect(record) then Q:Start(record) end
+        local record = takeRowPress(self, r.record)
+        if Q:CanSelect(record) then Q:Start(record, true) end
     end)
-    r:SetScript("OnMouseDown", function(self) self.pressedRecord = self.record end)
+    r:SetScript("OnMouseDown", function(self) captureRowPress(self, self.record) end)
+    r:SetScript("OnHide", cancelRowPress)
     r:SetScript("OnClick", function(self)
-        if player.editing then return end
-        local record = self.pressedRecord or self.record
-        self.pressedRecord = nil
-        if Q:CanSelect(record) then Q:Start(record) end
+        local record = takeRowPress(self, self.record)
+        if Q:CanSelect(record) then Q:Start(record, true) end
     end)
     rows[index] = r
     return r
@@ -564,11 +601,11 @@ local function create()
     player.TextMeasure:Hide()
     createBackground()
     scroll = CreateFrame("ScrollFrame", nil, player)
-    scroll:SetPoint("TOPLEFT", player, "TOPLEFT", 24, 0)
+    scroll:SetPoint("TOPLEFT", player, "TOPLEFT", 24, -SCROLL_TOP)
     content = CreateFrame("Frame", nil, scroll)
     scroll:SetScrollChild(content)
     bar = CreateFrame("Slider", "WowVoiceQuestQueueScroll", player)
-    bar:SetPoint("TOPLEFT", player, "TOPLEFT", 0, 0)
+    bar:SetPoint("TOPLEFT", player, "TOPLEFT", 0, -SCROLL_TOP)
     bar:SetOrientation("VERTICAL")
     bar:SetWidth(16)
     bar.Track = bar:CreateTexture(nil, "BACKGROUND")
@@ -593,13 +630,73 @@ local function create()
     bar:EnableMouseWheel(true)
     bar:SetScript("OnMouseWheel", function(_, delta) userScroll(offset - delta * 26) end)
     controls = CreateFrame("Frame", nil, player)
-    controls:SetPoint("BOTTOMLEFT", player, "BOTTOMLEFT", 24, 6)
+    -- The visible toolbar top is also the edit outline and alignment edge.
+    controls:SetPoint("TOPLEFT", player, "TOPLEFT", 24, 0)
     controls:SetSize(400, 24)
-    controls.Clear = button(controls, "Очистить всё", 110, function() if not player.editing then Q:Clear() end end)
-    controls.Clear:SetPoint("LEFT", controls, "LEFT")
+    controls.Background = controls:CreateTexture(nil, "BACKGROUND")
+    controls.Background:SetAllPoints(controls)
+    -- A solid cool tint separates the toolbar from translucent black quest tiles.
+    controls.Background:SetColorTexture(0.10, 0.13, 0.16, 1)
+    local function toggleAutoplay()
+        if not player.preview then WV:SetQueueAutoPlay(Q.paused) end
+    end
+    local autoplay = button(controls, "Автовоспроизведение", 160, toggleAutoplay)
+    controls.Autoplay, player.Autoplay = autoplay, autoplay
+    autoplay.Underline:Hide()
+    autoplay.Label:ClearAllPoints()
+    autoplay.Label:SetPoint("LEFT", autoplay, "LEFT", 24, 0)
+    autoplay.Check = CreateFrame("CheckButton", nil, autoplay)
+    autoplay.Check:SetSize(22, 22)
+    autoplay.Check:SetPoint("LEFT", autoplay, "LEFT")
+    autoplay.ColorParts = {}
+    for _, edge in ipairs({ { 14, 1, 4, 7 }, { 14, 1, 4, -6 }, { 1, 14, 4, 7 }, { 1, 14, 17, 7 } }) do
+        local part = autoplay.Check:CreateTexture(nil, "ARTWORK")
+        part:SetColorTexture(1, 1, 1, 1)
+        part:SetSize(edge[1], edge[2])
+        part:SetPoint("TOPLEFT", autoplay.Check, "LEFT", edge[3], edge[4])
+        autoplay.ColorParts[#autoplay.ColorParts + 1] = part
+    end
+    local mark = autoplay.Check:CreateTexture(nil, "ARTWORK")
+    mark:SetTexture("Interface\\AddOns\\WowVoiceTalkingHead\\Media\\QueueCheck")
+    mark:SetSize(12, 12)
+    mark:SetPoint("CENTER")
+    autoplay.Check.Mark = mark
+    autoplay.ColorParts[#autoplay.ColorParts + 1] = mark
+    autoplay.Check:SetScript("OnClick", toggleAutoplay)
+    autoplay.Check:SetScript("OnEnter", function(self)
+        self.hovered = true
+        autoplay:RefreshAppearance()
+    end)
+    local function clearCheckHover(self)
+        self.hovered = false
+        autoplay:RefreshAppearance()
+    end
+    autoplay.Check:SetScript("OnLeave", clearCheckHover)
+    autoplay.Check:SetScript("OnHide", clearCheckHover)
+    autoplay.Check:SetScript("OnMouseDown", function() autoplay.pressed = true; autoplay:RefreshAppearance() end)
+    autoplay.Check:SetScript("OnMouseUp", function() autoplay.pressed = false; autoplay:RefreshAppearance() end)
+    local nextButton = button(controls, "Далее", 60, function()
+        if not player.preview then Q:Start(Q:Waiting(), true) end
+    end)
+    controls.Next, player.Next = nextButton, nextButton
+    nextButton.Underline:Hide()
+    nextButton:SetPoint("RIGHT", controls, "RIGHT", -8, 0)
+    autoplay:SetPoint("RIGHT", nextButton, "LEFT", -12, 0)
+    nextButton.Label:ClearAllPoints()
+    nextButton.Label:SetPoint("RIGHT", nextButton, "RIGHT", 0, 0)
+    nextButton.Icon = nextButton:CreateTexture(nil, "ARTWORK")
+    nextButton.Icon:SetTexture("Interface\\AddOns\\WowVoiceTalkingHead\\Media\\QueueNext")
+    nextButton.Icon:SetSize(14, 14)
+    nextButton.Icon:SetPoint("RIGHT", nextButton.Label, "LEFT", -6, 0)
+    nextButton.ColorParts = { nextButton.Icon }
+    controls.Clear = button(controls, "Очистить всё", 90, function() if not player.preview then Q:Clear() end end)
+    controls.Clear.Underline:Hide()
+    controls.Clear:SetPoint("LEFT", controls, "LEFT", 8, 0)
+    controls.Clear.Label:ClearAllPoints()
+    controls.Clear.Label:SetPoint("LEFT", controls.Clear, "LEFT", 0, 0)
     local edit = CreateFrame("Frame", nil, player, "BackdropTemplate")
     player.EditOverlay = edit
-    edit:SetPoint("TOPLEFT", bar, "TOPLEFT")
+    edit:SetPoint("TOPLEFT", player, "TOPLEFT")
     -- Tiles start at x=24 and span width-36, ending 12 units before the frame.
     edit:SetPoint("BOTTOMRIGHT", player, "BOTTOMRIGHT", -PANEL_RIGHT, 0)
     edit:SetFrameLevel(player:GetFrameLevel() + 20)
@@ -628,11 +725,19 @@ local function create()
         for _, collection in ipairs({ headers, rows }) do
             for _, frame in ipairs(collection) do frame.motion, frame.layoutKey, frame.viewY = nil, nil, nil end
         end
+        for _, frame in ipairs(rows) do
+            for _, control in ipairs({ frame, frame.Play, frame.Next, frame.Remove }) do cancelRowPress(control) end
+        end
     end)
     player:SetScript("OnUpdate", function(_, dt)
+        if player.autoPreview and player.autoHideAt and GetTime() >= player.autoHideAt then
+            local t = math.min(1, (GetTime() - player.autoHideAt) / AUTO_PREVIEW_FADE)
+            if t == 1 then WV:HideAutoQuestQueuePreview(); return end
+            player:SetAlpha(1 - t * t)
+        end
         updateDrag()
         if player.editing and WV.RefreshQuestQueuePositionOptions then WV:RefreshQuestQueuePositionOptions() end
-        local view = player.editing and player.preview or Q
+        local view = player.preview or Q
         local moved = false
         for _, collection in ipairs({ headers, rows }) do
             for _, frame in ipairs(collection) do
@@ -648,12 +753,12 @@ local function create()
         end
         if moved and not player.fading then
             local height = visibleContentHeight()
-            layoutViewport(player:GetWidth(), math.min(WV:GetQuestQueueHeight() - 46, height), height)
+            layoutViewport(player:GetWidth(), math.min(WV:GetQuestQueueHeight() - SCROLL_TOP, height), height)
         end
         if player.fading then
             player.fading.elapsed = math.min(HIDE_DURATION, player.fading.elapsed + dt)
             local height = fadingHeight(player.fading)
-            layoutViewport(player.fading.width, height - 46, visibleContentHeight())
+            layoutViewport(player.fading.width, height - SCROLL_TOP, visibleContentHeight())
             local t = player.fading.elapsed / HIDE_DURATION
             player:SetAlpha(1 - t * t)
             if t == 1 then player:Hide(); return end
@@ -691,14 +796,16 @@ end
 function WV:RefreshQuestQueuePlayer(layoutMode)
     local head = WowVoiceTalkingHead
     local editing = player and player.editing
-    local view = editing and player.preview or Q
+    local previewing = player and player.preview ~= nil
+    local view = previewing and player.preview or Q
     local count = view:Count()
-    if not view.enabled or not head or (count == 0 and not editing) then
+    if not view.enabled or not head or (count == 0 and not previewing) then
         if player then player:Hide() end
         return
     end
     local startingFade = false
-    if count == 1 and not view.paused and not editing then
+    -- A sole playing line is represented by the head; an idle waiting line needs controls.
+    if count == 1 and view.current and view.current.status == "playing" and not previewing then
         if not player or not player:IsShown() then return end
         if not player.fading then
             player.fading = { elapsed = 0, height = player:GetHeight() }
@@ -713,8 +820,9 @@ function WV:RefreshQuestQueuePlayer(layoutMode)
     for _, part in ipairs(player.BackgroundParts) do part.texture:Hide() end
     player.EditOverlay:SetShown(editing == true)
     scroll:Show(); controls:Show()
-    if editing then
-        self:RefreshPlaylistHeadPreview()
+    refreshControls(view, previewing)
+    if previewing then
+        if editing then self:RefreshPlaylistHeadPreview() end
         local portraitGroups = {}
         for _, group in ipairs(Q.groups) do portraitGroups[#portraitGroups + 1] = group end
         for _, group in ipairs(view.groups) do portraitGroups[#portraitGroups + 1] = group end
@@ -729,7 +837,7 @@ function WV:RefreshQuestQueuePlayer(layoutMode)
     local pauseChanged = player.wasPaused ~= view.paused
     player.wasPaused = view.paused
     -- Avoid recycling a row underneath the pointer while a recording ends.
-    if not editing and MouseIsOver and MouseIsOver(scroll) and not Q.forceRefresh and not pauseChanged and not startingFade then return end
+    if not previewing and MouseIsOver and MouseIsOver(scroll) and not Q.forceRefresh and not pauseChanged and not startingFade then return end
     layoutMode = player.pendingLayoutMode
     player.pendingLayoutMode = nil
     local previous, headerOccurrences = {}, {}
@@ -807,7 +915,10 @@ function WV:RefreshQuestQueuePlayer(layoutMode)
             for _, t in ipairs(r.Bars) do t:SetShown(record == view.current and record.status == "playing") end
             r.Play:SetShown(record ~= view.current and not blocked)
             r.Next:SetShown(canPlayNext)
-            r.Next:SetEnabled(canPlayNext)
+            r:SetEnabled(not previewing)
+            r.Play:SetEnabled(not previewing)
+            r.Remove:SetEnabled(not previewing)
+            r.Next:SetEnabled(not previewing and canPlayNext)
             r:Show()
             y = y + rowHeight
         end
@@ -818,11 +929,11 @@ function WV:RefreshQuestQueuePlayer(layoutMode)
     for i = used + 1, #rows do rows[i].record = nil; rows[i].motion = nil; rows[i]:Hide() end
     player.contentHeight = y
     local contentHeight = visibleContentHeight()
-    local height = math.min(self:GetQuestQueueHeight() - 46, contentHeight)
+    local height = math.min(self:GetQuestQueueHeight() - SCROLL_TOP, contentHeight)
     -- Shrink the viewport and background alongside the last row's upward motion.
     if player.fading then
-        player.fading.targetHeight, player.fading.width = math.min(self:GetQuestQueueHeight() - 46, y) + 46, width
-        height = fadingHeight(player.fading) - 46
+        player.fading.targetHeight, player.fading.width = math.min(self:GetQuestQueueHeight() - SCROLL_TOP, y) + SCROLL_TOP, width
+        height = fadingHeight(player.fading) - SCROLL_TOP
     end
     anchorScroll(previous)
     layoutViewport(width, height, contentHeight)
@@ -895,25 +1006,55 @@ function WV:SetQuestQueueHeight(height)
     return true
 end
 
-function WV:PreviewQuestQueue(show)
+function WV:PreviewQuestQueue(show, allowDisabled)
     if show then
-        if WowVoiceDB and WowVoiceDB.autoPlay == false then return end
+        if not allowDisabled and WowVoiceDB and WowVoiceDB.autoPlay == false then return end
         self:GetHeadSettings()
         create()
-        if not player.editing then
+        if not player.preview then
             player:Hide()
             player.preview = newPreview()
         end
+        player.autoPreview, player.autoHideAt = nil, nil
+        player:SetAlpha(1)
         player.editing = true
         self:SetPlaylistHeadEditing(true)
-    elseif player and player.editing then
+    elseif player and (player.editing or player.autoPreview) then
         finishDrag()
+        local wasEditing = player.editing
         player.editing = nil
-        self:SetPlaylistHeadEditing(false)
+        player.autoPreview, player.autoHideAt = nil, nil
+        if wasEditing then self:SetPlaylistHeadEditing(false) end
         player.preview = nil
         player:Hide()
         self:PrepareQuestQueuePortraits(Q.groups)
     else return end
+    self:RefreshQuestQueuePlayer("instant")
+end
+
+-- Geometry previews share the samples, but never enable frame movement.
+function WV:EnsureQuestQueuePreview()
+    self:GetHeadSettings()
+    create()
+    if player.editing then return end
+    if not player.autoPreview then
+        player:Hide()
+        player.preview = newPreview()
+    end
+    player.autoPreview, player.autoHideAt = true, nil
+    player:SetAlpha(1)
+    self:RefreshQuestQueuePlayer("instant")
+end
+
+function WV:FinishAutoQuestQueuePreview(delay)
+    if player and player.autoPreview then player.autoHideAt = GetTime() + delay end
+end
+
+function WV:HideAutoQuestQueuePreview()
+    if not (player and player.autoPreview) then return end
+    player.autoPreview, player.autoHideAt, player.preview = nil, nil, nil
+    player:Hide()
+    self:PrepareQuestQueuePortraits(Q.groups)
     self:RefreshQuestQueuePlayer("instant")
 end
 

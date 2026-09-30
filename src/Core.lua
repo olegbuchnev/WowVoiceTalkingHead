@@ -22,6 +22,7 @@ local defaults = {
     enabled  = true,
     autoPlay = true, -- Master switch; manual replay stays available
     queueDescriptionsOnly = false,
+    queueAutoPlay = true, -- Remember continuous playback; fill only when absent.
     autoPlayAccept = true, -- Automatically play quest descriptions unless opted out
     autoPlayTurnIn = true, -- Both progress dialogue and the final quest reward dialogue
     channel  = "auto",   -- auto: Master with background sound, Music without it

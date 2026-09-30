@@ -194,10 +194,10 @@ finish(861)
 assert(WowVoiceDB.listenedQuests[playerGUID][90902], 'replaced playback still counts')
 print('PASS: manual and automatic descriptions share cooldown; duplicate events, failures and turn-in lines do not renew it')
 
--- Actual options Test button previews every visible arrow, even heard quests
+-- The explicit head-preview API previews every visible arrow, even heard quests
 -- without changing listening history.
 local played, stopped=#plays, #stops
-panel.Buttons.test.scripts.OnClick()
+WV:ToggleHeadPreview()
 advance(0.6)
 assert(play.ProgressGlow.visible and other.ProgressGlow.visible)
 assert(WowVoiceDB.listenedQuests[playerGUID][179])
@@ -208,27 +208,27 @@ assert(play.ProgressGlow.visible and other.ProgressGlow.visible, 'preview stays 
 advance(30.8)
 assert(play.ProgressGlow.visible and play.scripts.OnUpdate, 'preview continues beyond the normal 10-second limit')
 assert(#plays==played and #stops==stopped, 'preview is silent')
-panel.Buttons.test.scripts.OnClick()
+WV:ToggleHeadPreview()
 assert(not play.ProgressGlow.visible and not play.scripts.OnUpdate)
-panel.Buttons.test.scripts.OnClick()
+WV:ToggleHeadPreview()
 panel:Hide()
 assert(not play.ProgressGlow.visible and not other.scripts.OnUpdate, 'closing options stops preview')
 panel:Show()
-panel.Buttons.test.scripts.OnClick()
+WV:ToggleHeadPreview()
 assert(WV:ReplayQuest(179))
 assert(not play.ProgressGlow.visible and not other.scripts.OnUpdate, 'real audio exits preview')
 WV:Silence()
-panel.Buttons.test.scripts.OnClick()
+WV:ToggleHeadPreview()
 frames.WowVoiceTalkingHead.Close.scripts.OnClick()
 assert(not play.ProgressGlow.visible and not other.scripts.OnUpdate, 'portrait close exits preview')
 assert(WowVoiceDB.trackerProgressPulse==nil, 'test must not recreate the removed setting')
-print('PASS: options test keeps all active arrows glowing; close, toggle and real playback clean up')
+print('PASS: explicit head preview keeps all active arrows glowing; close, toggle and real playback clean up')
 
 -- Scale previews must not light the native quest buttons, from idle or Test.
 for _, explicitTest in ipairs({false, true}) do
     for _, numeric in ipairs({false, true}) do
         WV:HideHeadPreview()
-        if explicitTest then panel.Buttons.test.scripts.OnClick(); assert(play.ProgressGlow.visible) end
+        if explicitTest then WV:ToggleHeadPreview(); assert(play.ProgressGlow.visible) end
         if numeric then
             panel.ScaleInput:SetText('110')
             panel.ScaleInput.scripts.OnEnterPressed(panel.ScaleInput)
@@ -244,7 +244,7 @@ for _, explicitTest in ipairs({false, true}) do
 end
 -- Explicit Test still enables the demonstration when pinning an automatic preview.
 panel.ScaleInput:SetText('105'); panel.ScaleInput.scripts.OnEnterPressed(panel.ScaleInput)
-panel.Buttons.test.scripts.OnClick()
+WV:ToggleHeadPreview()
 assert(play.ProgressGlow.visible)
 WV:HideHeadPreview()
 

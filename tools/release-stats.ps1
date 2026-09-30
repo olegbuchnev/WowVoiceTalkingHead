@@ -36,10 +36,10 @@ try {
         # Fetch assets separately so large releases are also paginated completely.
         $assets = @(Get-Pages "/releases/$($release.id)/assets" |
             Where-Object { $_.state -eq 'uploaded' -and $_.name -match '\.zip$' })
-        $counts = @{ full = $null; addon = $null; lite = $null }
+        $counts = @{ full = $null; addon = $null }
         foreach ($asset in $assets) {
             $kind = if ($asset.name -match '^WowVoice(?:TalkingHead)?-.+-addon-only\.zip$') { 'addon' }
-                elseif ($asset.name -match '^WowVoice(?:TalkingHead)?-.+-lite\.zip$') { 'lite' }
+                elseif ($asset.name -match '^WowVoice(?:TalkingHead)?-.+-lite\.zip$') { continue }
                 elseif ($asset.name -match '^WowVoice(?:TalkingHead)?-.+\.zip$') { 'full' }
                 else { continue }
             $counts[$kind] = [long]$counts[$kind] + [long]$asset.download_count
@@ -51,8 +51,8 @@ try {
         $rows += [pscustomobject]@{
             Release = $release.tag_name
             PublishedUTC = ([DateTimeOffset]::Parse($release.published_at)).UtcDateTime.ToString('yyyy-MM-dd')
-            Full = $counts.full; AddonOnly = $counts.addon; Lite = $counts.lite
-            Total = [long]$counts.full + [long]$counts.addon + [long]$counts.lite
+            Full = $counts.full; AddonOnly = $counts.addon
+            Total = [long]$counts.full + [long]$counts.addon
         }
     }
     $collectedAt = [DateTimeOffset]::UtcNow
@@ -61,17 +61,16 @@ try {
     $displayRows = @($rows | Select-Object Release, @{Name = 'Published'; Expression = {
         [DateTime]::ParseExact($_.PublishedUTC, 'yyyy-MM-dd',
             [Globalization.CultureInfo]::InvariantCulture).ToString('d MMMM yyyy', $dateCulture)
-    }}, Full, AddonOnly, Lite, Total)
+    }}, Full, AddonOnly, Total)
     $totalFull = [long](($rows | Measure-Object Full -Sum).Sum)
     $totalAddon = [long](($rows | Measure-Object AddonOnly -Sum).Sum)
-    $totalLite = [long](($rows | Measure-Object Lite -Sum).Sum)
-    $total = $totalFull + $totalAddon + $totalLite
+    $total = $totalFull + $totalAddon
     $tableRows = foreach ($row in $displayRows) {
         '<tr><th scope="row">' + (Escape-Html $row.Release) + '</th><td>' + $row.Published +
             '</td><td>' + (Count-Text $row.Full) + '</td><td>' + (Count-Text $row.AddonOnly) +
-            '</td><td>' + (Count-Text $row.Lite) + '</td><td>' + (Count-Text $row.Total) + '</td></tr>'
+            '</td><td>' + (Count-Text $row.Total) + '</td></tr>'
     }
-    if (-not $rows.Count) { $tableRows = '<tr><td colspan="6">Опубликованных релизов пока нет.</td></tr>' }
+    if (-not $rows.Count) { $tableRows = '<tr><td colspan="5">Опубликованных релизов пока нет.</td></tr>' }
     $html = @"
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -87,13 +86,13 @@ a{color:#a7e0c6}code{background:#29372f;padding:2px 6px;border-radius:4px}.notes
 </style></head><body><main>
 <h1>Скачивания WowVoice TalkingHead</h1>
 <p class="muted">Локальный отчёт · GitHub Releases · обновлён $collectedDisplay</p>
-<div class="cards"><div class="card">Всего ZIP<strong>$(Count-Text $total)</strong></div><div class="card">Полный комплект<strong>$(Count-Text $totalFull)</strong></div><div class="card">Только аддон<strong>$(Count-Text $totalAddon)</strong></div><div class="card">Облегчённый комплект<strong>$(Count-Text $totalLite)</strong></div></div>
-<div class="table"><table><thead><tr><th>Релиз</th><th title="Дата публикации по UTC">Дата релиза</th><th>Полный</th><th>Только аддон</th><th>Облегчённый</th><th>Всего</th></tr></thead>
-<tbody>$($tableRows -join "`n")</tbody><tfoot><tr><th colspan="2">Итого</th><td>$(Count-Text $totalFull)</td><td>$(Count-Text $totalAddon)</td><td>$(Count-Text $totalLite)</td><td>$(Count-Text $total)</td></tr></tfoot></table></div>
+<div class="cards"><div class="card">Всего ZIP<strong>$(Count-Text $total)</strong></div><div class="card">Полный комплект<strong>$(Count-Text $totalFull)</strong></div><div class="card">Только аддон<strong>$(Count-Text $totalAddon)</strong></div></div>
+<div class="table"><table><thead><tr><th>Релиз</th><th title="Дата публикации по UTC">Дата релиза</th><th>Полный</th><th>Только аддон</th><th>Всего</th></tr></thead>
+<tbody>$($tableRows -join "`n")</tbody><tfoot><tr><th colspan="2">Итого</th><td>$(Count-Text $totalFull)</td><td>$(Count-Text $totalAddon)</td><td>$(Count-Text $total)</td></tr></tfoot></table></div>
 <p><a href="downloads.csv" download>Скачать таблицу CSV для Excel</a></p>
 <p>Для обновления снова запусти <code>stats.cmd</code>. Эта страница — сохранённый снимок, перезагрузка браузера не запрашивает новые данные.</p>
 <div class="notes"><p>Счётчики включают повторные и проверочные скачивания. Это не число уникальных пользователей и не отдельный счётчик нажатий на сайте. Скачивания с pCloud сюда не входят.</p>
-<p>Учитываются полные, addon-only и облегчённые архивы WowVoice, прикреплённые к существующим опубликованным релизам, включая предварительные. Другие файлы и автоматически созданные GitHub архивы исходников исключены. Удалённые или заменённые файлы не сохраняют прежний счётчик в этом отчёте. «—» означает, что архива такого типа в релизе нет.</p>
+<p>Учитываются полные и addon-only архивы WowVoice, прикреплённые к существующим опубликованным релизам, включая предварительные. Другие файлы, исторические lite-архивы и автоматически созданные GitHub архивы исходников исключены. Удалённые или заменённые файлы не сохраняют прежний счётчик в этом отчёте. «—» означает, что архива такого типа в релизе нет.</p>
 <p>Отчёт хранится только на этом компьютере и не публикуется. Исходные счётчики публичного репозитория доступны через GitHub API.</p></div>
 </main></body></html>
 "@

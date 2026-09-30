@@ -127,6 +127,7 @@ for _, p in ipairs(points) do
     -- Moving in test mode must retain the choice and persist the new offsets.
     local storedBeforeMove = WowVoiceDB.headPosition
     panel.PositionX:SetFocus(); panel.PositionX:SetText('999')
+    WV:SetWindowsUnlocked(true)
     head.scripts.OnDragStart()
     assert(head.draggingPosition and not panel.editingPosition and not panel.PositionX.focus)
     for _, center in ipairs({{45, -60}, {-110, 93}}) do
@@ -153,6 +154,7 @@ for _, p in ipairs(points) do
     local oldCursor = GetCursorPosition
     local cursorX, cursorY = 700, 500
     GetCursorPosition = function() return cursorX, cursorY end
+    WV:SetWindowsUnlocked(true)
     head.scripts.OnDragStart()
     cursorX, cursorY = 737.5, 477.5 -- +50, -30 UI units at UI scale 0.75.
     head.scripts.OnUpdate(head)
@@ -249,6 +251,7 @@ for _, bad in ipairs({math.huge, -math.huge, 'wrong'}) do
 end
 assert(not WV:SetHeadAnchorPosition(0/0, 1))
 -- Choosing a point during real playback leaves sound/model identity untouched.
+WV:SetWindowsUnlocked(false)
 WV:HideHeadPreview()
 assert(WV:ReplayQuest(179))
 local played, stopped, model = #plays, #stops, head.Model:GetDisplayInfo()
@@ -294,6 +297,7 @@ for _, scale in ipairs({0.5, 1, 1.5}) do
     near(anchor.clampRectInsets[3], -borderTop, 'native dragging must use the same top edge')
     assert(anchor.clampRectInsets[4] == 0, 'the bottom bound must keep the progress bar on screen')
     WV:EnsureHeadPreview()
+    WV:SetWindowsUnlocked(true)
     head.scripts.OnDragStart()
     head.scripts.OnDragStop()
     near(WV:GetHeadSettings().y, atTop.y, 'releasing the mouse must not pull the head down')
@@ -308,7 +312,8 @@ for _, scale in ipairs({0.5, 1, 1.5}) do
             'the yellow side border must reach the screen edge')
         near(anchor.clampRectInsets[side == -1 and 1 or 2], -side*inset*scale,
             'native dragging must use the same side edge')
-        head.scripts.OnDragStart()
+        WV:SetWindowsUnlocked(true)
+    head.scripts.OnDragStart()
         head.scripts.OnDragStop()
         near(WV:GetHeadSettings().x, atSide.x, 'release must retain the side edge position')
         WV:HideHeadPreview()
@@ -319,6 +324,7 @@ end
 UIParent.scale = 1
 frames.WowVoiceHeadScaleEvents.scripts.OnEvent()
 WV:ResetHeadSettings()
+WV:SetWindowsUnlocked(false)
 print('PASS: nine anchor points, exclusive selection, fixed pivots, fractional drag/release, numeric input, cancellation, screen resize, movement, bounds, reset and uninterrupted playback')
 print('PASS: common screen-center origin for all anchor coordinates, zero placement, decimal commas, atomic entry, Tab, Escape, drafts, validation, clamped readback and preview')
 print('PASS: all nine pivots finish parent geometry before starting the vertex text transform')

@@ -9,6 +9,7 @@ for (const scenario of ['catquest-speakers-scenarios.lua','audio-sources-scenari
         if(s!==lua.LUA_OK) throw Error(to_jsstring(lua.lua_tostring(L,-1)));
     }
     for (const file of ['mock.lua','journal-mock.lua','portrait-mock.lua']) run(path.join(__dirname,file));
+    if (scenario === 'retail-head-scenarios.lua') run(path.join(__dirname, 'queue-lab-mock.lua'));
     const toc=fs.readFileSync(path.join(root,'WowVoiceTalkingHead.toc'),'utf8');
     for (const file of toc.split(/\r?\n/).filter(s=>s.endsWith('.lua'))) run(path.join(root,file));
     run(path.join(__dirname, "catquest-pack-mock.lua"));

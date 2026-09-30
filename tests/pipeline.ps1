@@ -283,10 +283,12 @@ try {
   Write-Host 'PASS: addon-only build without audio sources, runtime hashes, update guide, validation, failed-build preservation and independent archive replacement.'
   # Exercise environment-based deployment only inside the temporary fixture.
   $previousAddonsEnvironment = $env:WOWVOICE_FOREVER_BETA_ADDONS
+  $previousQueueLabEnvironment = $env:WOWVOICE_QUEUE_LAB
   $fixtureConfig = Join-Path $fixture 'config'
   New-Item -ItemType Directory -Path $fixtureConfig -Force | Out-Null
   $fixtureEnvironment = Join-Path $fixtureConfig 'build.env.local.ps1'
   try {
+    $env:WOWVOICE_QUEUE_LAB = $null
     $env:WOWVOICE_FOREVER_BETA_ADDONS = $null
     Assert-Fails { & $build -Task DeployAddon } 'Deployment accepted missing environment configuration.'
     $env:WOWVOICE_FOREVER_BETA_ADDONS = $retail
@@ -303,6 +305,26 @@ try {
     Assert-True ($env:WOWVOICE_FOREVER_BETA_ADDONS -eq $addons) 'Local file did not override inherited environment.'
     Assert-True (Test-Path -LiteralPath (Join-Path $voice 'VoiceComparison.lua')) 'Environment deployment missed public voice catalogue.'
 
+    # Local opt-in survives ordinary and repeated deployments without a flag.
+    '$env:WOWVOICE_QUEUE_LAB = ''1''' | Add-Content -LiteralPath $fixtureEnvironment -Encoding UTF8
+    foreach ($iteration in 1..2) {
+      & $build -Task DeployAddon
+      foreach ($toc in Get-ChildItem -LiteralPath $voice -Filter '*.toc') {
+        $entries = @(Get-Content -LiteralPath $toc.FullName | Where-Object { $_ -like 'QueueLab\*' })
+        Assert-True (($entries -join ',') -eq 'QueueLab\State.lua,QueueLab\Runtime.lua,QueueLab\Window.lua') 'Local QueueLab default missing or duplicated.'
+      }
+      Assert-True (Test-Path -LiteralPath (Join-Path $voice 'QueueLab\Window.lua')) 'Local QueueLab default missed harness files.'
+    }
+    & $build -Task PackageAddon
+    $archive = [IO.Compression.ZipFile]::OpenRead($updateZip)
+    try {
+      Assert-True (@($archive.Entries | Where-Object { $_.FullName -match 'QueueLab|queue-lab' }).Count -eq 0) 'Local QueueLab default leaked into a release archive.'
+    } finally { $archive.Dispose() }
+    & $build -Task DeployAddon -QueueLab:$false
+    Assert-True (-not (Test-Path -LiteralPath (Join-Path $voice 'QueueLab'))) 'Explicit QueueLab opt-out did not override local default.'
+    & $build -Task DeployAddon -ConfigPath $config
+    Assert-True (-not (Test-Path -LiteralPath (Join-Path $voice 'QueueLab'))) 'Explicit configuration used the inherited QueueLab preference.'
+
     # Non-deploy tasks and explicit PSD1 configuration must not execute this file.
     "throw 'Local environment must not be loaded here.'" | Set-Content -LiteralPath $fixtureEnvironment
     & $build -Task Validate
@@ -312,8 +334,9 @@ try {
     Assert-True (@(Get-ChildItem -LiteralPath $retail -Force).Count -eq 0) 'Environment tests wrote to rejected destination.'
   } finally {
     $env:WOWVOICE_FOREVER_BETA_ADDONS = $previousAddonsEnvironment
+    $env:WOWVOICE_QUEUE_LAB = $previousQueueLabEnvironment
   }
-  Write-Host 'PASS: inherited and local environment deployment, missing/unsafe paths rejected, explicit config bypass, non-deploy tasks independent.'
+  Write-Host 'PASS: inherited/local deployment, persistent QueueLab opt-in, explicit opt-out/config bypass, release exclusion and independent non-deploy tasks.'
 
   # QueueLab is a Git-managed dev module, injected only into explicitly opted-in deployments.
   foreach ($iteration in 1..2) {

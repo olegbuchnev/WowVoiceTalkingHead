@@ -118,7 +118,7 @@ print('PASS: native Settings category, legacy geometry, centering, validation an
 
 -- Preview uses the player model, scrolls on a loop, and is the only draggable mode.
 local beforeStops=#stops
-panel.Buttons.test.scripts.OnClick()
+WV:ToggleHeadPreview()
 assert(head.visible and head.Model.unit=='player' and head.Model.displayID==98765)
 assert(head.Name.text=='Тестовый персонаж' and head.mouseEnabled)
 assert(head.textRange>0)
@@ -136,11 +136,11 @@ assert(WowVoiceDB.headPosition[3]==123 and WowVoiceDB.headPosition[4]==-234)
 assert(#plays==sounds and #stops==beforeStops)
 restored('1','0.37')
 panel:Hide(); assert(not head.visible and not head.mouseEnabled)
-command('options'); panel.Buttons.test.scripts.OnClick(); head.Close.scripts.OnClick()
+command('options'); WV:ToggleHeadPreview(); head.Close.scripts.OnClick()
 assert(not head.visible and #stops==beforeStops)
 -- Preview can be toggled repeatedly.
-panel.Buttons.test.scripts.OnClick(); assert(head.visible)
-panel.Buttons.test.scripts.OnClick(); assert(not head.visible)
+WV:ToggleHeadPreview(); assert(head.visible)
+WV:ToggleHeadPreview(); assert(not head.visible)
 -- Refreshing and closing the options do not interrupt real voice.
 questID=179; event('QUEST_DETAIL')
 assert(head.visible and head.mouseEnabled) -- Retail right-click dismissal, no dragging.
@@ -170,7 +170,7 @@ do
     assert(WV:ReplayQuest(179))
     local soundCount,stopCount,handle=#plays,#stops,plays[#plays].handle
     assert(frames.WowVoiceTicker.visible and head.mouseEnabled)
-    panel.Buttons.test.scripts.OnClick()
+    WV:ToggleHeadPreview()
     assert(#plays==soundCount and #stops==stopCount+1 and stops[#stops]==handle,
         'preview must stop the playing sound exactly once without starting another')
     restored('1','0.37')
@@ -184,7 +184,7 @@ do
     head.scripts.OnUpdate()
     assert(head.visible and head.mouseEnabled and head.Model.unit=='player',
         'the old playback deadline must not close or replace the preview')
-    panel.Buttons.test.scripts.OnClick()
+    WV:ToggleHeadPreview()
     assert(not head.visible and #stops==stopCount+1 and #plays==soundCount,
         'a second click closes preview without resuming or stopping audio again')
 end

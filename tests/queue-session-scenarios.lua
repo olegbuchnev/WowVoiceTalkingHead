@@ -6,6 +6,11 @@ WowVoiceDB = { autoPlay = false, autoPlayAccept = false, autoPlayTurnIn = false,
 event('ADDON_LOADED')
 assert(WowVoiceDB.autoPlay and WowVoiceDB.autoPlayAccept and WowVoiceDB.autoPlayTurnIn
     and WowVoiceDB.playlistAutoPlayApplied == 2 and WowVoiceDB.volume == 0.6)
+assert(WowVoiceDB.queueAutoPlay == true, 'continuous playback defaults on once')
+WowVoiceDB.queueAutoPlay = false
+event('ADDON_LOADED')
+assert(WowVoiceDB.queueAutoPlay == false, 'a later autoplay choice survives default initialization')
+WowVoiceDB.queueAutoPlay = true
 -- The previously shipped test archive already set the boolean migration flag.
 WowVoiceDB.playlistAutoPlayApplied = true
 WowVoiceDB.autoPlay, WowVoiceDB.autoPlayAccept, WowVoiceDB.autoPlayTurnIn = false, false, false
@@ -45,7 +50,8 @@ local function step()
     local frame = frames.WowVoiceQuestQueueDriver
     if frame.visible then frame.scripts.OnUpdate() end
 end
-local function resetRuntime()
+local function resetRuntime(keepPreferences)
+    if not keepPreferences then WowVoiceDB.queueAutoPlay = true end
     Q:Clear()
     Q.groups, Q.offers, Q.completed, Q.removals = {}, {}, {}, {}
     Q.current, Q.nextRecord, Q.gap, Q.loggingOut = nil, nil, nil, nil
@@ -53,7 +59,7 @@ local function resetRuntime()
     frames.WowVoiceQuestQueueDriver:Hide()
 end
 local function restore(saved, elapsed)
-    resetRuntime()
+    resetRuntime(true)
     WowVoiceQueueDB = saved
     serverNow = saved.savedAt + (elapsed or 0)
     Q:RestoreSession()
@@ -148,6 +154,187 @@ assert(#gap.records == 1 and gap.records[1].context.questId == ids[2] and not ga
 restore(gap, 1); step()
 assert(Q.current.context.questId == ids[2])
 
+-- Autoplay can be disabled after the current line, with no audio restart or cut.
+resetRuntime()
+local running = offer(1)
+local waiting = offer(2)
+local autoplayButton = frames.WowVoiceQuestQueuePlayer.Autoplay
+assert(autoplayButton and autoplayButton.Label.text == 'Автовоспроизведение'
+    and autoplayButton.Check:GetChecked())
+local played, stopped = #plays, #stops
+GameTooltip:SetOwner(UIParent, 'ANCHOR_RIGHT')
+GameTooltip:AddLine('Native tooltip')
+GameTooltip:Show()
+autoplayButton.scripts.OnEnter(autoplayButton)
+autoplayButton.Check.scripts.OnEnter(autoplayButton.Check)
+assert(GameTooltip.visible and GameTooltip:IsOwned(UIParent) and GameTooltip.lines[1] == 'Native tooltip',
+    'new queue controls have no tooltip and leave native tooltips untouched')
+autoplayButton.Check.scripts.OnLeave(autoplayButton.Check)
+autoplayButton.Check.scripts.OnClick(autoplayButton.Check)
+assert(Q.paused and Q.current == running and running.status == 'playing'
+    and #plays == played and #stops == stopped, 'pause only blocks automatic advancement')
+assert(autoplayButton.Label.text == 'Автовоспроизведение' and not autoplayButton.Check:GetChecked(),
+    'pending pause keeps the label and unchecks autoplay')
+autoplayButton.scripts.OnLeave(autoplayButton)
+assert(GameTooltip.visible and GameTooltip:IsOwned(UIParent))
+GameTooltip:Hide()
+autoplayButton.scripts.OnClick(autoplayButton)
+assert(not Q.paused and autoplayButton.Check:GetChecked() and Q.current == running
+    and #plays == played and #stops == stopped, 'toggling off does not restart current audio')
+autoplayButton.scripts.OnClick(autoplayButton)
+offer(3, 'c')
+assert(Q.paused and Q.current == running and Q:Count() == 3,
+    'new quest events preserve the requested pause')
+local _, pauseDuration = WV:SoundPath(ids[1], 'a')
+tick(now + pauseDuration + 1); step()
+assert(Q.paused and not Q.current and not Q.gap and running.status == 'done'
+    and Q:Waiting() == waiting and #plays == played, 'finished line is removed without starting its successor')
+assert(autoplayButton.Label.text == 'Автовоспроизведение' and not autoplayButton.Check:GetChecked())
+assert(frames.WowVoiceQuestQueuePlayer:IsShown(), 'paused playlist remains visible')
+Q:SaveSession()
+local autoplayPaused = WowVoiceQueueDB
+assert(autoplayPaused.paused and #autoplayPaused.records == 2)
+restore(autoplayPaused, 1); step()
+assert(Q.paused and not Q.current and #plays == played
+    and not autoplayButton.Check:GetChecked(), 'disabled autoplay survives reload')
+autoplayButton.scripts.OnClick(autoplayButton)
+assert(not Q.paused and Q.current.context.questId == ids[2] and #plays == played + 1
+    and autoplayButton.Check:GetChecked(), 'enabling autoplay starts the next waiting line once')
+
+-- A pause clicked in the automatic gap cannot strand/replay the finished line.
+resetRuntime(); running = offer(1); waiting = offer(2)
+local _, gapDuration = WV:SoundPath(ids[1], 'a')
+tick(now + gapDuration + 1)
+assert(Q.gap and Q.current == running and running.status == 'done')
+played, stopped = #plays, #stops
+autoplayButton.scripts.OnClick(autoplayButton)
+assert(Q.paused and not Q.current and not Q.gap and Q:Count() == 1
+    and not autoplayButton.Check:GetChecked() and #stops == stopped)
+tick(now + 2); step()
+WowVoiceTalkingHead.scripts.OnUpdate(WowVoiceTalkingHead, 2)
+assert(not WowVoiceTalkingHead:IsShown() and #plays == played,
+    'head fades normally while the paused queue waits')
+Q:Event('QUEST_REMOVED', ids[2]); step()
+assert(Q:Count() == 0 and not Q.paused, 'abandonment still clears waiting quests while paused')
+offer(3)
+assert(Q.current.context.questId == ids[3], 'an empty queue cannot leave a stale pause behind')
+
+-- Removing a requested pause before completion retains normal automatic playback.
+resetRuntime(); offer(1); waiting = offer(2)
+Q:SetPaused(true); Q:SetPaused(false)
+tick(now + pauseDuration + 1)
+assert(Q.gap and not Q.paused)
+tick(Q.gap.deadline); step()
+assert(Q.current == waiting)
+Q:SetPaused(true); Q:Clear()
+assert(Q:Count() == 0 and not Q.paused and not frames.WowVoiceQuestQueuePlayer:IsShown())
+print('PASS: autoplay preserves current audio, toggles before completion, resumes once, persists and handles gaps/quest events')
+
+-- The fixed Next control plays one line at a time when autoplay is disabled.
+resetRuntime(); running = offer(1); waiting = offer(2)
+local lastWaiting = offer(3)
+local nextControl = frames.WowVoiceQuestQueuePlayer.Next
+local toolbar = autoplayButton:GetParent()
+local toolbarY = select(2, toolbar:GetCenter())
+assert(nextControl:IsEnabled() and autoplayButton:GetWidth() + nextControl:GetWidth()
+    + toolbar.Clear:GetWidth() + 24 <= toolbar:GetWidth(), 'toolbar controls fit at the existing player width')
+GameTooltip:SetOwner(UIParent, 'ANCHOR_RIGHT'); GameTooltip:Show()
+nextControl.scripts.OnEnter(nextControl); nextControl.scripts.OnLeave(nextControl)
+assert(GameTooltip.visible and GameTooltip:IsOwned(UIParent), 'Next never creates or hides a tooltip')
+GameTooltip:Hide()
+Q:SetPaused(true)
+played = #plays
+nextControl.scripts.OnClick(nextControl)
+assert(Q.current == waiting and Q.paused and #plays == played + 1 and running.status == 'skipped',
+    'Next skips the current line without enabling autoplay')
+assert(select(2, toolbar:GetCenter()) == toolbarY, 'the toolbar stays fixed when the list gets shorter')
+local _, nextDuration = WV:SoundPath(ids[2], 'a')
+tick(now + nextDuration + 1); step()
+assert(Q.paused and not Q.current and Q:Waiting() == lastWaiting and nextControl:IsEnabled())
+assert(frames.WowVoiceQuestQueuePlayer:IsShown(), 'the sole waiting line remains accessible')
+nextControl.scripts.OnClick(nextControl)
+assert(Q.current == lastWaiting and Q.paused and #plays == played + 2 and not nextControl:IsEnabled(),
+    'Next from the paused queue starts only the last waiting line and then disables itself')
+local lastPlayer = frames.WowVoiceQuestQueuePlayer
+assert(lastPlayer.fading, 'the sole playing line fades even with autoplay disabled')
+lastPlayer.scripts.OnUpdate(lastPlayer, 0.25)
+assert(not lastPlayer:IsShown() and Q.current == lastWaiting and WowVoiceTalkingHead:IsShown())
+WV:RefreshQuestQueuePlayer()
+assert(not lastPlayer:IsShown(), 'refresh does not reveal the last playing line')
+local _, lastDuration = WV:SoundPath(ids[3], 'a')
+tick(now + lastDuration + 1); step()
+assert(Q:Count() == 0 and #plays == played + 2)
+
+resetRuntime(); running = offer(1); waiting = offer(2)
+nextControl.scripts.OnClick(nextControl)
+assert(Q.current == waiting and not Q.paused, 'Next preserves enabled autoplay too')
+tick(now + nextDuration + 1); step()
+assert(Q:Count() == 0 and not nextControl:IsEnabled())
+resetRuntime()
+print('PASS: fixed Next skips or starts one line, preserves autoplay mode and disables without a successor')
+
+-- Playlist buttons and whole-row clicks play one line without lifting pause.
+local function playlistRow(record)
+    for _, frame in ipairs(allFrames) do
+        if frame.record == record and frame.Play then return frame end
+    end
+    error('Missing playlist row')
+end
+resetRuntime(); offer(1)
+local single = offer(2)
+local singleProgress = offer(2, 'p')
+local singleCompletion = offer(2, 'c')
+local later = offer(3)
+Q:SetPaused(true)
+tick(now + pauseDuration + 1); step()
+played = #plays
+local singleRow = playlistRow(single)
+singleRow.Play.scripts.OnClick(singleRow.Play)
+assert(Q.current == single and Q.paused and #plays == played + 1,
+    'Play in a paused playlist starts one line and preserves pause')
+local _, singleDuration = WV:SoundPath(ids[2], 'a')
+tick(now + singleDuration + 1); step()
+assert(not Q.current and not Q.gap and Q.paused and #plays == played + 1
+    and singleProgress.group and singleCompletion.group and later.group,
+    'single playback does not advance to the next stage of the same quest')
+local progressRow = playlistRow(singleProgress)
+progressRow.scripts.OnClick(progressRow)
+assert(Q.current == singleProgress and Q.paused and #plays == played + 2,
+    'clicking the quest title also preserves pause')
+local laterRow = playlistRow(later)
+laterRow.Play.scripts.OnClick(laterRow.Play)
+assert(Q.current == later and Q.paused and #plays == played + 3
+    and singleCompletion.group, 'replacing a playing line in the paused playlist keeps pause')
+local _, laterDuration = WV:SoundPath(ids[3], 'a')
+tick(now + laterDuration + 1); step()
+assert(Q.paused and not Q.current and Q:Waiting() == singleCompletion)
+autoplayButton.scripts.OnClick(autoplayButton)
+assert(not Q.paused and Q.current == singleCompletion and #plays == played + 4,
+    'enabling autoplay resumes continuous playback')
+
+-- Playing from an active playlist retains its existing continuous behavior.
+resetRuntime(); offer(1); single = offer(2); later = offer(3)
+singleRow = playlistRow(single)
+singleRow.scripts.OnClick(singleRow)
+assert(not Q.paused and Q.current == single)
+tick(now + singleDuration + 1)
+assert(Q.gap)
+tick(Q.gap.deadline); step()
+assert(Q.current == later and not Q.paused)
+
+-- Missing audio during single playback must leave the remaining queue paused.
+resetRuntime(); offer(1); single = offer(2); later = offer(3)
+Q:SetPaused(true); tick(now + pauseDuration + 1); step()
+singleRow = playlistRow(single)
+soundOK = false
+singleRow.Play.scripts.OnClick(singleRow.Play)
+soundOK = true
+step()
+assert(Q.paused and not Q.current and Q:Waiting() == later,
+    'a failed manual line cannot resume the rest of a paused queue')
+resetRuntime()
+print('PASS: paused playlist supports one-click single-line playback, same-quest stages, replacement, failure and continuous resume')
+
 -- Per-type switches only stop new entries; pending lines still play and restore.
 for _, section in ipairs({'a', 'p', 'c'}) do
     resetRuntime()
@@ -219,6 +406,52 @@ WV:SetAutoPlayEnabled(true)
 WV:SetAutoPlayAcceptEnabled(true); WV:SetAutoPlayTurnInEnabled(true)
 WV:SetQueueDescriptionsOnly(false)
 print('PASS: master-off and descriptions-only preserve pending audio, manual/automatic advancement and session persistence')
+
+-- The toolbar choice survives empty queues and reload; manual launches keep it.
+resetRuntime(); running = offer(1); waiting = offer(2)
+played, stopped = #plays, #stops
+autoplayButton.Check.scripts.OnClick(autoplayButton.Check)
+assert(WowVoiceDB.queueAutoPlay == false and Q.paused and Q.current == running
+    and #plays == played and #stops == stopped)
+Q:Clear()
+assert(Q:Count() == 0 and not Q.paused and WowVoiceDB.queueAutoPlay == false,
+    'clearing the queue does not erase the remembered mode')
+played = #plays
+running = offer(1); waiting = offer(2)
+assert(Q.current == running and Q.paused and #plays == played + 1
+    and not autoplayButton.Check:GetChecked(), 'a new queue starts its first line in the remembered mode')
+tick(now + pauseDuration + 1); step()
+assert(not Q.current and Q.paused and Q:Waiting() == waiting and #plays == played + 1)
+Q:SaveSession()
+local rememberedSession = WowVoiceQueueDB
+event('ADDON_LOADED')
+assert(WowVoiceDB.queueAutoPlay == false)
+restore(rememberedSession, 1); step()
+assert(WowVoiceDB.queueAutoPlay == false and Q.paused and not Q.current and #plays == played + 1)
+nextControl.scripts.OnClick(nextControl)
+assert(Q.current.context.questId == ids[2] and Q.paused and #plays == played + 2)
+tick(now + nextDuration + 1); step()
+assert(Q:Count() == 0 and WowVoiceDB.queueAutoPlay == false)
+running = offer(3); waiting = offer(4)
+assert(Q.current == running and Q.paused)
+assert(WV:PlayQueuedQuest({ context = { questId = ids[1], section = 'a', title = 'Manual journal replay',
+    speaker = { npcID = 100, name = 'NPC', displayID = 1234 } } }))
+assert(Q.current.context.questId == ids[1] and Q.paused and WowVoiceDB.queueAutoPlay == false,
+    'manual playback outside the playlist respects the remembered advancement mode')
+tick(now + pauseDuration + 1); step()
+assert(not Q.current and Q.paused and Q:Waiting() == waiting)
+played = #plays
+autoplayButton.scripts.OnClick(autoplayButton)
+assert(WowVoiceDB.queueAutoPlay == true and not Q.paused and Q.current == waiting and #plays == played + 1)
+Q:Clear()
+running = offer(1); waiting = offer(2)
+assert(not Q.paused and autoplayButton.Check:GetChecked())
+tick(now + pauseDuration + 1); step()
+assert(Q.gap)
+tick(Q.gap.deadline); step()
+assert(Q.current == waiting and not Q.paused)
+resetRuntime()
+print('PASS: toolbar autoplay choice persists across empty queues and reload, preserves first-line launch, single playback and continuous resume')
 resetRuntime()
 WowVoiceQueueDB = { version = 1, savedAt = serverNow, records = { false, { context = {} } } }
 Q:RestoreSession(); assert(Q:Count() == 0)

@@ -6,7 +6,7 @@ local scalePreview
 local playlistHeadEditing
 local function refreshEditBorder()
     if head and head.EditBorder then
-        if playlistHeadEditing or (active and active.preview) then head.EditBorder:Show()
+        if playlistHeadEditing or (active and active.preview and not active.autoPreview) then head.EditBorder:Show()
         else head.EditBorder:Hide() end
     end
 end
@@ -60,7 +60,7 @@ local DEFAULT_BOTTOM_OFFSET = 96
 local TALKING_HEAD_TEXTURE = "Interface\\AddOns\\WowVoiceTalkingHead\\Media\\TalkingHeads"
 local CLOSE_UP = "Interface\\Buttons\\UI-Panel-MinimizeButton-Up"
 local function createCloseArtwork(close)
-    -- Native red fill and bevel match the queue prototype's Next button.
+    -- Native close-button fill and bevel.
     -- Keep the glyph separate so its texture cannot alter the panel shading.
     local art = CreateFrame("Frame", nil, close)
     art:SetAllPoints(close)
@@ -115,81 +115,6 @@ local function createCloseArtwork(close)
     close:SetScript("OnMouseDown", function() pressed(true) end)
     close:SetScript("OnMouseUp", function() pressed(false) end)
     close:ResetAppearance()
-end
-function WV:CreateHeadStyleButton(parent, label, width, callback, name)
-    local button = CreateFrame("Button", name, parent)
-    button:SetSize(width, 22)
-    local parts, glows = {}, {}
-    local function piece(x, y, w, h, left, right, top, bottom, center)
-        local texture = button:CreateTexture(nil, "BACKGROUND")
-        texture:SetPoint("TOPLEFT", button, "TOPLEFT", x, -y)
-        texture:SetSize(w, h)
-        texture:SetTexCoord(left, right, top, bottom)
-        parts[#parts + 1] = { texture = texture, center = center }
-    end
-    -- The approved prototype: close-button bevel around a wider native red fill.
-    piece(4, 6, width - 8, 10, 12/128, 68/128, 5/32, 17/32, true)
-    piece(0, 2, 4, 4, 6/32, 10/32, 7/32, 11/32)
-    piece(width - 4, 2, 4, 4, 21/32, 25/32, 7/32, 11/32)
-    piece(0, 16, 4, 4, 6/32, 10/32, 21/32, 25/32)
-    piece(width - 4, 16, 4, 4, 21/32, 25/32, 21/32, 25/32)
-    piece(4, 2, width - 8, 4, 10/32, 21/32, 7/32, 11/32)
-    piece(4, 16, width - 8, 4, 10/32, 21/32, 21/32, 25/32)
-    piece(0, 6, 4, 10, 6/32, 10/32, 11/32, 21/32)
-    piece(width - 4, 6, 4, 10, 21/32, 25/32, 11/32, 21/32)
-    button.Label = button:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    button.Label:SetText(label)
-    local function glowPiece(x, width, left, right, leftAlpha, rightAlpha)
-        local glow = button:CreateTexture(nil, "OVERLAY", nil, 1)
-        glow:SetTexture("Interface\\Buttons\\UI-Panel-MinimizeButton-Highlight")
-        glow:SetTexCoord(left, right, 0, 1)
-        glow:SetPoint("TOPLEFT", button, "TOPLEFT", x, 5)
-        glow:SetSize(width, 32)
-        glow:SetBlendMode("ADD")
-        if glow.SetGradient and CreateColor then
-            glow:SetGradient("HORIZONTAL", CreateColor(1, 1, 1, leftAlpha), CreateColor(1, 1, 1, rightAlpha))
-        elseif glow.SetGradientAlpha then
-            glow:SetGradientAlpha("HORIZONTAL", 1, 1, 1, leftAlpha, 1, 1, 1, rightAlpha)
-        else glow:SetAlpha(math.min(leftAlpha, rightAlpha)) end
-        glows[#glows + 1] = glow
-    end
-    glowPiece(-6, 16, 0, 0.5, 0.65, 0.40)
-    glowPiece(10, width - 19, 15/32, 17/32, 0.40, 0.40)
-    glowPiece(width - 9, 16, 0.5, 1, 0.40, 0.65)
-    local function appearance(pressed)
-        for _, part in ipairs(parts) do
-            -- Down has a different inset: reusing the Up crop stretches its dark edge.
-            part.texture:SetTexture(part.center and "Interface\\Buttons\\UI-Panel-Button-Up" or CLOSE_UP)
-            local shade = pressed and 0.72 or 1
-            part.texture:SetVertexColor(shade, shade, shade)
-        end
-        button.Label:ClearAllPoints()
-        button.Label:SetPoint("CENTER", button, "CENTER", pressed and 1 or 0, pressed and -1 or 0)
-    end
-    local function reset()
-        for _, glow in ipairs(glows) do glow:Hide() end
-        button.Label:SetTextColor(1, 0.82, 0)
-        appearance(false)
-    end
-    button:SetScript("OnEnter", function() for _, glow in ipairs(glows) do glow:Show() end end)
-    button:SetScript("OnLeave", reset)
-    button:SetScript("OnHide", reset)
-    button:SetScript("OnMouseDown", function() appearance(true) end)
-    button:SetScript("OnMouseUp", function() appearance(false) end)
-    button:SetScript("OnClick", callback)
-    reset()
-    return button
-end
-
-local function createNextButton(parent)
-    local button = WV:CreateHeadStyleButton(parent, "Далее", 72, function()
-        local queue = WV.questQueue
-        if queue and queue.enabled and queue.current then queue:Next() end
-    end, "WowVoiceTalkingHeadNext")
-    button:SetPoint("RIGHT", parent.Close, "LEFT", -6, 0)
-    button:SetFrameLevel(parent:GetFrameLevel() + 10)
-    button:Hide()
-    return button
 end
 
 local function applyHeadAppearance()
@@ -932,8 +857,7 @@ local function layoutHead()
     local textLeft, textRight = 152, 42
     -- Retail composition: portrait on the left, name above
     -- the text on the right, and space reserved for the close button.
-    local nameRight = head.Next and head.Next:IsShown() and 130 or textRight
-    head.Name:SetWidth(math.max(1, width - textLeft - nameRight))
+    head.Name:SetWidth(math.max(1, width - textLeft - textRight))
     head.Name:SetHeight(0)
     local _, titleSize = head.Name:GetFont()
     local nameHeight = math.max(titleSize, head.Name:GetStringHeight())
@@ -994,16 +918,6 @@ local function layoutHead()
     updatePlaybackText()
 end
 
-function WV:RefreshHeadQueueButton()
-    if not (head and head.Next) then return end
-    local queue = self.questQueue
-    local shown = active and not active.preview and (not active.closing or (queue and queue.gap))
-        and queue and queue.enabled and queue.current and queue:Waiting() ~= nil or false
-    if head.Next:IsShown() == shown then return end
-    if shown then head.Next:Show() else head.Next:Hide() end
-    layoutHead()
-end
-
 -- Keep model ancestors opaque: PlayerModel's rendered geometry needs its own
 -- opacity, rather than relying on a parent frame fade. Apply the same value to
 -- every visible component, without multiplying it again through its parents.
@@ -1021,7 +935,6 @@ local function setHeadOpacity(alpha)
     head.TextScroll:SetAlpha(alpha)
     head.Progress:SetAlpha(alpha)
     head.Close:SetAlpha(alpha)
-    if head.Next then head.Next:SetAlpha(alpha) end
     syncModelOpacity()
 end
 
@@ -1079,7 +992,7 @@ local function createHead()
     head:RegisterForDrag("LeftButton")
     head:RegisterForClicks("RightButtonUp")
     head:SetScript("OnDragStart", function()
-        if playlistHeadEditing or (active and active.preview) then
+        if playlistHeadEditing or (active and active.preview and not active.autoPreview) then
             if active and active.autoPreview then WV:EnsureHeadPreview() end
             local x, y = centerPosition()
             local movement = { x = x, y = y, scale = anchor:GetEffectiveScale() }
@@ -1092,7 +1005,7 @@ local function createHead()
     head:SetScript("OnDragStop", function()
         head.draggingPosition = nil
         anchor:StopMovingOrSizing()
-        if playlistHeadEditing or (active and active.preview) then
+        if playlistHeadEditing or (active and active.preview and not active.autoPreview) then
             setPosition(centerPosition())
             if WV.RefreshHeadOptions then WV:RefreshHeadOptions() end
             WV:FinishAutoHeadPreview(2)
@@ -1205,6 +1118,7 @@ local function createHead()
     local close = CreateFrame("Button", nil, head)
     createCloseArtwork(close)
     local function stopPlayback()
+        if playlistHeadEditing then WV:SetWindowsUnlocked(false); return end
         playlistHeadEditing = nil
         refreshEditBorder()
         if active and active.preview then WV:StopTalkingHead()
@@ -1215,7 +1129,6 @@ local function createHead()
         if button == "RightButton" then stopPlayback() end
     end)
     head.Close = close
-    head.Next = createNextButton(head)
     head.EditBorder = CreateFrame("Frame", nil, head, "BackdropTemplate")
     -- The TalkingHeads sheet has transparent/faded margins around the panel.
     -- Outline the visible panel instead of the texture's full rectangle.
@@ -1914,7 +1827,7 @@ function WV:EnsureHeadPreview(suppressTrackerPulse)
     end
     if active and not active.closing then return true end
     local ok, reason = self:ToggleHeadPreview(suppressTrackerPulse)
-    if ok and active and active.preview then active.autoPreview = true end
+    if ok and active and active.preview then active.autoPreview = true; refreshEditBorder() end
     return ok, reason
 end
 
@@ -1962,6 +1875,19 @@ function WV:SetPlaylistHeadEditing(enabled)
         end
         self:HideHeadPreview()
         refreshEditBorder()
+    end
+    if self.RefreshFrameLockOption then self:RefreshFrameLockOption() end
+end
+
+function WV:IsWindowsUnlocked()
+    return playlistHeadEditing == true
+end
+
+function WV:SetWindowsUnlocked(unlocked)
+    if self.PreviewQuestQueue then self:PreviewQuestQueue(unlocked == true, true)
+    else
+        self:GetHeadSettings()
+        self:SetPlaylistHeadEditing(unlocked == true)
     end
 end
 

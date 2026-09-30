@@ -18,6 +18,7 @@ $LegacyDebugFiles = @('CatQuestComparison.lua', 'LocalDebug.lua')
 $ArtifactsRoot = Join-Path $RepoRoot 'artifacts'
 $SoundTocs = @('WowVoiceSounds.toc', 'WowVoiceSounds_Mainline.toc')
 $QueueLabModules = @('State.lua', 'Runtime.lua', 'Window.lua')
+$QueueLabExplicit = $PSBoundParameters.ContainsKey('QueueLab')
 if ($QueueLab -and $Task -notin @('Deploy', 'DeployAddon')) {
   throw '-QueueLab is allowed only for local Deploy/DeployAddon, never release packaging.'
 }
@@ -185,8 +186,13 @@ function Resolve-AddOnsDirectory {
 
 function Invoke-Deploy {
   param([switch]$AddonOnly)
+  $addons = Resolve-AddOnsDirectory
+  # Local defaults are opt-in and apply only to environment-based deployment.
+  # An explicit switch (including -QueueLab:$false) always wins.
+  $enableQueueLab = $QueueLab -or (-not $QueueLabExplicit -and -not $ConfigPath -and
+    $env:WOWVOICE_QUEUE_LAB -eq '1')
   $labSource = Join-Path $RepoRoot 'dev\queue-lab'
-  if ($QueueLab) {
+  if ($enableQueueLab) {
     Assert-NoReparseTree $labSource
     foreach ($module in $QueueLabModules) {
       if (-not (Test-Path -LiteralPath (Join-Path $labSource $module) -PathType Leaf)) {
@@ -194,7 +200,6 @@ function Invoke-Deploy {
       }
     }
   }
-  $addons = Resolve-AddOnsDirectory
   $destination = Join-Path $addons 'WowVoiceTalkingHead'
   $sounds = Join-Path $addons 'WowVoiceSounds'
   Assert-DirectChildPath $destination $addons 'WowVoiceTalkingHead'
@@ -246,7 +251,7 @@ function Invoke-Deploy {
       [IO.Directory]::Delete($dir.FullName)
     }
   }
-  if ($QueueLab) {
+  if ($enableQueueLab) {
     $labDestination = Join-Path $destination 'QueueLab'
     New-Item -ItemType Directory -Path $labDestination -Force | Out-Null
     foreach ($module in $QueueLabModules) {

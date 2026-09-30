@@ -48,23 +48,19 @@ assert(Q:Count() == 1 and Q.current == current)
 Lab:Reset()
 assert(not Q.current and Q:Count() == 0)
 
--- The approved Next control lives beside the head's close button, only with a successor.
+-- Next lives only in the queue toolbar; adding entries does not change head text space.
 Lab:Accept(ids[1])
-local head, nextButton = WowVoiceTalkingHead, WowVoiceTalkingHead.Next
+local head = WowVoiceTalkingHead
 local normalNameWidth = head.Name:GetWidth()
-assert(not nextButton:IsShown())
+assert(not head.Next and not frames.WowVoiceQuestQueuePlayer:IsShown())
 count = #plays
 Lab:Accept(ids[2])
-assert(nextButton:IsShown() and #plays == count, 'show Next without restarting current audio')
-assert(head.Name:GetWidth() < normalNameWidth, 'reserve title space for Next')
-local point, relative, relativePoint = nextButton:GetPoint()
-assert(point == 'RIGHT' and relative == head.Close and relativePoint == 'LEFT')
-nextButton.scripts.OnEnter()
-assert(nextButton.Label.textColor[1] == 1 and nextButton.Label.textColor[2] == 0.82,
-    'hover must keep the approved gold label')
-nextButton.scripts.OnClick()
+local nextButton = frames.WowVoiceQuestQueuePlayer.Next
+assert(nextButton:IsEnabled() and #plays == count)
+assert(head.Name:GetWidth() == normalNameWidth)
+nextButton.scripts.OnClick(nextButton)
 assert(Q.current.context.questId == ids[2] and #plays == count + 1)
-assert(not nextButton:IsShown() and head.Name:GetWidth() == normalNameWidth)
+assert(not nextButton:IsEnabled() and head.Name:GetWidth() == normalNameWidth)
 Lab:Reset()
 
 -- NPC 1/A, NPC 2/B, NPC 1/C: grouped playback A, C, B.
@@ -393,7 +389,7 @@ tick(now + gapAudioDuration + 1)
 local gapStarted, gapSounds = now, #plays
 local waitingY = rowFor(b).viewY
 assert(Q.gap and Q.current == a and a.status == 'done')
-assert(Q.gap.deadline == gapStarted + 1 and gapHead.Next:IsShown())
+assert(Q.gap.deadline == gapStarted + 1 and gapPlayer.Next:IsEnabled())
 assert(gapPlayer:IsShown() and not gapPlayer.fading and not rowFor(a).Bars[1].visible)
 tick(gapStarted + 0.35); gapHead.scripts.OnUpdate(gapHead); step()
 assert(math.abs(gapHead.visualAlpha - 0.5) < 0.001 and Q.current == a and #plays == gapSounds)
@@ -429,7 +425,7 @@ for _, useNext in ipairs({ false, true }) do
     local deadline = Q.gap.deadline
     tick(now + 0.3); gapHead.scripts.OnUpdate(gapHead)
     local before = #plays
-    if useNext then gapHead.Next.scripts.OnClick()
+    if useNext then gapPlayer.Next.scripts.OnClick(gapPlayer.Next)
     else rowFor(c).Play.scripts.OnClick(rowFor(c).Play) end
     local selected = useNext and b or c
     assert(Q.current == selected and not Q.gap and #plays == before + 1)
@@ -646,7 +642,7 @@ for _, manual in ipairs({ false, true }) do
     local oldY = rowFor(selected).viewY
     local animationPlayer = frames.WowVoiceQuestQueuePlayer
     local oldPanelHeight = animationPlayer:GetHeight()
-    assert(oldPanelHeight < 280 and oldPanelHeight == rowFor(selected):GetParent():GetHeight() + 46,
+    assert(oldPanelHeight < 280 and oldPanelHeight == rowFor(selected):GetParent():GetHeight() + 28,
         'short queues fit their content instead of reserving the maximum height')
     local audioBefore = #plays
     if manual then rowFor(selected).Play.scripts.OnClick(rowFor(selected).Play) else finish() end
@@ -662,13 +658,13 @@ for _, manual in ipairs({ false, true }) do
     animationPlayer.scripts.OnUpdate(animationPlayer, 0.1)
     assert(visual.viewY == targetY and not visual.motion)
     assert(animationPlayer:GetHeight() < intermediateHeight
-        and animationPlayer:GetHeight() == animationPlayer.contentHeight + 46,
+        and animationPlayer:GetHeight() == animationPlayer.contentHeight + 28,
         'the panel shrinks smoothly to fit all remaining entries, even before the last one')
     assert(#plays == audioBefore + 1, 'visual animation never restarts or delays audio')
     Q:Clear()
 end
 
--- Manual browsing holds the visible entries steady across natural and head-Next advances.
+-- Manual browsing holds the visible entries steady across natural and toolbar-Next advances.
 for _, manual in ipairs({ false, true }) do
     local records = {}
     for i = 1, 12 do
@@ -685,7 +681,7 @@ for _, manual in ipairs({ false, true }) do
     local oldOffset = view:GetVerticalScroll()
     assert(oldOffset > 0)
     local screenY = rowFor(records[7]).viewY - oldOffset
-    if manual then WowVoiceTalkingHead.Next.scripts.OnClick() else finish() end
+    if manual then p.Next.scripts.OnClick(p.Next) else finish() end
     assert(Q.current == records[2])
     animate(0.1)
     assert(math.abs(rowFor(records[7]).viewY - view:GetVerticalScroll() - screenY) < 0.01)
@@ -785,8 +781,11 @@ end
 assert(firstTile and secondTile and firstTile.last == rowFor(b) and #firstTile.BackgroundParts == 9)
 local function tileTop(frame) local _, _, _, _, y = frame:GetPoint(); return -y end
 local _, _, _, _, viewportTop = firstTile:GetParent():GetParent():GetPoint()
-assert(viewportTop == 0 and tileTop(firstTile) == 0,
-    'the first tile must align with the draggable preview top, without an extra viewport inset')
+assert(viewportTop == -28 and tileTop(firstTile) == 0,
+    'the first tile starts below the fixed queue toolbar, without an extra inset inside the viewport')
+local toolbar = frames.WowVoiceQuestQueuePlayer.Next:GetParent()
+assert(-viewportTop + tileTop(firstTile) - toolbar:GetHeight() == 4,
+    'alignment keeps the original four-unit gap between the toolbar and first tile')
 local function checkGap()
     assert(math.abs(tileTop(secondTile) - tileTop(firstTile) - firstTile:GetHeight() - 8) < 0.001)
     assert(math.abs(tileTop(firstTile) + firstTile:GetHeight()
@@ -802,21 +801,21 @@ for _, frame in ipairs(allFrames) do
     if frame.Label and frame.Label.text == 'Очистить всё' then clearQueue = frame end
 end
 assert(clearQueue and clearQueue:GetParent():GetParent() == tilePlayer,
-    'Clear all belongs below the scrolling tiles, not inside the last giver tile')
+    'Clear all belongs to the fixed toolbar outside the scrolling tiles')
 finish()
 tilePlayer.scripts.OnUpdate(tilePlayer, 0.1); checkGap()
 tilePlayer.scripts.OnUpdate(tilePlayer, 0.1); checkGap()
 Q:Clear()
 
 -- A narrow fragment of the next tile is trimmed without exceeding the user's height.
-WowVoice:SetQuestQueueHeight(396)
+WowVoice:SetQuestQueueHeight(382)
 local trimRecords = {}
 for i = 1, 5 do trimRecords[i] = offer(ids[i], 9100 + i); Q:Accept(ids[i], 'lab') end
 local trimPlayer = frames.WowVoiceQuestQueuePlayer
 local trimView = rowFor(trimRecords[1]):GetParent():GetParent()
 local fourthBottom = rowFor(trimRecords[4]).viewY + rowFor(trimRecords[4]):GetHeight() + 6
-assert(trimView:GetHeight() == fourthBottom and 396 - 46 - trimView:GetHeight() <= 24)
-assert(trimView:GetHeight() < 396 - 46 and trimPlayer:GetHeight() == 396 and WowVoice:GetQuestQueueHeight() == 396,
+assert(trimView:GetHeight() == fourthBottom and 382 - 28 - trimView:GetHeight() <= 24)
+assert(trimView:GetHeight() < 382 - 28 and trimPlayer:GetHeight() == trimView:GetHeight() + 28 and WowVoice:GetQuestQueueHeight() == 382,
     'fit the visible area without overwriting the selected maximum')
 local settledHeight = trimView:GetHeight()
 local _, footerY = clearQueue:GetParent():GetCenter()
@@ -824,7 +823,7 @@ for i = 1, 3 do WowVoice:RefreshQuestQueuePlayer() end
 assert(trimView:GetHeight() == settledHeight, 'periodic refresh must not oscillate between heights')
 trimView.mouseOver = true
 trimView.scripts.OnMouseWheel(trimView, -1)
-assert(trimView:GetVerticalScroll() > 0 and trimPlayer:GetHeight() <= 396)
+assert(trimView:GetVerticalScroll() > 0 and trimPlayer:GetHeight() <= 382)
 assert(trimView:GetHeight() > settledHeight and select(2, clearQueue:GetParent():GetCenter()) == footerY,
     'expanding the viewport after scrolling must not move the Clear all link')
 trimView.scripts.OnMouseWheel(trimView, 1)
@@ -842,8 +841,8 @@ local beforeRemovalHeight = trimPlayer:GetHeight()
 local _, beforeRemovalFooterY = clearQueue:GetParent():GetCenter()
 Q:DeleteNPC('lab:npc:9203')
 assert(Q:Count() == 2 and trimPlayer:GetHeight() < beforeRemovalHeight)
-assert(select(2, clearQueue:GetParent():GetCenter()) > beforeRemovalFooterY,
-    'removing a giver tile must move Clear all up with the shorter list')
+assert(select(2, clearQueue:GetParent():GetCenter()) == beforeRemovalFooterY,
+    'removing a giver tile must not move the fixed queue toolbar')
 Q:Clear()
 WowVoice:SetQuestQueueHeight(280)
 

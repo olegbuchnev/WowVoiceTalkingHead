@@ -28,3 +28,4 @@ run(path.join(__dirname, 'queue-session-scenarios.lua'));
 for (const file of ['State.lua', 'Runtime.lua', 'Window.lua']) run(path.join(lab, file));
 run(path.join(__dirname, 'queue-lab-scenarios.lua'));
 run(path.join(__dirname, 'queue-settings-scenarios.lua'));
+run(path.join(__dirname, 'queue-auto-preview-scenarios.lua'));
