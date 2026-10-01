@@ -68,6 +68,14 @@ the same profile.
   installed `CatQuest/RaceModels.lua`; the live model ID was not reported.
   Female model `7478494` retains its existing framing.
 
+- [x] Goblin — Forever SD male model `8125066`, confirmed by live `/thead diag`
+  on Mebok Mizzyrix (NPC `3446`, quest `1069`). Previously used `default` and
+  showed only the top of the head. Now mapped to the existing `goblin_male`
+  profile: vertical offset `0.04`, distance `1.3`, lateral `-0.04`.
+  User confirmed the family framing in game; no SD-specific profile is needed
+  for this model.
+  Models `119376`, `1838570` and `124224` retain `goblin_male` unchanged.
+
 ## Awaiting in-game confirmation
 
 - [ ] Human — child. Raised on Shawn feedback: profile `human_child`,

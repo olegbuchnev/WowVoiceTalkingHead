@@ -56,6 +56,13 @@ for _, id in ipairs({119376,1838570,124224}) do
     assert(key=='goblin_male' and profile.y<0 and profile.distance==1.3 and profile.z==.04,
         'male goblins need leftward room for the nose while preserving accepted zoom and height')
 end
+model.id=8125066
+do
+    local profile,key=WV:GetPortraitCameraProfile(model)
+    local character=WV.PortraitCameraProfiles.goblin_male
+    assert(key=='model:8125066' and profile==character,
+        'unlisted Forever male goblin must reuse the existing family profile instead of default')
+end
 for _, id in ipairs({119369,1838568,516489,518459,321588,368597}) do
     model.id=id
     local profile,key=WV:GetPortraitCameraProfile(model)
@@ -91,6 +98,12 @@ print('PASS: all model IDs resolve, female orcs have dedicated framing, other or
 
 WV:ToggleHeadPreview()
 local head=frames.WowVoiceTalkingHead
+head.Model.modelFileID=8125066
+head.Model:CompleteLoad(1234)
+assert(head.Model.cameraProfile=='model:8125066' and head.Model.cameraFileID==8125066
+    and head.Model.modelPosition[3]==.04 and head.Model.modelPosition[2]==-.04
+    and head.Model.cameraDistanceScale==1.3,
+    'live Forever SD goblin must apply the existing male goblin framing when loaded')
 head.Model.modelFileID=7478494
 head.Model:CompleteLoad(1234)
 assert(head.Model.cameraProfile=='model:7478494' and head.Model.modelPosition[3]==.015

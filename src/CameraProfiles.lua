@@ -92,6 +92,9 @@ WV.PortraitCameraOverrides = {
     -- recorded in the locally installed CatQuest/RaceModels.lua (Skyborne).
     [7478487] = profiles.skyborne_male,
     [7478494] = profiles.skyborne_female,
+    -- Live /thead diag: Mebok Mizzyrix, NPC 3446, quest 1069, SD models.
+    -- Reuse the male goblin family framing for this unlisted Forever model.
+    [8125066] = profiles.goblin_male,
 }
 
 function WV:GetPortraitCameraProfile(model)

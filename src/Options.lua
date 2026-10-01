@@ -38,10 +38,15 @@ local function refreshVersions()
     local supported = WowVoiceCatQuestAudio and WowVoiceCatQuestAudio.sourceVersion
     local incompatible = not source and WowVoiceAudioSources.Loaded("CatQuest_Voices")
     local updated = source and source.updated
+    local outdated = source and source.outdated
     local warning = panel.AudioSourceWarning
     if GameTooltip and GameTooltip:IsOwned(warning) then GameTooltip:Hide() end
-    warning.title = incompatible and "Озвучка CatQuest недоступна" or "Обновлённая озвучка CatQuest"
+    warning.title = incompatible and "Озвучка CatQuest недоступна"
+        or outdated and "Устаревшая озвучка CatQuest" or "Обновлённая озвучка CatQuest"
     warning.message = incompatible and tostring(reason or "Индекс озвучки недоступен.")
+        or outdated and ("Установлена: " .. source.version .. ". Полностью проверена: " .. tostring(supported)
+            .. ".\nСовместимые записи продолжают работать. Часть озвучки заданий может быть недоступна."
+            .. "\nОбновите CatQuest Voices до версии " .. tostring(supported) .. ".")
         or updated and ("Установлена: " .. source.version .. ". Полностью проверена: " .. tostring(supported)
             .. ".\nСовместимые записи продолжают работать. Изменённые и новые записи пока недоступны."
             .. "\nОбновление WowVoice TalkingHead добавит их поддержку.") or nil

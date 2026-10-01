@@ -172,10 +172,25 @@ addon version merely to refresh these links.
 
 For a local download report, run `stats.cmd` (or `stats.cmd -NoOpen` without
 opening the browser). `tools/release-stats.ps1` reads the public GitHub API,
-paginates releases and assets, and writes HTML, CSV and JSON to the gitignored
-`artifacts/stats/` directory, outside the pCloud release sync folder. It needs no
-token or extra dependencies. Run it again to refresh the snapshot. Counts cover
-existing full and addon-only ZIP assets only, including repeated/test downloads; they do not measure
+paginates releases and large asset lists, and writes HTML, CSV and JSON to the
+gitignored `artifacts/stats/` directory, outside the pCloud release sync folder.
+Embedded release assets keep an ordinary report to one API request. Authentication
+uses `GITHUB_TOKEN`, then `GH_TOKEN`, then the existing Git credential helper login.
+The helper runs without interactive prompts, with a five-second timeout; credentials
+remain in memory. Missing credentials fall back to public API access. A rejected
+login retries anonymously once; rate limits report retry time and preserve the
+previous snapshot. No additional dependencies are needed. Run it again to refresh
+the snapshot. Counts cover
+existing full and addon-only ZIP assets only. Full, AddonOnly and Total exclude
+known verification downloads recorded in `config/release-download-checks.json`.
+Console, HTML, CSV and JSON retain their original fields and show adjusted counts
+only; do not display technical-check counts. Bind checks to immutable GitHub
+asset IDs, not tags or filenames, so replacing an asset resets its deduction.
+After each actual public ZIP download during release verification, record its
+asset ID and increment its count in this ledger. HEAD/API metadata requests and
+uploads do not count as downloads. Never infer checks for older releases without
+evidence. Deductions are capped at the current counter to handle API delays.
+The remaining counts still include other repeated/test downloads; they do not measure
 unique users, website clicks or pCloud downloads. The report stays local, while
 the underlying public-repository counters remain public. No site analytics is added.
 
@@ -633,7 +648,13 @@ contains initial, uncalibrated model-family settings, including non-playable
 quest givers such as ogres, furbolgs, centaurs, murlocs and dragons. Goblins and
 trolls have dedicated offsets and more distance. Male goblins use a separate
 profile with a small leftward shift to leave room for the nose during speech,
-confirmed for the tested model. Female trolls use a separate
+confirmed for the tested model. Forever SD male goblin model `8125066` uses
+the existing `goblin_male` family profile through a per-model override.
+The ID was confirmed by live diagnostics on Mebok Mizzyrix (NPC `3446`, quest
+`1069`). The user confirmed the existing family framing in game; this model
+needs only the mapping, without SD-specific camera parameters. Models `119376`,
+`1838570` and `124224` retain their framing.
+Female trolls use a separate
 centered profile; the accepted male troll lateral offset is preserved. Female
 blood elf models also have a separate, wider and higher framing to leave
 room for their talking animation in both directions, confirmed for the tested
@@ -978,6 +999,13 @@ also retain their existing game/journal lookup. Import reports text coverage
 separately in `forever-audio-manifest.json` so updates can be compared.
 
 ## Two release packages and website metadata
+
+The options version tooltip recommends updating older CatQuest Voices to the
+version in `CatQuestAudio.lua`; newer packs retain the recommendation to update
+WowVoice TalkingHead. Recommendations appear only in the options tooltip. Numeric
+three-part versions are compared component by component; missing or unrecognized
+versions are not classified as older. Compatible playback and the saved source
+choice remain available.
 
 Package contains WowVoiceTalkingHead and WowVoiceSounds. PackageAddon contains
 only WowVoiceTalkingHead. Both include the same text, NPC and compatibility data.

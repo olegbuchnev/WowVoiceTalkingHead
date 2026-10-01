@@ -34,6 +34,20 @@ function Sources.IsSupplement(id)
         and CatQuestVoicePack.quests[id] ~= nil
 end
 
+local function olderVersion(installed, indexed)
+    local function parts(version)
+        if type(version) ~= "string" then return end
+        local major, minor, patch = version:match("^(%d+)%.(%d+)%.(%d+)$")
+        if major then return { tonumber(major), tonumber(minor), tonumber(patch) } end
+    end
+    local a, b = parts(installed), parts(indexed)
+    if not a or not b then return false end
+    for i = 1, 3 do
+        if a[i] ~= b[i] then return a[i] < b[i] end
+    end
+    return false
+end
+
 local function external()
     if not Sources.Loaded("CatQuest_Voices") then return nil, "CatQuest_Voices не загружен" end
     local pack, compat = _G.CatQuestVoicePack, _G.WowVoiceCatQuestAudio
@@ -46,7 +60,8 @@ local function external()
     local version = Sources.Metadata("CatQuest_Voices", "Version")
     if type(version) ~= "string" or version == "" then version = nil end
     return { id = "catquest", version = version or "не указана", indexedVersion = compat.sourceVersion,
-        updated = version ~= compat.sourceVersion, entries = compat.entries, quests = pack.quests,
+        updated = version ~= compat.sourceVersion, outdated = olderVersion(version, compat.sourceVersion),
+        entries = compat.entries, quests = pack.quests,
         prefix = "Interface\\AddOns\\CatQuest_Voices\\Sounds\\q\\" }
 end
 
