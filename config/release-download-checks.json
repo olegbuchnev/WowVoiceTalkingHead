@@ -12,6 +12,18 @@
       "release": "v1.2.2-forever",
       "asset": "WowVoiceTalkingHead-1.2.2-forever-addon-only.zip",
       "count": 1
+    },
+    {
+      "assetId": 602082284,
+      "release": "v1.2.2-forever",
+      "asset": "WowVoiceTalkingHead-1.2.2-forever.zip",
+      "count": 1
+    },
+    {
+      "assetId": 602086030,
+      "release": "v1.2.2-forever",
+      "asset": "WowVoiceTalkingHead-1.2.2-forever-addon-only.zip",
+      "count": 1
     }
   ]
 }
