@@ -213,6 +213,8 @@ The player website is hosted at https://olegbuchnev.github.io/WowVoiceTalkingHea
 Run `npm run build:site` (Node.js 24) to generate `artifacts/site/` locally.
 `tools/build-site.mjs` builds the landing page from README.md and the full guide
 from USER_README.md; download URLs and screenshots come from README.md as well.
+CSS and JavaScript filenames include their content SHA-256 so new HTML cannot
+reuse stale cached styles or behavior. Both pages and local previews use these URLs.
 Local PNG assets referenced in either document are emitted as
 `images/<name>.<sha256>.png`. Markdown and inline HTML use the same hashed URL;
 replacing bytes changes the URL automatically in both published and preview builds.

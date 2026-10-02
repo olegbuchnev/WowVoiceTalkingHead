@@ -16,6 +16,14 @@ const escape = text => text.replace(/[&<>"']/g, char => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
 }[char]));
 const imageAssets = new Map();
+// Give changed CSS/JS a new URL so cached files cannot style a new page.
+const pageAssets = new Map();
+for (const file of ['style.css', 'site.js']) {
+  const bytes = await fs.readFile(path.join(root, 'site', file));
+  const hash = createHash('sha256').update(bytes).digest('hex');
+  const { name, ext } = path.parse(file);
+  pageAssets.set(file, { url: `${name}.${hash}${ext}`, bytes });
+}
 const imageURL = source => {
   const asset = imageAssets.get(source);
   if (!asset) throw Error(`Unindexed screenshot: ${source}`);
@@ -192,8 +200,8 @@ function page(content, isGuide = false) {
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#181a1b">
   <title>${isGuide ? 'Инструкция — ' : ''}${escape(title)}</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="site.js" defer></script>
+  <link rel="stylesheet" href="${pageAssets.get('style.css').url}">
+  <script src="${pageAssets.get('site.js').url}" defer></script>
 </head>
 <body>
   ${previewMode ? '<aside class="preview-banner">Предпросмотр следующего выпуска. Кнопки скачивают локальные тестовые ZIP. Релиз ещё не опубликован.</aside>' : ''}
@@ -262,9 +270,7 @@ const content = `<div class="intro"><p class="eyebrow">WoW Forever Beta</p><h1>�
 await fs.mkdir(path.join(output, 'images'), { recursive: true });
 await fs.writeFile(path.join(output, 'index.html'), page(content));
 await fs.writeFile(path.join(output, 'guide.html'), page(markdown.parse(guide), true));
-await fs.copyFile(path.join(root, 'site/style.css'), path.join(output, 'style.css'));
-await fs.copyFile(path.join(root, 'site/site.js'), path.join(output, 'site.js'));
-for (const asset of imageAssets.values()) {
+for (const asset of [...pageAssets.values(), ...imageAssets.values()]) {
   await fs.writeFile(path.join(output, asset.url), asset.bytes);
 }
 console.log(`Built GitHub Pages site: ${output}`);
