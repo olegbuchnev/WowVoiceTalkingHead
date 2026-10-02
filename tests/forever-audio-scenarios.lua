@@ -24,7 +24,8 @@ local entry = externalAudio[plainID .. 'a']
 event('QUEST_DETAIL')
 local play = plays[#plays]
 assert(play.file == prefix .. entry.file and play.channel == 'Master')
-assert(frames.WowVoiceTalkingHead.Body.text == GetQuestText())
+assert(frames.WowVoiceTalkingHead.Body.text == GetQuestText(),
+    'Russian client keeps actual quest dialogue ahead of CatQuest subtitles')
 assert(cvars.Sound_EnableDialog == '0')
 local count = #plays
 event('QUEST_DETAIL'); assert(#plays == count, 'duplicate event restarted supplement')
@@ -46,13 +47,14 @@ for _, variant in ipairs({{2, entry.male}, {3, entry.female}}) do
 end
 sex = 2
 
--- JSON-only quest 99080 has completion audio, but no description/replay arrow.
+-- JSON-only quest 99080 has completion audio; its earlier stages are text-only.
 questID = 99080
 assert(not WV:HasQuestAudio(questID))
 assert(WV:SoundPath(questID, 'a') == nil and WV:SoundPath(questID, 'p') == nil)
 count = #plays
 event('QUEST_DETAIL'); event('QUEST_PROGRESS')
 assert(#plays == count, 'turn-in-only quest attempted missing audio')
+WV.questQueue:Clear()
 for _, variant in ipairs({{2, 'm'}, {3, 'f'}}) do
     sex = variant[1]
     event('QUEST_COMPLETE')
@@ -74,6 +76,7 @@ event('QUEST_PROGRESS'); assert(#plays == count)
 if not externalAudio[plainID .. 'c'] then
     event('QUEST_COMPLETE'); assert(#plays == count)
 end
+WV.questQueue:Clear()
 questID = turninID
 local file, duration = WV:SoundPath(turninID, 'c')
 assert(file and duration)
@@ -89,11 +92,9 @@ assert(WV:ReplayQuest(plainID) and plays[#plays].file == file)
 WV:Silence()
 WowVoiceDur[plainID .. 'a'] = old
 
--- Supplemental OGG paths are independent of legacy filename/activation settings.
+-- Supplemental OGG paths are independent of the primary pack's file extension.
 WowVoiceDB.ext = 'mp3'
-WV.license = {content_key = 'unused-for-supplement'}
 assert(WV:SoundPath(plainID, 'a') == prefix .. externalAudio[plainID .. 'a'].file)
-WV.license = nil
 WowVoiceDB.ext = 'ogg'
 
 soundOK = false
@@ -118,7 +119,8 @@ WV:Silence()
 local before = #plays
 questID = plainID
 event('QUEST_DETAIL'); event('QUEST_PROGRESS'); event('QUEST_COMPLETE')
-assert(#plays == before and not frames.WowVoiceTalkingHead:IsShown(), 'Missing external audio must show no head and play no audio')
+assert(#plays == before and frames.WowVoiceTalkingHead:IsShown(), 'Missing external audio keeps the head without sound')
+WV.questQueue:Clear()
 C_AddOns.IsAddOnLoaded = loaded
 print('PASS: supplemental events, own portrait, timing, gender, missing sections, Classic priority and failure restoration')
 

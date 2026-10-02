@@ -17,7 +17,7 @@ const { createHash } = require('crypto');
   const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'wowvoice-site-'));
   try {
     for (const dir of ['tools', 'site', 'docs/images']) fs.mkdirSync(path.join(fixture, dir), {recursive:true});
-    for (const file of ['tools/build-site.mjs', 'tools/release-assets.mjs', 'site/style.css', 'site/audio-releases.json', 'USER_README.md']) {
+    for (const file of ['tools/build-site.mjs', 'tools/release-assets.mjs', 'site/style.css', 'site/site.js', 'site/audio-releases.json', 'USER_README.md']) {
       let text = fs.readFileSync(path.join(root, file), 'utf8');
       if (file.endsWith('build-site.mjs')) {
         // Resolve the real dependency without copying node_modules or using a junction.
@@ -47,7 +47,7 @@ const { createHash } = require('crypto');
     fs.writeFileSync(path.join(fixture,'mock.mjs'),mock);
     const intro='# Test WowVoice\n\nDescription.\n\n';
     const body=`\n[Full](${urls.full})\n[Addon](${urls.addon})\n[Mirror](https://e.pcloud.link/example)\n\n`
-      + ['Две озвучки на выбор','Установка','Возможности','Очередь озвучки','Настройки','Совместимость с CatQuest','Авторы и озвучка']
+      + ['Две озвучки на выбор','Установка','Возможности','Очередь озвучки','Настройки','Совместимость с CatQuest','Авторы и озвучка','Что нового']
         .map(name=>`## ${name}\n\nContent. [Full](${urls.full}) [Addon](${urls.addon})\n`
           + (name === 'Две озвучки на выбор' ? '\n![Head](docs/images/head.png)\n' : '')
           + (name === 'Очередь озвучки' ? '\n<p class="feature-image"><img src="docs/images/queue.png" width="320" alt="Queue"></p>\n' : '')).join('\n');
@@ -67,6 +67,9 @@ const { createHash } = require('crypto');
         assert(!html.includes('555,6 МБ'));
         assert(html.includes('CatQuest Voices 0.2.2') && html.includes('curseforge.com/wow/addons/catquest'));
         assert(html.includes(`href="${urls.full}"`));
+        assert(html.includes('<script src="site.js" defer></script>'));
+        assert.equal(fs.readFileSync(path.join(fixture,'artifacts/site/site.js'),'utf8'),
+          fs.readFileSync(path.join(root,'site/site.js'),'utf8'));
         assert(html.includes('Зеркало на pCloud'));
         assert(html.includes('<time datetime="2026-08-13">13.08.2026</time>'), 'Audio release date must not follow artifact uploads');
         assert.equal((html.match(/Обновлён <time/g) || []).length, 1, 'Only the addon card shows the addon update date');
@@ -112,7 +115,7 @@ const { createHash } = require('crypto');
     const previewHtml=fs.readFileSync(path.join(previewRoot,'index.html'),'utf8');
     assert(previewHtml.includes('Релиз ещё не опубликован') && previewHtml.includes('1,2 МБ') && previewHtml.includes('23,5 КБ'));
     assert(!previewHtml.includes(urls.full) && !previewHtml.includes(urls.addon));
-    assert.equal((previewHtml.match(new RegExp(`href="downloads/${preview.full}"`,'g'))||[]).length,8);
+    assert.equal((previewHtml.match(new RegExp(`href="downloads/${preview.full}"`,'g'))||[]).length,9);
     assert(previewHtml.includes(`href="downloads/${preview.addon}"`));
     assert(previewHtml.includes(`src="${changedURL}"`) && previewHtml.includes(`src="${headURL}"`));
     assert.deepEqual(fs.readFileSync(path.join(previewRoot,changedURL)), Buffer.from([3]));

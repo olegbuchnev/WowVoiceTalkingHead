@@ -52,11 +52,11 @@ try {
   assert(before.includes('["99080c"]') && !before.includes('["99080a"]'));
   assert(!before.includes('["490c"]') && before.includes('["179a"]') && before.includes('["179c"]'));
   const L = lauxlib.luaL_newstate(); lualib.luaL_openlibs(L);
-  const textFile = path.join(root, 'src/CatQuestTexts.lua');
+  const textFile = path.join(root, 'src/QuestTexts.lua');
   const metadata = fs.readFileSync(textFile, 'utf8');
   assert(!fs.readFileSync(path.join(root, 'src/CatQuestAudio.lua'), 'utf8').includes('text = {'));
   function transcript(key, variant) {
-    const code = metadata + `\nreturn WowVoiceCatQuestTexts.entries["${key}"].${variant}`;
+    const code = metadata + `\nreturn WowVoiceQuestTexts.entries["${key}"].${variant}`;
     const status = lauxlib.luaL_dostring(L, to_luastring(code));
     assert.equal(status, lua.LUA_OK, to_jsstring(lua.lua_tostring(L, -1)));
     const text = to_jsstring(lua.lua_tostring(L, -1));

@@ -1,3 +1,4 @@
+local L = WowVoiceLocale
 -- Public voice catalogue, created only when opened from the options page.
 local WV = WowVoice
 local Comparison = WowVoiceComparison
@@ -11,21 +12,17 @@ local function indexedQuestIDs()
     audioRevision = WV.audioRevision
     catQuestPresent = hasCatQuest
     questIDs = {}
-    -- Only loaded libraries contribute quests. A broken recording in a loaded
-    -- library stays disabled; completion-only quests are excluded.
+    -- Loaded CatQuest uses its current index; otherwise use our offline snapshot.
+    -- Known recordings stay visible while unavailable; completion-only quests are excluded.
     for id in pairs(Comparison.QuestIDs()) do questIDs[#questIDs + 1] = id end
     table.sort(questIDs)
     local wowvoice, catquest = 0, 0
     for _, id in ipairs(questIDs) do
         if Comparison.Known(id, "wowvoice") then wowvoice = wowvoice + 1 end
-        if hasCatQuest and Comparison.Known(id, "catquest") then catquest = catquest + 1 end
+        if Comparison.Known(id, "catquest") then catquest = catquest + 1 end
     end
-    if hasCatQuest then
-        questSummary = string.format("WowVoice: %d    CatQuest: %d    Всего без повторов: %d",
-            wowvoice, catquest, #questIDs)
-    else
-        questSummary = string.format("WowVoice: %d", wowvoice)
-    end
+    questSummary = string.format("WowVoice: %d    CatQuest: %d    Всего без повторов: %d",
+        wowvoice, catquest, #questIDs)
     return questIDs
 end
 
@@ -36,7 +33,7 @@ local function backdrop(frame, alpha)
     frame:SetBackdropBorderColor(0.3, 0.3, 0.3, 0.8)
 end
 
-local colors = { wowvoice = {0.25, 0.7, 1}, catquest = {1, 0.55, 0.2}, unavailable = {0.4, 0.4, 0.4} }
+local colors = { wowvoice = {0.25, 0.7, 1}, catquest = {1, 0.55, 0.2} }
 local function playIcon(parent, color)
     local icon = parent:CreateTexture(nil, "ARTWORK")
     icon:SetTexture("Interface\\AddOns\\WowVoiceTalkingHead\\Media\\Play.tga")
@@ -44,6 +41,23 @@ local function playIcon(parent, color)
     icon:SetPoint("CENTER", parent, "CENTER", 0, 0)
     icon:SetVertexColor(unpack(color))
     return icon
+end
+
+local function unavailableMark(parent)
+    local mark = parent:CreateTexture(nil, "OVERLAY")
+    mark:SetTexture("Interface\\AddOns\\WowVoiceTalkingHead\\Media\\QueueClose.png")
+    -- This glyph's diagonal tips reach the play icon's rim at equal texture
+    -- size. Anchor to the icon itself: legend frames are smaller than buttons.
+    mark:SetAllPoints(parent.Icon)
+    mark:SetVertexColor(0.25, 0.25, 0.25)
+    mark:Hide()
+    return mark
+end
+
+local function sourceAppearance(widget, source, available)
+    local color = colors[source]
+    widget.Icon:SetVertexColor(color[1], color[2], color[3], available and 1 or 0.4)
+    if available then widget.UnavailableMark:Hide() else widget.UnavailableMark:Show() end
 end
 
 local function attachQuestSuggestions(frame, input)
@@ -66,12 +80,11 @@ local function attachQuestSuggestions(frame, input)
     local selectedID, selectedSource
     local function updateSelection(row)
         for source, button in pairs(row.PlayButtons) do
-            local known = row.questID and (source ~= "catquest" or Comparison.HasCatQuest())
-                and Comparison.Known(row.questID, source)
+            local known = row.questID and Comparison.Known(row.questID, source)
             if known then button:Show() else button:Hide() end
             local available = row.questID and Comparison.Resolve(row.questID, source) ~= nil
             button:SetEnabled(available == true)
-            button.Icon:SetVertexColor(unpack(available and colors[source] or colors.unavailable))
+            sourceAppearance(button, source, available)
             if available and row.questID == selectedID and source == selectedSource then
                 local color = colors[source]
                 button.SelectedMark:SetVertexColor(color[1], color[2], color[3], 1)
@@ -117,6 +130,7 @@ local function attachQuestSuggestions(frame, input)
                     button:SetSize(24, 24)
                     button:SetPoint("BOTTOM", row, "BOTTOM", source == "wowvoice" and -13 or 13, 4)
                     button.Icon = playIcon(button, colors[source])
+                    button.UnavailableMark = unavailableMark(button)
                     button.SelectedMark = button:CreateTexture(nil, "OVERLAY")
                     button.SelectedMark:SetTexture("Interface\\AddOns\\WowVoiceTalkingHead\\Media\\PlaySelected.tga")
                     button.SelectedMark:SetAllPoints(button.Icon)
@@ -157,10 +171,19 @@ local function attachQuestSuggestions(frame, input)
     end)
     local function refresh()
         local ids = indexedQuestIDs()
-        frame.QuestRange:SetText(#ids > 0 and (ids[1] .. "–" .. ids[#ids]) or "Индекс пуст")
-        frame.CatalogSummary:SetText(questSummary)
-        for _, element in ipairs(frame.CatQuestLegend) do
-            if catQuestPresent then element:Show() else element:Hide() end
+        L.SetOptionsText(frame.QuestRange, #ids > 0 and (ids[1] .. "–" .. ids[#ids]) or "Индекс пуст")
+        L.SetOptionsText(frame.CatalogSummary, questSummary)
+        for index, source in ipairs({"wowvoice", "catquest"}) do
+            local legend = frame.SourceLegend[source]
+            local available = Comparison.SourceAvailable(source)
+            sourceAppearance(legend.Marker, source, available)
+            L.SetOptionsText(legend.Caption, legend.Name .. (available and "" or " — недоступна"))
+            local columnWidth = (frame:GetWidth() - 40) / 2
+            legend.Marker:ClearAllPoints()
+            legend.Marker:SetPoint("TOPLEFT", frame, "TOPLEFT", 20 + (index - 1) * columnWidth, -88)
+            legend.Caption:ClearAllPoints()
+            legend.Caption:SetPoint("LEFT", legend.Marker, "RIGHT", 4, 0)
+            legend.Caption:SetWidth(columnWidth - 28)
         end
         frame.CatalogSummary:SetWidth(math.max(240, frame:GetWidth() - 40))
         local hasFilter = (input:GetText() or "") ~= ""
@@ -236,14 +259,14 @@ local function createPanel(options)
         value:SetPoint("TOPLEFT", frame, "TOPLEFT", x, y)
         value:SetSize(width, height)
         value:SetJustifyH("LEFT")
-        value:SetText(text)
+        L.SetOptionsText(value, text)
         return value
     end
     label("Озвучка заданий", 126, -16, 438, 26, "GameFontNormalLarge")
     local back = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
     back:SetSize(90, 26)
     back:SetPoint("TOPLEFT", frame, "TOPLEFT", 20, -16)
-    back:SetText("Назад")
+    L.SetOptionsText(back, "Назад")
     back:SetScript("OnClick", showOptions)
     frame.Back, frame.Buttons.Back = back, back
     label("ID квеста:", 20, -60, 90, 20, "GameFontNormal")
@@ -303,13 +326,15 @@ local function createPanel(options)
     range:SetPoint("LEFT", input, "RIGHT", 12, 0)
     range:SetTextColor(0.7, 0.7, 0.7)
     frame.QuestRange = range
-    frame.CatQuestLegend = {}
+    frame.CatQuestLegend, frame.SourceLegend = {}, {}
     for index, entry in ipairs({{"wowvoice", "WowVoice"}, {"catquest", "CatQuest"}}) do
         local marker = CreateFrame("Frame", nil, frame)
         marker:SetSize(20, 20)
         marker:SetPoint("TOPLEFT", frame, "TOPLEFT", 20 + (index - 1) * 150, -88)
-        playIcon(marker, colors[entry[1]])
+        marker.Icon = playIcon(marker, colors[entry[1]])
+        marker.UnavailableMark = unavailableMark(marker)
         local caption = label(entry[2], 44 + (index - 1) * 150, -88, 120, 20)
+        frame.SourceLegend[entry[1]] = { Marker = marker, Caption = caption, Name = entry[2] }
         if entry[1] == "catquest" then frame.CatQuestLegend = {marker, caption} end
     end
     local summary = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
@@ -355,5 +380,4 @@ function WV:OpenVoiceComparison(value)
     if options and options:IsShown() then showDebug(options, strtrim(value or "")) end
 end
 SLASH_WOWVOICELOCALDEBUG1 = "/wvvoices"
-SLASH_WOWVOICELOCALDEBUG2 = "/wvdebug" -- Keep the old local command as an alias.
 SlashCmdList.WOWVOICELOCALDEBUG = function(value) WV:OpenVoiceComparison(value) end

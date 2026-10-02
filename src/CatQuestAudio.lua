@@ -1,4 +1,4 @@
--- Generated compatibility metadata; transcripts are in CatQuestTexts.lua.
+-- Generated compatibility metadata; transcripts are in QuestTexts.lua.
 WowVoiceCatQuestAudio = { schemaVersion = 1, sourceVersion = "0.3.0", entries = {
     ["2a"] = { indexDuration = 16.6, gender = false, voice = "human-male#114", jsonOnly = false, audio = { file = "2.ogg", duration = 16.63625 } },
     ["2c"] = { indexDuration = 32, gender = true, voice = "tauren-female", jsonOnly = false, audio = { male = { file = "2_t_m.ogg", duration = 31.73575 }, female = { file = "2_t_f.ogg", duration = 32.006542 } } },

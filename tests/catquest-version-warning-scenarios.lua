@@ -45,8 +45,12 @@ if older then
     assert(not warning.message:find('Обновление WowVoice TalkingHead', 1, true))
 elseif mode == 'newer' or mode == 'double-digit' then
     assert(warning:IsShown() and warning.message:find('Обновление WowVoice TalkingHead', 1, true))
+    assert(warning.message:find('включая новые и изменённые записи', 1, true))
+    assert(warning.message:find('Голова и очередь могут завершаться позже звука', 1, true))
 elseif mode == 'current' or mode == 'absent' then
     assert(not warning:IsShown())
+elseif mode == 'missing' or mode == 'unknown' then
+    assert(warning:IsShown() and warning.title == 'Непроверенная озвучка CatQuest')
 end
 for _ = 1, 3 do
     WV:RefreshAudioSources()

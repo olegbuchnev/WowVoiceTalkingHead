@@ -9,7 +9,8 @@ function run(file) {
 }
 function load() {
     for(const file of ['mock.lua','journal-mock.lua','portrait-mock.lua']) run(path.join(__dirname,file));
-    for(const file of ['License.lua','Index.lua','Durations.lua','CatQuestAudio.lua','CatQuestTexts.lua','AudioSources.lua','Core.lua','Work.lua','CameraModels.lua','CameraProfiles.lua','UI.lua','Portrait.lua']) run(path.join(root,file));
+    for(const file of ['Localization.lua','Index.lua','Durations.lua','CatQuestAudio.lua','QuestTexts.lua','AudioSources.lua','Core.lua','Work.lua','CameraModels.lua','CameraProfiles.lua','UI.lua','Portrait.lua']) run(path.join(root,file));
+    run(path.resolve(root, '..', 'dev/queue-lab/Commands.lua'));
 }
 load(); run(path.join(__dirname,'portrait-scenarios.lua'));
 load(); run(path.join(__dirname,'portrait-reload.lua'));

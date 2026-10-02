@@ -14,7 +14,7 @@ CatQuestVoicePack = {quests={
     [98246]={d=28.9,v='dwarf-male'},
 }}
 for id, entry in pairs(CatQuestVoicePack.quests) do
-    local texts = WowVoiceCatQuestTexts.entries[id .. 'a']
+    local texts = WowVoiceQuestTexts.entries[id .. 'a']
     entry.c = entry.g and {m={{0,texts.male}},f={{0,texts.female}}} or {x={{0,texts.common}}}
 end
 local function tile(id)
@@ -75,46 +75,90 @@ soundOK = false
 row = tile(179)
 click(row, 'catquest')
 assert(not row.PlayButtons.catquest:IsEnabled() and row.PlayButtons.wowvoice:IsEnabled())
+assert(row.PlayButtons.catquest.UnavailableMark.visible and not row.PlayButtons.wowvoice.UnavailableMark.visible)
+assert(row.PlayButtons.catquest.Icon.vertexColor[1] == 1 and row.PlayButtons.catquest.Icon.vertexColor[4] == 0.4,
+    'failed recordings retain their source hue with a visible unavailable mark')
 assert(WV:HasQuestAudio(179))
 soundOK = true
 click(row, 'wowvoice')
 assert(plays[#plays].file:find('179a.ogg', 1, true))
 WV:Silence()
--- Missing external library hides its controls and quests before any click.
+-- Missing external library keeps its offline catalogue and disabled controls.
+local classicCount, catquestCount, union = 0, 0, {}
+for key in pairs(WowVoiceDur) do
+    local id = tonumber(key:match('^(%d+)a$'))
+    if id then classicCount = classicCount + 1; union[id] = true end
+end
+for key in pairs(WowVoiceCatQuestAudio.entries) do
+    local id = tonumber(key:match('^(%d+)a$'))
+    if id then catquestCount = catquestCount + 1; union[id] = true end
+end
+local unionCount = 0
+for _ in pairs(union) do unionCount = unionCount + 1 end
+local offlineSummary = string.format('WowVoice: %d    CatQuest: %d    Всего без повторов: %d',
+    classicCount, catquestCount, unionCount)
+local function checkOffline(row)
+    assert(row.PlayButtons.catquest:IsShown() and not row.PlayButtons.catquest:IsEnabled())
+    assert(row.PlayButtons.catquest.UnavailableMark.visible)
+    assert(panel.SourceLegend.catquest.Caption:GetText() == 'CatQuest — недоступна')
+    for _, element in ipairs(panel.CatQuestLegend) do assert(element.visible) end
+    assert(panel.CatalogSummary:GetText() == offlineSummary)
+end
 local existsAPI, errorAPI = C_AddOns.DoesAddOnExist, C_AddOns.DoesAddOnHaveLoadError
 C_AddOns.DoesAddOnExist = function(name) return name ~= 'CatQuest_Voices' end
 row = tile(179)
 assert(CatQuestVoicePack.quests and loaded.CatQuest_Voices, 'Keep stale index and loaded flag for this regression')
-assert(not row.PlayButtons.catquest:IsShown())
+checkOffline(row)
 assert(not WowVoiceOptionsPanel.SharedVoiceButtons.catquest:IsEnabled())
-for _, element in ipairs(panel.CatQuestLegend) do assert(not element.visible) end
 C_AddOns.DoesAddOnExist = existsAPI
 local fullLoadedAPI = C_AddOns.IsAddOnLoaded
 C_AddOns.IsAddOnLoaded = function(name) return loaded[name] == true, name ~= 'CatQuest_Voices' end
 row = tile(179)
-assert(not row.PlayButtons.catquest:IsShown())
+checkOffline(row)
 C_AddOns.IsAddOnLoaded = fullLoadedAPI
 C_AddOns.DoesAddOnHaveLoadError = function(name) return name == 'CatQuest_Voices' end
 row = tile(179)
-assert(not row.PlayButtons.catquest:IsShown())
+checkOffline(row)
 C_AddOns.DoesAddOnHaveLoadError = errorAPI
 loaded.CatQuest_Voices = false
 row = tile(179)
-assert(not row.PlayButtons.catquest:IsEnabled())
-assert(not row.PlayButtons.catquest:IsShown(), 'Missing CatQuest library must have no play icons')
-for _, element in ipairs(panel.CatQuestLegend) do assert(not element.visible) end
-local classicCount = 0
-for key in pairs(WowVoiceDur) do if key:match('^%d+a$') then classicCount = classicCount + 1 end end
-assert(panel.CatalogSummary:GetText() == 'WowVoice: ' .. classicCount)
+checkOffline(row)
 panel.QuestID:SetText('')
-assert(popup.matchCount == classicCount)
-for _, cell in ipairs(popup.Rows) do assert(not cell.PlayButtons.catquest:IsShown()) end
+assert(popup.matchCount == unionCount)
+for _, cell in ipairs(popup.Rows) do assert(not cell.PlayButtons.catquest:IsEnabled()) end
 row = tile(179)
 local before = #plays
 click(row, 'catquest')
 assert(#plays == before, 'Disabled comparison button must do nothing')
-panel.QuestID:SetText('98246')
-assert(popup.matchCount == 0, 'CatQuest-only quests must not leave empty tiles')
+row = tile(98246)
+assert(row.PlayButtons.catquest:IsShown() and not row.PlayButtons.catquest:IsEnabled()
+    and not row.PlayButtons.wowvoice:IsShown(), 'CatQuest-only quests stay discoverable offline')
+
+-- Both libraries disabled: two distinct colors/marks, permanent legend and no
+-- playback even if a stale external index remains in memory.
+loaded.WowVoiceSounds = false
+CatQuestVoicePack.quests[999997] = {d=10}
+row = tile(179)
+checkOffline(row)
+assert(not C.QuestIDs()[999997], 'disabled CatQuest must use our snapshot, not stale external records')
+assert(row.PlayButtons.wowvoice:IsShown() and not row.PlayButtons.wowvoice:IsEnabled())
+assert(row.PlayButtons.wowvoice.UnavailableMark.visible)
+assert(row.PlayButtons.wowvoice.Icon.vertexColor[3] == 1
+    and row.PlayButtons.catquest.Icon.vertexColor[1] == 1)
+assert(panel.SourceLegend.wowvoice.Caption:GetText() == 'WowVoice — недоступна')
+before = #plays
+click(row, 'wowvoice'); click(row, 'catquest')
+assert(#plays == before)
+local tooltip = GameTooltip
+GameTooltip = setmetatable({}, {__index = function() error('Catalogue must not access tooltips') end})
+for _, source in ipairs({'wowvoice', 'catquest'}) do
+    local button = row.PlayButtons[source]
+    button.scripts.OnEnter(button); button.scripts.OnLeave(button)
+    assert(not panel.SourceLegend[source].Marker.scripts.OnEnter, 'legend status is inline, not a tooltip')
+end
+GameTooltip = tooltip
+CatQuestVoicePack.quests[999997] = nil
+loaded.WowVoiceSounds = true
 WV:Silence()
 local classicOnly
 for key in pairs(WowVoiceDur) do
@@ -132,16 +176,18 @@ assert(row.PlayButtons.catquest:IsEnabled(), 'An updated pack keeps compatible c
 version = auditedVersion
 row = tile(179)
 assert(row.PlayButtons.catquest:IsEnabled())
+assert(not row.PlayButtons.catquest.UnavailableMark.visible and row.PlayButtons.catquest.Icon.vertexColor[4] == 1)
+assert(panel.SourceLegend.catquest.Caption:GetText() == 'CatQuest')
 for _, element in ipairs(panel.CatQuestLegend) do assert(element.visible) end
 assert(panel.CatalogSummary:GetText():find('CatQuest:', 1, true))
 assert(tile(98246).PlayButtons.catquest:IsEnabled(), 'Restored library must restore its quests')
 CatQuestVoicePack.quests[179].d = 999
 row = tile(179)
-assert(not row.PlayButtons.catquest:IsEnabled(), 'Changed metadata must not use an old timer')
+assert(row.PlayButtons.catquest:IsEnabled() and C.Resolve(179, 'catquest').duration == 999.25,
+    'Changed metadata must use the live timer')
 CatQuestVoicePack = nil
 row = tile(179)
-assert(not row.PlayButtons.catquest:IsShown(), 'Missing live index must hide CatQuest even if the client still reports it loaded')
-assert(panel.CatalogSummary:GetText() == 'WowVoice: ' .. classicCount)
+checkOffline(row)
 C_AddOns.IsAddOnLoaded, C_AddOns.GetAddOnMetadata, UnitSex = loadedAPI, metadataAPI, sexAPI
 WV:RefreshAudioSources()
-print('PASS: A/B tiles, immediate source switch, exact source timers/sex/text, isolated failures/cooldowns, grey unavailable icons and optional external pack support')
+print('PASS: A/B playback, offline catalogues/counts, source-colored unavailable marks, inline legend, restored libraries and isolated failures')

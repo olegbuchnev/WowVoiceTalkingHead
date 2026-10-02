@@ -78,34 +78,39 @@ QuestLogDetailFrame, QuestLogFrame = nil, surface() -- nil gap must not skip leg
 local quest = readButton(QuestFrame, CatQuest_Toggle)
 local book = readButton(ItemTextFrame, CatQuest_Toggle)
 local gossip = readButton(GossipFrame, CatQuest_Toggle)
+local otherGossip = readButton(GossipFrame, function() end)
 local other = readButton(QuestFrame, function() end)
 local journal = readButton(QuestMapFrame.DetailsFrame, CatQuest_ReadQuestLog)
 QuestMapFrame.DetailsFrame.catQuestButton = journal
 local hidden = readButton(QuestLogFrame, CatQuest_ReadQuestLog, false)
 QuestLogFrame.catQuestButton = hidden
 command('on')
-assert(not quest.visible and not journal.visible and not hidden.visible)
-assert(book.visible and gossip.visible and other.visible, 'books/gossip/unrelated read buttons stay intact')
+assert(not quest.visible and not gossip.visible and not journal.visible and not hidden.visible)
+assert(book.visible and other.visible and otherGossip.visible, 'books and unrelated read buttons stay intact')
 assert(quest.scripts.OnClick == CatQuest_Toggle and journal.scripts.OnClick == CatQuest_ReadQuestLog)
-quest:Show(); journal:Show()
-assert(not quest.visible and not journal.visible, 'a native Show must not defeat suppression')
+quest:Show(); journal:Show(); gossip:Show()
+assert(not quest.visible and not gossip.visible and not journal.visible, 'a native Show must not defeat suppression')
 WV:UpdateCatQuestIntegration() -- must retain the original visibility snapshot
 command('off')
-assert(quest.visible and journal.visible and not hidden.visible, 'restore exactly the prior shown state')
+assert(quest.visible and gossip.visible and journal.visible and not hidden.visible, 'restore exactly the prior shown state')
 journal:Hide(); journal:Show()
 assert(journal.visible, 'installed visibility hooks must be inactive after /thead off')
 command('on')
 event('PLAYER_LOGOUT')
-assert(quest.visible and journal.visible and not hidden.visible)
+assert(quest.visible and gossip.visible and journal.visible and not hidden.visible)
 
 -- CatQuest can create buttons after our login/addon listener has run.
-QuestFrame, QuestMapFrame, QuestLogFrame = surface(), nil, nil
+QuestFrame, GossipFrame, QuestMapFrame, QuestLogFrame = surface(), surface(), nil, nil
 command('on')
 event('PLAYER_LOGIN')
 local lateQuest = readButton(QuestFrame, CatQuest_Toggle)
+local lateGossip = readButton(GossipFrame, CatQuest_Toggle)
+lateGossip:SetText('Read') -- Identification must not depend on translated labels.
 assert(lateQuest.visible)
 deferred()
-assert(not lateQuest.visible, 'deferred login refresh finds anonymous quest buttons')
+assert(not lateQuest.visible and not lateGossip.visible, 'deferred login refresh finds anonymous quest and gossip buttons')
+lateGossip:Show()
+assert(not lateGossip.visible)
 frame.scripts.OnEvent(frame, 'ADDON_LOADED', 'Blizzard_QuestLog')
 QuestMapFrame = {DetailsFrame=surface()}
 local lateJournal = readButton(QuestMapFrame.DetailsFrame, CatQuest_ReadQuestLog)
@@ -113,10 +118,10 @@ QuestMapFrame.DetailsFrame.catQuestButton = lateJournal
 deferred()
 assert(not lateJournal.visible, 'deferred journal load refresh finds its button')
 command('off')
-assert(lateQuest.visible and lateJournal.visible)
+assert(lateQuest.visible and lateGossip.visible and lateJournal.visible)
 
 -- Missing optional APIs/frames must be harmless with CatQuest absent.
 CatQuestDB = nil
 WV:UpdateCatQuestIntegration()
 assert(book.visible and gossip.visible and other.visible)
-print('PASS: CatQuest quest/read buttons, exact identity, book exclusion, prior visibility, late journal/login and restoration')
+print('PASS: CatQuest quest/gossip/read buttons, locale-independent identity, book exclusion, prior visibility, late journal/login and restoration')

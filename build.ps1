@@ -17,7 +17,7 @@ $SoundSource = Join-Path $RepoRoot 'soundpack'
 $LegacyDebugFiles = @('CatQuestComparison.lua', 'LocalDebug.lua')
 $ArtifactsRoot = Join-Path $RepoRoot 'artifacts'
 $SoundTocs = @('WowVoiceSounds.toc', 'WowVoiceSounds_Mainline.toc')
-$QueueLabModules = @('State.lua', 'Runtime.lua', 'Window.lua')
+$QueueLabModules = @('State.lua', 'Runtime.lua', 'Window.lua', 'Commands.lua')
 $QueueLabExplicit = $PSBoundParameters.ContainsKey('QueueLab')
 if ($QueueLab -and $Task -notin @('Deploy', 'DeployAddon')) {
   throw '-QueueLab is allowed only for local Deploy/DeployAddon, never release packaging.'
@@ -102,6 +102,10 @@ function Test-AddonLayout {
     }
   }
   if ($classicFiles.Count -eq 0) { throw 'Empty Classic audio index.' }
+  $runtimeSilence = Join-Path $AddonSource 'Media\silence.ogg'
+  if (-not (Test-Path -LiteralPath $runtimeSilence -PathType Leaf) -or (Get-Item -LiteralPath $runtimeSilence).Length -eq 0) {
+    throw 'Missing service audio: WowVoiceTalkingHead/Media/silence.ogg'
+  }
   $sources = if ($AddonOnly) { @($AddonSource) } else { @($AddonSource, $SoundSource) }
   foreach ($source in $sources) {
     if (-not (Test-Path -LiteralPath $source -PathType Container)) { throw "Missing source: $source" }
@@ -113,7 +117,8 @@ function Test-AddonLayout {
       }
       if ($file.Extension -eq '.ogg') {
         $isClassic = (Test-PathEquals $file.DirectoryName $SoundSource) -and $classicFiles.ContainsKey($file.Name)
-        if (-not $isClassic) { throw "Unexpected audio in package source: $($file.FullName)" }
+        $isServiceAudio = Test-PathEquals $file.FullName $runtimeSilence
+        if (-not $isClassic -and -not $isServiceAudio) { throw "Unexpected audio in package source: $($file.FullName)" }
       }
     }
   }

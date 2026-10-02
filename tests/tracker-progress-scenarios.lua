@@ -550,3 +550,78 @@ increment(999999)
 assert(not notice:IsShown(), 'quests without audio remain silent')
 assert(WV.Work.errors == beforeErrors, 'production notifications must not fail inside the deferred scan')
 print('PASS: real reminder and glow are always available, no duplicate status/autoplay, renewal, hover target safety, native-event priority, lifecycle cleanup and listening cooldown')
+
+-- A pending description already serves the purpose of a replay reminder.
+local queue = WV.questQueue
+queue:Clear()
+queue.loggingOut = nil
+table.insert(quests, 179)
+objectives[179] = {{text='Targets: 0/10', type='monster', numFulfilled=0, numRequired=10, finished=false}}
+completed[179] = false
+WowVoiceDB.listenedQuests[playerGUID] = {}
+WowVoiceDB.autoPlay, WowVoiceDB.autoPlayAccept = true, true
+send('PLAYER_ENTERING_WORLD')
+local blocker = {context={questId=192, section='p'}}
+queue:Add(blocker)
+WV:SetQueueAutoPlay(false)
+queue:Offer({questId=179, section='a'})
+local description = queue.offers['game:179:a']
+assert(description and not description.group and not queue:HasQueuedDescription(179))
+increment(179)
+assert(notice:IsShown() and play.ProgressGlow.visible, 'an unaccepted offer is not a queued description')
+notice.scripts.OnEnter(notice)
+local queuedPlays = #plays
+queue:Accept(179)
+assert(queue:HasQueuedDescription(179) and description.status == 'waiting' and queue.paused)
+assert(not notice:IsShown() and not play.ProgressGlow.visible, 'queuing hides an existing reminder even while hovered')
+increment(179)
+assert(not notice:IsShown() and not play.ProgressGlow.visible, 'paused descriptions suppress both progress reminders')
+assert(queue:Count() == 2 and description.group and #plays == queuedPlays,
+    'suppression neither removes nor plays queued records')
+assert(not WowVoiceDB.listenedQuests[playerGUID][179], 'waiting alone does not start a listening cooldown')
+increment(192)
+assert(notice:IsShown() and notice.questID == 192, 'queued progress dialogue does not suppress another quest reminder')
+queue:DeleteQuest(description)
+assert(not queue:HasQueuedDescription(179) and notice.questID == 192, 'removal does not resurrect a suppressed reminder')
+increment(179)
+assert(notice:IsShown() and notice.questID == 179 and play.ProgressGlow.visible,
+    'fresh progress after removing the description can remind again')
+for _, section in ipairs({'p', 'c'}) do
+    local record = {context={questId=179, section=section}}
+    queue:Add(record)
+    queue:Changed()
+    increment(179)
+    assert(notice:IsShown() and play.ProgressGlow.visible, 'only description records suppress reminders')
+    queue:Remove(record)
+end
+local lab = {context={questId=179, section='a', queueOwner='lab'}}
+queue:Add(lab)
+queue:Changed()
+increment(179)
+assert(notice:IsShown() and not queue:HasQueuedDescription(179), 'stand descriptions do not suppress game reminders')
+queue:Remove(lab)
+queue:Add(description)
+queue:Changed()
+queue:SaveSession()
+assert(WowVoiceQueueDB and WowVoiceQueueDB.paused)
+queue:Clear()
+queue.loggingOut = nil
+queue:RestoreSession()
+send('PLAYER_ENTERING_WORLD')
+increment(179)
+assert(queue.paused and queue:HasQueuedDescription(179) and not notice:IsShown() and not play.ProgressGlow.visible,
+    'a paused queue restored after reload also suppresses reminders')
+description = queue.offers['game:179:a']
+assert(queue:Start(description, true) and description.status == 'playing')
+-- Isolate the queue rule from the independent successful-playback cooldown.
+WowVoiceDB.listenedQuests[playerGUID][179] = nil
+increment(179)
+assert(queue:HasQueuedDescription(179) and not notice:IsShown() and not play.ProgressGlow.visible,
+    'a currently playing description also suppresses reminders')
+WV:Silence('duration timer')
+assert(not queue:HasQueuedDescription(179))
+increment(179)
+assert(notice:IsShown() and play.ProgressGlow.visible, 'a finished description no longer suppresses fresh progress')
+queue:Clear()
+assert(WV.Work.errors == beforeErrors, 'queue reminder checks must not fail inside the deferred scan')
+print('PASS: queued descriptions suppress reminders while waiting, playing and restored; offers, other stages and stand records do not')

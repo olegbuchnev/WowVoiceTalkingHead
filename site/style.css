@@ -20,7 +20,10 @@ a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset:
 a:hover { color: var(--accent-hover); }
 a:focus-visible { outline: 3px solid var(--focus); outline-offset: 5px; border-radius: 2px; }
 .layout { display: grid; grid-template-columns: 310px minmax(0, 730px); gap: 72px; max-width: 1208px; margin: 0 auto; padding: 72px 48px 40px; }
-.sidebar { position: sticky; top: 56px; align-self: start; }
+.sidebar { top: 56px; align-self: start; }
+@media (min-width: 701px) {
+  .sidebar.fits-viewport { position: sticky; }
+}
 .brand { display: block; color: var(--ink); text-decoration: none; font-size: 36px; font-weight: 700; line-height: 1.15; letter-spacing: -1.3px; }
 .brand span { display: block; font-weight: 400; }
 .tagline { color: var(--muted); font-size: 16px; line-height: 1.65; margin: 22px 0 28px; }
@@ -66,6 +69,12 @@ p { margin: 0 0 18px; }
 img { display: block; max-width: 100%; height: auto; border-radius: 5px; }
 .screenshots p { margin: 14px 0; }
 section { border-top: 1px solid var(--line); padding-top: 30px; margin-top: 32px; }
+section[aria-labelledby="whats-new"] details { border: 1px solid var(--line); border-radius: 6px; margin-top: 12px; }
+section[aria-labelledby="whats-new"] summary { padding: 14px 18px; cursor: pointer; background: var(--surface); border-radius: 5px; }
+section[aria-labelledby="whats-new"] summary:hover { background: var(--surface-hover); }
+section[aria-labelledby="whats-new"] summary:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+section[aria-labelledby="whats-new"] details[open] summary { border-bottom: 1px solid var(--line); border-radius: 5px 5px 0 0; }
+section[aria-labelledby="whats-new"] details > ul { margin: 20px 18px 20px 22px; }
 .queue-feature { display: grid; grid-template-columns: minmax(0, 1fr) 400px; column-gap: 28px; align-items: start; }
 .queue-feature .feature-image { margin: 0; }
 @media (max-width: 1100px) {
@@ -104,4 +113,3 @@ footer a { color: var(--muted); }
   h2 { font-size: 23px; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
-@media (max-height: 1100px) { .sidebar { position: static; } }

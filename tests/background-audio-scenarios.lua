@@ -38,6 +38,8 @@ for _, enabled in ipairs({'0','1'}) do
         if ending=='timer' then tick(now+duration+0.051)
         elseif ending=='close' then WV:Silence()
         else event('PLAYER_LOGOUT') end
+        assert(music[#music].file == 'Interface\\AddOns\\WowVoiceTalkingHead\\Media\\silence.ogg',
+            'all Music stop paths must use our bundled silence, never an external voice-pack file')
         settings(enabled,'0')
     end
 end

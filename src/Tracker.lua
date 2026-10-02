@@ -1,6 +1,7 @@
 -- Small replay controls in Blizzard's tracker (including EllesmereUI) and
 -- Questie. Keep our state outside either tracker's pooled rows.
 local WV = _G.WowVoice
+local L = WowVoiceLocale
 local buttons, hooked = {}, {}
 local progress, pulses = {}, {}
 local REMINDER_DURATION = 10
@@ -17,6 +18,11 @@ end
 
 local function pulseEnabled()
     return enabled() and WowVoiceDB.enabled ~= false
+end
+
+local function descriptionQueued(id)
+    local queue = WV.questQueue
+    return queue and queue.HasQueuedDescription and queue:HasQueuedDescription(id)
 end
 
 local function visibleTrackerQuest(play)
@@ -61,7 +67,7 @@ local function positionReminder(self)
 end
 
 local function updateReminderPreview(self)
-    if not self.isTest and not pulseEnabled() then self:Hide(); return end
+    if not self.isTest and (not pulseEnabled() or descriptionQueued(self.questID)) then self:Hide(); return end
     positionReminder(self)
     if self.hovered then return end
     local remaining = self.expiresAt - GetTime()
@@ -72,6 +78,7 @@ end
 -- Shared by actual progress and the explicit mock. Only the mock emits a
 -- synthetic yellow message; normal notifications leave Blizzard's text alone.
 local function showQuestReminder(id, isTest)
+    if not isTest and descriptionQueued(id) then return end
     if reminderPreview and reminderPreview:IsShown() and reminderPreview.hovered
         and reminderPreview.questID ~= id then
         -- Do not change the click target under the user's mouse.
@@ -84,7 +91,7 @@ local function showQuestReminder(id, isTest)
         frame:SetFrameStrata("DIALOG")
         local label = frame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
         label:SetPoint("LEFT", frame, "LEFT", 0, 0)
-        label:SetText("Вспомнить задание")
+        label:SetText("Вспомнить задание") -- Deliberately Russian on every client.
         label:SetWordWrap(false)
         label:SetTextColor(1, 0.82, 0)
         frame.Label = label
@@ -127,6 +134,9 @@ local function showQuestReminder(id, isTest)
             size = size * UIErrorsFrame:GetEffectiveScale() / frame:GetEffectiveScale()
             frame.Label:SetFont(font, size, flags)
         end
+        -- The English status font lacks Cyrillic; adapt before measuring and
+        -- after every native font assignment, including repeated reminders.
+        L.ApplyContentFont(frame.Label, frame.Label:GetText(), font)
         local ratio = (size or frame.baseFontSize) / frame.baseFontSize
         local iconSize, gap = 18 * ratio, 6 * ratio
         frame.Icon:SetSize(iconSize, iconSize)
@@ -143,6 +153,8 @@ local function showQuestReminder(id, isTest)
         end
         positionReminder(frame)
     else
+        L.ApplyContentFont(frame.Label, frame.Label:GetText())
+        frame:SetWidth(frame.Label:GetStringWidth() + 24)
         frame.statusFrame, frame.statusOffset = nil, nil
         frame:ClearAllPoints()
         frame:SetPoint("TOP", UIParent, "TOP", 0, -146)
@@ -266,7 +278,8 @@ local function updatePulse(play)
     local started = previewStarted or testStarted or pulses[play.questID]
     local elapsed = started and (GetTime() - started)
     if not play.active or not enabled() or not elapsed
-        or (not previewStarted and not testStarted and (not pulseEnabled() or elapsed >= REMINDER_DURATION)) then
+        or (not previewStarted and not testStarted and (not pulseEnabled()
+            or descriptionQueued(play.questID) or elapsed >= REMINDER_DURATION)) then
         stopPulse(play)
         return
     end
@@ -314,7 +327,7 @@ local function makeButton(block, readQuestID, parent)
     play:SetScript("OnClick", function()
         -- Resolve at click time: either tracker can recycle a row.
         local id = readQuestID()
-        if enabled() and play.active and id and WV:HasQuestAudio(id) then
+        if enabled() and play.active and id and WV:CanPresentQuest(id) then
             pulses[id] = nil
             stopPulse(play)
             WV:ReplayQuest(id)
@@ -393,7 +406,7 @@ end
 local function refreshQuestieLine(line)
     local id = questieQuestID(line)
     if not (id and line.label and line.expandQuest and line:IsVisible()
-        and WV:HasQuestAudio(id)) then return end
+        and WV:CanPresentQuest(id)) then return end
     local scroll = questieScroll(line)
     local host = scroll and scroll:GetParent() or line
     local play = buttons[line]
@@ -488,16 +501,17 @@ end
 function WV:RefreshTrackerButtons()
     if reminderPreview and reminderPreview:IsShown() and (not enabled()
         or not WV:HasQuestAudio(reminderPreview.questID)
-        or (not reminderPreview.isTest and not pulseEnabled())) then reminderPreview:Hide() end
+        or (not reminderPreview.isTest and (not pulseEnabled()
+            or descriptionQueued(reminderPreview.questID)))) then reminderPreview:Hide() end
     for id, started in pairs(pulses) do
-        if not pulseEnabled() or GetTime() - started >= REMINDER_DURATION then pulses[id] = nil end
+        if not pulseEnabled() or descriptionQueued(id) or GetTime() - started >= REMINDER_DURATION then pulses[id] = nil end
     end
     for _, play in pairs(buttons) do play.active = false end
     local tracker = _G.QuestObjectiveTracker
     if enabled() and tracker and tracker.usedBlocks then
         for _, blocks in pairs(tracker.usedBlocks) do
             for _, block in pairs(blocks) do
-                if block.HeaderText and WV:HasQuestAudio(block.id) then
+                if block.HeaderText and WV:CanPresentQuest(block.id) then
                     local play = buttons[block] or makeButton(block)
                     play.questID = block.id
                     play.active = true
@@ -569,7 +583,7 @@ local function scanProgress()
         -- Only a still-active listening pause slides with real progress.
         -- After 30 quiet minutes the next change can remind again.
         if listened[id] then listened[id] = currentTimestamp() + LISTENED_COOLDOWN end
-        if not listened[id] and pulseEnabled() and WV:HasQuestAudio(id) then
+        if not listened[id] and pulseEnabled() and not descriptionQueued(id) and WV:HasQuestAudio(id) then
             pulses[id] = GetTime()
             -- Prefer the most recent native progress event; use a stable order
             -- when several changes arrive without QUEST_WATCH_UPDATE.

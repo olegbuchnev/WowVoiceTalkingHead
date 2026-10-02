@@ -4,6 +4,7 @@ local Q = { enabled = true, groups = {}, offers = {}, paused = false, completed 
 WV.questQueue = Q
 local driver = CreateFrame("Frame", "WowVoiceQuestQueueDriver")
 driver:Hide()
+local restoreLoading = false
 
 local function key(context)
     return tostring(context.queueOwner or "game") .. ":" .. context.questId .. ":" .. context.section
@@ -45,6 +46,7 @@ function Q:Changed(layoutMode)
     if self:Count() == 0 then self.paused = false end
     if WV.PrepareQuestQueuePortraits then WV:PrepareQuestQueuePortraits(self.groups) end
     if WV.RefreshQuestQueuePlayer then WV:RefreshQuestQueuePlayer(layoutMode) end
+    if WV.RefreshTrackerButtons then WV:RefreshTrackerButtons() end
     if self.observer then self.observer() end
 end
 
@@ -52,6 +54,19 @@ function Q:Count()
     local count = 0
     for _, group in ipairs(self.groups) do count = count + #group.records end
     return count
+end
+
+function Q:HasQueuedDescription(id)
+    if not self.enabled then return false end
+    for _, group in ipairs(self.groups) do
+        for _, record in ipairs(group.records) do
+            local context = record.context
+            if context.questId == id and context.section == "a"
+                and (context.queueOwner or "game") == "game"
+                and (record.status == "waiting" or record.status == "playing") then return true end
+        end
+    end
+    return false
 end
 
 function Q:Add(record, first)
@@ -173,7 +188,8 @@ function Q:OrderQuestStages(record)
 end
 
 function Q:Schedule()
-    if self.enabled and not self.paused and (self.gap or not self.current) and self:Waiting() then driver:Show() end
+    if not restoreLoading and self.enabled and not self.paused
+        and (self.gap or not self.current) and self:Waiting() then driver:Show() end
 end
 
 function Q:SetPaused(paused)
@@ -331,6 +347,9 @@ end
 
 function Q:PlaybackStopped(reason)
     local hadCurrent = self.current ~= nil
+    -- Dismissing the head skips this line without changing autoplay. Schedule
+    -- on the next frame so the old playback finishes restoring audio/head state.
+    local advance = reason == "duration timer" or (reason == "talking head button" and not self.paused)
     local nextRecord = self:Waiting()
     if reason == "duration timer" and not self.paused and self.current and nextRecord then
         local sameQuest = questKey(self.current.context.questId, self.current.context.queueOwner)
@@ -345,9 +364,9 @@ function Q:PlaybackStopped(reason)
     if self.current then self:Remove(self.current,
         (reason == "duration timer" or self.current.status == "done") and "done" or "skipped") end
     self.current = nil
-    if reason == "duration timer" then self:Schedule()
+    if advance then self:Schedule()
     elseif reason ~= "new playback" then self.paused = self:Waiting() ~= nil; driver:Hide() end
-    self:Changed((reason == "duration timer" or (hadCurrent and reason == "new playback")) and "advance"
+    self:Changed((advance or (hadCurrent and reason == "new playback")) and "advance"
         or (hadCurrent or reason ~= "new playback") and "instant" or nil)
 end
 
@@ -489,7 +508,7 @@ function Q:RestoreSession()
     if self:Count() == 0 then self.paused = false
     elseif WV.GetHeadSettings then WV:GetHeadSettings() end -- Paused restore needs geometry, not playback.
     self:Changed("instant")
-    self:Schedule() -- Start after entering the world, with current audio sources.
+    self:Schedule() -- Restart with a full playback clock once the loading screen is gone.
 end
 
 function WV:SetQueueDescriptionsOnly(enabled)
@@ -524,10 +543,24 @@ events:RegisterEvent("QUEST_ACCEPTED")
 events:RegisterEvent("QUEST_REMOVED")
 events:RegisterEvent("QUEST_TURNED_IN")
 events:RegisterEvent("PLAYER_ENTERING_WORLD")
+-- PLAYER_ENTERING_WORLD can precede the end of loading. Starting audio there
+-- lets its timer run before the client is ready to play it. Older clients lack
+-- this event; they retain the next-frame PLAYER_ENTERING_WORLD fallback.
+local hasLoadingEvent = pcall(events.RegisterEvent, events, "LOADING_SCREEN_DISABLED")
+local loadingComplete = false
 local restorePending = true
 events:SetScript("OnEvent", function(_, event, id, legacyID)
+    if event == "LOADING_SCREEN_DISABLED" then
+        loadingComplete = true
+        if restoreLoading then restoreLoading = false; Q:Schedule() end
+        return
+    end
     if event == "PLAYER_ENTERING_WORLD" then
-        if restorePending then restorePending = false; Q:RestoreSession() end
+        if restorePending then
+            restorePending = false
+            restoreLoading = hasLoadingEvent and not loadingComplete
+            Q:RestoreSession()
+        end
         return
     end
     Q:Event(event, event == "QUEST_ACCEPTED" and (legacyID or id) or id)
@@ -539,6 +572,7 @@ driver:SetScript("OnUpdate", function()
     for identity, quest in pairs(removed) do
         if not Q.completed[identity] then Q:Abandon(quest.id, quest.owner) end
     end
+    if restoreLoading then return end
     if Q.gap and not Q.paused then
         if GetTime() < Q.gap.deadline then driver:Show()
         else Q:Next() end

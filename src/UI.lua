@@ -1,3 +1,4 @@
+local L = WowVoiceLocale
 -- Quest journal replay controls.
 local WV = _G.WowVoice
 if not WV then return end
@@ -67,11 +68,12 @@ local journalButtons = {}
 local journalHooks = {}
 
 local function updatePlayButton(play)
-    if not WV:HasQuestAudio(play.questOwner.questID) then
+    if not WV:CanPresentQuest(play.questOwner.questID) then
         play:Hide()
         return
     end
     if not play.compact then applyEllesmereStyle(play) end
+    if not play.compact then play:SetText(WV:HasQuestAudio(play.questOwner.questID) and L["Слушать"] or L["Читать"]) end
     local available = WowVoiceDB and WowVoiceDB.enabled
     local alpha = play.compact and not play.hovered and 0.7 or 1
     play:SetAlpha(available and alpha or 0.4)
@@ -94,10 +96,10 @@ local function makePlayButton(parent, questOwner, compact)
         icon:SetSize(20, 20)
         icon:SetPoint("CENTER")
     else
-        play:SetText("Слушать")
+        play:SetText(L["Слушать"])
     end
     play:SetScript("OnClick", function(self)
-        if WV:HasQuestAudio(self.questOwner.questID) then
+        if WV:CanPresentQuest(self.questOwner.questID) then
             WV:ReplayQuest(self.questOwner.questID)
         end
         updatePlayButton(self)
@@ -127,7 +129,7 @@ local function refreshQuestList()
             local play = journalButtons[row] or makePlayButton(row, row, true)
             -- Make room to the right of the checkbox. The template already anchors
             -- the quest title and markers to it, so they move together.
-            if WV:HasQuestAudio(row.questID) then
+            if WV:CanPresentQuest(row.questID) then
                 if not play.checkboxPoint then play.checkboxPoint = { row.Checkbox:GetPoint() } end
                 row.Checkbox:ClearAllPoints()
                 row.Checkbox:SetPoint("TOPRIGHT", row, "TOPRIGHT", -26, -8)

@@ -302,9 +302,10 @@ finish(); assert(Q.current.context.section == 'p' and Lab.state.current.section 
 finish(); assert(Q.current.context.section == 'c')
 Lab:Reset()
 
--- Close stops current and autoplay; accepted additions do not resume it.
+-- Close preserves disabled autoplay; accepted additions do not resume it.
 a = offer(ids[1], 1001); Q:Accept(ids[1], 'lab')
 b = offer(ids[2], 2002); Q:Accept(ids[2], 'lab')
+WowVoice:SetQueueAutoPlay(false)
 WowVoiceTalkingHead.Close.scripts.OnClick()
 assert(Q.paused and not Q.current and Q:Count() == 1 and a.status == 'skipped')
 c = offer(ids[3], 1001); Q:Accept(ids[3], 'lab')
@@ -316,6 +317,42 @@ rowFor(b).Play.scripts.OnClick(rowFor(b).Play)
 assert(Q.current == b and a.status == 'skipped', 'Play starts the chosen record, not the discarded one')
 assert(not rowFor(b).Play:IsShown())
 Q:Clear()
+WowVoice:SetQueueAutoPlay(true)
+
+-- Cross/right-click skip only the current track, preserving both autoplay
+-- preference and checkbox. Exercise Master and the background-off Music path.
+local savedMusic, savedStopMusic = PlayMusic, StopMusic
+local savedBackground = cvars.Sound_EnableSoundWhenGameIsInBG
+local musicFiles, musicStops = {}, 0
+PlayMusic = function(path) musicFiles[#musicFiles+1] = path; return true end
+StopMusic = function() musicStops = musicStops + 1 end
+for _, background in ipairs({'1','0'}) do
+    cvars.Sound_EnableSoundWhenGameIsInBG = background
+    for _, button in ipairs({'cross','right'}) do
+        a = offer(ids[1], 1001); Q:Accept(ids[1], 'lab')
+        b = offer(ids[2], 2002); Q:Accept(ids[2], 'lab')
+        c = offer(ids[3], 3003); Q:Accept(ids[3], 'lab')
+        local oldHandle, oldStops, oldMusicStops = plays[#plays].handle, #stops, musicStops
+        local checkbox = frames.WowVoiceQuestQueuePlayer.Autoplay.Check
+        if button == 'cross' then WowVoiceTalkingHead.Close.scripts.OnClick()
+        else WowVoiceTalkingHead.scripts.OnClick(WowVoiceTalkingHead, 'RightButton') end
+        assert(not Q.current and not Q.paused and Q:Count() == 2 and a.status == 'skipped')
+        assert(WowVoiceDB.queueAutoPlay and checkbox:GetChecked(), 'dismissal must retain autoplay')
+        if background == '1' then assert(#stops == oldStops + 1 and stops[#stops] == oldHandle)
+        else assert(musicStops == oldMusicStops + 1) end
+        step()
+        assert(Q.current == b and WowVoiceTalkingHead:IsShown(), 'next head must survive old playback cleanup')
+        if background == '1' then assert(plays[#plays].file == WowVoice:SoundPath(ids[2], 'a'))
+        else assert(musicFiles[#musicFiles] == WowVoice:SoundPath(ids[2], 'a')) end
+        finish(); assert(Q.current == c, 'autoplay continues after the skipped track')
+        WowVoiceTalkingHead.Close.scripts.OnClick(); step()
+        assert(not Q.current and Q:Count() == 0 and not WowVoiceTalkingHead:IsShown())
+        assert(WowVoiceDB.queueAutoPlay, 'closing the last track preserves the saved choice')
+        Q:Clear()
+    end
+end
+PlayMusic, StopMusic = savedMusic, savedStopMusic
+cvars.Sound_EnableSoundWhenGameIsInBG = savedBackground
 
 -- Explicit next overrides NPC grouping, explicit now replaces only current.
 a = offer(ids[1], 1001); Q:Accept(ids[1], 'lab')
@@ -455,7 +492,7 @@ Q:Clear('lab')
 tick(now + 2); step()
 assert(not Q.gap and not Q.current and Q:Count() == 0 and #plays == gapSounds)
 
--- A file removed during the gap is skipped without leaving a finished current record.
+-- A source removed during the gap keeps the next line as a silent presentation.
 a = offer(ids[1], 1001); Q:Accept(ids[1], 'lab')
 b = offer(ids[2], 2002); Q:Accept(ids[2], 'lab')
 c = offer(ids[3], 3003); Q:Accept(ids[3], 'lab')
@@ -466,19 +503,22 @@ WowVoice.SoundPath = function(self, id, ...)
     return savedSoundPath(self, id, ...)
 end
 tick(Q.gap.deadline); step()
-assert(not Q.current and not Q.gap and b.status == 'failed' and a.status == 'done')
-step(); assert(Q.current == c, 'a missing file at the deadline must not strand the queue')
+assert(Q.current == b and not Q.gap and b.status == 'playing' and a.status == 'done')
+tick(now + WowVoice:SilentDuration(b.context) + 0.01)
+tick(Q.gap.deadline); step()
+assert(Q.current == c, 'a silent line must not strand the queue')
 WowVoice.SoundPath = savedSoundPath
 Q:Clear()
 
--- Close during the final visual fade cancels the already scheduled advance.
+-- Close during the final visual fade advances once, without waiting for its gap.
 a = offer(ids[1], 1001); Q:Accept(ids[1], 'lab')
 b = offer(ids[2], 2002); Q:Accept(ids[2], 'lab')
 local _, endingDuration = WowVoice:SoundPath(ids[1], 'a')
 tick(now + endingDuration + 1)
 WowVoiceTalkingHead.Close.scripts.OnClick()
 step()
-assert(not Q.current and Q.paused and Q:Count() == 1)
+assert(Q.current == b and not Q.paused and Q:Count() == 1 and a.status == 'done')
+assert(WowVoiceDB.queueAutoPlay and WowVoiceTalkingHead:IsShown())
 Q:Clear()
 -- With no remaining queue, closing a standalone preview does not mute future dialogs.
 a = offer(ids[1], 1001)
@@ -601,11 +641,13 @@ Q:DeleteNPC('lab:npc:1001')
 assert(not Q.current and not a.group and not d.group and Q:Count() == 2)
 assert(realWaiting.group and b.group, 'keep other NPCs and real/test ownership separate')
 step(); assert(Q.current == b)
+WowVoice:SetQueueAutoPlay(false)
 WowVoiceTalkingHead.Close.scripts.OnClick()
 assert(Q.paused and realWaiting.group)
 Q:DeleteQuest(realWaiting); step()
 assert(not Q.current and Q:Count() == 0 and not Q.paused)
 Q:Clear()
+WowVoice:SetQueueAutoPlay(true)
 
 -- Play-next immediately reflows at the final width, even while the pointer is on the list.
 a = offer(ids[1], 1001); Q:Accept(ids[1], 'lab')

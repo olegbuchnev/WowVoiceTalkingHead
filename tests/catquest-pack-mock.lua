@@ -7,7 +7,7 @@ for key, entry in pairs(WowVoiceCatQuestAudio.entries) do
         local quest = CatQuestVoicePack.quests[id] or {}
         CatQuestVoicePack.quests[id] = quest
         local record = {d=entry.indexDuration, g=entry.gender and 1 or nil, v=entry.voice, c={}}
-        local texts = WowVoiceCatQuestTexts.entries[key]
+        local texts = WowVoiceQuestTexts.entries[key]
         for _, variant in ipairs(entry.gender and {'m','f'} or {'x'}) do
             local text = texts and texts[variant == 'x' and 'common' or variant == 'm' and 'male' or 'female']
             if text then record.c[variant] = {{0, text}} end

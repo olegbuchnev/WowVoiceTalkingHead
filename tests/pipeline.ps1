@@ -18,6 +18,18 @@ function Assert-Fails {
   Assert-True $failed $Message
 }
 
+function Assert-NoDeveloperCommands {
+  param($Archive)
+  foreach ($entry in $Archive.Entries | Where-Object { $_.FullName -like '*.lua' }) {
+    $reader = [IO.StreamReader]::new($entry.Open())
+    try {
+      $text = $reader.ReadToEnd()
+      Assert-True (-not ($text -match 'cmd\s*==\s*"(?:remindertest|stoptest|test|diag|perf|debug|source)"')) ('Developer command in release ZIP: ' + $entry.FullName)
+      Assert-True (-not ($text -match 'SLASH_\w+\s*=\s*"/(?:tt|wvdebug|wvcqupdate)"')) ('Developer alias in release ZIP: ' + $entry.FullName)
+    } finally { $reader.Dispose() }
+  }
+}
+
 try {
   foreach ($name in @('src', 'dev', 'build.ps1', 'USER_README.md')) {
     Copy-Item -LiteralPath (Join-Path $project $name) -Destination $fixture -Recurse
@@ -107,6 +119,17 @@ try {
   'not allowed' | Set-Content -LiteralPath $accidentalOgg
   Assert-Fails { & $build -Task Package } 'Unindexed OGG was allowed in release sources.'
   Remove-Item -LiteralPath $accidentalOgg
+  $accidentalRuntimeOgg = Join-Path $fixture 'src\Media\voice.ogg'
+  'not allowed' | Set-Content -LiteralPath $accidentalRuntimeOgg
+  try { Assert-Fails { & $build -Task PackageAddon } 'A voice recording was allowed alongside service audio.' }
+  finally { Remove-Item -LiteralPath $accidentalRuntimeOgg }
+  $serviceAudio = Join-Path $fixture 'src\Media\silence.ogg'
+  $heldServiceAudio = Join-Path $fixture 'temporarily-held-silence.ogg'
+  Move-Item -LiteralPath $serviceAudio -Destination $heldServiceAudio
+  try {
+    Assert-Fails { & $build -Task PackageAddon } 'Addon-only archive without service audio was allowed.'
+    Assert-Fails { & $build -Task Package } 'Full archive without service audio was allowed.'
+  } finally { Move-Item -LiteralPath $heldServiceAudio -Destination $serviceAudio }
   foreach ($audio in @((Join-Path $fixture 'soundpack\179a.ogg'))) {
     $saved = Join-Path $fixture 'temporarily-held-audio.ogg'
     Move-Item -LiteralPath $audio -Destination $saved
@@ -153,6 +176,7 @@ try {
   $expected['README.txt'] = $null
   Add-Type -AssemblyName System.IO.Compression.FileSystem
   $archive = [IO.Compression.ZipFile]::OpenRead($archives[0].FullName)
+  Assert-NoDeveloperCommands $archive
   $sha = [Security.Cryptography.SHA256]::Create()
   try {
     $entries = @($archive.Entries | Where-Object { $_.Name })
@@ -237,6 +261,7 @@ try {
     Assert-True ((Split-Path -Leaf $updateZip) -like 'WowVoiceTalkingHead-*-addon-only.zip') 'Addon-only package is missing the new project name.'
     Assert-True ((Get-FileHash -LiteralPath $fullZip).Hash -eq $fullHash) 'Addon update changed full release.'
     $archive = [IO.Compression.ZipFile]::OpenRead($updateZip)
+    Assert-NoDeveloperCommands $archive
     $sha = [Security.Cryptography.SHA256]::Create()
     try {
       $entries = @($archive.Entries | Where-Object { $_.Name })
@@ -251,7 +276,8 @@ try {
           Assert-True ($guide.Contains('addon-only') -and $guide.Contains('/reload') -and $guide.Contains('WowVoiceSounds')) 'Addon-only instructions missing.'
           continue
         }
-        Assert-True ($name.StartsWith('WowVoiceTalkingHead/') -and $name -notmatch '\.ogg$') 'Audio or unrelated folder in addon update.'
+        Assert-True ($name.StartsWith('WowVoiceTalkingHead/') -and
+          ($name -notmatch '\.ogg$' -or $name -eq 'WowVoiceTalkingHead/Media/silence.ogg')) 'Voice recordings or unrelated folder in addon update.'
         $stream = $entry.Open()
         try { $hash = [BitConverter]::ToString($sha.ComputeHash($stream)).Replace('-', '') }
         finally { $stream.Dispose() }
@@ -311,12 +337,13 @@ try {
       & $build -Task DeployAddon
       foreach ($toc in Get-ChildItem -LiteralPath $voice -Filter '*.toc') {
         $entries = @(Get-Content -LiteralPath $toc.FullName | Where-Object { $_ -like 'QueueLab\*' })
-        Assert-True (($entries -join ',') -eq 'QueueLab\State.lua,QueueLab\Runtime.lua,QueueLab\Window.lua') 'Local QueueLab default missing or duplicated.'
+        Assert-True (($entries -join ',') -eq 'QueueLab\State.lua,QueueLab\Runtime.lua,QueueLab\Window.lua,QueueLab\Commands.lua') 'Local QueueLab default missing or duplicated.'
       }
       Assert-True (Test-Path -LiteralPath (Join-Path $voice 'QueueLab\Window.lua')) 'Local QueueLab default missed harness files.'
     }
     & $build -Task PackageAddon
     $archive = [IO.Compression.ZipFile]::OpenRead($updateZip)
+    Assert-NoDeveloperCommands $archive
     try {
       Assert-True (@($archive.Entries | Where-Object { $_.FullName -match 'QueueLab|queue-lab' }).Count -eq 0) 'Local QueueLab default leaked into a release archive.'
     } finally { $archive.Dispose() }
@@ -341,13 +368,13 @@ try {
   # QueueLab is a Git-managed dev module, injected only into explicitly opted-in deployments.
   foreach ($iteration in 1..2) {
     & $build -Task DeployAddon -QueueLab -ConfigPath $config
-    foreach ($module in @('State.lua', 'Runtime.lua', 'Window.lua')) {
+    foreach ($module in @('State.lua', 'Runtime.lua', 'Window.lua', 'Commands.lua')) {
       Assert-True ((Get-FileHash -LiteralPath (Join-Path $voice ('QueueLab\' + $module))).Hash -eq
         (Get-FileHash -LiteralPath (Join-Path $fixture ('dev\queue-lab\' + $module))).Hash) 'QueueLab module mismatch.'
     }
     foreach ($toc in Get-ChildItem -LiteralPath $voice -Filter '*.toc') {
       $entries = @(Get-Content -LiteralPath $toc.FullName | Where-Object { $_ -like 'QueueLab\*' })
-      Assert-True (($entries -join ',') -eq 'QueueLab\State.lua,QueueLab\Runtime.lua,QueueLab\Window.lua') 'QueueLab duplicate or wrong TOC order.'
+      Assert-True (($entries -join ',') -eq 'QueueLab\State.lua,QueueLab\Runtime.lua,QueueLab\Window.lua,QueueLab\Commands.lua') 'QueueLab duplicate or wrong TOC order.'
       Assert-True (-not ([IO.File]::ReadAllText((Join-Path $fixture ('src\' + $toc.Name))).Contains('QueueLab'))) 'QueueLab changed a source TOC.'
     }
   }
@@ -355,6 +382,7 @@ try {
   Assert-Fails { & $build -Task Package -QueueLab } 'Full packaging accepted QueueLab.'
   & $build -Task PackageAddon
   $archive = [IO.Compression.ZipFile]::OpenRead($updateZip)
+  Assert-NoDeveloperCommands $archive
   try {
     Assert-True (@($archive.Entries | Where-Object { $_.FullName -match 'QueueLab|queue-lab' }).Count -eq 0) 'QueueLab leaked into release ZIP.'
     foreach ($entry in $archive.Entries | Where-Object { $_.FullName -like '*.toc' }) {

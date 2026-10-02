@@ -193,6 +193,7 @@ function page(content, isGuide = false) {
   <meta name="theme-color" content="#181a1b">
   <title>${isGuide ? 'Инструкция — ' : ''}${escape(title)}</title>
   <link rel="stylesheet" href="style.css">
+  <script src="site.js" defer></script>
 </head>
 <body>
   ${previewMode ? '<aside class="preview-banner">Предпросмотр следующего выпуска. Кнопки скачивают локальные тестовые ZIP. Релиз ещё не опубликован.</aside>' : ''}
@@ -234,6 +235,7 @@ function page(content, isGuide = false) {
         <a href="${isGuide ? 'index.html' : ''}#voice-choice">Выбор озвучки</a>
         <a href="${isGuide ? 'index.html' : ''}#installation">Установка</a>
         <a href="${isGuide ? 'index.html' : ''}#features">Возможности</a>
+        <a href="${isGuide ? 'index.html' : ''}#whats-new">Что нового</a>
         <a href="guide.html"${isGuide ? ' aria-current="page"' : ''}>Подробная инструкция</a>
       </nav>
       <a class="source-link" href="${repository}">Проект на GitHub ↗</a>
@@ -255,11 +257,13 @@ const content = `<div class="intro"><p class="eyebrow">WoW Forever Beta</p><h1>�
   ${section('Очередь озвучки', 'quest-queue', 'queue-feature')}
   ${section('Настройки', 'settings')}
   ${section('Совместимость с CatQuest', 'catquest')}
-  ${section('Авторы и озвучка', 'credits')}`;
+  ${section('Авторы и озвучка', 'credits')}
+  ${section('Что нового', 'whats-new')}`;
 await fs.mkdir(path.join(output, 'images'), { recursive: true });
 await fs.writeFile(path.join(output, 'index.html'), page(content));
 await fs.writeFile(path.join(output, 'guide.html'), page(markdown.parse(guide), true));
 await fs.copyFile(path.join(root, 'site/style.css'), path.join(output, 'style.css'));
+await fs.copyFile(path.join(root, 'site/site.js'), path.join(output, 'site.js'));
 for (const asset of imageAssets.values()) {
   await fs.writeFile(path.join(output, asset.url), asset.bytes);
 }

@@ -1,3 +1,4 @@
+local L = WowVoiceLocale
 local WV = WowVoice
 local Q = WV.questQueue
 local root, player, scroll, content, bar, controls
@@ -322,6 +323,7 @@ local function refreshControls(view, editing)
 end
 
 local function fitTitle(label, value, availableWidth)
+    L.ApplyContentFont(label, value)
     local measure = player.TextMeasure
     measure:SetFont(label:GetFont())
     measure:SetText(value)
@@ -451,8 +453,13 @@ local function layoutViewport(width, height, contentHeight)
     updateTiles()
     controls:SetWidth(width - 36)
     controls.Autoplay:SetWidth(math.ceil(controls.Autoplay.Label:GetStringWidth()) + 28)
-    controls.Next:SetWidth(math.max(72, math.ceil(controls.Next.Label:GetStringWidth()) + 24))
+    controls.Next:SetWidth(math.ceil(controls.Next.Label:GetStringWidth()) + 24)
     controls.Clear:SetWidth(math.ceil(controls.Clear.Label:GetStringWidth()) + 8)
+    -- Share the remaining space between both gaps, regardless of label language.
+    local gap = math.max(0, (controls:GetWidth() - 16 - controls.Clear:GetWidth()
+        - controls.Autoplay:GetWidth() - controls.Next:GetWidth()) / 2)
+    controls.Autoplay:ClearAllPoints()
+    controls.Autoplay:SetPoint("LEFT", controls.Clear, "RIGHT", gap, 0)
     extent = math.max(0, contentHeight - height)
     updating = true
     bar:SetHeight(math.max(1, height))
@@ -538,7 +545,7 @@ local function row(index)
         t:SetPoint("BOTTOMLEFT", r.Title, "BOTTOMRIGHT", 6 + (i - 1) * 5, 0)
         r.Bars[i] = t
     end
-    r.Next = button(r, "Следующим", 84, function(self)
+    r.Next = button(r, L["Следующим"], 84, function(self)
         local record = takeRowPress(self, r.record)
         if Q:CanPlayNext(record) then Q:PlayNext(record) end
     end)
@@ -644,7 +651,7 @@ local function create()
     local function toggleAutoplay()
         if not player.preview then WV:SetQueueAutoPlay(Q.paused) end
     end
-    local autoplay = button(controls, "Автовоспроизведение", 160, toggleAutoplay)
+    local autoplay = button(controls, L["Автовоспроизведение"], 160, toggleAutoplay)
     controls.Autoplay, player.Autoplay = autoplay, autoplay
     autoplay.Underline:Hide()
     autoplay.Label:ClearAllPoints()
@@ -679,13 +686,12 @@ local function create()
     autoplay.Check:SetScript("OnHide", clearCheckHover)
     autoplay.Check:SetScript("OnMouseDown", function() autoplay.pressed = true; autoplay:RefreshAppearance() end)
     autoplay.Check:SetScript("OnMouseUp", function() autoplay.pressed = false; autoplay:RefreshAppearance() end)
-    local nextButton = button(controls, "Далее", 60, function()
+    local nextButton = button(controls, L["Далее"], 60, function()
         if not player.preview then Q:Start(Q:Waiting(), true) end
     end)
     controls.Next, player.Next = nextButton, nextButton
     nextButton.Underline:Hide()
     nextButton:SetPoint("RIGHT", controls, "RIGHT", -8, 0)
-    autoplay:SetPoint("RIGHT", nextButton, "LEFT", -12, 0)
     nextButton.Label:ClearAllPoints()
     nextButton.Label:SetPoint("RIGHT", nextButton, "RIGHT", 0, 0)
     nextButton.Icon = nextButton:CreateTexture(nil, "ARTWORK")
@@ -693,7 +699,7 @@ local function create()
     nextButton.Icon:SetSize(14, 14)
     nextButton.Icon:SetPoint("RIGHT", nextButton.Label, "LEFT", -6, 0)
     nextButton.ColorParts = { nextButton.Icon }
-    controls.Clear = button(controls, "Очистить всё", 90, function() if not player.preview then Q:Clear() end end)
+    controls.Clear = button(controls, L["Очистить всё"], 90, function() if not player.preview then Q:Clear() end end)
     controls.Clear.Underline:Hide()
     controls.Clear:SetPoint("LEFT", controls, "LEFT", 8, 0)
     controls.Clear.Label:ClearAllPoints()
@@ -872,8 +878,8 @@ function WV:RefreshQuestQueuePlayer(layoutMode)
         place(h, group.key .. ":" .. headerOccurrences[group.key], y, previous, layoutMode)
         h:SetWidth(width - 44 - 2 * TILE_INSET)
         h.Name:SetWidth(width - 90 - 2 * TILE_INSET)
-        local name = group.speaker.name or "Неизвестный NPC"
-        h.Name:SetText(name:match("^%[([^%[%]]+)%]$") or name)
+        local name = group.speaker.name or L["Неизвестный NPC"]
+        L.SetContentText(h.Name, name:match("^%[([^%[%]]+)%]$") or name)
         h.Name:SetHeight(0)
         local nameHeight = math.ceil(h.Name:GetStringHeight())
         h.Name:SetHeight(nameHeight)
@@ -902,11 +908,11 @@ function WV:RefreshQuestQueuePlayer(layoutMode)
             shownQuests[questKey] = true
             place(r, record, y, previous, layoutMode)
             r:SetWidth(width - 36 - 2 * TILE_INSET)
-            local title = record.context.title or ("Задание " .. record.context.questId)
+            local title = record.context.title or (L["Задание "] .. record.context.questId)
             local blocked = record ~= view.current and not view:CanSelect(record)
             local canPlayNext = view:CanPlayNext(record)
             local titleWidth = width - 36 - 2 * TILE_INSET - 64 - (record == view.current and 24 or canPlayNext and 90 or 0)
-            local titleHeight = fitTitle(r.Title, (record.context.section ~= "a" and "Сдача: " or "") .. title, titleWidth)
+            local titleHeight = fitTitle(r.Title, (record.context.section ~= "a" and L["Сдача: "] or "") .. title, titleWidth)
             local rowHeight = math.max(26, titleHeight + 8)
             r:SetHeight(rowHeight)
             r.Icon:SetTexture(record.context.section == "a" and "Interface\\GossipFrame\\AvailableQuestIcon"

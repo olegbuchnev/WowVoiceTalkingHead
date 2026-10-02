@@ -1,18 +1,31 @@
+local L = WowVoiceLocale
 -- Explicit previews never change the saved preference for normal quest playback.
 local WV, Sources = WowVoice, WowVoiceAudioSources
 local Comparison = {}
 WowVoiceComparison = Comparison
 local failed, revision = {}, nil
 function Comparison.HasCatQuest()
-    return Sources.Loaded("CatQuest_Voices") and type(CatQuestVoicePack) == "table"
-        and type(CatQuestVoicePack.quests) == "table"
+    return Sources.Status() ~= nil
+end
+local function catQuestSnapshot()
+    local data = WowVoiceCatQuestAudio
+    return type(data) == "table" and data.schemaVersion == 1 and type(data.entries) == "table" and data.entries or {}
+end
+function Comparison.SourceAvailable(source)
+    if source == "wowvoice" then return Sources.Loaded("WowVoiceSounds") end
+    return source == "catquest" and Comparison.HasCatQuest()
 end
 function Comparison.Known(id, source)
     if source == "wowvoice" then return WowVoiceDur and WowVoiceDur[id .. "a"] ~= nil end
     if source == "catquest" then
-        local metadata = WowVoiceCatQuestAudio
-        if metadata and metadata.entries[id .. "a"] then return true end
-        return false
+        local status = Sources.Status()
+        if status then
+            local quest = status.quests[id]
+            return type(quest) == "table" and quest.d ~= nil
+        end
+        -- The offline catalogue is descriptive only. Resolve still requires
+        -- the loaded library and never fabricates playable snapshot paths.
+        return type(catQuestSnapshot()[id .. "a"]) == "table"
     end
     return false
 end
@@ -26,22 +39,25 @@ function Comparison.Resolve(id, source)
     elseif source == "catquest" then
         local recording = Sources.Resolve(id, "a")
         if recording then path, seconds = recording.path, recording.duration end
-        text = Sources.Text(id, "a")
+        text = Sources.Text(id, "a", "catquest")
     end
     if not path or type(seconds) ~= "number" or seconds <= 0 or failed[path] then return end
-    return { path = path, duration = seconds, text = text }
+    return { path = path, duration = seconds, text = text, sourceID = source }
 end
 function Comparison.QuestIDs()
     local candidates, result = {}, {}
     local function add(index)
         for key in pairs(index or {}) do
-            local id = type(key) == "number" and key or tonumber(key:match("^(%d+)a$"))
-            if id then candidates[id] = true end
+            local id = type(key) == "number" and key
+                or (type(key) == "string" and tonumber(key:match("^(%d+)a$")))
+            if id and id > 0 and id % 1 == 0 then candidates[id] = true end
         end
     end
     add(WowVoiceDur)
     if Comparison.HasCatQuest() then
-        add(WowVoiceCatQuestAudio and WowVoiceCatQuestAudio.entries)
+        add(Sources.Status().quests)
+    else
+        add(catQuestSnapshot())
     end
     for id in pairs(candidates) do
         if Comparison.Known(id, "wowvoice") or Comparison.Known(id, "catquest") then result[id] = true end
@@ -52,10 +68,10 @@ function Comparison.Play(id, source)
     local recording = Comparison.Resolve(id, source)
     if not recording then return false end
     if not (WowVoiceDB and WowVoiceDB.enabled) then
-        DEFAULT_CHAT_FRAME:AddMessage("WowVoice TalkingHead: озвучка выключена. Включить: /thead on")
+        DEFAULT_CHAT_FRAME:AddMessage(L["WowVoice TalkingHead: озвучка выключена. Включить: /thead on"])
         return false
     end
-    local ok = WV:PreviewQuestAudio(id, recording.path, recording.duration, recording.text)
+    local ok = WV:PreviewQuestAudio(id, recording.path, recording.duration, recording.text, recording.sourceID)
     if not ok then failed[recording.path] = true end
     return ok
 end

@@ -1,6 +1,10 @@
+local L = WowVoiceLocale
 -- Data-only source selection. Playback and CatQuest's player remain independent.
 local Sources = {}
 WowVoiceAudioSources = Sources
+-- Includes rounding and small upstream index errors (0.2.0 quest 132 is
+-- about 0.181 seconds longer than d). Exact OGG measurements need no padding.
+local UNVERIFIED_PADDING = 0.25
 
 function Sources.Loaded(name)
     local exists = C_AddOns and C_AddOns.DoesAddOnExist
@@ -54,14 +58,18 @@ local function external()
     if type(pack) ~= "table" or type(pack.quests) ~= "table" then
         return nil, "индекс CatQuest_Voices не загружен"
     end
-    if type(compat) ~= "table" or compat.schemaVersion ~= 1 or type(compat.entries) ~= "table" then
-        return nil, "метаданные совместимости CatQuest Voices недоступны"
+    if pack.schemaVersion ~= nil and pack.schemaVersion ~= 1 then
+        return nil, "формат индекса CatQuest_Voices не поддерживается"
     end
+    local snapshot = type(compat) == "table" and compat.schemaVersion == 1
+        and type(compat.entries) == "table" and compat or nil
     local version = Sources.Metadata("CatQuest_Voices", "Version")
     if type(version) ~= "string" or version == "" then version = nil end
-    return { id = "catquest", version = version or "не указана", indexedVersion = compat.sourceVersion,
-        updated = version ~= compat.sourceVersion, outdated = olderVersion(version, compat.sourceVersion),
-        entries = compat.entries, quests = pack.quests,
+    local indexedVersion = snapshot and snapshot.sourceVersion
+    local verified = version ~= nil and version == indexedVersion
+    return { id = "catquest", version = version or "не указана", indexedVersion = indexedVersion,
+        updated = not verified, outdated = olderVersion(version, indexedVersion),
+        entries = snapshot and snapshot.entries or {}, quests = pack.quests,
         prefix = "Interface\\AddOns\\CatQuest_Voices\\Sounds\\q\\" }
 end
 
@@ -69,69 +77,80 @@ function Sources.Status()
     return external()
 end
 
+local function positiveNumber(value)
+    return type(value) == "number" and value > 0 and value < math.huge
+end
+
+local function liveRecord(source, id, section)
+    local quest = source.quests[id]
+    if type(quest) ~= "table" then return nil end
+    if section == "a" then return quest end
+    if section == "c" and type(quest.t) == "table" then return quest.t end
+end
+
+local function variantFor(gender)
+    if gender == nil or gender == false or gender == 0 then return "x" end
+    if gender ~= 1 and gender ~= true then return nil end
+    return type(UnitSex) == "function" and UnitSex("player") == 3 and "f" or "m"
+end
+
 function Sources.Resolve(id, section)
     if type(id) ~= "number" or id <= 0 or id % 1 ~= 0
         or (section ~= "a" and section ~= "p" and section ~= "c") then return nil end
     local source = Sources.Status()
     if not source then return nil end
+    if section == "p" then return nil end
     local entry = source.entries[id .. section]
-    if type(entry) ~= "table" then return nil end
-    local cues, indexDuration
-    if source.id == "catquest" then
-        local liveQuest = source.quests[id]
-        local live = type(liveQuest) == "table" and (section == "a" and liveQuest or liveQuest.t) or nil
-        if entry.jsonOnly then
-            -- Recovery is valid only while upstream still omits this quest entirely.
-            -- A newer pack may have removed the file as well as its index entry.
-            if source.updated or liveQuest ~= nil then return nil end
-        elseif type(live) ~= "table" or live.d ~= entry.indexDuration
-            or (not not live.g) ~= entry.gender or (live.v or "") ~= entry.voice then
-            return nil
-        end
-        cues = live and live.c
-        indexDuration = live and live.d
-        entry = entry.audio
-    end
-    if type(entry) ~= "table" then return nil end
-    local female = type(UnitSex) == "function" and UnitSex("player") == 3
-    local variant = entry.male and (female and "f" or "m") or "x"
-    if entry.male then entry = female and entry.female or entry.male end
-    if type(entry) ~= "table" or type(entry.file) ~= "string" or type(entry.duration) ~= "number"
-        or entry.duration <= 0 or entry.duration == math.huge or entry.duration ~= entry.duration then return nil end
+    local live = liveRecord(source, id, section)
+    local recovered = not source.updated and type(entry) == "table" and entry.jsonOnly
+        and source.quests[id] == nil
+    if not recovered and (not live or not positiveNumber(live.d)) then return nil end
+    local audio = type(entry) == "table" and entry.audio or nil
+    local variant = recovered and (type(audio) == "table" and variantFor(audio.male ~= nil))
+        or live and variantFor(live.g)
+    if not variant then return nil end
     local stem = tostring(id) .. (section == "c" and "_t" or "")
-    local expected = stem .. (variant == "x" and "" or "_" .. variant) .. ".ogg"
-    if section == "p" or entry.file ~= expected then return nil end
-    local selectedCues = type(cues) == "table" and cues[variant] or nil
-    local seconds = entry.duration
-    if source.updated then
-        -- Matching voice/sex/duration is required even on an unfamiliar release.
-        -- Changed wording with the same rounded duration is a different record.
-        local text = Sources.Text(id, section)
-        if text then
-            if type(selectedCues) ~= "table" or #selectedCues == 0 then return nil end
-            local parts = {}
-            for _, cue in ipairs(selectedCues) do
-                if type(cue) ~= "table" or type(cue[2]) ~= "string" then return nil end
-                parts[#parts + 1] = cue[2]:match("^%s*(.-)%s*$")
-            end
-            if table.concat(parts, " ") ~= text then return nil end
-        end
-        -- The OGG may have been re-encoded even when rounded metadata matches.
-        -- Use the live maximum (including sex variants) plus rounding allowance;
-        -- exact per-file timing returns after importing that release's metadata.
-        seconds = indexDuration + 0.1
-    end
-    return { path = source.prefix .. entry.file, duration = seconds,
+    local file = stem .. (variant == "x" and "" or "_" .. variant) .. ".ogg"
+    local selectedCues = live and type(live.c) == "table" and live.c[variant] or nil
+    local verified = not source.updated and type(entry) == "table" and (recovered
+        or (not entry.jsonOnly and live.d == entry.indexDuration
+            and (variant ~= "x") == entry.gender and (live.v or "") == entry.voice))
+    if type(audio) == "table" and variant ~= "x" then audio = variant == "f" and audio.female or audio.male end
+    verified = verified and type(audio) == "table" and audio.file == file and positiveNumber(audio.duration)
+    -- The live index owns availability and naming. The snapshot supplies only
+    -- measured per-file timing for an audited release and matching record.
+    if recovered and not verified then return nil end
+    local seconds = verified and audio.duration or live.d + UNVERIFIED_PADDING
+    return { path = source.prefix .. file, duration = seconds, verified = verified == true,
         sourceID = source.id, sourceVersion = source.version, variant = variant,
         cues = selectedCues }
 end
 
 -- Transcripts ship with the addon itself, so every package has the same fallback.
 -- Independent of installed audio sources; includes Classic overlaps as well.
-function Sources.Text(id, section)
+function Sources.Text(id, section, sourceID)
     if type(id) ~= "number" or id <= 0 or id % 1 ~= 0
         or (section ~= "a" and section ~= "c") then return nil end
-    local database = _G.WowVoiceCatQuestTexts
+    if sourceID == "catquest" then
+        local source = Sources.Status()
+        if not source then return nil end
+        local live = liveRecord(source, id, section)
+        local variant = live and variantFor(live.g)
+        local cues = variant and type(live.c) == "table" and live.c[variant]
+        if type(cues) == "table" and #cues > 0 then
+            local parts = {}
+            for _, cue in ipairs(cues) do
+                if type(cue) ~= "table" or type(cue[2]) ~= "string" then return nil end
+                local text = cue[2]:match("^%s*(.-)%s*$")
+                if text ~= "" then parts[#parts + 1] = text end
+            end
+            return #parts > 0 and table.concat(parts, " ") or nil
+        end
+        -- Never attach stale snapshot subtitles to an unverified recording.
+        local recording = Sources.Resolve(id, section)
+        if not recording or not recording.verified then return nil end
+    end
+    local database = _G.WowVoiceQuestTexts
     if type(database) ~= "table" or database.schemaVersion ~= 1
         or type(database.entries) ~= "table" then return nil end
     local texts = database.entries[id .. section]
@@ -140,6 +159,18 @@ function Sources.Text(id, section)
     local key = texts.common and "common" or (female and "female" or "male")
     local text = texts[key]
     return type(text) == "string" and text ~= "" and text or nil
+end
+
+-- Choose only at display time: keep captured game text intact in queue/session
+-- data so changing locale or audio source can choose again on the next replay.
+function Sources.DisplayText(context)
+    if not L.isRussian then
+        local russian = Sources.Text(context.questId, context.section)
+        if russian and russian:find("[\208-\211][\128-\191]") then return russian end
+    end
+    local text = context.text
+    if type(text) == "string" and text:find("%S") then return text end
+    return Sources.Text(context.questId, context.section, context.audioSourceID)
 end
 
 function Sources.QuestIDs()
@@ -152,6 +183,11 @@ function Sources.QuestIDs()
     end
     add(WowVoiceDur)
     local source = Sources.Status()
-    if source then add(source.entries) end
+    if source then
+        for id in pairs(source.quests) do
+            if type(id) == "number" and id > 0 and id % 1 == 0 then ids[id] = true end
+        end
+        if not source.updated then add(source.entries) end
+    end
     return ids
 end

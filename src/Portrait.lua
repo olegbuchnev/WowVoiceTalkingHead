@@ -1,3 +1,4 @@
+local L = WowVoiceLocale
 -- Quest giver appearance capture and WowVoice's talking-head panel.
 -- SavedVariables stores data only, never frames or unit references.
 local WV = _G.WowVoice
@@ -51,7 +52,7 @@ local function syncModelOpacity()
     else model:SetAlpha(alpha) end
 end
 
-local SECTION = { a = "Описание задания", p = "Выполнение задания", c = "Завершение задания" }
+local SECTION = { a = L["Описание задания"], p = L["Выполнение задания"], c = L["Завершение задания"] }
 local FALLBACK_ICON = "Interface\\Icons\\INV_Misc_Note_01"
 local DEFAULT_WIDTH, DEFAULT_HEIGHT = 570, 155
 local PANEL_LEFT, PANEL_RIGHT = 15, 13
@@ -418,7 +419,7 @@ local function scanQuestPortraits()
     for index = 1, count do
         if revision ~= warmRevision then return end
         local info = log.GetInfo(index)
-        if info and not info.isHeader and WV:HasQuestAudio(info.questID) then
+        if info and not info.isHeader and WV:CanPresentQuest(info.questID) then
             local speaker = replaySpeaker(info.questID, quests[info.questID], quests, snapshot)
             local key = portraitKey(speaker)
             if key then wanted[key] = speaker end
@@ -562,11 +563,14 @@ function WV:GetReplaySpeaker(questId)
         title = C_QuestLog.GetTitleForQuestID(questId)
     end
     local text = record and record.description
-    if (not text or text == "") and C_QuestLog and C_QuestLog.GetLogIndexForQuestID
+    if C_QuestLog and C_QuestLog.GetLogIndexForQuestID
         and type(GetQuestLogQuestText) == "function" then
         local index = C_QuestLog.GetLogIndexForQuestID(questId)
         -- nil means the selected quest, whose text may belong to another ID.
-        if positive(index) then text = GetQuestLogQuestText(index) end
+        if positive(index) then
+            local current = GetQuestLogQuestText(index)
+            if type(current) == "string" and current:find("%S") then text = current end
+        end
     end
     return { questId = questId, section = "a", title = title, text = text, speaker = record }
 end
@@ -749,9 +753,9 @@ end
 
 local function updatePlaybackText()
     if not (head and active) or scalePreview then return end
-    local elapsed = math.max(0, GetTime() - active.startedAt)
+    local elapsed = math.max(0, WV.PlaybackTime() - active.startedAt)
     if active.preview and elapsed >= active.duration then
-        active.startedAt = GetTime()
+        active.startedAt = WV.PlaybackTime()
         active.endsAt = active.startedAt + active.duration
         elapsed = 0
     end
@@ -792,6 +796,31 @@ local function updatePortraitCamera(model)
     model:RefreshCamera()
 end
 
+local function startTalkingAnimation(model)
+    if model.SetPaused then model:SetPaused(false) end
+    model.talkAnimation = model:HasAnimation(60) and 60 or 0
+    model:SetAnimation(model.talkAnimation)
+    model.animationNextCheck = GetTime() + 0.5
+end
+
+local function updateTalkingAnimation()
+    if not (head and active) or active.closing or scalePreview then return end
+    local model = head.Model
+    if not model.portraitReady then return end
+    -- Native model loading can overwrite SetAnimation from OnModelLoaded.
+    -- Reapply once outside the callback, including for a restored playlist.
+    if model.animationPending then
+        model.animationPending = nil
+        startTalkingAnimation(model)
+    elseif model.talkAnimation ~= 60 and GetTime() >= (model.animationNextCheck or 0) then
+        -- Animation data may arrive after the visible model. Do not keep the
+        -- initial idle fallback forever, or restart an already talking model.
+        model.animationNextCheck = GetTime() + 0.5
+        if model:HasAnimation(60) then startTalkingAnimation(model) end
+    end
+    if model.GetPaused and model.SetPaused and model:GetPaused() then model:SetPaused(false) end
+end
+
 local function finishTalkingModel(model)
     traceScaleEvent("loaded")
     if not active or active.closing then return end
@@ -805,8 +834,8 @@ local function finishTalkingModel(model)
     -- Reapply it for every real OnModelLoaded notification.
     model.portraitReady = true
     updatePortraitCamera(model)
-    model.talkAnimation = model:HasAnimation(60) and 60 or 0
-    model:SetAnimation(model.talkAnimation)
+    startTalkingAnimation(model)
+    model.animationPending = true
     model:SetAlpha(1)
     syncModelOpacity()
     head.Icon:Hide()
@@ -901,9 +930,9 @@ local function layoutHead()
     measure:SetFont(head.Body:GetFont())
     measure:SetSpacing(head.Body:GetSpacing())
     measure:SetWidth(textWidth)
-    measure:SetText("А")
+    measure:SetText(L["А"])
     local singleHeight = measure:GetStringHeight()
-    measure:SetText("А\nА")
+    measure:SetText(L["А\nА"])
     local lineHeight = math.max(1, measure:GetStringHeight() - singleHeight)
     local textSpace = height - contentTop - 14
     local visibleLines = math.max(1, math.floor((textSpace - singleHeight) / lineHeight + 0.001) + 1)
@@ -973,7 +1002,7 @@ local function updateHead()
         active.autoHideAt = nil
         WV:FinishTalkingHead()
     end
-    if not scalePreview then tryTalkingModel() end
+    if not scalePreview then tryTalkingModel(); updateTalkingAnimation() end
     if active and not active.closing then updatePlaybackText() end
     updateHeadTransition()
     syncModelOpacity()
@@ -1060,7 +1089,10 @@ local function createHead()
     model:SetScript("OnShow", function(self)
         traceScaleEvent("shown")
         -- PlayerModel can reset its camera when a hidden parent is shown again.
-        if not scalePreview and active and self.portraitReady then updatePortraitCamera(self) end
+        if not scalePreview and active and self.portraitReady then
+            updatePortraitCamera(self)
+            if not active.closing then self.animationPending = true end
+        end
         syncModelOpacity()
     end)
     model:SetScript("OnHide", function() traceScaleEvent("hiddenEvent") end)
@@ -1068,7 +1100,9 @@ local function createHead()
     head:SetScript("OnHide", syncModelOpacity)
     model:SetScript("OnModelLoaded", finishTalkingModel)
     model:SetScript("OnAnimFinished", function(self)
-        if not scalePreview and active and self.talkAnimation then self:SetAnimation(self.talkAnimation) end
+        if not scalePreview and active and not active.closing and self.talkAnimation then
+            self.animationPending = true
+        end
     end)
 
     local function label(font, y, height)
@@ -1117,7 +1151,7 @@ local function createHead()
     head.Progress:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
     head.Progress:SetMinMaxValues(0, 1)
 
-    -- The close button stops playback or closes the silent preview.
+    -- Dismiss this line (queue autoplay may advance) or close the silent preview.
     local close = CreateFrame("Button", nil, head)
     createCloseArtwork(close)
     local function stopPlayback()
@@ -1157,6 +1191,7 @@ function WV:RefreshTalkingHeadModel()
     local model, speaker = head.Model, active.context.speaker
     disablePortraitBlend(model)
     model.talkAnimation = nil
+    model.animationPending, model.animationNextCheck = nil, nil
     model.portraitReady = false
     model:ClearModel()
     model:SetAlpha(0)
@@ -1174,6 +1209,7 @@ function WV:RefreshTalkingHeadModel()
         if loaded then
             model.portraitReady = true
             updatePortraitCamera(model)
+            model.animationPending = true
             model:SetAlpha(1)
             syncModelOpacity()
             head.Icon:Hide()
@@ -1187,26 +1223,23 @@ end
 function WV:StartTalkingHead(context, endsAt, duration, startedAt, preview)
     self:StopTalkingHead()
     if not context then return end
-    active = { context = context, startedAt = startedAt or GetTime(), endsAt = endsAt,
+    active = { context = context, startedAt = startedAt or WV.PlaybackTime(), endsAt = endsAt,
         duration = duration, preview = preview }
     createHead()
     head:EnableMouse(true)
     head:SetAlpha(1)
     setHeadOpacity(1)
     local speaker = context.speaker
-    local name = speaker and speaker.name or "Описание задания"
+    local name = speaker and speaker.name or L["Описание задания"]
     -- Some imported NPC names have enclosing brackets. Keep the source intact
     -- and remove only that outer wrapper from the displayed heading.
-    head.Name:SetText(name:match("^%[([^%[%]]+)%]$") or name)
-    head.Title:SetText(context.title or ("Квест " .. context.questId))
+    L.SetContentText(head.Name, name:match("^%[([^%[%]]+)%]$") or name)
+    L.SetContentText(head.Title, context.title or (L["Квест "] .. context.questId))
     head.Section:SetText(SECTION[context.section] or "")
     head.Progress:SetValue(0)
     head:Show()
-    local text = context.text
-    if (not text or text == "") and WowVoiceAudioSources then
-        text = WowVoiceAudioSources.Text(context.questId, context.section)
-    end
-    head.Body:SetText(text and text ~= "" and text or (context.queueOwner and "" or "Текст задания недоступен."))
+    local text = WowVoiceAudioSources.DisplayText(context)
+    L.SetContentText(head.Body, text and text ~= "" and text or (context.queueOwner and "" or L["Текст задания недоступен."]))
     layoutHead()
     restorePosition()
     self:RefreshTalkingHeadModel()
@@ -1225,6 +1258,7 @@ function WV:FinishTalkingHead(forceFade)
     updatePlaybackText()
     active.closing = true
     head.Model.talkAnimation = nil
+    head.Model.animationPending = nil
     if head.Model.portraitReady then head.Model:SetAnimation(0) end
     local gap = not forceFade and self.questQueue and self.questQueue.enabled and self.questQueue.gap
     if gap and not gap.fadeDuration then transition = nil
@@ -1245,6 +1279,7 @@ function WV:StopTalkingHead()
         head.EditBorder:Hide()
         head:EnableMouse(false)
         head.Model.talkAnimation = nil
+        head.Model.animationPending, head.Model.animationNextCheck = nil, nil
         head.Model.portraitReady = false
         head.Model:ClearModel()
         head:Hide()
@@ -1602,7 +1637,7 @@ local function frozenLineText(text, source)
         measure:SetText(value)
         return measure:GetStringHeight()
     end
-    local originalHeight, singleHeight = height(source), height("А")
+    local originalHeight, singleHeight = height(source), height(L["А"])
     if math.abs(originalHeight - text:GetStringHeight()) > 0.1 then return end
     local parts, previousHeight, previousEnd = {}, nil, 1
     for start, word, finish in source:gmatch("()(%S+)()") do
@@ -1824,8 +1859,8 @@ function WV:EnsureHeadPreview(suppressTrackerPulse)
             active.closing, transition = nil, nil
             setHeadOpacity(1)
             if head.Model.portraitReady then
-                head.Model.talkAnimation = head.Model:HasAnimation(60) and 60 or 0
-                head.Model:SetAnimation(head.Model.talkAnimation)
+                startTalkingAnimation(head.Model)
+                head.Model.animationPending = true
             end
         end
         return true
@@ -1846,16 +1881,16 @@ function WV:FinishAutoHeadPreview(delay)
 end
 
 local function showSilentHeadPreview()
-    WV:StartTalkingHead({ questId = 0, section = "a", title = "Тест говорящей головы",
-        speaker = { questId = 0, name = UnitName("player") or "Ваш персонаж" },
-        text = "Это тест говорящей головы. Слева показана модель вашего персонажа. Звук в этом режиме не запускается.\n\n"
-            .. "Здесь будет текст задания. Каждый блок остаётся неподвижным, пока идёт его чтение. "
-            .. "Затем короткий плавный сдвиг открывает продолжение, сохраняя две строки предыдущего блока. "
-            .. "Последний блок раскрывается заранее и стоит на месте до конца реплики.\n\n"
-            .. "Кнопка центрирования выравнивает окно по горизонтали, сохраняя высоту.\n\n"
-            .. "Только во время теста панель можно перемещать мышью. В обычном режиме её положение закреплено. "
-            .. "Тест повторяется каждые 30 секунд и прекращается при закрытии настроек." },
-        GetTime() + 30, 30, nil, true)
+    WV:StartTalkingHead({ questId = 0, section = "a", title = L["Тест говорящей головы"],
+        speaker = { questId = 0, name = UnitName("player") or L["Ваш персонаж"] },
+        text = L["Это тест говорящей головы. Слева показана модель вашего персонажа. Звук в этом режиме не запускается.\n\n"]
+            .. L["Здесь будет текст задания. Каждый блок остаётся неподвижным, пока идёт его чтение. "]
+            .. L["Затем короткий плавный сдвиг открывает продолжение, сохраняя две строки предыдущего блока. "]
+            .. L["Последний блок раскрывается заранее и стоит на месте до конца реплики.\n\n"]
+            .. L["Кнопка центрирования выравнивает окно по горизонтали, сохраняя высоту.\n\n"]
+            .. L["Только во время теста панель можно перемещать мышью. В обычном режиме её положение закреплено. "]
+            .. L["Тест повторяется каждые 30 секунд и прекращается при закрытии настроек."] },
+        WV.PlaybackTime() + 30, 30, nil, true)
 end
 
 function WV:RefreshPlaylistHeadPreview()
@@ -1931,7 +1966,7 @@ end
 function WV:HeadCommand(command)
     if command == "reset" then
         self:ResetHeadPosition()
-        message("положение говорящей головы сброшено")
+        message(L["положение говорящей головы сброшено"])
     else
         if self.OpenOptions then self:OpenOptions() end
     end
@@ -1959,6 +1994,10 @@ function WV:HeadDiagnostics()
     if head and active then
         message("Camera: model=" .. tostring(head.Model.cameraFileID)
             .. " profile=" .. tostring(head.Model.cameraProfile))
+        message("Animation: selected=" .. tostring(head.Model.talkAnimation)
+            .. " hasTalk=" .. tostring(head.Model:HasAnimation(60))
+            .. " paused=" .. tostring(head.Model.GetPaused and head.Model:GetPaused())
+            .. " pending=" .. tostring(head.Model.animationPending == true))
     end
     local speaker = active and active.context.speaker
     if speaker then

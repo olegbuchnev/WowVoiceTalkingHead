@@ -46,6 +46,10 @@ local defaults = {
 local WV = {}
 WV.displayName = "WowVoice TalkingHead"
 _G.WowVoice = WV
+-- Playback and head progress share a clock that advances inside a long frame.
+-- GetTime() can still describe the start of the loading frame when audio starts.
+-- Never mix the epochs of these APIs in a playback deadline.
+WV.PlaybackTime = GetTimePreciseSec or GetTime
 
 -- CatQuest shares its player between quests, books and location lore. Temporarily
 -- disable automatic quest reading and hide quest read buttons; leave its player
@@ -79,9 +83,9 @@ local function updateCatQuestButtons(active)
         end
         button:Hide()
     end
-    -- Only quest surfaces. ItemTextFrame (books) and GossipFrame are independent.
-    -- CatQuest exposes the journal button; its quest-dialog button is anonymous.
-    for _, parent in pairs({_G.QuestFrame,
+    -- Quest and NPC dialogue surfaces; ItemTextFrame keeps its book reader.
+    -- CatQuest exposes the journal button; dialogue buttons are anonymous.
+    for _, parent in pairs({_G.QuestFrame, _G.GossipFrame,
         _G.QuestMapFrame and _G.QuestMapFrame.DetailsFrame,
         _G.QuestLogDetailFrame, _G.QuestLogFrame}) do
         if not catQuestParentHooks[parent] and parent.HookScript then
@@ -140,6 +144,7 @@ end
 --------------------------------------------------------------------- Utilities
 
 local function msg(fmt, ...)
+    fmt = WowVoiceLocale[fmt]
     local text = select("#", ...) > 0 and format(fmt, ...) or fmt
     DEFAULT_CHAT_FRAME:AddMessage("|cff66ccff" .. WV.displayName .. "|r: " .. text)
 end
@@ -187,6 +192,7 @@ end
 --------------------------------------------------------------------- Playback
 
 local Playback = {}
+WV.Playback = Playback
 do
     -- Modern clients return a PlaySoundFile handle and support StopSound.
     local canStopSound = (type(StopSound) == "function")
@@ -238,7 +244,8 @@ do
         if master then setTemporaryCVar("Sound_MasterVolume", master * voiceVolume()) end
     end
 
-    local SILENCE = "Interface\\AddOns\\" .. SOUND_ADDON .. "\\silence.ogg"
+    -- Service audio ships with this player, independently of either voice pack.
+    local SILENCE = "Interface\\AddOns\\WowVoiceTalkingHead\\Media\\silence.ogg"
 
     --[[ Music-channel playback depends on Sound_MusicVolume and
          Sound_EnableMusic. Quiet or disabled music makes the voice inaudible,
@@ -306,7 +313,7 @@ do
 
     --[[ Live testing on 3.3.5a showed that StopMusic() does not interrupt
          a file started by PlayMusic. Select a workaround with /thead stopmode
-         and check it with /thead stoptest:
+         and check it with the local QueueLab stop test:
            silence   replaces the current stream with a short silent file.
            cvar      briefly disables the music channel.
            stopmusic calls StopMusic() alone (does not work on Sirus).
@@ -337,8 +344,8 @@ do
             if not stopAt then ticker:Hide() end
         end
         if not stopAt then return end
-        if now >= stopAt then
-            dbg("таймер длительности истёк: stopAt=%.3f", stopAt)
+        if WV.PlaybackTime() >= stopAt then
+            dbg("таймер длительности истёк: stopAt=%.3f now=%.3f", stopAt, WV.PlaybackTime())
             Playback:Stop("duration timer")
             WV.lastKey = nil        -- Allow replay when the quest is opened again
         end
@@ -394,8 +401,37 @@ do
         end
     end
 
+    local function startPlaybackClock(context, duration, tail)
+        local startedAt = WV.PlaybackTime()
+        stopAt = startedAt + (duration or FALLBACK_LIMIT) + (tail or 0)
+        dbg("таймер: duration=%s tail=%.3f start=%.3f stopAt=%.3f clock=%s",
+            tostring(duration or FALLBACK_LIMIT), tail or 0, startedAt, stopAt,
+            GetTimePreciseSec and "precise" or "frame")
+        ticker:Show()
+        if WV.StartTalkingHead then WV:StartTalkingHead(context, stopAt, duration, startedAt) end
+        if WV.questQueue and WV.questQueue.enabled then WV.questQueue:PlaybackStarted(context) end
+    end
+
     -- duration: voice line length, or nil if unknown
-    function Playback:Play(path, duration, context)
+    function Playback:Play(path, duration, context, sourceID)
+        if not path then
+            if not context then return false end
+            -- The same head/queue clock works without any sound library. Do not
+            -- enable audio, duck NPCs or play even the service silence here.
+            self:Stop("new playback")
+            duration = WV:SilentDuration(context)
+            playing = true
+            startPlaybackClock(context, duration)
+            return true
+        end
+        if context and sourceID == "catquest" then
+            -- Queue/speaker contexts can be reused for a different source later.
+            -- Keep source-specific text fallbacks out of SavedVariables.
+            local copy = {}
+            for key, value in pairs(context) do copy[key] = value end
+            copy.audioSourceID = sourceID
+            context = copy
+        end
         local mode = self:mode()
         dbg("Playback: mode=%s duration=%s path=%s", tostring(mode), tostring(duration), path)
         if mode == "music" then
@@ -417,10 +453,7 @@ do
             end
             self.usedMusic, playing = true, true
             local tail = (WowVoiceDB and WowVoiceDB.tail) or 0.05
-            stopAt = GetTime() + (duration or FALLBACK_LIMIT) + tail
-            ticker:Show()
-            if WV.StartTalkingHead then WV:StartTalkingHead(context, stopAt, duration) end
-            if WV.questQueue and WV.questQueue.enabled then WV.questQueue:PlaybackStarted(context) end
+            startPlaybackClock(context, duration, tail)
             return true
         end
         self:Stop("new playback")
@@ -443,12 +476,7 @@ do
             -- The timer calls StopSound and restores Dialog; a duration table
             -- from another pack could cut the voice line short.
             local tail = (WowVoiceDB and WowVoiceDB.tail) or 0.05
-            stopAt = GetTime() + (duration or FALLBACK_LIMIT) + tail
-            dbg("таймер: duration=%s tail=%.3f stopAt=%.3f",
-                tostring(duration or FALLBACK_LIMIT), tail, stopAt)
-            ticker:Show()
-            if WV.StartTalkingHead then WV:StartTalkingHead(context, stopAt, duration) end
-            if WV.questQueue and WV.questQueue.enabled then WV.questQueue:PlaybackStarted(context) end
+            startPlaybackClock(context, duration, tail)
             return true
         end
         restoreCVar("Sound_MasterVolume")
@@ -541,27 +569,24 @@ function WV:Resolve(title, section, shownText)
     return pool[1].q
 end
 
---[[ Voice file path. Licensed installations use hashed filenames:
-     HMAC-SHA256(content_key, "179a")[:32] .. ".ogg". The installer renames
-     files the same way; Hash.lua and Python produce identical results.
-     Without a license (the deploy_addon.py development pack), filenames
-     use canonical keys such as "179a.ogg".
-]]
-WV._nameCache = {}
+-- Audio sources resolve ordinary quest filenames, such as "179a.ogg".
 local function foreverAudio(questId, section)
     return WowVoiceAudioSources.Resolve(questId, section)
 end
 
 function WV:SoundPath(questId, section)
     local duration = _G.WowVoiceDur and _G.WowVoiceDur[tostring(questId) .. section]
-    if not duration or self:GetSharedQuestVoice() == "catquest" then
+    if not WowVoiceAudioSources.Loaded(SOUND_ADDON) or not duration or self:GetSharedQuestVoice() == "catquest" then
         local extra = foreverAudio(questId, section)
-        if extra then return extra.path, extra.duration, extra.sourceVersion end
+        if extra then return extra.path, extra.duration, extra.sourceVersion, extra.sourceID end
     end
     return self:ClassicSoundPath(questId, section)
 end
 
 function WV:GetSharedQuestVoice()
+    -- A disabled primary pack temporarily makes CatQuest the only source.
+    -- Retain the saved preference for when WowVoice Sounds is enabled again.
+    if not WowVoiceAudioSources.Loaded(SOUND_ADDON) and WowVoiceAudioSources.Status() then return "catquest" end
     if WowVoiceDB and WowVoiceDB.sharedQuestVoice == "catquest" then
         if WowVoiceAudioSources.Status() then return "catquest" end
         -- Keep the saved selection and radio buttons aligned with the fallback.
@@ -572,6 +597,7 @@ end
 
 function WV:SetSharedQuestVoice(source)
     if source ~= "wowvoice" and source ~= "catquest" then return false end
+    if source == "wowvoice" and not WowVoiceAudioSources.Loaded(SOUND_ADDON) then return false end
     if source == "catquest" and not WowVoiceAudioSources.Status() then return false end
     WowVoiceDB.sharedQuestVoice = source
     self:RefreshAudioSources()
@@ -580,21 +606,33 @@ end
 
 -- Explicit WowVoice previews must remain independent of the saved preference.
 function WV:ClassicSoundPath(questId, section)
+    if not WowVoiceAudioSources.Loaded(SOUND_ADDON) then return nil end
     local key = tostring(questId) .. section
     local duration = _G.WowVoiceDur and _G.WowVoiceDur[key]
     -- A known supplemental source cannot turn an absent section into a Classic path.
     if not duration and WowVoiceAudioSources.IsSupplement(questId) then return nil end
-    local secret = WV.license and WV.license.content_key
-    if secret and secret ~= "" and WowVoiceHash then
-        local name = WV._nameCache[key]
-        if not name then
-            name = WowVoiceHash.filename(secret, key)
-            WV._nameCache[key] = name
-        end
-        return "Interface\\AddOns\\" .. SOUND_ADDON .. "\\" .. name, duration
-    end
     local ext = (WowVoiceDB and WowVoiceDB.ext) or "ogg"
     return "Interface\\AddOns\\" .. SOUND_ADDON .. "\\" .. key .. "." .. ext, duration
+end
+
+-- Offline measurements remain useful for reading when their library is disabled.
+-- For quests without measurements, allow about three words per second plus a
+-- short lead-in. Count words rather than UTF-8 bytes so Russian reads normally.
+function WV:SilentDuration(context)
+    local key = context.questId .. context.section
+    local seconds = WowVoiceDur and WowVoiceDur[key]
+    if type(seconds) == "number" and seconds > 0 then return seconds end
+    local entry = WowVoiceCatQuestAudio and WowVoiceCatQuestAudio.entries[key]
+    local audio = entry and entry.audio
+    if audio and audio.male then
+        audio = type(UnitSex) == "function" and UnitSex("player") == 3 and audio.female or audio.male
+    end
+    if audio and type(audio.duration) == "number" and audio.duration > 0 then return audio.duration end
+    local text = WowVoiceAudioSources.DisplayText(context)
+    text = (text or ""):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+        :gsub("|T.-|t", ""):gsub("|H.-|h(.-)|h", "%1")
+    local _, words = text:gsub("%S+", "")
+    return math.max(4, 2 + words / 3)
 end
 
 --------------------------------------------------------------------- Logic
@@ -655,11 +693,7 @@ function WV:Speak(section, title, text, event)
     end
 
     local key = questId .. section
-    local path, dur = self:SoundPath(questId, section)
-    if not path then
-        dbg("нет записи для квеста %s, секция %s", tostring(questId), section)
-        return
-    end
+    local path, dur, _, sourceID = self:SoundPath(questId, section)
     if self.questQueue and self.questQueue.enabled then
         self.questQueue:Offer(context or { questId = questId, section = section, title = title, text = text })
         return
@@ -667,7 +701,7 @@ function WV:Speak(section, title, text, event)
     dbg("выбор: event=%s questID=%s section=%s title=%s",
         tostring(event), tostring(questId), section, tostring(title))
     dbg("аудио: key=%s WowVoiceDur=%s duration=%s path=%s",
-        key, tostring(_G.WowVoiceDur ~= nil and _G.WowVoiceDur[key] ~= nil), tostring(dur), path)
+        key, tostring(_G.WowVoiceDur ~= nil and _G.WowVoiceDur[key] ~= nil), tostring(dur), tostring(path))
     if key == self.lastKey then
         dbg("Speak: повтор ключа %s, PlaySoundFile не вызывается", key)
         return
@@ -677,12 +711,12 @@ function WV:Speak(section, title, text, event)
     -- Play strictly by questID. If a file is missing or its section was
     -- intentionally omitted, stay silent instead of substituting another quest.
     dbg("играю %s (квест %d, секция %s, длительность %s)",
-        path, questId, section, dur and format("%.1f с", dur) or "неизвестна")
-    local ok = Playback:Play(path, dur, context)
-    if ok and section == SECTION.accept and self.MarkQuestListened then
+        path or "без звука", questId, section, dur and format("%.1f с", dur) or "неизвестна")
+    local ok = Playback:Play(path, dur, context, sourceID)
+    if ok and path and section == SECTION.accept and self.MarkQuestListened then
         self:MarkQuestListened(questId)
     end
-    if section == SECTION.accept then self:SetQuestAudioAvailable(questId, ok) end
+    if path and section == SECTION.accept then self:SetQuestAudioAvailable(questId, ok) end
     if not ok then
         dbg("файл не проигрался: %s", path)
     end
@@ -706,13 +740,12 @@ function WV:PlayQueuedQuest(record)
     local context = record.context
     if not (WowVoiceDB and WowVoiceDB.enabled) then return false end
     -- Per-type autoplay preferences gate new entries, not already queued lines.
-    local path, duration = self:SoundPath(context.questId, context.section)
-    if not path then return false end
+    local path, duration, _, sourceID = self:SoundPath(context.questId, context.section)
     dbg("очередь: questID=%s section=%s title=%s WowVoiceDur=%s path=%s", tostring(context.questId),
         tostring(context.section), tostring(context.title), tostring(_G.WowVoiceDur ~= nil
-            and _G.WowVoiceDur[context.questId .. context.section] ~= nil), path)
-    local ok = Playback:Play(path, duration, context)
-    if not context.queueOwner then
+            and _G.WowVoiceDur[context.questId .. context.section] ~= nil), tostring(path))
+    local ok = Playback:Play(path, duration, context, sourceID)
+    if path and not context.queueOwner then
         if ok and context.section == "a" and self.MarkQuestListened then self:MarkQuestListened(context.questId) end
         if context.section == "a" then self:SetQuestAudioAvailable(context.questId, ok) end
     end
@@ -762,8 +795,16 @@ end
 function WV:HasQuestAudio(questId)
     return type(questId) == "number" and questId > 0
         and not unavailableQuestAudio[availabilityKey(questId)]
-        and ((_G.WowVoiceDur ~= nil and _G.WowVoiceDur[questId .. "a"] ~= nil)
+        and ((WowVoiceAudioSources.Loaded(SOUND_ADDON)
+                and _G.WowVoiceDur ~= nil and _G.WowVoiceDur[questId .. "a"] ~= nil)
             or foreverAudio(questId, "a") ~= nil)
+end
+
+function WV:CanPresentQuest(questId)
+    if type(questId) ~= "number" or questId <= 0 or questId % 1 ~= 0 then return false end
+    -- Keep audio availability honest for the voice catalogue and reminders.
+    -- Missing libraries/sections may still show the quest text and portrait.
+    return self:HasQuestAudio(questId) or self:SoundPath(questId, "a") == nil
 end
 
 function WV:ReplayQuest(questId)
@@ -771,7 +812,7 @@ function WV:ReplayQuest(questId)
         msg("озвучка выключена. Включить: /thead on")
         return false
     end
-    if not self:HasQuestAudio(questId) then
+    if not self:CanPresentQuest(questId) then
         msg("для описания этого квеста нет записи в установленном аудиопаке")
         return false
     end
@@ -780,16 +821,16 @@ function WV:ReplayQuest(questId)
     -- without counting it as a real manual listen. Capture before playback
     -- changes other preview state.
     local isReminderTest = self.IsQuestReminderTest and self:IsQuestReminderTest(questId)
-    local path, duration = self:SoundPath(questId, "a")
-    dbg("журнал: повтор questID=%s key=%s path=%s", tostring(questId), key, path)
+    local path, duration, _, sourceID = self:SoundPath(questId, "a")
+    dbg("журнал: повтор questID=%s key=%s path=%s", tostring(questId), key, tostring(path))
     local context = self.GetReplaySpeaker and self:GetReplaySpeaker(questId)
-    local ok = Playback:Play(path, duration, context)
+    local ok = Playback:Play(path, duration, context, sourceID)
     -- Real descriptions, automatic or manual, share the reminder cooldown.
     if ok then
         if isReminderTest then self:FinishQuestReminderTest(questId)
-        elseif self.MarkQuestListened then self:MarkQuestListened(questId) end
+        elseif path and self.MarkQuestListened then self:MarkQuestListened(questId) end
     end
-    self:SetQuestAudioAvailable(questId, ok)
+    if path then self:SetQuestAudioAvailable(questId, ok) end
     self.lastKey = ok and key or nil
     if not ok then msg("не удалось воспроизвести описание квеста %d", questId) end
     return ok
@@ -799,21 +840,11 @@ end
 
 -- Shared transport for local A/B listening. It uses our portrait/timer but
 -- does not change the normal source policy, reminder cooldowns or failure cache.
-function WV:PreviewQuestAudio(questId, path, duration, text)
+function WV:PreviewQuestAudio(questId, path, duration, text, sourceID)
     if not (WowVoiceDB and WowVoiceDB.enabled) then return false end
     local context = self.GetReplaySpeaker and self:GetReplaySpeaker(questId)
-    if context and text then context.text = text end
-    return Playback:Play(path, duration, context)
-end
-
--- CatQuest Voices is optional; only warn when the primary WowVoice pack is missing.
-local function warnIfNoSounds()
-    local isLoaded = (C_AddOns and C_AddOns.IsAddOnLoaded) or IsAddOnLoaded
-    if not isLoaded then return end
-    if isLoaded(SOUND_ADDON) then return end
-    msg("|cffff2020Не загружена основная база WowVoiceSounds.|r")
-    msg("Установите комплект WowVoice со звуковой базой.")
-    msg("Включите звуковые паки в списке модификаций и полностью перезапустите игру.")
+    if context and text and (not context.text or not context.text:find("%S")) then context.text = text end
+    return Playback:Play(path, duration, context, sourceID)
 end
 
 local f = CreateFrame("Frame", "WowVoiceFrame")
@@ -885,16 +916,14 @@ f:SetScript("OnEvent", function(self, event, arg1)
             end
             WowVoiceDB.tail3Migrated = true
         end
-        WV.license = _G.WowVoiceLicense   -- Installer marker, or nil in development
         WV:UpdateCatQuestIntegration()
-        msg("На основе WowVoice. Озвучка: WowVoice — https://boosty.to/wowvoice; Cathey — https://boosty.to/cathey")
+        msg("Озвучка: WowVoice — https://boosty.to/wowvoice; Cathey — https://boosty.to/cathey")
 
     elseif event == "PLAYER_LOGIN" then
         WV:RefreshAudioSources()
         WV:UpdateCatQuestIntegration()
         -- CatQuest creates dialog buttons in its own PLAYER_LOGIN handler.
         if type(_G.CatQuestDB) == "table" then scheduleCatQuestIntegration() end
-        warnIfNoSounds()
 
     elseif event == "QUEST_DETAIL" then
         dbg("event=%s section=a; чтение GetTitleText/GetQuestText", event)
@@ -926,8 +955,8 @@ end)
 ]]
 local BOOSTY_URL = "https://boosty.to/wowvoice"
 StaticPopupDialogs["WOWVOICE_BOOSTY"] = {
-    text = "Спасибо, что поддерживаешь WowVoice! |cffffd100Ctrl+C|r скопирует ссылку — вставь её в браузер:",
-    button1 = "Закрыть",
+    text = WowVoiceLocale["Спасибо, что поддерживаешь WowVoice! |cffffd100Ctrl+C|r скопирует ссылку — вставь её в браузер:"],
+    button1 = WowVoiceLocale["Закрыть"],
     hasEditBox = true,
     editBoxWidth = 260,
     timeout = 0,
@@ -964,17 +993,6 @@ SlashCmdList["WOWVOICETALKINGHEAD"] = function(input)
         WV:UpdateCatQuestIntegration()
         if not WowVoiceDB.enabled then WV:Silence() end
         msg("озвучка %s", WowVoiceDB.enabled and "включена" or "выключена")
-
-    elseif cmd == "remindertest" then
-        local value = strtrim(rest or "")
-        local id = tonumber(value)
-        if value == "off" then
-            WV:TestQuestReminder(false)
-        elseif value == "" or (id and id > 0 and id == math.floor(id)) then
-            WV:TestQuestReminder(id)
-        else
-            msg("тест напоминания: /thead remindertest [ID квеста] | off")
-        end
 
     elseif cmd == "stop" then
         WV:Silence()
@@ -1032,25 +1050,6 @@ SlashCmdList["WOWVOICETALKINGHEAD"] = function(input)
                 WowVoiceDB.stopmode)
         end
 
-    elseif cmd == "stoptest" then
-        --[[ Play a voice line, then attempt to stop it after three seconds
-             using the selected method. Continued audio means the method failed.
-]]
-        local path = WV:SoundPath(179, "a")
-        msg("канал: %s | способ остановки: %s", Playback:mode(), WowVoiceDB.stopmode)
-        msg("играю 179a, оборву через 3 с — слушай, замолчит ли")
-        Playback:Play(path, 60)
-        local t = CreateFrame("Frame")
-        local since = 0
-        t:SetScript("OnUpdate", function(self, elapsed)
-            since = since + elapsed
-            if since >= 3 then
-                self:SetScript("OnUpdate", nil)
-                Playback:Stop("stoptest")
-                msg("остановка вызвана. Если звук идёт — попробуй другой stopmode")
-            end
-        end)
-
     elseif cmd == "duck" then
         rest = strlower(rest or "")
         if rest == "on" or rest == "off" then
@@ -1059,95 +1058,17 @@ SlashCmdList["WOWVOICETALKINGHEAD"] = function(input)
         msg("глушение приветствия NPC: %s. Переключить: /thead duck on|off",
             WowVoiceDB.ducknpc and "вкл" or "выкл")
 
-    elseif cmd == "debug" then
-        rest = strlower(strtrim(rest or ""))
-        if rest == "on" then
-            WowVoiceDB.debug = true
-        elseif rest == "off" then
-            WowVoiceDB.debug = false
-        elseif rest == "" then
-            WowVoiceDB.debug = not WowVoiceDB.debug
-        else
-            msg("использование: /thead debug on|off")
-            return
-        end
-        msg("отладка %s", WowVoiceDB.debug and "включена" or "выключена")
-
     elseif cmd == "" or cmd == "options" then
         if WV.OpenOptions then WV:OpenOptions() end
 
     elseif cmd == "head" then
         if WV.HeadCommand then WV:HeadCommand(strlower(rest or "")) end
 
-    elseif cmd == "perf" then
-        if WV.Work then WV.Work:Report() end
-
-    elseif cmd == "source" then
-        local source, reason = WowVoiceAudioSources.Status()
-        msg("Дополнительная озвучка выбирается автоматически: %s", source and (source.id .. " " .. source.version) or reason)
-
-    elseif cmd == "diag" then
-        local source, reason = WowVoiceAudioSources.Status()
-        msg("Дополнительная озвучка (автоматически): %s", source and (source.id .. " " .. source.version) or reason)
-        msg("CatQuest: автозапуск квестов %s; книги и лор управляются CatQuest",
-            WV:IsCatQuestAutoplaySuppressed() and "приостановлен" or "не изменён")
-        local ver, build, _, iface = GetBuildInfo()
-        local n = 0
-        if _G.WowVoiceIndex then for _ in pairs(_G.WowVoiceIndex) do n = n + 1 end end
-        msg("клиент %s (сборка %s, интерфейс %s)", tostring(ver), tostring(build),
-            tostring(iface))
-        msg("Forever: WOW_PROJECT_ID=%s | C_AddOns=%s", tostring(WOW_PROJECT_ID), type(C_AddOns))
-        msg("GetQuestID=%s | GetTitleText=%s | GetQuestText=%s",
-            type(GetQuestID), type(GetTitleText), type(GetQuestText))
-        msg("GetProgressText=%s | GetRewardText=%s", type(GetProgressText), type(GetRewardText))
-        msg("Dialog: Sound_EnableDialog=%s | Sound_DialogVolume=%s",
-            tostring(GetCVar("Sound_EnableDialog")), tostring(GetCVar("Sound_DialogVolume")))
-        msg("PlaySoundFile: %s | StopSound: %s | PlayMusic: %s",
-            type(PlaySoundFile), type(StopSound), type(PlayMusic))
-        msg("канал: %s (настройка %s), остановка звука: %s",
-            Playback:mode(), WowVoiceDB.channel,
-            Playback:canStop() and "поддерживается" or "нет, откат на музыку")
-        msg("множитель громкости диалогов: %.2f | сдвиг остановки: %+.2f с",
-            WowVoiceDB.volume, WowVoiceDB.tail)
-        msg("сейчас в клиенте: музыка %s, громкость музыки %s",
-            GetCVar("Sound_EnableMusic") == "1" and "вкл" or "ВЫКЛ",
-            GetCVar("Sound_MusicVolume"))
-        local d = 0
-        if _G.WowVoiceDur then for _ in pairs(_G.WowVoiceDur) do d = d + 1 end end
-        msg("формат: %s | индекс: %d названий | длительностей: %d",
-            WowVoiceDB.ext, n, d)
-        msg("глушение приветствия NPC: %s (канал Dialog)",
-            WowVoiceDB.ducknpc and "вкл" or "выкл")
-        if WV.license and WV.license.key then
-            local k = WV.license.key
-            msg("лицензия: активна (ключ …%s, пак %s)",
-                strsub(k, -6), tostring(WV.license.pack or "?"))
-        else
-            msg("бесплатный аудиопак: лицензия не требуется")
-        end
-        msg("пример пути: %s", WV:SoundPath(179, "a"))
-        msg("UI.lua (журнал): %s",
-            WV.RefreshJournalButtons and "загружен" or "НЕ ЗАГРУЖЕН — нужен полный перезапуск игры")
-        msg("обрыв реплики: только кнопкой (при закрытии окна не прерывается)")
-        if WV.HeadDiagnostics then WV:HeadDiagnostics() end
-        if WV.Work then WV.Work:Report() end
-
-    elseif cmd == "test" then
-        local id = tonumber(rest)
-        if id then
-            local path, dur = WV:SoundPath(id, "a")
-            msg("проверка: %s (%s)", path,
-                dur and format("%.1f с", dur) or "длительность неизвестна")
-            Playback:Play(path, dur)
-        else
-            msg("использование: /thead test <quest_id>")
-        end
-
     elseif cmd == "boosty" then
         StaticPopup_Show("WOWVOICE_BOOSTY")
 
     else
-        msg("команды /thead: on | off | stop | boosty | diag | perf | debug <on|off> | duck <on|off> | test <quest_id> | stoptest")
+        msg("команды /thead: on | off | stop | boosty | duck <on|off>")
         msg("         volume <0..1> | tail <сек>")
         msg("         channel <auto|sound|music> | ext <mp3|ogg>")
         msg("         stopmode <silence|cvar|stopmusic>")

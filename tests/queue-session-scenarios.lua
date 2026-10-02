@@ -96,6 +96,8 @@ offer(1, 'p', 999); offer(1, 'c', 999)
 Q:Event('QUEST_TURNED_IN', ids[1])
 Q:PlayNext(c)
 offer(4, 'a', 444, 'lab')
+local _, interruptedDuration = WV:SoundPath(ids[1], 'a')
+tick(now + interruptedDuration * 0.6)
 event('PLAYER_LOGOUT')
 local saved = WowVoiceQueueDB
 assert(saved and #saved.records == 5 and saved.records[1].context.questId == ids[1])
@@ -112,12 +114,41 @@ frames.WowVoiceQuestQueueEvents.scripts.OnEvent(nil, 'PLAYER_ENTERING_WORLD')
 assert(Q:Count() == 5 and not Q.current and #plays == sounds and not WowVoiceQueueDB)
 assert(Q.groups[1].speaker.npcID == 100 and Q.nextRecord.context.questId == ids[3])
 assert(Q.completed['game:' .. ids[1]])
+-- Entering the world is not yet permission to start audio. Loading time and
+-- time played before logout must not consume the restarted line's duration.
 step()
+assert(not Q.current and #plays == sounds, 'restored playback waits for the loading screen')
+tick(now + 40)
+step()
+assert(not Q.current and #plays == sounds, 'loading cannot start or expire a restored line')
+frames.WowVoiceQuestQueueEvents.scripts.OnEvent(nil, 'LOADING_SCREEN_DISABLED')
+assert(not Q.current and #plays == sounds, 'audio starts on the frame after loading completes')
+local restoredModel = frames.WowVoiceTalkingHead.Model
+local completeLoad = restoredModel.CompleteLoad
+function restoredModel:CompleteLoad(display)
+    completeLoad(self, display)
+    self.animation, self.paused = 0, true -- Native load finalization after its callback.
+end
+step()
+local restartedAt = now
 assert(Q.current.context.questId == ids[1] and #plays == sounds + 1, 'interrupted line restarts once in-world')
 assert(Q.current.context.text == 'Actual captured dialog')
+frames.WowVoiceTalkingHead.scripts.OnUpdate()
+assert(restoredModel.animation == 60 and not restoredModel.paused,
+    'playlist restored after reload must restart its model animation after native loading')
+restoredModel.CompleteLoad = completeLoad
 frames.WowVoiceQuestQueueEvents.scripts.OnEvent(nil, 'PLAYER_ENTERING_WORLD')
+frames.WowVoiceQuestQueueEvents.scripts.OnEvent(nil, 'LOADING_SCREEN_DISABLED')
 step()
 assert(#plays == sounds + 1, 'zoning cannot restart a restored playlist')
+tick(restartedAt + interruptedDuration - 0.01)
+frames.WowVoiceTalkingHead.scripts.OnUpdate()
+assert(Q.current and Q.current.status == 'playing' and not Q.gap
+    and WowVoiceTalkingHead.Progress.value < 1,
+    'the restarted line and head retain the full duration regardless of prior playback and loading')
+tick(restartedAt + interruptedDuration + WowVoiceDB.tail + 0.01)
+assert(Q.gap and Q.current.status == 'done' and #plays == sounds + 1,
+    'only a complete new duration finishes restored audio')
 
 -- Exactly five minutes expires; normal play has no age limit.
 restore(saved, 300)
@@ -130,10 +161,11 @@ assert(Q:Count() == 5 and Q.current)
 event('PLAYER_LOGOUT')
 assert(WowVoiceQueueDB.savedAt == serverNow)
 
--- Closing the head before exit drops that line and preserves a paused queue.
+-- Closing the head with autoplay disabled drops the line and preserves the pause.
 resetRuntime()
 offer(1); offer(2)
-WV:Silence('head close')
+WV:SetQueueAutoPlay(false)
+WowVoiceTalkingHead.Close.scripts.OnClick()
 event('PLAYER_LOGOUT')
 local paused = WowVoiceQueueDB
 assert(paused.paused and #paused.records == 1 and paused.records[1].context.questId == ids[2])
@@ -141,6 +173,18 @@ restore(paused, 10)
 sounds = #plays
 step(); assert(Q.paused and not Q.current and #plays == sounds and Q:Count() == 1)
 assert(Q:Start(Q:Waiting()) and Q.current.context.questId == ids[2])
+
+-- Reload immediately after a skip resumes the successor and retains autoplay.
+resetRuntime()
+local skipped = offer(1)
+offer(2)
+WowVoiceTalkingHead.Close.scripts.OnClick()
+assert(skipped.status == 'skipped' and not Q.current and not Q.paused and WowVoiceDB.queueAutoPlay)
+event('PLAYER_LOGOUT')
+local afterSkip = WowVoiceQueueDB
+assert(not afterSkip.paused and #afterSkip.records == 1 and afterSkip.records[1].context.questId == ids[2])
+restore(afterSkip, 1); step()
+assert(Q.current.context.questId == ids[2] and WowVoiceDB.queueAutoPlay)
 
 -- Completed audio in the automatic gap must not be replayed.
 resetRuntime()

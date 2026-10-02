@@ -1,4 +1,8 @@
 WowVoiceDB = {debug=true}
+-- A separately loaded WowVoice addon may still publish activation globals.
+-- They must not change our filenames, diagnostics or playback.
+WowVoiceLicense = {content_key='legacy-secret', key='legacy-key', pack='legacy-pack'}
+WowVoiceHash = {filename=function() error('Legacy filename hashing must not be used') end}
 event('ADDON_LOADED')
 WowVoiceDB.autoPlayAccept = true -- Exercise opted-in automatic descriptions.
 assert(WowVoiceDB.debug==false and WowVoiceDB.ducknpc==true)
@@ -17,7 +21,8 @@ WowVoice.OpenOptions = openOptions
 print('PASS: /thead opens settings, help remains accessible, original aliases are not registered')
 command('debug on'); command('debug on'); assert(WowVoiceDB.debug)
 command('diag')
-assert(has('бесплатный аудиопак: лицензия не требуется'))
+assert(has('имена файлов: <quest_id><секция>.ogg'))
+assert(not has('лицензия:') and not has('legacy-key') and not has('legacy-pack'))
 assert(not has('Forever test:') and not has('установка через WowVoice.exe'))
 for _,s in ipairs({'70009','16001','WOW_PROJECT_ID=99','C_AddOns=table','GetQuestID=function','GetQuestText=function','GetRewardText=function','StopSound: function','Sound_EnableDialog=1','Sound_DialogVolume=0.37'}) do
     assert(has(s),'missing diagnostic: '..s)
@@ -39,6 +44,7 @@ for _,item in ipairs({{'QUEST_DETAIL','a'},{'QUEST_PROGRESS','p'},{'QUEST_COMPLE
     assert(has('reason=duration timer') and has('StopSound: done') and has('Dialog restore: done'))
 end
 print('PASS: all three quest events, Master, duck, durations, duplicate suppression, stop, restore')
+print('PASS: external activation globals cannot change plain audio paths or diagnostics')
 
 questID=861
 event('QUEST_COMPLETE')

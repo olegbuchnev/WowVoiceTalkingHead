@@ -35,7 +35,7 @@ local function animationGroup()
     return group
 end
 local function region(fontObject,parent)
-    local t = {visible=true,fontObject=fontObject,fontFile=fontObject or 'mock-font',
+    local t = {visible=true,fontObject=fontObject,fontFile=(mockFontFiles or {})[fontObject] or fontObject or 'mock-font',
         fontSize=fontObject=='QuestTitleFont' and 18 or fontObject=='QuestFont' and 13 or 14,fontFlags='',parent=parent}
     function t:GetEffectiveScale() return self.parent:GetEffectiveScale() end
     function t:GetPoint() return table.unpack(self.point) end

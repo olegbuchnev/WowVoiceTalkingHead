@@ -1,6 +1,18 @@
 const fs = require('fs'), path = require('path'), assert = require('assert');
 const crypto = require('crypto'), lua = require('luaparse');
 const root = path.resolve(__dirname, '..');
+for (const name of fs.readdirSync(path.join(root, 'src')).filter(name => name.endsWith('.toc'))) {
+  const toc = fs.readFileSync(path.join(root, 'src', name), 'utf8');
+  assert(!/^##\s*(?:Dependencies|RequiredDeps):/mi.test(toc), `${name} must load without audio packs`);
+  assert.match(toc, /^## OptionalDeps: WowVoiceSounds, CatQuest_Voices\s*$/m,
+    'Sound libraries may only set optional loading order');
+}
+const { duration } = require('../tools/import-forever-audio');
+const { check } = require('../tools/generate-classic-metadata');
+const classicManifest = check(path.join(root, 'soundpack'), root);
+console.log(`PASS: ${classicManifest.files.length} Classic OGG durations, sizes and SHA-256 match generated metadata`);
+const silence = fs.readFileSync(path.join(root, 'src/Media/silence.ogg'));
+assert.strictEqual(duration(silence), 0.1, 'Music stop requires the bundled 100 ms Vorbis service asset');
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'docs/internal/forever-audio-manifest.json'), 'utf8'));
 const index = lua.parse(fs.readFileSync(path.join(root, 'src/CatQuestAudio.lua'), 'utf8'),
   {encodingMode:'pseudo-latin1'}).body.find(n => n.type === 'AssignmentStatement').init[0].fields.find(f => f.key.name === 'entries').value;

@@ -1,3 +1,4 @@
+local L = WowVoiceLocale
 -- Built-in options page: Settings -> AddOns -> WowVoice.
 local WV = _G.WowVoice
 local panel, category
@@ -10,24 +11,29 @@ local legacySourceVersions = {
 local function refreshVoicePreference()
     if not panel.SharedVoiceButtons then return end
     local source, reason = WowVoiceAudioSources.Status()
-    panel.SharedVoiceCaption:SetAlpha(source and 1 or 0.45)
+    local primary = WowVoiceAudioSources.Loaded("WowVoiceSounds")
+    local selectable = source ~= nil and primary
+    local selectedSource = WV:GetSharedQuestVoice()
+    panel.SharedVoiceCaption:SetAlpha(selectable and 1 or 0.45)
     for id, button in pairs(panel.SharedVoiceButtons) do
-        button:SetChecked(WV:GetSharedQuestVoice() == id)
-        button:SetEnabled(source ~= nil)
-        button:SetAlpha(source and 1 or 0.45)
-        local selected = WV:GetSharedQuestVoice() == id
+        button:SetChecked(selectedSource == id)
+        button:SetEnabled(selectable)
+        button:SetAlpha(selectable and 1 or 0.45)
+        local selected = selectedSource == id
         button.Border:SetVertexColor(selected and 1 or 0.6, selected and 0.82 or 0.6, selected and 0.25 or 0.6)
     end
-    panel.SharedVoiceTooltip.message = source
+    panel.SharedVoiceTooltip.message = selectable
         and "Выбранная озвучка используется при получении и сдаче заданий, а также в журнале и списке заданий. Если запись есть только у одного источника, используется она."
-        or ("Для выбора установите и включите CatQuest Voices. Сейчас используется WowVoice.\n"
+        or source and "Используется CatQuest Voices. Для выбора между озвучками установите и включите WowVoice Sounds."
+        or primary and ("Для выбора установите и включите CatQuest Voices. Сейчас используется WowVoice.\n"
             .. tostring(reason or ""))
+        or "Реплики показываются без звука. Для озвучки можно подключить WowVoice Sounds или CatQuest Voices."
 end
 
 local function refreshVersions()
     refreshVoicePreference()
     local source, reason = WowVoiceAudioSources.Status()
-    panel.AudioSourceCaption:SetText("Озвучка CatQuest:")
+    L.SetOptionsText(panel.AudioSourceCaption, "Озвучка CatQuest:")
     panel.AudioSourceCaption:SetWidth(math.ceil(panel.AudioSourceCaption:GetStringWidth()) + 2)
     local metadata = (C_AddOns and C_AddOns.GetAddOnMetadata) or GetAddOnMetadata
     local function field(addon, key)
@@ -35,21 +41,22 @@ local function refreshVersions()
         return type(value) == "string" and value ~= "" and value or nil
     end
     local installed = field("CatQuest_Voices", "Version")
-    local supported = WowVoiceCatQuestAudio and WowVoiceCatQuestAudio.sourceVersion
+    local supported = WowVoiceCatQuestAudio and WowVoiceCatQuestAudio.sourceVersion or "нет данных"
     local incompatible = not source and WowVoiceAudioSources.Loaded("CatQuest_Voices")
     local updated = source and source.updated
     local outdated = source and source.outdated
     local warning = panel.AudioSourceWarning
     if GameTooltip and GameTooltip:IsOwned(warning) then GameTooltip:Hide() end
     warning.title = incompatible and "Озвучка CatQuest недоступна"
-        or outdated and "Устаревшая озвучка CatQuest" or "Обновлённая озвучка CatQuest"
+        or outdated and "Устаревшая озвучка CatQuest" or "Непроверенная озвучка CatQuest"
     warning.message = incompatible and tostring(reason or "Индекс озвучки недоступен.")
         or outdated and ("Установлена: " .. source.version .. ". Полностью проверена: " .. tostring(supported)
-            .. ".\nСовместимые записи продолжают работать. Часть озвучки заданий может быть недоступна."
+            .. ".\nОзвучка работает по индексу библиотеки. Голова и очередь могут завершаться позже звука."
             .. "\nОбновите CatQuest Voices до версии " .. tostring(supported) .. ".")
         or updated and ("Установлена: " .. source.version .. ". Полностью проверена: " .. tostring(supported)
-            .. ".\nСовместимые записи продолжают работать. Изменённые и новые записи пока недоступны."
-            .. "\nОбновление WowVoice TalkingHead добавит их поддержку.") or nil
+            .. ".\nОзвучка работает по индексу библиотеки, включая новые и изменённые записи."
+            .. "\nГолова и очередь могут завершаться позже звука."
+            .. "\nОбновление WowVoice TalkingHead после проверки библиотеки вернёт точные таймеры.") or nil
     if incompatible or updated then warning:Show() else warning:Hide() end
     local width = 0
     for addon, text in pairs(panel.VersionLabels) do
@@ -71,14 +78,14 @@ local function refreshVersions()
             end
         end
         text:SetWidth(124)
-        text:SetText(version)
+        L.SetOptionsText(text, version)
         width = math.max(width, math.ceil(text:GetStringWidth()) + 2)
     end
     for _, text in pairs(panel.VersionLabels) do text:SetWidth(math.min(124, width)) end
 end
 
 local function status(text)
-    panel.Status:SetText(text or "")
+    L.SetOptionsText(panel.Status, text or "")
 end
 
 function WV:RefreshAudioSourceOptions()
@@ -205,7 +212,7 @@ local function createPanel()
         fs:SetSize(width, height)
         fs:SetJustifyH("LEFT")
         fs:SetJustifyV("TOP")
-        fs:SetText(text)
+        L.SetOptionsText(fs, text)
         return fs
     end
     label(WV.displayName, "GameFontNormalLarge", 16, -16, 280, 28)
@@ -238,6 +245,7 @@ local function createPanel()
                 GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
                 GameTooltip:AddLine(self.title, 1, 0.82, 0.25)
                 GameTooltip:AddLine(self.message, 1, 1, 1, true)
+                L.OptionsTooltip(GameTooltip)
                 GameTooltip:Show()
             end)
             local function hideTooltip(self)
@@ -280,7 +288,7 @@ local function createPanel()
         local b = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
         b:SetSize(width, 26)
         b:SetPoint("TOPLEFT", content, "TOPLEFT", x, y or -128)
-        b:SetText(text)
+        L.SetOptionsText(b, text)
         b:SetScript("OnClick", callback)
         panel.Buttons[key] = b
     end
@@ -691,6 +699,7 @@ local function createPanel()
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:AddLine("Выбор озвучки", 1, 0.82, 0)
         GameTooltip:AddLine(hint.message, 1, 1, 1, true)
+        L.OptionsTooltip(GameTooltip)
         GameTooltip:Show()
     end
     local function hideVoiceTooltip(self)

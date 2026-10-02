@@ -14,6 +14,8 @@ for (const dir of [source, __dirname]) {
 console.log(`Lua 5.1 syntax validated: ${parsed} files.`);
 for (const runner of [
   'validate-audio-import.js',
+  'validate-classic-metadata.js',
+  'validate-localization.js',
   'validate-site.js',
   'validate-audio-assets.js',
   'validate-forever-speakers.js',

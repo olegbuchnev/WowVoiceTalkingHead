@@ -54,7 +54,7 @@ function audit(catDirectory, voicesDirectory) {
         voice: entry.v || '', jsonOnly: recovered.has(id), files: names };
     }
   }
-  const texts = read('src/CatQuestTexts.lua'), audio = read('src/CatQuestAudio.lua');
+  const texts = read('src/QuestTexts.lua'), audio = read('src/CatQuestAudio.lua');
   const sourceVersion = version(voicesDirectory, 'CatQuest_Voices.toc');
   for (const [label, db] of [['texts', texts], ['audio', audio]]) {
     check(db.sourceVersion === sourceVersion, `${label} source version differs`);

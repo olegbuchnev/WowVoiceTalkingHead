@@ -13,7 +13,7 @@ local panel = frames.WowVoiceOptionsPanel
 assert(WV:SetSharedQuestVoice('catquest'))
 local snapshot = WowVoiceCatQuestAudio.sourceVersion
 assert(snapshot == '0.3.0' and not S.Status().updated and not panel.AudioSourceWarning:IsShown())
-assert(WowVoiceCatQuestTexts.sourceVersion == '0.3.0' and WowVoiceCatQuestSpeakers.sourceVersion == '0.3.1')
+assert(WowVoiceQuestTexts.sourceVersion == '0.3.0' and WowVoiceCatQuestSpeakers.sourceVersion == '0.3.1')
 -- Real 0.3.0 changes: longer recording and a renamed common turn-in file.
 -- These live fields come from the external index, independently of the snapshot.
 local previousFive, previousTwentySeven = quests[5], quests[27]
@@ -39,39 +39,105 @@ print('PASS: migrated 0.3.0 records use new timings, common filenames and texts;
 version = '0.4.0'; WV:RefreshAudioSources()
 assert(snapshot == '0.3.0' and S.Status().updated and S.Status().version == '0.4.0')
 assert(WV:GetSharedQuestVoice() == 'catquest' and panel.SharedVoiceButtons.catquest:IsEnabled())
--- Metadata changes affect only their own sections, with Classic fallback.
+-- Changed durations must use the live index, independently for each section.
 local original = quests[179]
 quests[179] = {d=original.d + 1, g=original.g, v=original.v, c=original.c, t=original.t}
-assert(not S.Resolve(179, 'a') and S.Resolve(179, 'c'))
-assert(WV:SoundPath(179, 'a'):find('WowVoiceSounds', 1, true))
+assert(S.Resolve(179, 'a').duration == original.d + 1.25 and S.Resolve(179, 'c'))
+assert(WV:SoundPath(179, 'a'):find('CatQuest_Voices', 1, true))
 assert(WV:SoundPath(179, 'c'):find('CatQuest_Voices', 1, true))
 assert(S.Resolve(99108, 'a'), 'a changed shared recording cannot disable unrelated unique quests')
+quests[179] = original
+quests[179] = nil
+assert(not S.Resolve(179,'a') and not WowVoiceComparison.Known(179,'catquest'),
+    'a removed live recording must not be resurrected from the snapshot')
 quests[179] = original
 local record = quests[99108]
 local voice, gender, duration, cues = record.v, record.g, record.d, record.c
 for _, change in ipairs({
     function() record.v = 'unknown-new-voice' end,
-    function() record.g = not gender end,
-    function() record.d = nil end,
+    function() record.g = nil end,
     function() record.c = {m={{0, 'Changed transcript'}},f={{0, 'Changed transcript'}}} end,
     function() record.c = nil end,
 }) do
     change()
-    assert(not S.Resolve(99108, 'a'))
+    assert(S.Resolve(99108, 'a') and not S.Resolve(99108, 'a').verified)
     assert(S.Resolve(179, 'a') and S.Resolve(99162, 'a'))
     record.v, record.g, record.d, record.c = voice, gender, duration, cues
 end
+-- Invalid necessary metadata blocks only its own recording; subtitles/voice
+-- are optional and must not mute a valid OGG.
+for _, invalid in ipairs({false, '30', 0, -1, math.huge, 0/0}) do
+    record.d = invalid
+    assert(not S.Resolve(99108, 'a') and S.Resolve(99108, 'c'))
+    assert(S.Resolve(179, 'a') and S.Resolve(99162, 'a'))
+end
+record.d = nil
+assert(not S.Resolve(99108, 'a'))
+record.d = duration
+record.g = 'new-format'
+assert(not S.Resolve(99108, 'a') and S.Resolve(99108, 'c'))
+record.g = gender
+local savedShared = quests[179]
+quests[179] = {d=-1,t=savedShared.t}
+assert(WV:SoundPath(179, 'a'):find('WowVoiceSounds', 1, true))
+quests[179] = savedShared
 for _, playerSex in ipairs({2, 3}) do
     sex = playerSex
     local resolved = S.Resolve(98430, 'a')
-    assert(resolved and resolved.duration == quests[98430].d + 0.1)
+    assert(resolved and resolved.duration == quests[98430].d + 0.25)
     assert(resolved.path:find(playerSex == 3 and '_f.ogg' or '_m.ogg', 1, true))
 end
 sex = 2
 assert(not S.Resolve(99080, 'c'), 'new releases cannot inherit JSON-only files absent from their live index')
-quests[999999] = {d=30,v='human-male'}
-assert(not S.Resolve(999999, 'a'), 'unknown quests wait for metadata migration')
-quests[999999] = nil
+-- This fixture is independent of our snapshots: new ID, new text, new voice,
+-- new gender layout. It can be tested before any real upstream release.
+local newID = 99998
+assert(not WowVoiceCatQuestAudio.entries[newID .. 'a'] and not WowVoiceQuestTexts.entries[newID .. 'a'])
+quests[newID] = {d=10,g=1,v='future-voice',c={m={{0,'New male text.'}},f={{0,'New female text.'}}},
+    t={d=3,c={x={{0,'New turn-in.'}}}}}
+for _, playerSex in ipairs({2,3}) do
+    sex = playerSex
+    local resolved = S.Resolve(newID, 'a')
+    assert(resolved and resolved.duration == 10.25 and not resolved.verified)
+    assert(resolved.path:find(playerSex == 3 and '_f.ogg' or '_m.ogg', 1, true))
+    assert(S.Text(newID,'a','catquest') == (playerSex == 3 and 'New female text.' or 'New male text.'))
+    assert(WV:ReplayQuest(newID) and frames.WowVoiceTalkingHead.Body:GetText() == S.Text(newID,'a','catquest'))
+    WV:Silence()
+end
+sex = 2
+assert(S.Resolve(newID,'c').path:find('99998_t.ogg',1,true))
+assert(S.QuestIDs()[newID] and WowVoiceComparison.QuestIDs()[newID])
+assert(WowVoiceComparison.Known(newID,'catquest') and not WowVoiceComparison.Known(newID,'wowvoice'))
+assert(WowVoiceComparison.Play(newID,'catquest') and plays[#plays].file == S.Resolve(newID,'a').path)
+assert(frames.WowVoiceTalkingHead.Body:GetText() == 'New male text.')
+WV:Silence()
+record.c = {m={{0,' Changed wording. '},{3,'Second sentence.'}},f={{0,'New female wording.'}}}
+assert(S.Text(99108,'a','catquest') == 'Changed wording. Second sentence.')
+assert(WV:ReplayQuest(99108) and frames.WowVoiceTalkingHead.Body:GetText() == 'Changed wording. Second sentence.')
+WV:Silence()
+record.c = nil
+assert(S.Text(99108,'a','catquest') == nil and S.Text(99108,'a') ~= nil,
+    'unverified CatQuest must not reuse stale subtitles; Classic keeps its text fallback')
+record.c = {m={{0,false}}}
+assert(S.Text(99108,'a','catquest') == nil and S.Resolve(99108,'a'), 'invalid optional subtitles cannot mute audio')
+record.c = cues
+-- Real old-pack counterexample to using only a 0.1s rounding allowance:
+-- Voices 0.2.0 quest 132 declares 21s but its OGG is 21.180792s long.
+local old132 = quests[132]
+quests[132] = {d=21}
+assert(S.Resolve(132,'a').duration == 21.25 and WV:ReplayQuest(132))
+local oldPackHandle, oldPackStarted = plays[#plays].handle, now
+tick(oldPackStarted + 21.180792)
+assert(stops[#stops] ~= oldPackHandle, 'small index errors must not cut this old-pack recording')
+tick(oldPackStarted + 21.25 + WowVoiceDB.tail + 0.01)
+assert(stops[#stops] == oldPackHandle)
+quests[132] = old132
+-- Runtime CatQuest remains usable even when our optional snapshots are absent.
+local savedAudio, savedTexts = WowVoiceCatQuestAudio, WowVoiceQuestTexts
+WowVoiceCatQuestAudio, WowVoiceQuestTexts = nil, nil
+assert(S.Status() and S.Status().updated and S.Resolve(newID,'a'))
+assert(S.Text(newID,'a','catquest') == 'New male text.' and WowVoiceComparison.QuestIDs()[newID])
+WowVoiceCatQuestAudio, WowVoiceQuestTexts = savedAudio, savedTexts
 for _, futureVersion in ipairs({'0.5.0', '1.0.0', ''}) do
     version = futureVersion
     WV:RefreshAudioSources()
@@ -85,15 +151,21 @@ WV:RefreshAudioSources()
 -- Updated records play through the existing queue, and one missing OGG does
 -- not poison another quest or the independently installed Classic library.
 Q:Clear()
-local first, second = S.Resolve(99162, 'a'), S.Resolve(99108, 'a')
+local first, second = S.Resolve(newID, 'a'), S.Resolve(99108, 'a')
 local function context(id)
     return {questId=id,section='a',title='Updated library',speaker={npcID=id,name='NPC'}}
 end
 WowVoiceDB.autoPlay, WowVoiceDB.autoPlayAccept, WowVoiceDB.queueAutoPlay = true, true, true
-Q:Offer(context(99162)); Q:Accept(99162)
+Q:Offer(context(newID)); Q:Accept(newID)
 Q:Offer(context(99108)); Q:Accept(99108)
-assert(Q.current.context.questId == 99162 and Q:Count() == 2 and plays[#plays].file == first.path)
-tick(now + first.duration + WowVoiceDB.tail + 0.01)
+assert(Q.current.context.questId == newID and Q:Count() == 2 and plays[#plays].file == first.path)
+local activeHandle, playCount, stopCount = plays[#plays].handle, #plays, #stops
+WV:RefreshAudioSources()
+assert(#plays == playCount and #stops == stopCount and Q.current.context.questId == newID,
+    'source refresh must retain active audio, head and queue')
+tick(now + first.duration - 0.01)
+assert(Q.current.context.questId == newID and stops[#stops] ~= activeHandle)
+tick(now + WowVoiceDB.tail + 0.03)
 tick(Q.gap.deadline)
 frames.WowVoiceQuestQueueDriver.scripts.OnUpdate()
 assert(Q.current.context.questId == 99108 and plays[#plays].file == second.path)
@@ -102,9 +174,45 @@ soundOK = false
 assert(not WV:ReplayQuest(99162) and not WV:HasQuestAudio(99162))
 soundOK = true
 assert(WV:HasQuestAudio(99108) and WV:HasQuestAudio(179))
+-- Music transport uses the same approximate timer and advances the same queue.
+local playMusic, stopMusic, background = PlayMusic, StopMusic, cvars.Sound_EnableSoundWhenGameIsInBG
+local music, musicStops = {}, 0
+PlayMusic = function(path) music[#music+1] = path; return true end
+StopMusic = function() musicStops = musicStops + 1 end
+cvars.Sound_EnableSoundWhenGameIsInBG = '0'
+Q:Offer(context(newID)); Q:Accept(newID)
+Q:Offer(context(99108)); Q:Accept(99108)
+assert(Q.current.context.questId == newID and music[#music] == first.path)
+local started = now
+tick(started + first.duration - 0.01)
+assert(Q.current.context.questId == newID)
+tick(started + first.duration + WowVoiceDB.tail + 0.01)
+assert(musicStops > 0)
+tick(Q.gap.deadline)
+frames.WowVoiceQuestQueueDriver.scripts.OnUpdate()
+assert(Q.current.context.questId == 99108 and music[#music] == second.path)
+Q:Clear()
+PlayMusic, StopMusic, cvars.Sound_EnableSoundWhenGameIsInBG = playMusic, stopMusic, background
+-- A future audited import automatically replaces live estimates by exact
+-- sex-specific timing, without resetting the user's choice.
+local beforeVersion = savedAudio.sourceVersion
+savedAudio.entries[newID .. 'a'] = {indexDuration=10,gender=true,voice='future-voice',
+    audio={male={file='99998_m.ogg',duration=9.95},female={file='99998_f.ogg',duration=8.75}}}
+savedAudio.sourceVersion = version
+for _, playerSex in ipairs({2,3}) do
+    sex = playerSex
+    WV:RefreshAudioSources()
+    assert(not S.Status().updated and not panel.AudioSourceWarning:IsShown())
+    assert(WV:GetSharedQuestVoice() == 'catquest')
+    assert(S.Resolve(newID,'a').verified and S.Resolve(newID,'a').duration == (sex == 3 and 8.75 or 9.95))
+end
+savedAudio.entries[newID .. 'a'], savedAudio.sourceVersion, quests[newID], sex = nil, beforeVersion, nil, 2
+pack.schemaVersion = 2
+assert(not S.Status(), 'declared unsupported index schema cannot be played')
+pack.schemaVersion = nil
 version = snapshot; WV:RefreshAudioSources()
 assert(S.Resolve(98430, 'a').duration == WowVoiceCatQuestAudio.entries['98430a'].audio.male.duration)
 assert(S.Resolve(99080, 'c') and WowVoiceCatQuestAudio.sourceVersion == snapshot)
 panel:Hide()
 UnitSex, C_AddOns.GetAddOnMetadata = originalSex, metadata
-print('PASS: updated CatQuest keeps compatible records, source choice, both sexes, Classic fallback and queue; changed/unknown records stay isolated without metadata migration')
+print('PASS: unverified CatQuest uses live new/changed records, sex/text/catalogue and both queue transports; snapshots optional, exact timing restored after audit')
