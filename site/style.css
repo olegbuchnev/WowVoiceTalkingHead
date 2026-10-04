@@ -38,14 +38,10 @@ a:focus-visible { outline: 3px solid var(--focus); outline-offset: 5px; border-r
 .primary { background: var(--primary); border-color: var(--primary); color: #fff; }
 .primary:hover { background: var(--primary-hover); color: #fff; }
 .download-note { color: var(--muted); font-size: 14px; margin: 0 0 10px; }
-.version-help { border-top: 1px solid var(--line); padding-top: 10px; margin: 12px 0 0; }
 .artifact-meta { color: var(--muted); font-size: 14px; line-height: 1.7; margin: 0; }
 .artifact-meta a { font-size: 14px; font-weight: 600; text-decoration: none; }
 .artifact-meta a:hover { text-decoration: underline; }
 .artifact-meta time { font-variant-numeric: tabular-nums; }
-.audio-versions { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 8px; border-top: 1px solid var(--line); padding-top: 10px; margin: 12px 0 0; font-size: 14px; line-height: 1.6; }
-.audio-versions dt { color: var(--muted); text-align: right; }
-.audio-versions dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .mirror { font-size: 14px; }
 nav { display: grid; gap: 8px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 16px; }
 nav a { text-decoration: none; }
@@ -89,6 +85,10 @@ code { font: .85em/1.65 ui-monospace, Consolas, monospace; background: var(--cod
 pre { background: var(--code); border: 1px solid var(--line); border-radius: 5px; padding: 16px; overflow-x: auto; }
 pre code { padding: 0; overflow-wrap: normal; }
 blockquote { margin: 20px 0; padding-left: 18px; border-left: 3px solid var(--line); color: var(--muted); }
+.installation-notice { border-color: #d18a39; border-radius: 0 5px 5px 0; background: #2b281f; padding: 16px 20px; color: var(--ink); }
+.installation-notice > p:first-child { color: #edcb85; margin-bottom: 8px; }
+.installation-notice > p:last-child { margin-bottom: 0; }
+section[aria-labelledby="whats-new"] details > .installation-notice { margin: 20px 18px; }
 table { display: block; overflow-x: auto; border-collapse: collapse; margin-bottom: 24px; }
 th, td { border: 1px solid var(--line); padding: 8px 12px; text-align: left; }
 hr { border: 0; border-top: 1px solid var(--line); margin: 30px 0; }

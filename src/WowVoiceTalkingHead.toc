@@ -4,11 +4,12 @@
 ## IconTexture: Interface\AddOns\WowVoiceTalkingHead\Media\VoiceChat-Active.tga
 ## Notes: Говорящая голова для заданий с подключаемой озвучкой WowVoice и CatQuest.
 ## Author: wowvoice
-## Version: 1.2.4-forever
+## Version: 1.2.5-forever
 ## SavedVariables: WowVoiceDB
 ## SavedVariablesPerCharacter: WowVoiceQueueDB
-## OptionalDeps: WowVoiceSounds, CatQuest_Voices
+## OptionalDeps: WowVoice, WowVoiceSounds, CatQuest_Voices
 
+WowVoiceIntegration.lua
 Localization.lua
 Index.lua
 Durations.lua

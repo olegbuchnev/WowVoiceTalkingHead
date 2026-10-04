@@ -273,7 +273,9 @@ try {
           $reader = [IO.StreamReader]::new($entry.Open(), [Text.Encoding]::UTF8)
           try { $guide = $reader.ReadToEnd() } finally { $reader.Dispose() }
           Assert-True ($guide -eq $fullGuide) 'Full and addon-only archives must share the same guide.'
-          Assert-True ($guide.Contains('addon-only') -and $guide.Contains('/reload') -and $guide.Contains('WowVoiceSounds')) 'Addon-only instructions missing.'
+          Assert-True ($guide.Contains('WowVoiceTalkingHead') -and $guide.Contains('WowVoiceSounds') -and
+            $guide.Contains('CatQuest_Voices') -and $guide.Contains('CurseForge') -and
+            $guide.Contains('gameVersionTypeId=88568')) 'Separate addon and Forever sound-library instructions missing.'
           continue
         }
         Assert-True ($name.StartsWith('WowVoiceTalkingHead/') -and

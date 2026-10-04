@@ -20,6 +20,7 @@ for (const runner of [
   'validate-audio-assets.js',
   'validate-forever-speakers.js',
   'validate-catquest-speakers.js',
+  'validate-wowvoice-integration.js',
   'validate-full.js', 'validate-portrait.js', 'validate-player-preview.js',
   'validate-block-scroll.js', 'validate-subtitles.js', 'validate-item-speaker.js',
   'validate-local-debug.js',

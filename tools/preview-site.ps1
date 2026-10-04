@@ -15,7 +15,7 @@ $node = (Get-Command node -ErrorAction Stop).Source
 # Run the real packager in an isolated workspace, away from published/pCloud ZIPs.
 New-Item -ItemType Directory -Path $fixture | Out-Null
 try {
-  foreach ($name in @('build.ps1', 'USER_README.md', 'src', 'soundpack')) {
+  foreach ($name in @('build.ps1', 'USER_README.md', 'src')) {
     Copy-Item -LiteralPath (Join-Path $repo $name) -Destination $fixture -Recurse
   }
   $tocPath = Join-Path $fixture 'src\WowVoiceTalkingHead.toc'
@@ -25,18 +25,13 @@ try {
     $text = [regex]::Replace($text, '(?m)^## Version:[^\r\n]*', "## Version: $version")
     [IO.File]::WriteAllText($toc.FullName, $text, $utf8)
   }
-  & (Join-Path $fixture 'build.ps1') -Task Package
   & (Join-Path $fixture 'build.ps1') -Task PackageAddon
   New-Item -ItemType Directory -Path $downloads -Force | Out-Null
-  $full = "WowVoiceTalkingHead-$version.zip"
   $addon = "WowVoiceTalkingHead-$version-addon-only.zip"
-  foreach ($name in @($full, $addon)) {
-    Copy-Item -LiteralPath (Join-Path $fixture "artifacts\WoWVoice\$name") -Destination (Join-Path $downloads $name) -Force
-  }
+  Copy-Item -LiteralPath (Join-Path $fixture "artifacts\WoWVoice\$addon") -Destination (Join-Path $downloads $addon) -Force
   $cat = [regex]::Match([IO.File]::ReadAllText((Join-Path $fixture 'src\CatQuestAudio.lua')), 'sourceVersion\s*=\s*"([^"]+)"').Groups[1].Value
-  $wow = [regex]::Match([IO.File]::ReadAllText((Join-Path $fixture 'soundpack\WowVoiceSounds.toc')), '(?m)^## X-Source-Version:\s*(\S+)').Groups[1].Value
-  if (-not $cat -or -not $wow) { throw 'Missing source version for preview.' }
-  $manifest = @{ version = $version; full = $full; addon = $addon; catQuestVersion = $cat; wowVoiceVersion = $wow }
+  if (-not $cat) { throw 'Missing CatQuest source version for preview.' }
+  $manifest = @{ version = $version; addon = $addon; catQuestVersion = $cat }
   [IO.File]::WriteAllText((Join-Path $output 'preview.json'), ($manifest | ConvertTo-Json), $utf8)
   & $node (Join-Path $repo 'tools\build-site.mjs') --preview
   if ($LASTEXITCODE -ne 0) { throw 'Preview site build failed.' }

@@ -3,9 +3,9 @@ local L = WowVoiceLocale
 local WV = _G.WowVoice
 local panel, category
 
--- Previously published packs predate explicit upstream version metadata.
+-- Old bundled packs can identify their source even without the upstream addon.
 local legacySourceVersions = {
-    WowVoiceSounds = { ["1.0.3-forever.1"] = "1.0.1" },
+    ["1.0.3-forever.1"] = "1.0.1",
 }
 
 local function refreshVoicePreference()
@@ -69,8 +69,12 @@ local function refreshVersions()
         else
             local installed = field(addon, "Version")
             version = installed
-            if legacySourceVersions[addon] then
-                version = field(addon, "X-Source-Version") or legacySourceVersions[addon][installed]
+            if addon == "WowVoiceSounds" then
+                -- Metadata remains readable while the upstream addon is disabled.
+                -- Only show its version when the sound library is also installed;
+                -- the player's presence alone does not provide any quest audio.
+                version = (installed or field(addon, "Title")) and field("WowVoice", "Version")
+                    or field(addon, "X-Source-Version") or legacySourceVersions[installed]
             end
             if not version then
                 version = metadata and not installed and not field(addon, "Title")

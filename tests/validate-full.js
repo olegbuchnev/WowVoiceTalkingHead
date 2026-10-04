@@ -7,6 +7,7 @@ scenarios.push('silent-playback-scenarios.lua');
 scenarios.push('music-stop-scenarios.lua');
 scenarios.push('release-commands-scenarios.lua', 'dev-commands-scenarios.lua');
 scenarios.push('catquest-update-lab-scenarios.lua');
+scenarios.push('wowvoice-version-label-scenarios.lua');
 for (const locale of ['enUS', 'enGB']) {
     scenarios.push({file:'catquest-scenarios.lua',locale});
 }

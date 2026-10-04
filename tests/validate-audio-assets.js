@@ -4,8 +4,10 @@ const root = path.resolve(__dirname, '..');
 for (const name of fs.readdirSync(path.join(root, 'src')).filter(name => name.endsWith('.toc'))) {
   const toc = fs.readFileSync(path.join(root, 'src', name), 'utf8');
   assert(!/^##\s*(?:Dependencies|RequiredDeps):/mi.test(toc), `${name} must load without audio packs`);
-  assert.match(toc, /^## OptionalDeps: WowVoiceSounds, CatQuest_Voices\s*$/m,
-    'Sound libraries may only set optional loading order');
+  assert.match(toc, /^## OptionalDeps: WowVoice, WowVoiceSounds, CatQuest_Voices\s*$/m,
+    'Upstream takeover and sound libraries may only set optional loading order');
+  assert.strictEqual(toc.split(/\r?\n/).find(line => line.endsWith('.lua')), 'WowVoiceIntegration.lua',
+    'Detach upstream before replacing its globals');
 }
 const { duration } = require('../tools/import-forever-audio');
 const { check } = require('../tools/generate-classic-metadata');

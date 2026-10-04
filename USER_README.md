@@ -4,19 +4,29 @@
 
 ## Установка — 3 шага
 
-**Для установки с основной озвучкой WowVoice скачайте полный комплект.**
-Для работы только с CatQuest подойдёт `addon-only`:
-достаточно папки `WowVoiceTalkingHead` и отдельно установленных CatQuest и CatQuest Voices.
+> **⚠ Если раньше скачивали наш полный архив**
+>
+> При переходе на [WowVoice из CurseForge](https://www.curseforge.com/wow/addons/wowvoice-classic/files/all?page=1&pageSize=20&gameVersionTypeId=88568&showAlphaFiles=hide)
+> закройте игру и удалите старую папку `WowVoiceSounds` из `Interface/AddOns`,
+> затем установите библиотеку из CurseForge. Это нужно сделать только один раз.
+> Настройки и история TalkingHead сохранятся.
 
-1. **Закройте игру.**
-2. **Скопируйте папки `WowVoiceTalkingHead` и `WowVoiceSounds` в
-   `_classic_beta_/Interface/AddOns/`.**
-3. **Запустите игру и включите оба аддона в списке модификаций.**
+1. **Закройте игру и установите TalkingHead.** Скопируйте папку
+   `WowVoiceTalkingHead` из нашего архива в `_classic_beta_/Interface/AddOns/`.
+2. **Установите одну или обе озвучки для Forever:**
+   [WowVoice](https://www.curseforge.com/wow/addons/wowvoice-classic/files/all?page=1&pageSize=20&gameVersionTypeId=88568&showAlphaFiles=hide)
+   или [CatQuest](https://www.curseforge.com/wow/addons/catquest/files/all?page=1&pageSize=20&gameVersionTypeId=88568&showAlphaFiles=hide)
+   вместе с [CatQuest Voices](https://www.curseforge.com/wow/addons/catquest-voices/files/all?page=1&pageSize=20&gameVersionTypeId=88568&showAlphaFiles=hide).
+   Папки библиотек также поместите в `AddOns`.
+3. **Запустите игру и включите TalkingHead и выбранные библиотеки.**
+   Для WowVoice нужна `WowVoiceSounds`; для CatQuest — `CatQuest` и `CatQuest_Voices`.
 
-Основная озвучка WowVoice работает самостоятельно. Для дополнительных квестов
-установите отдельно **CatQuest и CatQuest Voices**
-со [страницы CatQuest на CurseForge](https://www.curseforge.com/wow/addons/catquest).
-Оба должны быть включены: CatQuest Voices зависит от CatQuest.
+Если вместе со звуками установлен основной аддон `WowVoice`, TalkingHead
+автоматически отключит его для текущего персонажа, чтобы задания не звучали
+дважды. Библиотека `WowVoiceSounds` останется включённой.
+
+Озвучка WowVoice работает без CatQuest. Для озвучки CatQuest должны быть включены
+оба аддона: CatQuest Voices зависит от CatQuest.
 Говорящая голова и очередь запускают только реплики с доступной озвучкой.
 Если запись отсутствует или её библиотека отключена, реплика пропускается.
 При отключении обеих библиотек остаются доступными настройки и каталог озвучки.
@@ -40,7 +50,7 @@ WowVoice TalkingHead. Автозапуск квестов и кнопки «Чи
 квеста, приветствия NPC и журнале временно отключаются на всех языках клиента;
 чтение книг, табличек и лор мест
 остаются доступны.
-При отключении WowVoice исходные настройки и кнопки CatQuest восстанавливаются.
+При отключении TalkingHead исходные настройки и кнопки CatQuest восстанавливаются.
 Для них можно оставить включёнными `CatQuest`, `CatQuest_Voices`
 и `CatQuest_Books`. Их настройки книг и лора сохраняются.
 Основная озвучка не требует CatQuest. Дополнительная озвучка использует только
@@ -89,13 +99,12 @@ CatQuest Voices его можно выбрать снова вручную.
 
 ## Если обновляете эту сборку
 
-Скопируйте папки из архива в ту же папку `AddOns`, согласившись на замену файлов.
-Для `addon-only` достаточно заменить папку `WowVoiceTalkingHead` и выполнить `/reload`;
-папку `WowVoiceSounds` оставьте на месте. Настройки сохранятся, кроме однократного
+Замените папку `WowVoiceTalkingHead` в `AddOns` папкой из нового архива
+и полностью перезапустите игру. Библиотеки озвучки оставьте на месте:
+они обновляются отдельно через CurseForge. Настройки сохранятся, кроме однократного
 включения автозапуска при переходе на версию с плейлистом: общий переключатель,
 «При получении задания» и «При сдаче задания» будут включены. После этого их
 можно отключить снова; последующие входы и `/reload` выбор не сбрасывают.
-При установке полного архива закройте игру: для новых звуков нужен полный перезапуск.
 
 ## Как пользоваться
 

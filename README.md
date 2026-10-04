@@ -6,8 +6,7 @@
 На английском клиенте кнопки плеера отображаются на английском, настройки — на русском.
 Говорящая голова использует шрифты заданий Blizzard, включая их кириллические варианты.
 
-**[Скачать полный архив](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.2.4-forever/WowVoiceTalkingHead-1.2.4-forever.zip)** ·
-**[Скачать addon-only](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.2.4-forever/WowVoiceTalkingHead-1.2.4-forever-addon-only.zip)** ·
+**[Скачать аддон](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.2.5-forever/WowVoiceTalkingHead-1.2.5-forever-addon-only.zip)** ·
 [Инструкция](USER_README.md) ·
 [Сообщить об ошибке](https://github.com/olegbuchnev/WowVoiceTalkingHead/issues)
 
@@ -63,7 +62,7 @@
 При совместном использовании с CatQuest озвучку заданий берёт на себя
 WowVoice TalkingHead. Автозапуск квестов и кнопки «Читать» CatQuest в окне
 квеста и журнале временно отключаются; чтение книг и лор мест остаются доступны.
-При отключении WowVoice исходные настройки и кнопки CatQuest восстанавливаются.
+При отключении TalkingHead исходные настройки и кнопки CatQuest восстанавливаются.
 
 По умолчанию общие записи воспроизводятся из WowVoice; в настройках можно
 выбрать CatQuest. Для записей, которые есть только в одной библиотеке, источник
@@ -81,26 +80,30 @@ WowVoice TalkingHead. Автозапуск квестов и кнопки «Чи
 
 ## Установка
 
-1. **[Скачайте полный архив](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.2.4-forever/WowVoiceTalkingHead-1.2.4-forever.zip)** —
-   основная звуковая база WowVoice уже внутри.
-2. **Закройте игру** и скопируйте из архива две папки — `WowVoiceTalkingHead`
-   и `WowVoiceSounds` — в `_classic_beta_/Interface/AddOns/`.
-3. **Запустите игру**, включите аддоны в списке модификаций и откройте задание у NPC.
+> **⚠ Если раньше скачивали наш полный архив**
+>
+> При переходе на [WowVoice из CurseForge](https://www.curseforge.com/wow/addons/wowvoice-classic/files/all?page=1&pageSize=20&gameVersionTypeId=88568&showAlphaFiles=hide)
+> закройте игру и удалите старую папку `WowVoiceSounds` из `Interface/AddOns`,
+> затем установите библиотеку из CurseForge. Это нужно сделать только один раз.
+> Настройки и история TalkingHead сохранятся.
 
-Для работы только с CatQuest достаточно архива **addon-only**
-и папки `WowVoiceTalkingHead`. `WowVoiceSounds` можно не устанавливать или отключить.
+1. **[Скачайте аддон](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.2.5-forever/WowVoiceTalkingHead-1.2.5-forever-addon-only.zip)**.
+   Закройте игру и скопируйте папку `WowVoiceTalkingHead` из архива
+   в `_classic_beta_/Interface/AddOns/`.
+2. **Установите одну или обе озвучки для Forever:**
+   [WowVoice](https://www.curseforge.com/wow/addons/wowvoice-classic/files/all?page=1&pageSize=20&gameVersionTypeId=88568&showAlphaFiles=hide)
+   или [CatQuest](https://www.curseforge.com/wow/addons/catquest/files/all?page=1&pageSize=20&gameVersionTypeId=88568&showAlphaFiles=hide)
+   вместе с [CatQuest Voices](https://www.curseforge.com/wow/addons/catquest-voices/files/all?page=1&pageSize=20&gameVersionTypeId=88568&showAlphaFiles=hide).
+   Папки библиотек также поместите в `AddOns`.
+3. **Запустите игру** и включите TalkingHead и выбранные библиотеки в списке модификаций.
+   Для WowVoice нужна `WowVoiceSounds`; для CatQuest — `CatQuest` и `CatQuest_Voices`.
 
-**Обновление:** [скачайте addon-only](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.2.4-forever/WowVoiceTalkingHead-1.2.4-forever-addon-only.zip),
-замените папку `WowVoiceTalkingHead` и полностью перезапустите игру. Если в выпуске
-обновилась звуковая библиотека, понадобится полный архив.
+Основной аддон `WowVoice` из комплекта CurseForge TalkingHead отключает автоматически,
+чтобы задания не звучали дважды. `WowVoiceSounds` остаётся включённым.
 
-**[Зеркало на pCloud](https://e.pcloud.link/publink/show?code=ju6y6alK)** — полный комплект с основной
-озвучкой WowVoice и отдельный архив для обновления аддона.
-
-Для дополнительной озвучки нужны **CatQuest и CatQuest Voices**.
-Основная озвучка WowVoice работает без них.
-Скачать можно со [страницы CatQuest на CurseForge](https://www.curseforge.com/wow/addons/catquest).
-Эти записи не входят в наш архив.
+**Обновление:** скачайте тот же архив аддона, замените папку `WowVoiceTalkingHead`
+и полностью перезапустите игру. Библиотеки обновляются отдельно через CurseForge;
+при обычном обновлении TalkingHead удалять их не нужно.
 
 ## Настройки
 
@@ -129,6 +132,20 @@ WowVoice TalkingHead. Автозапуск квестов и кнопки «Чи
 Поддержать авторов озвучки можно по ссылкам выше.
 
 ## Что нового
+
+<details name="releases">
+<summary><strong>Версия 1.2.5-forever</strong> · <time datetime="2026-10-04">4 октября 2026</time></summary>
+
+- **Озвучка устанавливается отдельно.** Ссылки на WowVoice и CatQuest для Forever теперь собраны на сайте рядом со скачиванием аддона.
+- **Основной аддон WowVoice отключается автоматически**, чтобы избежать двойного воспроизведения. Его библиотека озвучки остаётся включённой.
+
+> **⚠ Раньше скачивали полный архив?**
+>
+> Перед переходом на [WowVoice из CurseForge](https://www.curseforge.com/wow/addons/wowvoice-classic/files/all?page=1&pageSize=20&gameVersionTypeId=88568&showAlphaFiles=hide)
+> закройте игру и удалите старую папку `WowVoiceSounds` из `Interface/AddOns`.
+> Затем установите озвучку из CurseForge. Настройки и история сохранятся.
+
+</details>
 
 <details name="releases">
 <summary><strong>Версия 1.2.4-forever</strong> · <time datetime="2026-10-04">4 октября 2026</time></summary>

@@ -183,13 +183,14 @@ a{color:#a7e0c6}code{background:#29372f;padding:2px 6px;border-radius:4px}.notes
 </style></head><body><main>
 <h1>Скачивания WowVoice TalkingHead</h1>
 <p class="muted">Локальный отчёт · GitHub Releases · обновлён $collectedDisplay</p>
-<div class="cards"><div class="card">Всего ZIP<strong>$(Count-Text $total)</strong></div><div class="card">Полный комплект<strong>$(Count-Text $totalFull)</strong></div><div class="card">Только аддон<strong>$(Count-Text $totalAddon)</strong></div></div>
-<div class="table"><table><thead><tr><th>Релиз</th><th title="Дата публикации по UTC">Дата релиза</th><th>Полный</th><th>Только аддон</th><th>Всего</th></tr></thead>
+<div class="cards"><div class="card">Всего ZIP<strong>$(Count-Text $total)</strong></div><div class="card">Аддон<strong>$(Count-Text $totalAddon)</strong></div><div class="card">Старые полные архивы<strong>$(Count-Text $totalFull)</strong></div></div>
+<p class="muted">Начиная с 1.2.5 выпускается только архив аддона. Скачивания полных архивов прошлых релизов сохраняются в статистике и входят в общую сумму.</p>
+<div class="table"><table><thead><tr><th>Релиз</th><th title="Дата публикации по UTC">Дата релиза</th><th>Старый полный архив</th><th>Аддон</th><th>Всего</th></tr></thead>
 <tbody>$($tableRows -join "`n")</tbody><tfoot><tr><th colspan="2">Итого</th><td>$(Count-Text $totalFull)</td><td>$(Count-Text $totalAddon)</td><td>$(Count-Text $total)</td></tr></tfoot></table></div>
 <p><a href="downloads.csv" download>Скачать таблицу CSV для Excel</a></p>
 <p>Для обновления снова запусти <code>stats.cmd</code>. Эта страница — сохранённый снимок, перезагрузка браузера не запрашивает новые данные.</p>
-<div class="notes"><p>Известные наши проверочные скачивания исключены. Остальные повторные и проверочные скачивания остаются в счётчиках. Это не число уникальных пользователей и не отдельный счётчик нажатий на сайте. Скачивания с pCloud сюда не входят.</p>
-<p>Учитываются полные и addon-only архивы WowVoice, прикреплённые к существующим опубликованным релизам, включая предварительные. Другие файлы, исторические lite-архивы и автоматически созданные GitHub архивы исходников исключены. Удалённые или заменённые файлы не сохраняют прежний счётчик в этом отчёте. «—» означает, что архива такого типа в релизе нет.</p>
+<div class="notes"><p>Известные наши проверочные скачивания исключены. Остальные повторные и проверочные скачивания остаются в счётчиках. Это не число уникальных пользователей и не отдельный счётчик нажатий на сайте. Скачивания с pCloud и скачивания библиотек с CurseForge сюда не входят.</p>
+<p>Учитываются архивы аддона (addon-only) и полные архивы прошлых выпусков, прикреплённые к существующим опубликованным релизам, включая предварительные. Другие файлы, исторические lite-архивы и автоматически созданные GitHub архивы исходников исключены. Удалённые или заменённые файлы не сохраняют прежний счётчик в этом отчёте. «—» означает, что архива такого типа в релизе нет.</p>
 <p>Отчёт хранится только на этом компьютере и не публикуется. Исходные счётчики публичного репозитория доступны через GitHub API.</p></div>
 </main></body></html>
 "@
