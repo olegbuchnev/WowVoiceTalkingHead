@@ -41,7 +41,7 @@ CatQuestVoicePack.quests[99080] = {t={d=1}}
 assert(WV:SoundPath(99080,'c') == prefix .. '99080_t.ogg')
 assert(S.Resolve(99080,'c').duration == 1.25 and not S.Resolve(99080,'c').verified)
 CatQuestVoicePack.quests[99080] = nil
-version = '0.4.0'
+version = '0.5.0'
 assert(S.Status().updated and WV:HasQuestAudio(98430) and WV:HasQuestAudio(179))
 assert(S.Resolve(98430, 'a').duration == 42.75, 'updated packs use the live maximum plus rounding/index-error allowance')
 assert(S.Resolve(99080, 'c') == nil, 'JSON-only recovery is limited to its audited release')
@@ -53,8 +53,9 @@ local before = #plays
 questID = 99162
 WowVoiceDB.autoPlayAccept = true
 event('QUEST_DETAIL'); event('QUEST_PROGRESS'); event('QUEST_COMPLETE')
-assert(WV:ReplayQuest(99162))
-assert(#plays == before and frames.WowVoiceTalkingHead:IsShown(), 'Absent audio keeps the silent presentation')
+assert(not WV:ReplayQuest(99162))
+assert(#plays == before and not frames.WowVoiceTalkingHead:IsShown()
+    and WV.questQueue:Count() == 0, 'Absent audio cannot show a head or enter the queue')
 WV.questQueue:Clear()
 messages = {}; event('PLAYER_LOGIN')
 assert(not has('Не все звуковые паки'))
@@ -93,18 +94,18 @@ assert(panel.AudioSourceCaption:GetText() == 'Озвучка CatQuest:')
 assert(panel.VersionLabels.AudioSource:GetText() == auditedVersion)
 loaded.CatQuest_Voices = false; WV:RefreshAudioSources()
 assert(panel.VersionLabels.AudioSource:GetText() == 'недоступна')
-loaded.CatQuest_Voices = true; version = '0.4.0'
+loaded.CatQuest_Voices = true; version = '0.5.0'
 local colors
 panel.VersionLabels.AudioSource.SetTextColor = function(self, ...) colors = {...} end
 WV:RefreshAudioSources()
-assert(S.Status().updated and panel.VersionLabels.AudioSource:GetText() == '0.4.0')
+assert(S.Status().updated and panel.VersionLabels.AudioSource:GetText() == '0.5.0')
 assert(colors[1] == 1 and colors[2] == .82)
 local warning = panel.AudioSourceWarning
 assert(warning:IsShown())
 warning.scripts.OnEnter(warning)
 assert(GameTooltip:IsOwned(warning) and GameTooltip.visible)
 assert(GameTooltip.lines[1]:find('Непроверенная озвучка',1,true))
-assert(GameTooltip.lines[2]:find('0.4.0',1,true) and GameTooltip.lines[2]:find(auditedVersion,1,true))
+assert(GameTooltip.lines[2]:find('0.5.0',1,true) and GameTooltip.lines[2]:find(auditedVersion,1,true))
 version = auditedVersion; WV:RefreshAudioSources()
 assert(S.Status().id == 'catquest' and not warning:IsShown() and not GameTooltip.visible)
 -- Saved preference applies to all normal playback, with stage-specific fallback.
@@ -153,7 +154,7 @@ local hint = panel.SharedVoiceTooltip
 hint.scripts.OnEnter(hint)
 assert(GameTooltip.visible and GameTooltip.lines[2]:find('установите', 1, true))
 hint.scripts.OnLeave(hint)
-loaded.CatQuest_Voices = true; version = '0.4.0'; WV:RefreshAudioSources()
+loaded.CatQuest_Voices = true; version = '0.5.0'; WV:RefreshAudioSources()
 assert(choices.catquest:IsEnabled() and WV:SoundPath(179, 'a'):find('WowVoiceSounds', 1, true))
 assert(WV:SetSharedQuestVoice('catquest'))
 WV:RefreshAudioSources()
@@ -202,4 +203,4 @@ loaded.CatQuest_Voices = false
 WV:RefreshAudioSourceOptions()
 assert(WowVoiceDB.sharedQuestVoice == 'wowvoice' and choices.wowvoice:GetChecked())
 loaded.CatQuest_Voices = true; WV:RefreshAudioSources()
-print('PASS: external-only supplement, stale CatVoices ignored, silent head when absent, Classic independent, exact timings, text, compatibility and late loading')
+print('PASS: external-only supplement, stale CatVoices ignored, absent audio skipped, Classic independent, exact timings, text, compatibility and late loading')

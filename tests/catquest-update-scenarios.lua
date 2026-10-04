@@ -1,7 +1,7 @@
 local WV, S, Q = WowVoice, WowVoiceAudioSources, WowVoice.questQueue
 local pack, quests = CatQuestVoicePack, CatQuestVoicePack.quests
 local metadata = C_AddOns.GetAddOnMetadata
-local version = '0.3.0'
+local version = '0.4.0'
 C_AddOns.GetAddOnMetadata = function(name, field)
     if name == 'CatQuest_Voices' and field == 'Version' then return version end
     return metadata(name, field)
@@ -12,8 +12,8 @@ WV:OpenOptions()
 local panel = frames.WowVoiceOptionsPanel
 assert(WV:SetSharedQuestVoice('catquest'))
 local snapshot = WowVoiceCatQuestAudio.sourceVersion
-assert(snapshot == '0.3.0' and not S.Status().updated and not panel.AudioSourceWarning:IsShown())
-assert(WowVoiceQuestTexts.sourceVersion == '0.3.0' and WowVoiceCatQuestSpeakers.sourceVersion == '0.3.1')
+assert(snapshot == '0.4.0' and not S.Status().updated and not panel.AudioSourceWarning:IsShown())
+assert(WowVoiceQuestTexts.sourceVersion == '0.4.0' and WowVoiceCatQuestSpeakers.sourceVersion == '0.4.0')
 -- Real 0.3.0 changes: longer recording and a renamed common turn-in file.
 -- These live fields come from the external index, independently of the snapshot.
 local previousFive, previousTwentySeven = quests[5], quests[27]
@@ -35,9 +35,22 @@ for _, playerSex in ipairs({2,3}) do
 end
 quests[5], quests[27], sex = previousFive, previousTwentySeven, 2
 assert(S.Text(251, 'a'):find('Отнесите записку Шире Фон-Инди.', 1, true), 'same-duration wording changes must also be imported')
-print('PASS: migrated 0.3.0 records use new timings, common filenames and texts; 0.3.1 NPC snapshot is loaded')
-version = '0.4.0'; WV:RefreshAudioSources()
-assert(snapshot == '0.3.0' and S.Status().updated and S.Status().version == '0.4.0')
+print('PASS: migrated 0.3.0 records use new timings, common filenames and texts; 0.4.0 NPC snapshot is loaded')
+-- Real 0.4.0 additions and replacements, including a file whose rounded
+-- upstream duration stayed 10.0 despite changed audio bytes and exact timing.
+assert(S.Resolve(2, 'a').verified and S.Resolve(2, 'a').duration == 17.025)
+assert(S.Resolve(251, 'a').verified and S.Resolve(251, 'a').duration == 10.013)
+for _, variant in ipairs({{2, 'm', 33.195167}, {3, 'f', 33.370542}}) do
+    sex = variant[1]
+    local added = S.Resolve(25, 'a')
+    assert(added.verified and added.duration == variant[3])
+    assert(added.path:find('\\25_' .. variant[2] .. '.ogg', 1, true))
+    assert(S.Text(25, 'a') and S.Resolve(25, 'c').duration == 25.103417)
+end
+sex = 2
+print('PASS: real 0.4.0 new quest variants and replaced audio use freshly measured durations and imported texts')
+version = '0.5.0'; WV:RefreshAudioSources()
+assert(snapshot == '0.4.0' and S.Status().updated and S.Status().version == '0.5.0')
 assert(WV:GetSharedQuestVoice() == 'catquest' and panel.SharedVoiceButtons.catquest:IsEnabled())
 -- Changed durations must use the live index, independently for each section.
 local original = quests[179]
@@ -146,7 +159,7 @@ end
 version = nil
 WV:RefreshAudioSources()
 assert(S.Resolve(99162, 'a') and not S.Resolve(99080, 'c'))
-version = '0.4.0'
+version = '0.5.0'
 WV:RefreshAudioSources()
 -- Updated records play through the existing queue, and one missing OGG does
 -- not poison another quest or the independently installed Classic library.

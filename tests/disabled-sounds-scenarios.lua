@@ -12,7 +12,7 @@ for key in pairs(WowVoiceDur) do
 end
 assert(classicOnly and WV:HasQuestAudio(classicOnly))
 
--- Journal and tracker keep both voiced and silent quest presentations.
+-- Journal and tracker offer only available recordings.
 QuestObjectiveTracker = CreateFrame('Frame', nil, UIParent)
 local blocks, trackerButtons, journalButtons = {}, {}, {}
 QuestScrollFrame = CreateFrame('Frame')
@@ -57,7 +57,7 @@ assert(WV:GetSharedQuestVoice() == 'catquest' and WowVoiceDB.sharedQuestVoice ==
 assert(not WV:SetSharedQuestVoice('wowvoice'), 'a disabled pack cannot be selected')
 assert(WV:HasQuestAudio(179) and not WV:HasQuestAudio(classicOnly))
 assert(journalButtons[179]:IsShown() and trackerButtons[179]:IsShown())
-assert(journalButtons[classicOnly]:IsShown() and trackerButtons[classicOnly]:IsShown())
+assert(not journalButtons[classicOnly]:IsShown() and not trackerButtons[classicOnly]:IsShown())
 for _, section in ipairs({'a','p','c'}) do
     assert(WV:ClassicSoundPath(179, section) == nil)
     assert(WV:SoundPath(classicOnly, section) == nil)
@@ -76,7 +76,7 @@ assert(not choices.catquest:IsEnabled() and not choices.wowvoice:IsEnabled())
 assert(panel.SharedVoiceTooltip.message:find('WowVoice Sounds', 1, true))
 
 local before = #plays
-assert(WV:ReplayQuest(classicOnly) and #plays == before and frames.WowVoiceTalkingHead:IsShown())
+assert(not WV:ReplayQuest(classicOnly) and #plays == before and not frames.WowVoiceTalkingHead:IsShown())
 Q:Clear()
 assert(WV:ReplayQuest(179) and plays[#plays].file == prefix .. '179.ogg')
 assert(frames.WowVoiceTalkingHead:IsShown())
@@ -87,7 +87,7 @@ assert(plays[#plays].file == prefix .. '179.ogg' and Q.current.context.questId =
 Q:Clear()
 before = #plays
 event('QUEST_PROGRESS')
-assert(#plays == before and Q.current.context.section == 'p')
+assert(#plays == before and not Q.current and Q:Count() == 0)
 Q:Clear()
 event('QUEST_COMPLETE')
 assert(plays[#plays].file == prefix .. '179_t.ogg')
@@ -95,14 +95,14 @@ Q:Clear()
 before = #plays
 questID = classicOnly
 event('QUEST_DETAIL'); event('QUEST_PROGRESS'); event('QUEST_COMPLETE')
-assert(#plays == before and Q.current and frames.WowVoiceTalkingHead:IsShown())
+assert(#plays == before and not Q.current and not frames.WowVoiceTalkingHead:IsShown())
 Q:Clear()
 
 -- Records queued before reload resolve their current source at playback time.
 local unavailable = {context={questId=classicOnly, section='a', speaker={npcID=1}}}
 local shared = {context={questId=179, section='a', speaker={npcID=658}}}
 Q:Add(unavailable); Q:Add(shared)
-assert(Q:Start(unavailable) and unavailable.status == 'playing' and #plays == before)
+assert(not Q:Start(unavailable) and unavailable.status == 'failed' and #plays == before)
 assert(Q:Start(shared) and plays[#plays].file == prefix .. '179.ogg')
 Q:Clear()
 
@@ -127,16 +127,18 @@ Q:Clear()
 tick(now + 0.3)
 assert(cvars.Sound_EnableMusic == '0')
 cvars.Sound_EnableSoundWhenGameIsInBG = '1'
+tick(now + 1)
+frames.WowVoiceTalkingHead.scripts.OnUpdate()
 
 -- Neither source loaded: stale indexes/globals cannot enable sound, but the UI works.
 loaded.CatQuest_Voices = false
 WV:RefreshAudioSources()
 assert(not WV:HasQuestAudio(179) and WV:SoundPath(179, 'a') == nil)
-assert(journalButtons[179]:IsShown() and trackerButtons[179]:IsShown())
+assert(not journalButtons[179]:IsShown() and not trackerButtons[179]:IsShown())
 before = #plays
-assert(WV:ReplayQuest(179) and #plays == before and frames.WowVoiceTalkingHead:IsShown())
+assert(not WV:ReplayQuest(179) and #plays == before and not frames.WowVoiceTalkingHead:IsShown())
 Q:Clear()
-assert(panel.SharedVoiceTooltip.message:find('без звука', 1, true))
+assert(panel.SharedVoiceTooltip.message:find('Нет доступной озвучки', 1, true))
 
 -- Modern loading/error/existence checks must reject stale primary metadata.
 loaded.CatQuest_Voices, loaded.WowVoiceSounds = true, true

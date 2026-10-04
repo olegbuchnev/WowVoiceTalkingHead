@@ -492,7 +492,7 @@ Q:Clear('lab')
 tick(now + 2); step()
 assert(not Q.gap and not Q.current and Q:Count() == 0 and #plays == gapSounds)
 
--- A source removed during the gap keeps the next line as a silent presentation.
+-- A source removed during the gap skips its line without stranding the queue.
 a = offer(ids[1], 1001); Q:Accept(ids[1], 'lab')
 b = offer(ids[2], 2002); Q:Accept(ids[2], 'lab')
 c = offer(ids[3], 3003); Q:Accept(ids[3], 'lab')
@@ -503,10 +503,9 @@ WowVoice.SoundPath = function(self, id, ...)
     return savedSoundPath(self, id, ...)
 end
 tick(Q.gap.deadline); step()
-assert(Q.current == b and not Q.gap and b.status == 'playing' and a.status == 'done')
-tick(now + WowVoice:SilentDuration(b.context) + 0.01)
-tick(Q.gap.deadline); step()
-assert(Q.current == c, 'a silent line must not strand the queue')
+step()
+assert(b.status == 'failed' and a.status == 'done')
+assert(Q.current == c, 'a missing recording must not strand the queue')
 WowVoice.SoundPath = savedSoundPath
 Q:Clear()
 

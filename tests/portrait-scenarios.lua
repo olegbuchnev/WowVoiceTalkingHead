@@ -87,10 +87,10 @@ event('QUEST_DETAIL'); portraitEvent('QUEST_ACCEPTED',179)
 assert(questCache()[179].npcID==nil and not head.Icon.visible and head.Model.creatureID==658)
 assert(head.Name.text=='Стен Крепкорук', 'Missing live NPC uses indexed giver, never the unrelated target')
 UnitGUID=oldGUID
--- No external audio: capture and the silent panel still work.
+-- No external audio: capture still works, but no unvoiced head is shown.
 WV:Silence(); modelLoadsImmediately=true; soundOK=false; questID=97250
 event('QUEST_DETAIL'); portraitEvent('QUEST_ACCEPTED',97250)
-assert(questCache()[97250].displayID==npcDisplay and head.visible)
+assert(questCache()[97250].displayID==npcDisplay and not head.visible)
 restored('1','0.37')
 soundOK=true
 -- Disabled voice still captures NPC for subsequent replay.

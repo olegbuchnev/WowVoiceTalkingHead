@@ -27,7 +27,7 @@ local function refreshVoicePreference()
         or source and "Используется CatQuest Voices. Для выбора между озвучками установите и включите WowVoice Sounds."
         or primary and ("Для выбора установите и включите CatQuest Voices. Сейчас используется WowVoice.\n"
             .. tostring(reason or ""))
-        or "Реплики показываются без звука. Для озвучки можно подключить WowVoice Sounds или CatQuest Voices."
+        or "Нет доступной озвучки. Подключите WowVoice Sounds или CatQuest Voices."
 end
 
 local function refreshVersions()

@@ -14,6 +14,14 @@ local disabledFirst = restoreTestCase == 'disabled-first'
 local legacy = restoreTestCase == 'legacy'
 if disabledFirst then send('LOADING_SCREEN_DISABLED') end
 send('PLAYER_ENTERING_WORLD')
+if restoreTestCase == 'silent' or restoreTestCase == 'stale-silent' then
+    send('LOADING_SCREEN_DISABLED'); step()
+    assert(Q:Count() == 0 and not Q.current and #plays == 0,
+        'a saved queue cannot restore recordings from disabled libraries')
+    assert(not WowVoiceTalkingHead or not WowVoiceTalkingHead:IsShown())
+    print('PASS: unavailable saved recordings discarded: ' .. restoreTestCase)
+    return
+end
 assert(Q:Count() == 2 and not Q.current and #plays == 0)
 if not disabledFirst and not legacy then
     step()
@@ -33,13 +41,10 @@ if paused then
 end
 assert(Q.current and Q.current.context.questId == 179 and Q.current.status == 'playing')
 local startedAt, played = now, #plays
-local silent = restoreTestCase == 'silent' or restoreTestCase == 'stale-silent'
-local duration = silent and WV:SilentDuration(Q.current.context) or select(2, WV:SoundPath(179, 'a'))
-assert(played == (silent and 0 or 1))
-if not silent then
-    local music = restoreTestCase == 'music' or restoreTestCase == 'stale-music'
-    assert(plays[1].channel == (music and 'Music' or 'Master'))
-end
+local duration = select(2, WV:SoundPath(179, 'a'))
+assert(played == 1)
+local music = restoreTestCase == 'music' or restoreTestCase == 'stale-music'
+assert(plays[1].channel == (music and 'Music' or 'Master'))
 WowVoiceTalkingHead.scripts.OnUpdate()
 assert(WowVoiceTalkingHead.Progress.value == 0, 'head progress starts at zero')
 tick(startedAt + duration / 2)
@@ -49,9 +54,9 @@ step()
 assert(#plays == played, 'later world/loading events cannot restart audio')
 tick(startedAt + duration - 0.01)
 assert(Q.current.status == 'playing' and not Q.gap, 'full new duration must elapse')
-tick(startedAt + duration + WowVoiceDB.tail + 0.01)
+tick(startedAt + duration + (music and 0 or WowVoiceDB.tail) + 0.0001)
 assert(Q.current.status == 'done' and Q.gap, 'full duration completes normally')
 tick(Q.gap.deadline); step()
-assert(Q.current.context.questId == 183 and #plays == played + (silent and 0 or 1),
+assert(Q.current.context.questId == 183 and #plays == played + 1,
     'the remaining playlist advances normally')
 print('PASS: loading-safe full-duration queue restart: ' .. restoreTestCase)

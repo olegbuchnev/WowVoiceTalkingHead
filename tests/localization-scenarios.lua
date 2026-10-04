@@ -29,6 +29,8 @@ local function record(id, name, title, body)
 end
 local ru = record(179, 'Русское имя', 'Русское задание', 'Русская речь. Ёж идёт к маяку.')
 local en = record(999997, 'English NPC', 'English quest', 'English dialogue.')
+-- A voiced fixture without Russian metadata exercises native English fonts.
+WowVoiceDur['999997a'] = 10
 Q:Add(ru); Q:Add(en); assert(Q:Start(ru))
 local head, player = frames.WowVoiceTalkingHead, frames.WowVoiceQuestQueuePlayer
 assert(head.Name:GetText() == ru.context.speaker.name)
@@ -114,4 +116,5 @@ function region:SetFont(file, height, flags)
 end
 L.SetContentText(region, 'Русское имя')
 assert(region:GetFont() == 'Fonts/MORPHEUS.ttf')
+WowVoiceDur['999997a'] = nil
 print('PASS: ' .. GetLocale() .. ' English player/Russian settings, Blizzard quest fonts, Cyrillic fallback, reused regions and original voice source')

@@ -229,6 +229,7 @@ function Q:Start(record, keepPaused)
 end
 
 function Q:Offer(context)
+    if not WV:SoundPath(context.questId, context.section) then return end
     if WowVoiceDB and WowVoiceDB.autoPlay == false then return end
     if WowVoiceDB and (context.section == "a" and WowVoiceDB.autoPlayAccept ~= true
         or context.section ~= "a" and WowVoiceDB.autoPlayTurnIn == false) then return end
@@ -261,6 +262,11 @@ function Q:Accept(id, owner)
     self.completed[identity], self.removals[identity] = nil, nil
     local record = self.offers[tostring(owner or "game") .. ":" .. id .. ":a"]
     if not record or record.status == "done" or record.status == "skipped" or record.status == "failed" then return end
+    if record ~= self.current and not WV:SoundPath(id, "a") then
+        self:Remove(record, "failed")
+        self:Changed()
+        return
+    end
     -- A description merely opened before disabling autoplay is not queued yet.
     if WowVoiceDB and WowVoiceDB.autoPlayAccept ~= true and not record.group then return end
     record.accepted = true
@@ -366,6 +372,9 @@ function Q:PlaybackStopped(reason)
     self.current = nil
     if advance then self:Schedule()
     elseif reason ~= "new playback" then self.paused = self:Waiting() ~= nil; driver:Hide() end
+    -- Start publishes the playing state (or the failure) before returning.
+    -- Rendering its cleanup now would expose a sole starting line as waiting.
+    if self.starting then return end
     self:Changed((advance or (hadCurrent and reason == "new playback")) and "advance"
         or (hadCurrent or reason ~= "new playback") and "instant" or nil)
 end
@@ -488,7 +497,7 @@ function Q:RestoreSession()
     local group
     for index, entry in ipairs(saved.records) do
         local context = type(entry) == "table" and copyContext(entry.context)
-        if context and not self.offers[key(context)] then
+        if context and not self.offers[key(context)] and WV:SoundPath(context.questId, context.section) then
             local giverContext = { questId = context.questId, speaker = copySpeaker(entry.giver) }
             local groupID = speakerKey(giverContext)
             if not group or group.key ~= groupID then

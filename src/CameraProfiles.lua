@@ -5,8 +5,8 @@ local WV = WowVoice
 local profiles = {
     default = { distance = 1.1, y = 0, z = -0.025 },
     -- Female orcs lean down and right while talking; allow room for both poses.
-    -- Reduced the leftward shift after feedback; confirmed for the tested model.
-    orc_female = { distance = 1.35, y = -0.04, z = 0 },
+    -- Rightward adjustment confirmed in game for Seereth Stonebreaker, 2026-10-03.
+    orc_female = { distance = 1.35, y = -0.02, z = 0 },
     -- Slightly lift female tauren; keep the accepted zoom and lateral position.
     tauren_female = { distance = 1.1, y = 0, z = 0 },
     human = { distance = 1.15, y = 0, z = -0.025 },

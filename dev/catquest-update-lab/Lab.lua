@@ -1,7 +1,7 @@
 -- Development addon, installed separately and excluded from release packages.
 -- Simulate upstream changes in memory; map test records to existing OGG files.
 local WV, S = WowVoice, WowVoiceAudioSources
-local NEW_ID, OWNER, FUTURE = 99998, "catquest-update-lab", "0.4.0"
+local NEW_ID, OWNER, FUTURE = 99998, "catquest-update-lab", "0.5.0"
 local BUILD = "20261002-3"
 local baseline, mode, routes = nil, "reset", {}
 local trace, traceOn, traceLog = nil, nil, {}
@@ -17,7 +17,7 @@ local function capture()
     if baseline then return true end
     local status = S.Status()
     if not status or status.updated or not WowVoiceCatQuestAudio then
-        say("Нужен установленный и проверенный CatQuest Voices 0.3.0. Сначала /wvcqupdate reset.")
+        say("Нужен установленный CatQuest Voices, совпадающий с проверенной версией наших метаданных. Сначала /wvcqupdate reset.")
         return false
     end
     local quests = CatQuestVoicePack.quests

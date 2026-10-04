@@ -74,7 +74,9 @@ soundOK=true; command('stop')
 print('PASS: replacement, manual stop, initially disabled Dialog, failed playback restoration')
 
 questID=999999; messages={}
-event('QUEST_DETAIL'); assert(has('WowVoiceDur=false') and has('999999a.ogg'))
+local beforeMissing = #plays
+event('QUEST_DETAIL')
+assert(#plays == beforeMissing and has('questID=999999 section=a'))
 command('stop')
 local original=GetQuestID
 GetQuestID=function() error('simulated GetQuestID incompatibility') end
@@ -86,7 +88,7 @@ GetQuestText=nil
 ok,err=pcall(function() event('QUEST_DETAIL') end)
 assert(not ok and err:find('GetQuestText',1,true),'text API error hidden')
 GetQuestText=originalText
-print('PASS: missing duration is visible, incompatible APIs propagate errors in debug mode')
+print('PASS: unknown audio skipped, incompatible APIs propagate errors in debug mode')
 
 command('debug off'); command('debug off'); assert(not WowVoiceDB.debug)
 questID=179; messages={}

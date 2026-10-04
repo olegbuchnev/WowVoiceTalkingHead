@@ -2,8 +2,8 @@ local WV, S = WowVoice, WowVoiceAudioSources
 local mode = catquestWarningTestMode
 local older = mode == 'old-login' or mode == 'old-late'
 local loaded = mode ~= 'absent' and mode ~= 'old-late'
-local version = older and '0.2.2' or mode == 'newer' and '0.4.0'
-    or mode == 'double-digit' and '0.10.0' or mode == 'unknown' and 'nightly' or '0.3.0'
+local version = older and '0.2.2' or mode == 'newer' and '0.5.0'
+    or mode == 'double-digit' and '0.10.0' or mode == 'unknown' and 'nightly' or WowVoiceCatQuestAudio.sourceVersion
 if mode == 'missing' then version = nil end
 local metadata, isLoaded = C_AddOns.GetAddOnMetadata, C_AddOns.IsAddOnLoaded
 C_AddOns.GetAddOnMetadata = function(name, field)
@@ -41,7 +41,7 @@ WV:OpenOptions()
 local warning = frames.WowVoiceOptionsPanel.AudioSourceWarning
 if older then
     assert(warning:IsShown() and warning.title == 'Устаревшая озвучка CatQuest')
-    assert(warning.message:find('Обновите CatQuest Voices до версии 0.3.0', 1, true))
+    assert(warning.message:find('Обновите CatQuest Voices до версии ' .. WowVoiceCatQuestAudio.sourceVersion, 1, true))
     assert(not warning.message:find('Обновление WowVoice TalkingHead', 1, true))
 elseif mode == 'newer' or mode == 'double-digit' then
     assert(warning:IsShown() and warning.message:find('Обновление WowVoice TalkingHead', 1, true))

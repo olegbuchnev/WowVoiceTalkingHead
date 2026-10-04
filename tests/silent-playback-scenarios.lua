@@ -3,104 +3,82 @@ local WV, Q = WowVoice, WowVoice.questQueue
 local loaded = {}
 C_AddOns.IsAddOnLoaded = function(name) return loaded[name] == true end
 event('PLAYER_LOGIN')
-assert(not has('Не загружена основная база') and not has('Установите комплект'))
-assert(not WV:HasQuestAudio(179) and WV:CanPresentQuest(179))
-assert(WV:CanPresentQuest(999999) and not WV:CanPresentQuest(0) and not WV:CanPresentQuest(nil))
-local realPlay, realStop, realCVar = PlaySoundFile, StopSound, SetCVar
-function PlaySoundFile() error('Silent playback called PlaySoundFile') end
-function StopSound() error('Silent playback called StopSound') end
-function PlayMusic() error('Silent playback called PlayMusic') end
-function StopMusic() error('Silent playback called StopMusic') end
-function SetCVar() error('Silent playback changed sound settings') end
-local function step(t)
-    tick(t)
-    local driver = frames.WowVoiceQuestQueueDriver
-    if driver.visible then driver.scripts.OnUpdate() end
+assert(not WV:HasQuestAudio(179) and not WV:CanPresentQuest(179))
+assert(not WV:CanPresentQuest(999999) and not WV:CanPresentQuest(0) and not WV:CanPresentQuest(nil))
+local realPlay, realStop, realMusic, realStopMusic, realCVar = PlaySoundFile, StopSound, PlayMusic, StopMusic, SetCVar
+function PlaySoundFile() error('Unavailable audio called PlaySoundFile') end
+function StopSound() error('Unavailable audio called StopSound') end
+function PlayMusic() error('Unavailable audio called PlayMusic') end
+function StopMusic() error('Unavailable audio called StopMusic') end
+function SetCVar() error('Unavailable audio changed sound settings') end
+local function record(id, section)
+    return { context = { questId = id, section = section or 'a', text = 'Quest text',
+        speaker = { npcID = 658, name = 'Speaker' } } }
 end
-local function record(id, section, text)
-    return { context = { questId = id, section = section or 'a', text = text or 'Текст задания',
-        speaker = { npcID = 658, name = 'Собеседник' } } }
+local function noPresentation()
+    assert(not Q.current and Q:Count() == 0)
+    assert(not frames.WowVoiceTalkingHead or not frames.WowVoiceTalkingHead:IsShown())
 end
-
--- Every transport setting stays silent, including forced Music and background-off.
+-- Neither library: all transports and stages reject automatic/manual playback.
 for _, channel in ipairs({'auto', 'music', 'sound'}) do
     for _, background in ipairs({'0', '1'}) do
         WowVoiceDB.channel = channel
         cvars.Sound_EnableSoundWhenGameIsInBG = background
         for _, section in ipairs({'a', 'p', 'c'}) do
             local item = record(179, section)
-            local start = now
-            assert(Q:Start(item) and Q.current == item and frames.WowVoiceTalkingHead:IsShown())
-            assert(frames.WowVoiceTalkingHead.Body:GetText() == item.context.text)
-            step(start + WowVoiceDur['179' .. section] - 0.001)
-            assert(Q.current == item)
-            step(start + WowVoiceDur['179' .. section] + 0.001)
-            assert(not Q.current and item.status == 'done')
-            Q:Clear()
+            Q:Offer(item.context); Q:Accept(179)
+            assert(not Q:Start(item))
+            noPresentation()
         end
+        questID = 179
+        event('QUEST_DETAIL'); event('QUEST_PROGRESS'); event('QUEST_COMPLETE')
+        assert(not WV:ReplayQuest(179))
+        noPresentation()
     end
 end
-
--- Non-indexed quests use reading time, including Cyrillic text and all stages.
-local text = string.rep('Слово ', 60)
-assert(WV:SilentDuration(record(999999, 'a', text).context) == 22)
-assert(WV:SilentDuration(record(999999, 'c', '').context) == 4)
-questID = 999999
-event('QUEST_DETAIL')
-assert(Q.current.context.questId == 999999 and frames.WowVoiceTalkingHead:IsShown())
-Q:Event('QUEST_ACCEPTED', questID)
-Q:Clear()
-assert(WV:ReplayQuest(179) and frames.WowVoiceTalkingHead:IsShown())
-assert(not (WowVoiceDB.listenedQuests and WowVoiceDB.listenedQuests[playerGUID]
-    and WowVoiceDB.listenedQuests[playerGUID][179]), 'Silent reading must not mark audio as listened')
-Q:Clear()
-
--- Timers, skip and an explicitly paused playlist all use the normal queue.
-local first, second = record(999998, 'a', text), record(999999, 'a', text)
-Q:Add(first); Q:Add(second)
-local start = now
-assert(Q:Start(first))
-step(start + 22.001)
-assert(Q.gap and first.status == 'done')
-step(Q.gap.deadline + 0.001)
-assert(Q.current == second)
-Q:Clear()
-first, second = record(179), record(192)
-Q:Add(first); Q:Add(second); assert(Q:Start(first))
-frames.WowVoiceTalkingHead.Close.scripts.OnClick()
-step(now + 0.001)
-assert(Q.current == second and not Q.paused and WowVoiceDB.queueAutoPlay)
-Q:Clear()
-first, second = record(179), record(192)
-Q:Add(first); Q:Add(second); assert(Q:Start(first))
-WV:SetQueueAutoPlay(false)
-frames.WowVoiceTalkingHead.Close.scripts.OnClick()
-step(now + 100)
-assert(not Q.current and Q:Waiting() == second and Q.paused)
-Q:Clear()
-WV:SetQueueAutoPlay(true)
-
--- Reload persistence retains silent records just like voiced ones.
-first, second = record(179), record(192)
-Q:Add(first); Q:Add(second); assert(Q:Start(first))
-Q:SaveSession()
-local saved = WowVoiceQueueDB
-Q:Clear()
-WowVoiceQueueDB = saved
-Q:RestoreSession()
-step(now + 0.001)
-assert(Q.current and Q.current.context.questId == 179)
-Q:Clear()
-
--- Enabling CatQuest later applies on the next start; silent playback does not restart.
-first = record(179)
-assert(Q:Start(first))
-loaded.CatQuest_Voices = true
-WV:RefreshAudioSources()
-assert(Q.current == first and WV:HasQuestAudio(179))
-PlaySoundFile, StopSound, SetCVar = realPlay, realStop, realCVar
+PlaySoundFile, StopSound, PlayMusic, StopMusic, SetCVar = realPlay, realStop, realMusic, realStopMusic, realCVar
 WowVoiceDB.channel = 'auto'
 cvars.Sound_EnableSoundWhenGameIsInBG = '1'
+loaded.WowVoiceSounds, loaded.CatQuest_Voices = true, true
+WV:RefreshAudioSources()
+-- Real reported quest: description exists, progress and turn-in do not.
+assert(WV:SoundPath(86576, 'a') and not WV:SoundPath(86576, 'p') and not WV:SoundPath(86576, 'c'))
+assert(not WV:SoundPath(999999, 'a'), 'Unknown IDs cannot invent Classic filenames')
+assert(WV:ReplayQuest(179))
+local current, count = Q.current, #plays
+questID = 86576
+event('QUEST_PROGRESS'); event('QUEST_COMPLETE')
+assert(Q.current == current and Q:Count() == 1 and #plays == count,
+    'Missing stages must not interrupt current audio or queue a silent head')
+Q:Clear()
+event('QUEST_PROGRESS'); event('QUEST_COMPLETE')
+noPresentation()
+event('QUEST_DETAIL')
+assert(Q.current and plays[#plays].file:find('86576.ogg', 1, true))
+Q:Clear()
+-- Recheck a pending offer when accepted after source availability changes.
+assert(WV:ReplayQuest(179))
+Q:Offer(record(86576).context)
+loaded.CatQuest_Voices = false
+Q:Accept(86576)
+assert(Q:Count() == 1 and Q.current.context.questId == 179)
+Q:Clear()
+-- Restore drops old unvoiced entries, preserves voiced ones and a paused state.
+WowVoiceQueueDB = {version = 1, savedAt = GetServerTime(), paused = true, records = {
+    record(86576, 'c'), record(86576), record(179), record(999999),
+}}
+Q:RestoreSession()
+assert(Q:Count() == 1 and Q.paused and Q:Waiting().context.questId == 179)
+assert(not frames.WowVoiceTalkingHead:IsShown())
+assert(Q:Start(Q:Waiting(), true) and Q.current.context.questId == 179)
+Q:Clear()
+loaded.WowVoiceSounds = false
+WowVoiceQueueDB = {version = 1, savedAt = GetServerTime(), records = {record(179)}}
+Q:RestoreSession()
+noPresentation()
+-- Late loading restores real playback normally.
+loaded.CatQuest_Voices = true
+WV:RefreshAudioSources()
 assert(WV:ReplayQuest(179) and plays[#plays].file:find('CatQuest_Voices', 1, true))
 Q:Clear()
-print('PASS: no-library heads/queue, zero audio or CVar calls, exact/reading timers, skip/pause, saved queue and late CatQuest')
+print('PASS: missing libraries/stages never show a head, real 86576 regression, admission/acceptance/restore and late audio loading')

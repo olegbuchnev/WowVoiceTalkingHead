@@ -335,6 +335,15 @@ during a Master recording, minimizing can still interrupt that recording.
 PlayMusic can report less reliable file availability than PlaySoundFile; an
 explicit failure is handled, but a successful return cannot prove audibility.
 
+As of 2026-10-03, Music ignores positive `tail` offsets for verified OGG timing.
+`SoundPath` returns verification as its fifth result, passed through automatic,
+queued, restored, journal and catalogue playback. Classic OGG metadata is measured;
+CatQuest uses its existing per-record verification. Unverified/unknown durations
+and Master keep their offsets; explicit negative offsets are preserved. Queue gaps
+and portrait fades follow audio termination. Stopping still waits for the next
+frame: this change removes intentional padding, not frame latency. Do not tune a
+global early-stop offset to one user's FPS.
+
 The default `silence` stop method uses our own `Media/silence.ogg`, a generated
 100 ms mono Vorbis silence asset at 44100 Hz. Both full and addon-only builds
 require and include it. It works with either voice source, including CatQuest
@@ -429,7 +438,8 @@ The start timestamp is sampled after the audio API call and passed to the head;
 frame-cached time from a slow loading frame cannot shorten the recording.
 The precise clock has its own epoch: only elapsed durations cross into other
 UI clocks. Regression cases keep frame time four seconds behind real time at
-startup, then catch up, for Master, Music and silent playback.
+startup, then catch up, for Master and Music playback. Missing libraries discard
+unavailable saved recordings before restoring the queue.
 There is no expiry during a continuous session. SavedVariables depend on the
 client writing them at logout/reload; arbitrary crashes are not guaranteed saves.
 
@@ -987,7 +997,7 @@ copy this field from the original TOC and preserve its filename in `X-Source-TOC
 Classic imports prefer `WowVoiceSounds_Vanilla.toc` over the generic TOC; the
 original Classic 1.15 archive has version 1.0.1 in that client-specific TOC and
 0.1.0 in the generic one. All 10,891 bundled Classic recordings match that archive
-byte-for-byte. Cathey's supplemental recordings come from CatQuest_Voices 0.3.0.
+byte-for-byte. Cathey's supplemental recordings come from CatQuest_Voices 0.4.0.
 
 Older published packs without source metadata are recognized by their exact
 adaptation versions (WowVoiceSounds 1.0.3-forever.1).
@@ -1022,10 +1032,10 @@ Tests, development tools, IDE settings, backups and internal manifests are exclu
 Maintain the installation and usage instructions in [USER_README.md](../USER_README.md)
 in Russian; the repository README presents the addon to players. This document contains development details.
 
-The bundle includes 10,891 Classic recordings. External CatQuest Voices 0.3.0
-adds 738 quests (737 descriptions, 464 turn-ins, 1,678 files with gender variants).
-The runtime index now includes the complete CatQuest library: 1,979 quests,
-1,978 descriptions, 1,687 turn-ins and 4,864 files. Saved `sharedQuestVoice`
+The bundle includes 10,891 Classic recordings. External CatQuest Voices 0.4.0
+adds 738 quests (737 descriptions, 478 turn-ins, 1,694 files with gender variants).
+The runtime index now includes the complete CatQuest library: 2,126 quests,
+2,125 descriptions, 1,843 turn-ins and 5,313 files. Saved `sharedQuestVoice`
 selects WowVoice (default) or CatQuest for overlapping recordings. Routing is
 per section: a recording available from only one source uses that source.
 Unavailable/incompatible CatQuest resets the saved preference to WowVoice.
@@ -1059,8 +1069,8 @@ hidden while our addon is enabled, including late login creation and subsequent
 Show calls. Identification uses CatQuest's click handlers, independent of labels
 and client language. `ItemTextFrame` book buttons and unrelated buttons remain
 available. The prior visibility is restored with `/thead off` or at logout.
-These integration points remain unchanged in the verified CatQuest 0.3.1.
-The separate Story modules are commented out in CatQuest's own 0.3.1 TOC.
+These integration points remain unchanged in the verified CatQuest 0.4.0.
+The separate Story modules are commented out in CatQuest's own 0.4.0 TOC.
 
 This uses CatQuest's initialized settings table without private namespace access
 or upstream file edits. WowVoice has optional TOC dependencies on the two audio
@@ -1075,7 +1085,7 @@ independent and is not stopped when WowVoice starts. `/thead diag` reports takeo
 
 AudioSources.lua resolves supplemental recordings independently of either player's UI.
 Only a loaded, supported CatQuest_Voices can supply supplemental recordings.
-Without it, supplemental quests retain a silent head and text. Classic remains
+Without it, supplemental recordings are skipped. Classic remains
 independent. An old manually installed CatVoices is ignored. The old bundled/external
 selector is removed; the new preference only selects overlapping recordings. Old `audioSource` saves
 are discarded on load. `/thead source` (including old arguments) reports status
@@ -1083,22 +1093,17 @@ without changing it; `/thead diag` gives detailed diagnostics. The options heade
 shows the active source version as "Озвучка CatQuest". Classic remains unchanged.
 CatQuest does not use our packs.
 
-Audio libraries are optional for the player and quest UI. All runtime TOCs use
-`OptionalDeps` solely to load available WowVoiceSounds/CatQuest_Voices first.
-Without either library, `SoundPath` returns nil while `CanPresentQuest` permits
-quest presentation. `Playback:Play` uses the same head, timer and queue for that
-case, without sound API calls or CVar changes. Offline per-file measurements
-supply display duration; absent measurements use three words per second plus
-two seconds, with a four-second minimum. This also covers sections missing from
-a CatQuest-only installation. The original explicit audio-failure suppression
-is retained for broken recordings in enabled packs.
-
-Journal/tracker controls use `CanPresentQuest`; the voice catalogue and listening
-reminders still use actual audio availability. Silent reading never marks audio
-as listened. Journal details say "Читать" when no recording is available.
-Timers, skip, paused queues, session restore and source loading share the existing
-playback lifecycle. Enabling a source does not restart the current silent line;
-the next start resolves the current source. No missing-library warning is emitted.
+Audio libraries are optional for addon loading, settings and the catalogue.
+All runtime TOCs use `OptionalDeps` solely to load available packs first.
+Gameplay heads require audio for the exact quest stage: absent recordings are
+rejected at admission, acceptance, playback and session restore. This replaces
+the earlier silent reading behavior, including when both libraries are disabled.
+Classic paths require a measured entry; unknown IDs/stages cannot fabricate a
+filename. CatQuest availability follows its supported live index as before.
+Journal/tracker controls use `CanPresentQuest`, which requires description audio.
+A recording lost after admission is skipped so the queue can advance. Missing
+entries in saved queues are discarded even when paused. No missing-library
+warning is emitted. Layout previews remain separate, silent demonstrations.
 
 Scope confirmed on 2026-10-02: separating playback and UI logic from the source
 addons is complete. CatQuest_Voices remains an externally installed pack with
@@ -1108,7 +1113,7 @@ CatQuest. The Classic WowVoice source keeps the bundled index and durations.
 If an official WowVoice release for Forever becomes available, adapting it is
 a separate future task. Neither condition is unfinished work in the current scope.
 
-The importer generates src/CatQuestAudio.lua for the audited external 0.3.0
+The importer generates src/CatQuestAudio.lua for the audited external 0.4.0
 release, including per-file durations and JSON-only recovery. The installed
 CatQuestVoicePack.quests owns availability, sex variants and subtitles; snapshot
 entries are optional measurements, not an allowlist. New and changed records work
@@ -1139,7 +1144,7 @@ missing or unusable live index stays unavailable. Runtime checks never change th
 parses the external Lua as data and runs the actual resolver for both sexes. It
 checks eligible OGG streams and timer bounds without importing metadata or running
 foreign addon code; the report is saved in artifacts/review/catquest-compatibility.json.
-Use `--version 0.4.0 --output artifacts/review/catquest-simulated-future.json`
+Use `--version 0.5.0 --output artifacts/review/catquest-simulated-future.json`
 to simulate a future version without editing TOCs. `--snapshot <directory>` loads
 previous generated metadata and checks real migrations. The audit covers the union
 of live and snapshot entries, records exact/estimated counts and maximum timer delay.
@@ -1156,13 +1161,13 @@ installed audio sources and their versions, with variants selected by player
 gender. `CatQuestAudio.lua` contains only audio measurements and matching metadata.
 
 `Sources.DisplayText(context)` applies the same language policy to both voice
-sources and silent playback. On ruRU, captured/current journal text wins; on
+sources. On ruRU, captured/current journal text wins; on
 enUS/enGB, a Russian entry in our bundled database wins, falling back to game
 text when absent. Progress stages without a transcript retain game text too.
 If neither preferred source has text, the source-specific transcript lookup is
 the final fallback. Journal replay reads current text before an older saved
 capture. Display substitutions never overwrite queue/session or speaker data.
-Silent reading estimates use the same selected text as the head.
+Bundled text alone never makes an unavailable recording playable.
 
 `Sources.Text(id, section, "catquest")` still requests live source text and rejects
 unverified snapshot subtitles; the two-argument form reads our independent text
@@ -1171,8 +1176,8 @@ regardless of installed voice packs or versions. Its wording may differ from a
 new recording or the game. Scrolling continues to use the displayed text and
 playback duration; no audio choice or timing metadata changes with this policy.
 
-The 0.3.0 text snapshot contains 1,978 quests, with 1,978 descriptions and 1,686 turn-ins
-(4,862 text variants). These include 1,241 Classic quests. Recovered JSON-only
+The 0.4.0 text snapshot contains 2,125 quests, with 2,125 descriptions and 1,842 turn-ins
+(5,311 text variants). These include 1,388 Classic quests. Recovered JSON-only
 turn-in 99080 has no source transcript, so it retains the no-text message when
 the game has not supplied text. Other quests absent from this text database
 also retain their existing game/journal lookup. Import reports text coverage

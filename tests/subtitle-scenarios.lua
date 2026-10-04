@@ -71,6 +71,8 @@ print('PASS: independent a/p/c text, short text stays still, old quests read exa
 -- Unknown duration cannot produce invented synchronization.
 GetQuestText=function() return description end
 questID=999999; event('QUEST_DETAIL')
+-- Supply an explicit preview recording; unknown quest IDs have no library entry.
+assert(WV:PreviewQuestAudio(questID, 'Interface\\AddOns\\WowVoiceSounds\\179a.ogg', nil, description))
 assert(head.textRange>0)
 now=now+20; head.scripts.OnUpdate()
 assert(head.TextScroll.scroll==0)

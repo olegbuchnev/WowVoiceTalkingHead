@@ -104,10 +104,10 @@ SlashCmdList.WOWVOICETALKINGHEAD = function(input)
     elseif cmd == "test" then
         local id = tonumber(rest)
         if id then
-            local path, dur = WV:SoundPath(id, "a")
+            local path, dur, _, sourceID, verified = WV:SoundPath(id, "a")
             msg("проверка: %s (%s)", path,
                 dur and format("%.1f с", dur) or "длительность неизвестна")
-            Playback:Play(path, dur)
+            Playback:Play(path, dur, nil, sourceID, verified)
         else
             msg("использование: /thead test <quest_id>")
         end

@@ -4,6 +4,7 @@ const root=process.argv[2];
 const scenarios = ['catquest-speakers-scenarios.lua','audio-sources-scenarios.lua','questie-tracker-scenarios.lua','catquest-scenarios.lua','work-scenarios.lua','startup-work-scenarios.lua','scenarios.lua','journal-scenarios.lua','tracker-scenarios.lua','tracker-progress-scenarios.lua','quest-reminder-preview-scenarios.lua','unavailable-audio-scenarios.lua','background-audio-scenarios.lua','retail-head-scenarios.lua','forever-audio-scenarios.lua','gossip-quest-speaker-scenarios.lua','head-transition-scenarios.lua','head-visibility-scenarios.lua','accept-autoplay-scenarios.lua','turnin-autoplay-scenarios.lua','portrait-position-scenarios.lua'];
 scenarios.push('disabled-sounds-scenarios.lua');
 scenarios.push('silent-playback-scenarios.lua');
+scenarios.push('music-stop-scenarios.lua');
 scenarios.push('release-commands-scenarios.lua', 'dev-commands-scenarios.lua');
 scenarios.push('catquest-update-lab-scenarios.lua');
 for (const locale of ['enUS', 'enGB']) {

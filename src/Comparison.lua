@@ -32,17 +32,18 @@ end
 function Comparison.Resolve(id, source)
     if revision ~= WV.audioRevision then failed, revision = {}, WV.audioRevision end
     if type(id) ~= "number" or id <= 0 or id % 1 ~= 0 then return end
-    local path, seconds, text
+    local path, seconds, text, verified
     if source == "wowvoice" then
         if not Sources.Loaded("WowVoiceSounds") or not (WowVoiceDur and WowVoiceDur[id .. "a"]) then return end
-        path, seconds = WV:ClassicSoundPath(id, "a")
+        local version, sourceID
+        path, seconds, version, sourceID, verified = WV:ClassicSoundPath(id, "a")
     elseif source == "catquest" then
         local recording = Sources.Resolve(id, "a")
-        if recording then path, seconds = recording.path, recording.duration end
+        if recording then path, seconds, verified = recording.path, recording.duration, recording.verified end
         text = Sources.Text(id, "a", "catquest")
     end
     if not path or type(seconds) ~= "number" or seconds <= 0 or failed[path] then return end
-    return { path = path, duration = seconds, text = text, sourceID = source }
+    return { path = path, duration = seconds, text = text, sourceID = source, verified = verified }
 end
 function Comparison.QuestIDs()
     local candidates, result = {}, {}
@@ -71,7 +72,7 @@ function Comparison.Play(id, source)
         DEFAULT_CHAT_FRAME:AddMessage(L["WowVoice TalkingHead: озвучка выключена. Включить: /thead on"])
         return false
     end
-    local ok = WV:PreviewQuestAudio(id, recording.path, recording.duration, recording.text, recording.sourceID)
+    local ok = WV:PreviewQuestAudio(id, recording.path, recording.duration, recording.text, recording.sourceID, recording.verified)
     if not ok then failed[recording.path] = true end
     return ok
 end

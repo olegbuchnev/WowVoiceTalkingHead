@@ -67,9 +67,10 @@ const { createHash } = require('crypto');
         assert(!html.includes('555,6 МБ'));
         assert(html.includes('CatQuest Voices 0.2.2') && html.includes('curseforge.com/wow/addons/catquest'));
         assert(html.includes(`href="${urls.full}"`));
-        assert(html.includes('<script src="site.js" defer></script>'));
-        assert.equal(fs.readFileSync(path.join(fixture,'artifacts/site/site.js'),'utf8'),
-          fs.readFileSync(path.join(root,'site/site.js'),'utf8'));
+        const script = fs.readFileSync(path.join(fixture, 'site/site.js'));
+        const scriptURL = `site.${createHash('sha256').update(script).digest('hex')}.js`;
+        assert(html.includes(`<script src="${scriptURL}" defer></script>`));
+        assert.deepEqual(fs.readFileSync(path.join(fixture, 'artifacts/site', scriptURL)), script);
         assert(html.includes('Зеркало на pCloud'));
         assert(html.includes('<time datetime="2026-08-13">13.08.2026</time>'), 'Audio release date must not follow artifact uploads');
         assert.equal((html.match(/Обновлён <time/g) || []).length, 1, 'Only the addon card shows the addon update date');

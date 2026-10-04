@@ -53,18 +53,18 @@ for _, entry in ipairs({{}, {common = '   '}, {common = 'English database text'}
 end
 texts['179a'] = {common = 'Русское описание.'}
 
--- Bundled text works without either voice pack; reading time uses displayed
--- text as well when no measured recording duration exists.
+-- Bundled text remains available as metadata, but cannot start an unvoiced head.
 Q:Clear()
 local isLoaded = C_AddOns.IsAddOnLoaded
 C_AddOns.IsAddOnLoaded = function() return false end
-start('a')
-assert(head.Body:GetText() == (english and texts['179a'].common or gameText))
+assert(S.DisplayText({questId = 179, section = 'a', text = gameText})
+    == (english and texts['179a'].common or gameText))
+assert(not WV:ReplayQuest(179) and not head:IsShown())
 local missingID = 999997
 assert(not texts[missingID .. 'a'] and not WowVoiceDur[missingID .. 'a'])
 texts[missingID .. 'a'] = {common = 'Короткое русское описание.'}
 local context = {questId = missingID, section = 'a', text = string.rep('word ', 30)}
-assert(WV:SilentDuration(context) == (english and 4 or 12))
+assert(S.DisplayText(context) == (english and texts[missingID .. 'a'].common or context.text))
 texts[missingID .. 'a'] = nil
 C_AddOns.IsAddOnLoaded = isLoaded
 Q:Clear()
@@ -79,4 +79,4 @@ assert(head.Body:GetText() == (english and texts['179a'].common or gameText))
 assert(questCache()[179].description == 'Old capture')
 Q:Clear()
 texts['179a'], texts['179c'], UnitSex = description, completion, unitSex
-print('PASS: ' .. GetLocale() .. ' quest text priority, both audio sources, stages/sex variants, reload, missing translations, silent duration and current journal text')
+print('PASS: ' .. GetLocale() .. ' quest text priority, both audio sources, stages/sex variants, reload, missing translations, unavailable audio and current journal text')

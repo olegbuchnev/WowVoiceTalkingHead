@@ -97,3 +97,56 @@ h.Model:CompleteLoad(10658); assert(not h.visible)
 h.Model.SetCreature=setCreature
 WowVoiceDB.questSpeakers=saved
 print('PASS: instant appearance, no mid-playback fades, synchronized model/UI fade, immediate close, replacement, preview and late model safety')
+
+-- A reused completed bar has no visible fill at the start of the next line,
+-- even when the native renderer has not yet updated its hidden geometry.
+for _, afterFade in ipairs({false, true}) do
+    h,t=start()
+    advance(t+WowVoiceDur['179a']+WowVoiceDB.tail+0.01)
+    near(h.Progress.value,1)
+    if afterFade then advance(now+2) end
+    local show, staleFill = h.Show, false
+    function h:Show()
+        staleFill = staleFill or self.Progress:IsShown()
+        return show(self)
+    end
+    assert(WV:ReplayQuest(861))
+    h.Show=show
+    assert(not staleFill and not h.Progress:IsShown(), 'new head must not reveal the old progress texture')
+    near(h.Progress.value,0)
+    advance(now+0.1)
+    assert(h.Progress:IsShown() and h.Progress.value>0 and h.Progress.value<0.1)
+    WV:Silence()
+end
+print('PASS: completed progress stays hidden at zero when a new head starts, during and after fade')
+
+-- Client trace: preparing the SECOND head takes ~2 ms. Its first positive
+-- progress is set before OnUpdate, while the old native fill was still full.
+-- Exercise that nonzero interval instead of only the frozen mock clock.
+for _, afterFade in ipairs({false, true}) do
+    h,t=start()
+    advance(t+WowVoiceDur['179a']+WowVoiceDB.tail+0.01)
+    near(h.Progress.Fill:GetWidth(), h.Progress:GetWidth())
+    if afterFade then advance(now+2) end
+    local clock, show, barShow = WV.PlaybackTime, h.Show, h.Progress.Show
+    local preparationTime, checked = 0, false
+    WV.PlaybackTime = function() return clock()+preparationTime end
+    function h:Show()
+        show(self)
+        preparationTime = 0.002
+    end
+    function h.Progress:Show()
+        if self:GetValue()>0 then
+            checked = true
+            assert(self.Fill:GetWidth()<1, 'second head must not reveal the previous full fill before its first update')
+        end
+        return barShow(self)
+    end
+    assert(WV:ReplayQuest(861))
+    assert(checked and h.Progress:GetValue()>0, 'must exercise nonzero progress during synchronous preparation')
+    h.Show, h.Progress.Show, WV.PlaybackTime = show, barShow, clock
+    advance(now+0.2)
+    near(h.Progress.Fill:GetWidth(), h.Progress:GetWidth()*h.Progress:GetValue())
+    WV:Silence()
+end
+print('PASS: second head has correct fill before its first frame, including nonzero preparation time and reuse during/after fade')

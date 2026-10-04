@@ -87,6 +87,53 @@ event('QUEST_COMPLETE')
 assert(Q.current == first and Q:Count() == 3)
 resetRuntime()
 
+-- Accepting an offer opened during a manual replay starts a lone line without
+-- briefly exposing an idle playlist during the transport's old-sound cleanup.
+local originalMusic = PlayMusic
+function PlayMusic(path)
+    if soundOK then plays[#plays + 1] = {file = path, channel = 'Music'} end
+    return soundOK
+end
+for _, background in ipairs({'0', '1'}) do
+    cvars.Sound_EnableSoundWhenGameIsInBG = background
+    for _, afterFade in ipairs({false, true}) do
+        for _, fail in ipairs({false, true}) do
+            resetRuntime()
+            assert(WV:ReplayQuest(ids[1]))
+            questID = ids[2]
+            event('QUEST_DETAIL')
+            assert(Q:Count() == 1 and Q.current.context.questId == ids[1])
+            local opened = Q.offers['game:' .. ids[2] .. ':a']
+            assert(opened and not opened.group and not opened.started)
+            local duration = select(2, WV:SoundPath(ids[1], 'a'))
+            tick(now + duration + 0.1)
+            assert(Q:Count() == 0 and not Q.current)
+            if afterFade then
+                tick(now + 2)
+                WowVoiceTalkingHead.scripts.OnUpdate()
+            end
+            local player = frames.WowVoiceQuestQueuePlayer
+            assert(not player:IsShown())
+            local show, flashes = player.Show, 0
+            function player:Show()
+                if not self:IsShown() then flashes = flashes + 1 end
+                return show(self)
+            end
+            soundOK = not fail
+            frames.WowVoiceQuestQueueEvents.scripts.OnEvent(nil, 'QUEST_ACCEPTED', 2, ids[2])
+            soundOK, player.Show = true, show
+            assert(flashes == 0 and not player:IsShown(),
+                'accepting the sole pending description must never flash the playlist')
+            if fail then assert(Q:Count() == 0 and not Q.current and opened.status == 'failed')
+            else assert(Q:Count() == 1 and Q.current == opened and opened.status == 'playing') end
+        end
+    end
+end
+PlayMusic = originalMusic
+cvars.Sound_EnableSoundWhenGameIsInBG = '1'
+resetRuntime()
+print('PASS: acceptance after manual replay never flashes a single-line playlist, both transports, head fade and failed playback')
+
 -- Persist the current line before Core stops it, exact quest order, real receiver,
 -- giver grouping, pending completion and the explicit "next" priority.
 local a = offer(1, 'a', 100)

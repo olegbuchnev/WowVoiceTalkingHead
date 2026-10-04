@@ -127,7 +127,7 @@ local function applyHeadAppearance()
     head.Name:SetTextColor(1, 0.82, 0.02, 1)
     head.Body:SetTextColor(1, 1, 1, 1)
     head.IconBorder:SetColorTexture(0.65, 0.53, 0.25, 1)
-    head.Progress:SetStatusBarColor(0.85, 0.68, 0.3, 1)
+    head.Progress.Fill:SetColorTexture(0.85, 0.68, 0.3, 1)
 end
 
 local function message(text)
@@ -760,7 +760,8 @@ local function updatePlaybackText()
         elapsed = 0
     end
     local length = active.endsAt - active.startedAt
-    head.Progress:SetValue(length > 0 and math.min(1, elapsed / length) or 1)
+    local progress = length > 0 and math.min(1, elapsed / length) or 1
+    head.Progress:SetValue(progress)
     local offset = 0
     for _, move in ipairs(head.scrollPlan or {}) do
         if elapsed < move.start then break end
@@ -924,6 +925,7 @@ local function layoutHead()
     head.Icon:SetSize(iconSize, iconSize)
     head.IconBorder:SetSize(iconSize + 2, iconSize + 2)
     head.Progress:SetWidth(width - PANEL_LEFT - PANEL_RIGHT)
+    head.Progress:SetValue(head.Progress:GetValue())
     head.TextContent:SetWidth(textWidth)
     head.Body:SetWidth(textWidth)
     local measure = head.TextMeasure
@@ -1145,11 +1147,22 @@ local function createHead()
     head.TextMeasure:SetWordWrap(true)
     head.TextMeasure:Hide()
     head.textRange = 0
-    head.Progress = CreateFrame("StatusBar", nil, head)
+    head.Progress = CreateFrame("Frame", nil, head)
     head.Progress:SetPoint("BOTTOMLEFT", head, "BOTTOMLEFT", PANEL_LEFT, 2)
     head.Progress:SetSize(312, 2)
-    head.Progress:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
-    head.Progress:SetMinMaxValues(0, 1)
+    head.Progress.Fill = head.Progress:CreateTexture(nil, "ARTWORK")
+    head.Progress.Fill:SetPoint("BOTTOMLEFT", head.Progress, "BOTTOMLEFT")
+    head.Progress.Fill:SetSize(1, 2)
+    function head.Progress:SetValue(value)
+        self.value = math.max(0, math.min(1, value))
+        -- Native StatusBar defers fill geometry: a new line can briefly show
+        -- the previous full texture even though GetValue() is already near 0.
+        -- Set the texture width ourselves before making it visible.
+        self.Fill:SetWidth(self:GetWidth() * self.value)
+        if self.value > 0 then self:Show() else self:Hide() end
+    end
+    function head.Progress:GetValue() return self.value end
+    head.Progress:SetValue(0)
 
     -- Dismiss this line (queue autoplay may advance) or close the silent preview.
     local close = CreateFrame("Button", nil, head)

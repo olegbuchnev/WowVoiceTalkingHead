@@ -119,7 +119,8 @@ WV:Silence()
 local before = #plays
 questID = plainID
 event('QUEST_DETAIL'); event('QUEST_PROGRESS'); event('QUEST_COMPLETE')
-assert(#plays == before and frames.WowVoiceTalkingHead:IsShown(), 'Missing external audio keeps the head without sound')
+assert(#plays == before and not frames.WowVoiceTalkingHead:IsShown()
+    and WV.questQueue:Count() == 0, 'Missing external audio cannot show a head or enter the queue')
 WV.questQueue:Clear()
 C_AddOns.IsAddOnLoaded = loaded
 print('PASS: supplemental events, own portrait, timing, gender, missing sections, Classic priority and failure restoration')

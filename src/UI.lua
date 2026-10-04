@@ -73,7 +73,7 @@ local function updatePlayButton(play)
         return
     end
     if not play.compact then applyEllesmereStyle(play) end
-    if not play.compact then play:SetText(WV:HasQuestAudio(play.questOwner.questID) and L["Слушать"] or L["Читать"]) end
+    if not play.compact then play:SetText(L["Слушать"]) end
     local available = WowVoiceDB and WowVoiceDB.enabled
     local alpha = play.compact and not play.hovered and 0.7 or 1
     play:SetAlpha(available and alpha or 0.4)
