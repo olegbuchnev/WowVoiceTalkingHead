@@ -6,8 +6,8 @@
 На английском клиенте кнопки плеера отображаются на английском, настройки — на русском.
 Говорящая голова использует шрифты заданий Blizzard, включая их кириллические варианты.
 
-**[Скачать полный архив](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.2.3-forever/WowVoiceTalkingHead-1.2.3-forever.zip)** ·
-**[Скачать addon-only](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.2.3-forever/WowVoiceTalkingHead-1.2.3-forever-addon-only.zip)** ·
+**[Скачать полный архив](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.2.4-forever/WowVoiceTalkingHead-1.2.4-forever.zip)** ·
+**[Скачать addon-only](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.2.4-forever/WowVoiceTalkingHead-1.2.4-forever-addon-only.zip)** ·
 [Инструкция](USER_README.md) ·
 [Сообщить об ошибке](https://github.com/olegbuchnev/WowVoiceTalkingHead/issues)
 
@@ -81,7 +81,7 @@ WowVoice TalkingHead. Автозапуск квестов и кнопки «Чи
 
 ## Установка
 
-1. **[Скачайте полный архив](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.2.3-forever/WowVoiceTalkingHead-1.2.3-forever.zip)** —
+1. **[Скачайте полный архив](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.2.4-forever/WowVoiceTalkingHead-1.2.4-forever.zip)** —
    основная звуковая база WowVoice уже внутри.
 2. **Закройте игру** и скопируйте из архива две папки — `WowVoiceTalkingHead`
    и `WowVoiceSounds` — в `_classic_beta_/Interface/AddOns/`.
@@ -90,7 +90,7 @@ WowVoice TalkingHead. Автозапуск квестов и кнопки «Чи
 Для работы только с CatQuest достаточно архива **addon-only**
 и папки `WowVoiceTalkingHead`. `WowVoiceSounds` можно не устанавливать или отключить.
 
-**Обновление:** [скачайте addon-only](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.2.3-forever/WowVoiceTalkingHead-1.2.3-forever-addon-only.zip),
+**Обновление:** [скачайте addon-only](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.2.4-forever/WowVoiceTalkingHead-1.2.4-forever-addon-only.zip),
 замените папку `WowVoiceTalkingHead` и полностью перезапустите игру. Если в выпуске
 обновилась звуковая библиотека, понадобится полный архив.
 
