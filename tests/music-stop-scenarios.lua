@@ -2,7 +2,7 @@ event('ADDON_LOADED')
 local WV, Q = WowVoice, WowVoice.questQueue
 local music = {}
 function PlayMusic(path) music[#music + 1] = path; return true end
-local silence = 'Interface\\AddOns\\WowVoiceTalkingHead\\Media\\silence.ogg'
+local silence = 'Interface\\AddOns\\TalkingHeadRu\\Media\\silence.ogg'
 cvars.Sound_EnableSoundWhenGameIsInBG = '0'
 cvars.Sound_EnableMusic = '0'
 local function atEnd(duration, offset, start)
@@ -20,7 +20,7 @@ for _, source in ipairs({'wowvoice', 'catquest'}) do
     local _, duration, _, _, verified = WV:SoundPath(1095, 'a')
     assert(verified == true)
     for _, tail in ipairs({0.05, 0.3, 0, -0.025}) do
-        WowVoiceDB.tail = tail
+        TalkingHeadRuDB.tail = tail
         for _, entry in ipairs({'replay', 'event', 'queue', 'comparison'}) do
             Q:Clear()
             if entry == 'replay' then assert(WV:ReplayQuest(1095))
@@ -30,12 +30,12 @@ for _, source in ipairs({'wowvoice', 'catquest'}) do
             else assert(WowVoiceComparison.Play(1095, source)) end
             assert(music[#music] == WV:SoundPath(1095, 'a'))
             atEnd(duration, math.min(tail, 0), now)
-            assert(WowVoiceDB.tail == tail, 'Do not overwrite saved transport settings')
+            assert(TalkingHeadRuDB.tail == tail, 'Do not overwrite saved transport settings')
         end
     end
 end
 Q:Clear()
-WowVoiceDB.tail = 0.05
+TalkingHeadRuDB.tail = 0.05
 -- Changed CatQuest records retain the estimate and both existing pads.
 local record = CatQuestVoicePack.quests[1095]
 local original = record.d

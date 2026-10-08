@@ -9,7 +9,7 @@ function run(file) {
 }
 function load() {
     for(const file of ['mock.lua','journal-mock.lua','portrait-mock.lua']) run(path.join(__dirname,file));
-    for(const file of fs.readFileSync(path.join(root,'WowVoiceTalkingHead.toc'),'utf8').split(/\r?\n/).filter(s=>s.endsWith('.lua'))) run(path.join(root,file));
+    for(const file of fs.readFileSync(path.join(root,'TalkingHeadRu.toc'),'utf8').split(/\r?\n/).filter(s=>s.endsWith('.lua'))) run(path.join(root,file));
 }
 load(); run(path.join(__dirname,'subtitle-scenarios.lua'));
 load(); run(path.join(__dirname,'subtitle-reload.lua'));

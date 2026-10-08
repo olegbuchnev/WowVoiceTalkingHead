@@ -1,7 +1,7 @@
 local WV, Q, Lab = WowVoice, WowVoice.questQueue, WowVoiceQueueLab
 Lab:Reset()
 WV:OpenOptions()
-local panel, head, player = frames.WowVoiceOptionsPanel, WowVoiceTalkingHead, frames.WowVoiceQuestQueuePlayer
+local panel, head, player = frames.WowVoiceOptionsPanel, TalkingHeadRu, frames.WowVoiceQuestQueuePlayer
 local function advance(seconds)
     now = now + seconds
     if head:IsShown() then head.scripts.OnUpdate(head) end

@@ -8,6 +8,7 @@ scenarios.push('music-stop-scenarios.lua');
 scenarios.push('release-commands-scenarios.lua', 'dev-commands-scenarios.lua');
 scenarios.push('catquest-update-lab-scenarios.lua');
 scenarios.push('wowvoice-version-label-scenarios.lua');
+scenarios.push('secret-speaker-scenarios.lua');
 for (const locale of ['enUS', 'enGB']) {
     scenarios.push({file:'catquest-scenarios.lua',locale});
 }
@@ -28,7 +29,7 @@ for (const entry of scenarios) {
         if (status !== lua.LUA_OK) throw Error(to_jsstring(lua.lua_tostring(L,-1)));
     }
     if (scenario === 'retail-head-scenarios.lua') run(path.join(__dirname, 'queue-lab-mock.lua'));
-    const toc=fs.readFileSync(path.join(root,'WowVoiceTalkingHead.toc'),'utf8');
+    const toc=fs.readFileSync(path.join(root,'TalkingHeadRu.toc'),'utf8');
     for (const file of toc.split(/\r?\n/).filter(s=>s.endsWith('.lua'))) run(path.join(root,file));
     run(path.join(__dirname, "catquest-pack-mock.lua"));
     if (['scenarios.lua', 'catquest-scenarios.lua', 'work-scenarios.lua', 'quest-reminder-preview-scenarios.lua', 'dev-commands-scenarios.lua'].includes(scenario)) {

@@ -1,5 +1,5 @@
 event('ADDON_LOADED')
-WowVoiceDB.autoPlayAccept = true
+TalkingHeadRuDB.autoPlayAccept = true
 event('PLAYER_LOGIN')
 local WV = WowVoice
 npcGUID = nil
@@ -20,7 +20,7 @@ C_Container = {
 }
 command('debug on')
 questID=179; event('QUEST_DETAIL')
-local h=frames.WowVoiceTalkingHead
+local h=frames.TalkingHeadRu
 assert(h.Name.text=='Свиток с рунами' and h.Icon.texture==134939)
 assert(h.Icon.visible and h.IconBorder.visible and h.Model.alpha==0)
 assert(has('item=10621') and scans==5)

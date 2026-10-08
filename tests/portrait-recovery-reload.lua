@@ -1,7 +1,7 @@
 event('ADDON_LOADED')
 event('PLAYER_LOGIN')
 assert(WowVoice:ReplayQuest(179))
-local h = frames.WowVoiceTalkingHead
+local h = frames.TalkingHeadRu
 assert(h.Name.text == 'Recovered item' and h.Icon.visible and h.Icon.texture == 134939)
 assert(questCache()[179].itemID == 10621)
 WowVoice:Silence()

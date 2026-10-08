@@ -2,5 +2,5 @@
 ## Title: WowVoice CatQuest Update Lab
 ## Notes: Local CatQuest update scenarios; no audio or saved data.
 ## Version: 1.0.0
-## Dependencies: WowVoiceTalkingHead, CatQuest_Voices
+## Dependencies: TalkingHeadRu, CatQuest_Voices
 Lab.lua

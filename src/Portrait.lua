@@ -59,7 +59,7 @@ local PANEL_LEFT, PANEL_RIGHT = 15, 13
 local PANEL_TOP, PANEL_BOTTOM = 15, 13
 -- Retail TalkingHeadUI.xml fallback; managed layouts place it above action bars.
 local DEFAULT_BOTTOM_OFFSET = 96
-local TALKING_HEAD_TEXTURE = "Interface\\AddOns\\WowVoiceTalkingHead\\Media\\TalkingHeads"
+local TALKING_HEAD_TEXTURE = "Interface\\AddOns\\TalkingHeadRu\\Media\\TalkingHeads"
 local CLOSE_UP = "Interface\\Buttons\\UI-Panel-MinimizeButton-Up"
 local function createCloseArtwork(close)
     -- Native close-button fill and bevel.
@@ -86,7 +86,7 @@ local function createCloseArtwork(close)
     piece(0, 6, 4, 10, 6/32, 10/32, 11/32, 21/32)
     piece(15, 6, 4, 10, 21/32, 25/32, 11/32, 21/32)
     art.Glyph = art:CreateTexture(nil, "ARTWORK")
-    art.Glyph:SetTexture("Interface\\AddOns\\WowVoiceTalkingHead\\Media\\CloseGlyph")
+    art.Glyph:SetTexture("Interface\\AddOns\\TalkingHeadRu\\Media\\CloseGlyph")
     art.Glyph:SetTexCoord(2/512, 270/512, 2/512, 247/512)
     art.Glyph:SetSize(19 * 268/416, 18 * 245/398)
     close.Highlight = art:CreateTexture(nil, "OVERLAY")
@@ -135,15 +135,15 @@ local function message(text)
 end
 
 local function debugLog(text)
-    if WowVoiceDB and WowVoiceDB.debug then message("[Portrait] " .. text) end
+    if TalkingHeadRuDB and TalkingHeadRuDB.debug then message("[Portrait] " .. text) end
 end
 
 local function characterQuests()
-    local guid = UnitGUID("player")
-    if not (WowVoiceDB and guid) then return end
-    WowVoiceDB.questSpeakers = WowVoiceDB.questSpeakers or {}
-    WowVoiceDB.questSpeakers[guid] = WowVoiceDB.questSpeakers[guid] or {}
-    return WowVoiceDB.questSpeakers[guid]
+    local guid = WV.PublicValue(UnitGUID("player"))
+    if not (TalkingHeadRuDB and guid) then return end
+    TalkingHeadRuDB.questSpeakers = TalkingHeadRuDB.questSpeakers or {}
+    TalkingHeadRuDB.questSpeakers[guid] = TalkingHeadRuDB.questSpeakers[guid] or {}
+    return TalkingHeadRuDB.questSpeakers[guid]
 end
 
 local function positive(value)
@@ -153,11 +153,11 @@ end
 local function liveSpeaker()
     -- The target may be unrelated, especially for a quest started by an item.
     for _, unit in ipairs({ "npc", "questnpc" }) do
-        local guid = UnitGUID(unit)
+        local guid = WV.PublicValue(UnitGUID(unit))
         if guid then
             local kind, _, _, _, _, id = strsplit("-", guid)
             if kind == "Creature" or kind == "Vehicle" then
-                return unit, guid, tonumber(id), UnitName(unit)
+                return unit, guid, tonumber(id), WV.PublicValue(UnitName(unit))
             end
         end
     end
@@ -481,7 +481,7 @@ end
 
 local function finishCapture()
     if not request then return end
-    local displayID = probe:GetDisplayInfo()
+    local displayID = WV.PublicValue(probe:GetDisplayInfo())
     if not positive(displayID) then return end
     -- Each request owns a separate record. A late load updates that record
     -- without restoring a removed or completed quest to SavedVariables.
@@ -521,7 +521,7 @@ function WV:CaptureQuestSpeaker(questId, section, title, text)
     local record = { questId = questId, title = title, npcID = npcID, name = name }
     if not unit then
         for _, token in ipairs({ "npc", "questnpc" }) do
-            local objectGUID = UnitGUID(token)
+            local objectGUID = WV.PublicValue(UnitGUID(token))
             if objectGUID then
                 local kind, _, _, _, _, id = strsplit("-", objectGUID)
                 if kind == "GameObject" then
@@ -584,15 +584,15 @@ local function pointOffset(point, width, height)
 end
 
 function WV:GetHeadAnchor()
-    local point = WowVoiceDB and WowVoiceDB.headAnchor
+    local point = TalkingHeadRuDB and TalkingHeadRuDB.headAnchor
     if headAnchorPoints[point] then return point end
-    local p = WowVoiceDB and WowVoiceDB.headPosition
+    local p = TalkingHeadRuDB and TalkingHeadRuDB.headPosition
     return p and headAnchorPoints[p[1]] and p[1] or "BOTTOM"
 end
 
 local function restorePosition()
     if not anchor then return end
-    local p = WowVoiceDB and WowVoiceDB.headPosition
+    local p = TalkingHeadRuDB and TalkingHeadRuDB.headPosition
     anchor:ClearAllPoints()
     if p and p[1] and p[2] and p[3] and p[4] then
         anchor:SetPoint(p[1], UIParent, p[2], p[3], p[4])
@@ -620,7 +620,7 @@ local function centerPosition()
     if x and y and cx and cy then return x - cx, y - cy end
     -- Layout may still be pending while the options page is opening. Derive
     -- the saved position without overwriting it with an arbitrary center.
-    local p = WowVoiceDB and WowVoiceDB.headPosition
+    local p = TalkingHeadRuDB and TalkingHeadRuDB.headPosition
     if p and p[1] and p[2] and p[3] and p[4] then
         local rx, ry = pointOffset(p[2], UIParent:GetWidth(), UIParent:GetHeight())
         local ax, ay = pointOffset(p[1], anchor:GetWidth(), anchor:GetHeight())
@@ -671,11 +671,11 @@ local function setPosition(x, y, temporary)
     -- Coordinates in UI units relative to the center of the screen.
     x, y = clampCenterPosition(x, y)
     -- Retain legacy center coordinates until a point has been explicitly chosen.
-    local point = headAnchorPoints[WowVoiceDB.headAnchor] and WowVoiceDB.headAnchor or "CENTER"
+    local point = headAnchorPoints[TalkingHeadRuDB.headAnchor] and TalkingHeadRuDB.headAnchor or "CENTER"
     local ax, ay = pointOffset(point, anchor:GetWidth(), anchor:GetHeight())
     local rx, ry = pointOffset(point, UIParent:GetWidth(), UIParent:GetHeight())
     x, y = x + ax - rx, y + ay - ry
-    if not temporary then WowVoiceDB.headPosition = { point, point, x, y } end
+    if not temporary then TalkingHeadRuDB.headPosition = { point, point, x, y } end
     anchor:ClearAllPoints()
     anchor:SetPoint(point, UIParent, point, x, y)
 end
@@ -866,7 +866,7 @@ local function tryTalkingModel()
 end
 
 function WV:GetHeadScale()
-    local scale = tonumber(WowVoiceDB and WowVoiceDB.headScale) or 1
+    local scale = tonumber(TalkingHeadRuDB and TalkingHeadRuDB.headScale) or 1
     if scale ~= scale or math.abs(scale) == math.huge then scale = 1 end
     return math.floor(math.max(0.5, math.min(1.5, scale)) * 100 + 0.5) / 100
 end
@@ -880,8 +880,8 @@ local function refreshHeadTextFonts()
 end
 
 local function layoutHead()
-    local width = (WowVoiceDB and WowVoiceDB.headWidth) or DEFAULT_WIDTH
-    local height = (WowVoiceDB and WowVoiceDB.headHeight) or DEFAULT_HEIGHT
+    local width = (TalkingHeadRuDB and TalkingHeadRuDB.headWidth) or DEFAULT_WIDTH
+    local height = (TalkingHeadRuDB and TalkingHeadRuDB.headHeight) or DEFAULT_HEIGHT
     local scale = WV:GetHeadScale()
     head:SetScale(scale)
     if head.EditBorder then WV:UpdateFrameEditBorder(head.EditBorder) end
@@ -1012,11 +1012,11 @@ end
 
 local function createHead()
     if head then return end
-    anchor = CreateFrame("Frame", "WowVoiceTalkingHeadAnchor")
+    anchor = CreateFrame("Frame", "TalkingHeadRuAnchor")
     anchor:SetScale(UIParent:GetEffectiveScale())
     anchor:SetMovable(true)
     anchor:SetClampedToScreen(true)
-    head = CreateFrame("Button", "WowVoiceTalkingHead", anchor)
+    head = CreateFrame("Button", "TalkingHeadRu", anchor)
     head:SetPoint("CENTER", anchor, "CENTER")
     head:SetSize(DEFAULT_WIDTH, DEFAULT_HEIGHT)
     -- Keep the entire panel above dialogue/tutorial banners, including after reload.
@@ -1288,7 +1288,7 @@ function WV:StopTalkingHead()
         local wasDragging = head.draggingPosition ~= nil
         head.draggingPosition = nil
         anchor:StopMovingOrSizing()
-        if wasDragging or (wasPreview and WowVoiceDB.headPosition) then setPosition(centerPosition()) end
+        if wasDragging or (wasPreview and TalkingHeadRuDB.headPosition) then setPosition(centerPosition()) end
         head.EditBorder:Hide()
         head:EnableMouse(false)
         head.Model.talkAnimation = nil
@@ -1312,7 +1312,7 @@ function WV:SetHeadAnchor(point)
     createHead()
     self:EndHeadScalePreview(true)
     local x, y = centerPosition()
-    WowVoiceDB.headAnchor = point
+    TalkingHeadRuDB.headAnchor = point
     setPosition(x, y)
     if self.RefreshHeadOptions then self:RefreshHeadOptions() end
     return true
@@ -1347,7 +1347,7 @@ function WV:SetHeadAnchorPosition(x, y)
     self:EndHeadScalePreview(true)
     local point = self:GetHeadAnchor()
     local ax, ay = panelPointOffset(point)
-    WowVoiceDB.headAnchor = point
+    TalkingHeadRuDB.headAnchor = point
     setPosition(x - ax, y - ay)
     if self.RefreshHeadOptions then self:RefreshHeadOptions() end
     return true
@@ -1365,7 +1365,7 @@ end
 
 function WV:ResetHeadPosition()
     self:EndHeadScalePreview(true)
-    WowVoiceDB.headPosition, WowVoiceDB.headAnchor = nil, nil
+    TalkingHeadRuDB.headPosition, TalkingHeadRuDB.headAnchor = nil, nil
     restorePosition()
     if self.RefreshHeadOptions then self:RefreshHeadOptions() end
 end
@@ -1548,7 +1548,7 @@ updateScalePreviewVisual = function()
         end
     end
     sizeHeadAnchor(head:GetWidth(), head:GetHeight(), scale)
-    if WowVoiceDB.headPosition then
+    if TalkingHeadRuDB.headPosition then
         local ax, ay = panelPointOffset(scalePreview.anchorPoint)
         setPosition(scalePreview.pivotX - ax, scalePreview.pivotY - ay, true)
     else restorePosition() end
@@ -1821,11 +1821,11 @@ function WV:SetHeadScale(scale, temporary)
         return true
     end
     local x, y = centerPosition()
-    local positioned = WowVoiceDB.headPosition ~= nil
+    local positioned = TalkingHeadRuDB.headPosition ~= nil
     local point = self:GetHeadAnchor()
     local ax, ay = panelPointOffset(point)
     local pivotX, pivotY = x + ax, y + ay
-    WowVoiceDB.headScale = scale
+    TalkingHeadRuDB.headScale = scale
     layoutHead()
     if head.Model.portraitReady then updatePortraitCamera(head.Model) end
     -- Hold the selected point in place; screen bounds take precedence if the
@@ -1855,7 +1855,7 @@ function WV:ApplyHeadSettings(settings)
         return false, "Панель больше экрана. Уменьшите размер или масштаб."
     end
     createHead()
-    WowVoiceDB.headWidth, WowVoiceDB.headHeight, WowVoiceDB.headScale = settings.width, settings.height, settings.scale
+    TalkingHeadRuDB.headWidth, TalkingHeadRuDB.headHeight, TalkingHeadRuDB.headScale = settings.width, settings.height, settings.scale
     layoutHead()
     setPosition(settings.x, settings.y)
     return true
@@ -1895,7 +1895,7 @@ end
 
 local function showSilentHeadPreview()
     WV:StartTalkingHead({ questId = 0, section = "a", title = L["Тест говорящей головы"],
-        speaker = { questId = 0, name = UnitName("player") or L["Ваш персонаж"] },
+        speaker = { questId = 0, name = WV.PublicValue(UnitName("player")) or L["Ваш персонаж"] },
         text = L["Это тест говорящей головы. Слева показана модель вашего персонажа. Звук в этом режиме не запускается.\n\n"]
             .. L["Здесь будет текст задания. Каждый блок остаётся неподвижным, пока идёт его чтение. "]
             .. L["Затем короткий плавный сдвиг открывает продолжение, сохраняя две строки предыдущего блока. "]
@@ -1970,8 +1970,8 @@ end
 
 function WV:ResetHeadSettings()
     createHead()
-    WowVoiceDB.headWidth, WowVoiceDB.headHeight, WowVoiceDB.headScale, WowVoiceDB.headPosition = nil, nil, nil, nil
-    WowVoiceDB.headAnchor = nil
+    TalkingHeadRuDB.headWidth, TalkingHeadRuDB.headHeight, TalkingHeadRuDB.headScale, TalkingHeadRuDB.headPosition = nil, nil, nil, nil
+    TalkingHeadRuDB.headAnchor = nil
     layoutHead()
     restorePosition()
 end

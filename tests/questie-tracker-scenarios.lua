@@ -240,9 +240,9 @@ tracker:Update(); flush(); assert(not play.visible)
 first.Quest={Id=179}; tracker:Update(); flush()
 
 -- Common options, progress preview, failure handling and no duplicate hooks.
-WowVoiceDB.trackerButtons=false
+TalkingHeadRuDB.trackerButtons=false
 WV:RefreshTrackerButtons(); assert(play.visible, 'obsolete opt-out cannot hide Questie buttons')
-WowVoiceDB.trackerButtons=nil
+TalkingHeadRuDB.trackerButtons=nil
 WV:SetTrackerPulsePreview(true); assert(play.ProgressGlow.visible)
 WV:SetTrackerPulsePreview(false); assert(not play.ProgressGlow.visible)
 WV:OpenOptions()

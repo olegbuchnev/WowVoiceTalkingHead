@@ -52,7 +52,7 @@ end
 function event(name)
     local f=frames.WowVoiceFrame
     assert(f.events[name], 'event not registered: '..name)
-    f.scripts.OnEvent(f,name,'WowVoiceTalkingHead')
+    f.scripts.OnEvent(f,name,'TalkingHeadRu')
 end
 function tick(t)
     now=t

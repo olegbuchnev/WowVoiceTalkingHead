@@ -1,11 +1,11 @@
-WowVoiceDB = {debug=true}
+TalkingHeadRuDB = {debug=true}
 -- A separately loaded WowVoice addon may still publish activation globals.
 -- They must not change our filenames, diagnostics or playback.
 WowVoiceLicense = {content_key='legacy-secret', key='legacy-key', pack='legacy-pack'}
 WowVoiceHash = {filename=function() error('Legacy filename hashing must not be used') end}
 event('ADDON_LOADED')
-WowVoiceDB.autoPlayAccept = true -- Exercise opted-in automatic descriptions.
-assert(WowVoiceDB.debug==false and WowVoiceDB.ducknpc==true)
+TalkingHeadRuDB.autoPlayAccept = true -- Exercise opted-in automatic descriptions.
+assert(TalkingHeadRuDB.debug==false and TalkingHeadRuDB.ducknpc==true)
 print('PASS: previously saved debug=true resets on addon load')
 assert(SLASH_WOWVOICETALKINGHEAD1 == '/thead')
 assert(SLASH_WOWVOICE1 == nil and SLASH_WOWVOICE2 == nil and SlashCmdList.WOWVOICE == nil,
@@ -19,7 +19,7 @@ command('help')
 assert(opened == 3 and has('/thead help'), '/thead help must show help without opening settings')
 WowVoice.OpenOptions = openOptions
 print('PASS: /thead opens settings, help remains accessible, original aliases are not registered')
-command('debug on'); command('debug on'); assert(WowVoiceDB.debug)
+command('debug on'); command('debug on'); assert(TalkingHeadRuDB.debug)
 command('diag')
 assert(has('имена файлов: <quest_id><секция>.ogg'))
 assert(not has('лицензия:') and not has('legacy-key') and not has('legacy-pack'))
@@ -90,7 +90,7 @@ assert(not ok and err:find('GetQuestText',1,true),'text API error hidden')
 GetQuestText=originalText
 print('PASS: unknown audio skipped, incompatible APIs propagate errors in debug mode')
 
-command('debug off'); command('debug off'); assert(not WowVoiceDB.debug)
+command('debug off'); command('debug off'); assert(not TalkingHeadRuDB.debug)
 questID=179; messages={}
 event('QUEST_DETAIL'); tick(now+40)
 assert(#messages==0,'normal mode produced debug spam')

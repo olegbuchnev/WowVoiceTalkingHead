@@ -12,7 +12,7 @@ differences: older clients cannot stop PlaySoundFile, so they use
 PlayMusic/StopMusic by default.
 ]]
 
-local ADDON = "WowVoiceTalkingHead"
+local ADDON = "TalkingHeadRu"
 local SOUND_ADDON = "WowVoiceSounds"
 
 -- Text sections: a = accept, p = progress, c = complete
@@ -39,8 +39,14 @@ local defaults = {
 }
 
 local WV = {}
-WV.displayName = "WowVoice TalkingHead"
+WV.displayName = "TalkingHead Ru"
 _G.WowVoice = WV
+-- Restricted client values must never reach identity parsing, logs or saves.
+-- Older clients do not provide the secret-value API.
+function WV.PublicValue(value)
+    if issecretvalue and issecretvalue(value) then return nil end
+    return value
+end
 -- Playback and head progress share a clock that advances inside a long frame.
 -- GetTime() can still describe the start of the loading frame when audio starts.
 -- Never mix the epochs of these APIs in a playback deadline.
@@ -98,7 +104,7 @@ end
 
 function WV:UpdateCatQuestIntegration(release)
     local db = _G.CatQuestDB
-    local active = not release and WowVoiceDB and WowVoiceDB.enabled
+    local active = not release and TalkingHeadRuDB and TalkingHeadRuDB.enabled
         and type(db) == "table"
     if catQuestOverride and (not active or catQuestOverride.db ~= db) then
         for key, value in pairs(catQuestOverride.values) do
@@ -145,7 +151,7 @@ local function msg(fmt, ...)
 end
 
 local function dbg(fmt, ...)
-    if WowVoiceDB and WowVoiceDB.debug then
+    if TalkingHeadRuDB and TalkingHeadRuDB.debug then
         msg("[Forever %.3f] " .. fmt, GetTime(), ...)
     end
 end
@@ -179,8 +185,10 @@ local function npcIdFromGUID(guid)
 end
 
 local function currentNPC()
-    local name = UnitName("npc") or UnitName("questnpc") or UnitName("target")
-    local guid = UnitGUID("npc") or UnitGUID("questnpc") or UnitGUID("target")
+    local name = WV.PublicValue(UnitName("npc")) or WV.PublicValue(UnitName("questnpc"))
+        or WV.PublicValue(UnitName("target"))
+    local guid = WV.PublicValue(UnitGUID("npc")) or WV.PublicValue(UnitGUID("questnpc"))
+        or WV.PublicValue(UnitGUID("target"))
     return name, npcIdFromGUID(guid)
 end
 
@@ -231,7 +239,7 @@ do
         -- Dialog is normally zero while we suppress NPC greetings. Read the
         -- user's value from the snapshot, including across consecutive lines.
         local dialog = tonumber(originalCVar("Sound_DialogVolume")) or 1
-        local multiplier = tonumber(WowVoiceDB and WowVoiceDB.volume) or 1
+        local multiplier = tonumber(TalkingHeadRuDB and TalkingHeadRuDB.volume) or 1
         return math.max(0, math.min(1, dialog)) * math.max(0, math.min(1, multiplier))
     end
     local function forceMasterAudio()
@@ -240,7 +248,7 @@ do
     end
 
     -- Service audio ships with this player, independently of either voice pack.
-    local SILENCE = "Interface\\AddOns\\WowVoiceTalkingHead\\Media\\silence.ogg"
+    local SILENCE = "Interface\\AddOns\\TalkingHeadRu\\Media\\silence.ogg"
 
     --[[ Music-channel playback depends on Sound_MusicVolume and
          Sound_EnableMusic. Quiet or disabled music makes the voice inaudible,
@@ -268,7 +276,7 @@ do
          Restore both CVars after playback. Clients without Dialog CVars skip it.
 ]]
     local function duckNPC()
-        if not (WowVoiceDB and WowVoiceDB.ducknpc) then
+        if not (TalkingHeadRuDB and TalkingHeadRuDB.ducknpc) then
             dbg("Dialog duck: пропущено, ducknpc=false")
             return
         end
@@ -314,7 +322,7 @@ do
            stopmusic calls StopMusic() alone (does not work on Sirus).
 ]]
     local function killMusic()
-        local how = (WowVoiceDB and WowVoiceDB.stopmode) or "silence"
+        local how = (TalkingHeadRuDB and TalkingHeadRuDB.stopmode) or "silence"
         if how == "stopmusic" then
             StopMusic()
         elseif how == "cvar" then
@@ -353,7 +361,7 @@ do
          when the user selects sound.
 ]]
     function Playback:mode()
-        local pick = (WowVoiceDB and WowVoiceDB.channel) or "auto"
+        local pick = (TalkingHeadRuDB and TalkingHeadRuDB.channel) or "auto"
         if pick == "sound" and not canStopSound then return "music" end
         if pick ~= "auto" then return pick end
         if not canStopSound or GetCVar("Sound_EnableSoundWhenGameIsInBG") == "0" then
@@ -439,7 +447,7 @@ do
                 return false
             end
             self.usedMusic, playing = true, true
-            local tail = (WowVoiceDB and WowVoiceDB.tail) or 0.05
+            local tail = (TalkingHeadRuDB and TalkingHeadRuDB.tail) or 0.05
             if verified == true and duration and duration > 0 then tail = math.min(tail, 0) end
             startPlaybackClock(context, duration, tail)
             return true
@@ -463,7 +471,7 @@ do
             -- using the duration table for this exact sound pack.
             -- The timer calls StopSound and restores Dialog; a duration table
             -- from another pack could cut the voice line short.
-            local tail = (WowVoiceDB and WowVoiceDB.tail) or 0.05
+            local tail = (TalkingHeadRuDB and TalkingHeadRuDB.tail) or 0.05
             startPlaybackClock(context, duration, tail)
             return true
         end
@@ -576,10 +584,10 @@ function WV:GetSharedQuestVoice()
     -- A disabled primary pack temporarily makes CatQuest the only source.
     -- Retain the saved preference for when WowVoice Sounds is enabled again.
     if not WowVoiceAudioSources.Loaded(SOUND_ADDON) and WowVoiceAudioSources.Status() then return "catquest" end
-    if WowVoiceDB and WowVoiceDB.sharedQuestVoice == "catquest" then
+    if TalkingHeadRuDB and TalkingHeadRuDB.sharedQuestVoice == "catquest" then
         if WowVoiceAudioSources.Status() then return "catquest" end
         -- Keep the saved selection and radio buttons aligned with the fallback.
-        WowVoiceDB.sharedQuestVoice = "wowvoice"
+        TalkingHeadRuDB.sharedQuestVoice = "wowvoice"
     end
     return "wowvoice"
 end
@@ -588,7 +596,7 @@ function WV:SetSharedQuestVoice(source)
     if source ~= "wowvoice" and source ~= "catquest" then return false end
     if source == "wowvoice" and not WowVoiceAudioSources.Loaded(SOUND_ADDON) then return false end
     if source == "catquest" and not WowVoiceAudioSources.Status() then return false end
-    WowVoiceDB.sharedQuestVoice = source
+    TalkingHeadRuDB.sharedQuestVoice = source
     self:RefreshAudioSources()
     return true
 end
@@ -601,7 +609,7 @@ function WV:ClassicSoundPath(questId, section)
     -- Only measured recordings exist in the supported Classic pack. Never
     -- invent a filename for a missing stage or an unknown Forever quest.
     if not duration then return nil end
-    local ext = (WowVoiceDB and WowVoiceDB.ext) or "ogg"
+    local ext = (TalkingHeadRuDB and TalkingHeadRuDB.ext) or "ogg"
     return "Interface\\AddOns\\" .. SOUND_ADDON .. "\\" .. key .. "." .. ext, duration, nil, nil, ext == "ogg"
 end
 
@@ -617,7 +625,7 @@ WV.lastKey = nil
 local function shownQuestID()
     if type(GetQuestID) == "function" then
         local ok, id
-        if WowVoiceDB and WowVoiceDB.debug then
+        if TalkingHeadRuDB and TalkingHeadRuDB.debug then
             -- In debug mode, let API errors reach the default handler with
             -- their original source line and full stack instead of using pcall.
             dbg("GetQuestID: begin")
@@ -648,16 +656,16 @@ function WV:Speak(section, title, text, event)
 
     -- Capture the quest giver even when voice-over is disabled or OGG is missing.
     local context = self.CaptureQuestSpeaker and self:CaptureQuestSpeaker(questId, section, title, text)
-    if not (WowVoiceDB and WowVoiceDB.enabled) then
+    if not (TalkingHeadRuDB and TalkingHeadRuDB.enabled) then
         dbg("Speak: пропущено, enabled=false")
         return
     end
-    if WowVoiceDB.autoPlay == false then return end
-    if section == SECTION.accept and WowVoiceDB.autoPlayAccept ~= true then
+    if TalkingHeadRuDB.autoPlay == false then return end
+    if section == SECTION.accept and TalkingHeadRuDB.autoPlayAccept ~= true then
         dbg("Speak: пропущено, autoPlayAccept=false")
         return
     end
-    if (section == SECTION.progress or section == SECTION.complete) and WowVoiceDB.autoPlayTurnIn == false then
+    if (section == SECTION.progress or section == SECTION.complete) and TalkingHeadRuDB.autoPlayTurnIn == false then
         dbg("Speak: пропущено, autoPlayTurnIn=false")
         return
     end
@@ -697,12 +705,12 @@ function WV:Speak(section, title, text, event)
 end
 
 function WV:SetAutoPlayAcceptEnabled(enabled)
-    WowVoiceDB.autoPlayAccept = enabled == true
+    TalkingHeadRuDB.autoPlayAccept = enabled == true
     if self.RefreshHeadOptions then self:RefreshHeadOptions() end
 end
 
 function WV:SetAutoPlayEnabled(enabled)
-    WowVoiceDB.autoPlay = enabled == true
+    TalkingHeadRuDB.autoPlay = enabled == true
     if not enabled then
         if self.PreviewQuestQueue then self:PreviewQuestQueue(false) end
     end
@@ -712,7 +720,7 @@ end
 -- The queue chooses order; playback, source selection and timing stay here.
 function WV:PlayQueuedQuest(record)
     local context = record.context
-    if not (WowVoiceDB and WowVoiceDB.enabled) then return false end
+    if not (TalkingHeadRuDB and TalkingHeadRuDB.enabled) then return false end
     -- Per-type autoplay preferences gate new entries, not already queued lines.
     local path, duration, _, sourceID, verified = self:SoundPath(context.questId, context.section)
     dbg("очередь: questID=%s section=%s title=%s WowVoiceDur=%s path=%s", tostring(context.questId),
@@ -727,7 +735,7 @@ function WV:PlayQueuedQuest(record)
 end
 
 function WV:SetAutoPlayTurnInEnabled(enabled)
-    WowVoiceDB.autoPlayTurnIn = enabled == true
+    TalkingHeadRuDB.autoPlayTurnIn = enabled == true
     if self.RefreshHeadOptions then self:RefreshHeadOptions() end
 end
 
@@ -781,7 +789,7 @@ function WV:CanPresentQuest(questId)
 end
 
 function WV:ReplayQuest(questId)
-    if not (WowVoiceDB and WowVoiceDB.enabled) then
+    if not (TalkingHeadRuDB and TalkingHeadRuDB.enabled) then
         msg("озвучка выключена. Включить: /thead on")
         return false
     end
@@ -814,13 +822,15 @@ end
 -- Shared transport for local A/B listening. It uses our portrait/timer but
 -- does not change the normal source policy, reminder cooldowns or failure cache.
 function WV:PreviewQuestAudio(questId, path, duration, text, sourceID, verified)
-    if not (WowVoiceDB and WowVoiceDB.enabled) then return false end
+    if not (TalkingHeadRuDB and TalkingHeadRuDB.enabled) then return false end
     local context = self.GetReplaySpeaker and self:GetReplaySpeaker(questId)
     if context and text and (not context.text or not context.text:find("%S")) then context.text = text end
     return Playback:Play(path, duration, context, sourceID, verified)
 end
 
 local f = CreateFrame("Frame", "WowVoiceFrame")
+-- Keep ownership explicit: the named global may still reference upstream's frame.
+WV.eventFrame = f
 f:RegisterEvent("ADDON_LOADED")
 f:RegisterEvent("PLAYER_LOGIN")
 f:RegisterEvent("QUEST_DETAIL")
@@ -841,53 +851,53 @@ f:SetScript("OnEvent", function(self, event, arg1)
             end
             return
         end
-        WowVoiceDB = WowVoiceDB or {}
+        TalkingHeadRuDB = TalkingHeadRuDB or {}
         -- The talking head always uses Retail. Preserve its saved geometry.
-        WowVoiceDB.headEnabled, WowVoiceDB.headPreset = nil, nil
-        WowVoiceDB.button, WowVoiceDB.buttonPos = nil, nil
-        WowVoiceDB.playTooltips = nil -- Removed setting; our controls no longer show tooltips.
-        WowVoiceDB.trackerButtons, WowVoiceDB.trackerProgressPulse = nil, nil -- Always available now.
-        WowVoiceDB.audioSource = nil -- Discard the obsolete bundled/external selector.
-        if WowVoiceDB.sharedQuestVoice ~= "catquest" then WowVoiceDB.sharedQuestVoice = "wowvoice" end
+        TalkingHeadRuDB.headEnabled, TalkingHeadRuDB.headPreset = nil, nil
+        TalkingHeadRuDB.button, TalkingHeadRuDB.buttonPos = nil, nil
+        TalkingHeadRuDB.playTooltips = nil -- Removed setting; our controls no longer show tooltips.
+        TalkingHeadRuDB.trackerButtons, TalkingHeadRuDB.trackerProgressPulse = nil, nil -- Always available now.
+        TalkingHeadRuDB.audioSource = nil -- Discard the obsolete bundled/external selector.
+        if TalkingHeadRuDB.sharedQuestVoice ~= "catquest" then TalkingHeadRuDB.sharedQuestVoice = "wowvoice" end
         for k, v in pairs(defaults) do
-            if WowVoiceDB[k] == nil then WowVoiceDB[k] = v end
+            if TalkingHeadRuDB[k] == nil then TalkingHeadRuDB[k] = v end
         end
         -- Correct the disabled default from the unreleased options build once.
         -- Later checkbox choices, including false, survive subsequent loads.
-        if not WowVoiceDB.autoPlayAcceptDefaultOnApplied then
-            WowVoiceDB.autoPlayAccept = true
-            WowVoiceDB.autoPlayAcceptDefaultOnApplied = true
+        if not TalkingHeadRuDB.autoPlayAcceptDefaultOnApplied then
+            TalkingHeadRuDB.autoPlayAccept = true
+            TalkingHeadRuDB.autoPlayAcceptDefaultOnApplied = true
         end
         -- Include turn-ins even for users who received the earlier partial migration.
         -- Apply once; subsequent user opt-outs survive reloads and logins.
-        if WowVoiceDB.playlistAutoPlayApplied ~= 2 then
-            WowVoiceDB.autoPlay, WowVoiceDB.autoPlayAccept, WowVoiceDB.autoPlayTurnIn = true, true, true
-            WowVoiceDB.playlistAutoPlayApplied = 2
+        if TalkingHeadRuDB.playlistAutoPlayApplied ~= 2 then
+            TalkingHeadRuDB.autoPlay, TalkingHeadRuDB.autoPlayAccept, TalkingHeadRuDB.autoPlayTurnIn = true, true, true
+            TalkingHeadRuDB.playlistAutoPlayApplied = 2
         end
         -- Diagnostics are enabled manually for the current session and reset
         -- after /reload or the next login.
-        WowVoiceDB.debug = false
+        TalkingHeadRuDB.debug = false
         --[[ Tail migrations: successive builds automatically used 0 (cut off
              endings), 0.3 (about 0.2 seconds of repeated audio), 0.1 (still
              slightly too long), then 0.05 (matched the ending by ear).
              Each migration changes ONLY the previous automatic value,
              preserving manual /thead tail settings. The current default is 0.05.
 ]]
-        if not WowVoiceDB.tailMigrated then
-            WowVoiceDB.tail = defaults.tail          -- 0 -> default (fresh installation)
-            WowVoiceDB.tailMigrated = true
+        if not TalkingHeadRuDB.tailMigrated then
+            TalkingHeadRuDB.tail = defaults.tail          -- 0 -> default (fresh installation)
+            TalkingHeadRuDB.tailMigrated = true
         end
-        if not WowVoiceDB.tail2Migrated then         -- Automatic 0.3 -> default
-            if WowVoiceDB.tail and WowVoiceDB.tail > 0.25 and WowVoiceDB.tail < 0.35 then
-                WowVoiceDB.tail = defaults.tail
+        if not TalkingHeadRuDB.tail2Migrated then         -- Automatic 0.3 -> default
+            if TalkingHeadRuDB.tail and TalkingHeadRuDB.tail > 0.25 and TalkingHeadRuDB.tail < 0.35 then
+                TalkingHeadRuDB.tail = defaults.tail
             end
-            WowVoiceDB.tail2Migrated = true
+            TalkingHeadRuDB.tail2Migrated = true
         end
-        if not WowVoiceDB.tail3Migrated then         -- Automatic 0.1 from an intermediate build -> default
-            if WowVoiceDB.tail and WowVoiceDB.tail > 0.08 and WowVoiceDB.tail < 0.12 then
-                WowVoiceDB.tail = defaults.tail
+        if not TalkingHeadRuDB.tail3Migrated then         -- Automatic 0.1 from an intermediate build -> default
+            if TalkingHeadRuDB.tail and TalkingHeadRuDB.tail > 0.08 and TalkingHeadRuDB.tail < 0.12 then
+                TalkingHeadRuDB.tail = defaults.tail
             end
-            WowVoiceDB.tail3Migrated = true
+            TalkingHeadRuDB.tail3Migrated = true
         end
         WV:UpdateCatQuestIntegration()
         msg("Озвучка: WowVoice — https://boosty.to/wowvoice; Cathey — https://boosty.to/cathey")
@@ -962,10 +972,10 @@ SlashCmdList["WOWVOICETALKINGHEAD"] = function(input)
     cmd = strlower(cmd or "")
 
     if cmd == "on" or cmd == "off" then
-        WowVoiceDB.enabled = (cmd == "on")
+        TalkingHeadRuDB.enabled = (cmd == "on")
         WV:UpdateCatQuestIntegration()
-        if not WowVoiceDB.enabled then WV:Silence() end
-        msg("озвучка %s", WowVoiceDB.enabled and "включена" or "выключена")
+        if not TalkingHeadRuDB.enabled then WV:Silence() end
+        msg("озвучка %s", TalkingHeadRuDB.enabled and "включена" or "выключена")
 
     elseif cmd == "stop" then
         WV:Silence()
@@ -974,62 +984,62 @@ SlashCmdList["WOWVOICETALKINGHEAD"] = function(input)
     elseif cmd == "channel" then
         rest = strlower(rest or "")
         if rest == "auto" or rest == "sound" or rest == "music" then
-            WowVoiceDB.channel = rest
+            TalkingHeadRuDB.channel = rest
             msg("канал: %s (сейчас работает: %s)", rest, Playback:mode())
             if rest == "sound" and not Playback:canStop() then
                 msg("|cffff8800на этом клиенте канал sound остановить нечем —|r")
                 msg("оставлен музыкальный, иначе реплику было бы не оборвать.")
             end
         else
-            msg("канал: %s. Варианты: auto | sound | music", WowVoiceDB.channel)
+            msg("канал: %s. Варианты: auto | sound | music", TalkingHeadRuDB.channel)
         end
 
     elseif cmd == "ext" then
         rest = strlower(rest or "")
         if rest == "mp3" or rest == "ogg" then
-            WowVoiceDB.ext = rest
+            TalkingHeadRuDB.ext = rest
             msg("формат пака: %s", rest)
         else
-            msg("формат пака: %s. Варианты: mp3 | ogg", WowVoiceDB.ext)
+            msg("формат пака: %s. Варианты: mp3 | ogg", TalkingHeadRuDB.ext)
         end
 
     elseif cmd == "volume" or cmd == "vol" then
         local v = tonumber(rest)
         if v and v >= 0 and v <= 1 then
-            WowVoiceDB.volume = v
+            TalkingHeadRuDB.volume = v
             msg("множитель громкости диалогов: %.2f (применится к следующей реплике)", v)
         else
             msg("множитель громкости диалогов: %.2f. Задать: /thead volume 0..1 (по умолчанию 1.0)",
-                WowVoiceDB.volume)
+                TalkingHeadRuDB.volume)
         end
 
     elseif cmd == "tail" then
         local v = tonumber(rest)
         if v ~= nil and v >= -3 and v <= 3 then
-            WowVoiceDB.tail = v
+            TalkingHeadRuDB.tail = v
             msg("сдвиг остановки: %+.2f с (минус = раньше конца, против лупа)", v)
         else
             msg("сдвиг остановки: %+.2f с. Задать: /thead tail 0.1 (дольше) / 0 (короче, против лупа)",
-                WowVoiceDB.tail)
+                TalkingHeadRuDB.tail)
         end
 
     elseif cmd == "stopmode" then
         rest = strlower(rest or "")
         if rest == "silence" or rest == "cvar" or rest == "stopmusic" then
-            WowVoiceDB.stopmode = rest
+            TalkingHeadRuDB.stopmode = rest
             msg("способ остановки: %s", rest)
         else
             msg("способ остановки: %s. Варианты: silence | cvar | stopmusic",
-                WowVoiceDB.stopmode)
+                TalkingHeadRuDB.stopmode)
         end
 
     elseif cmd == "duck" then
         rest = strlower(rest or "")
         if rest == "on" or rest == "off" then
-            WowVoiceDB.ducknpc = (rest == "on")
+            TalkingHeadRuDB.ducknpc = (rest == "on")
         end
         msg("глушение приветствия NPC: %s. Переключить: /thead duck on|off",
-            WowVoiceDB.ducknpc and "вкл" or "выкл")
+            TalkingHeadRuDB.ducknpc and "вкл" or "выкл")
 
     elseif cmd == "" or cmd == "options" then
         if WV.OpenOptions then WV:OpenOptions() end
@@ -1047,9 +1057,9 @@ SlashCmdList["WOWVOICETALKINGHEAD"] = function(input)
         msg("         stopmode <silence|cvar|stopmusic>")
         msg("/thead — настройки говорящей головы; /thead help — справка")
         msg("состояние: %s, канал %s (%s), формат %s, стоп %s, индекс %s",
-            WowVoiceDB.enabled and "вкл" or "выкл",
-            WowVoiceDB.channel, Playback:mode(), WowVoiceDB.ext,
-            WowVoiceDB.stopmode,
+            TalkingHeadRuDB.enabled and "вкл" or "выкл",
+            TalkingHeadRuDB.channel, Playback:mode(), TalkingHeadRuDB.ext,
+            TalkingHeadRuDB.stopmode,
             _G.WowVoiceIndex and "загружен" or "ОТСУТСТВУЕТ")
     end
 end

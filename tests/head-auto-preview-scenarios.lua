@@ -1,5 +1,5 @@
 local WV = WowVoice
-local panel, head = frames.WowVoiceOptionsPanel, frames.WowVoiceTalkingHead
+local panel, head = frames.WowVoiceOptionsPanel, frames.TalkingHeadRu
 local slider, input = panel.ScaleSlider, panel.ScaleInput
 local function toggleFrames()
     panel.LockFrames:SetChecked(WV:IsWindowsUnlocked())
@@ -34,13 +34,13 @@ local played, stopped = #plays, #stops
 slider.scripts.OnMouseDown(slider, 'LeftButton')
 slider:SetValue(112.3); head.scripts.OnUpdate(head)
 head.scripts.OnDragStart()
-assert(not head.draggingPosition and not frames.WowVoiceTalkingHeadAnchor.moving,
+assert(not head.draggingPosition and not frames.TalkingHeadRuAnchor.moving,
     'a scale preview cannot move a frame while the common lock is checked')
 advance(4); opaque()
 slider.scripts.OnMouseUp(slider, 'LeftButton')
 advance(0.5); fading()
 advance(0.5); assert(not head:IsShown())
-assert(WowVoiceDB.headScale == 1.12 and not head.Model:GetPaused())
+assert(TalkingHeadRuDB.headScale == 1.12 and not head.Model:GetPaused())
 -- Numeric scale and X/Y both hold for two seconds, then fade for one second.
 for _, apply in ipairs({function() scale(95) end, function() position(12.5, -24.25) end}) do
     apply(); opaque()

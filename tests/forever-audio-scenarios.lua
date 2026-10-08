@@ -1,5 +1,5 @@
 event('ADDON_LOADED')
-WowVoiceDB.autoPlayAccept = true
+TalkingHeadRuDB.autoPlayAccept = true
 local WV = WowVoice
 assert(CatQuestVoicePack, 'external voice index must be loaded')
 local externalAudio = {}
@@ -24,14 +24,14 @@ local entry = externalAudio[plainID .. 'a']
 event('QUEST_DETAIL')
 local play = plays[#plays]
 assert(play.file == prefix .. entry.file and play.channel == 'Master')
-assert(frames.WowVoiceTalkingHead.Body.text == GetQuestText(),
+assert(frames.TalkingHeadRu.Body.text == GetQuestText(),
     'Russian client keeps actual quest dialogue ahead of CatQuest subtitles')
 assert(cvars.Sound_EnableDialog == '0')
 local count = #plays
 event('QUEST_DETAIL'); assert(#plays == count, 'duplicate event restarted supplement')
 tick(now + entry.duration - 0.1)
 assert(stops[#stops] ~= play.handle, 'supplement ended early')
-tick(now + 0.1 + WowVoiceDB.tail + 0.01)
+tick(now + 0.1 + TalkingHeadRuDB.tail + 0.01)
 assert(stops[#stops] == play.handle)
 restored('1', '0.37')
 
@@ -62,10 +62,10 @@ for _, variant in ipairs({{2, 'm'}, {3, 'f'}}) do
     WV:Silence()
 end
 sex = 2
-WowVoiceDB.autoPlayTurnIn = false
+TalkingHeadRuDB.autoPlayTurnIn = false
 count = #plays
 event('QUEST_COMPLETE'); assert(#plays == count, 'turn-in-only quest ignored opt-out')
-WowVoiceDB.autoPlayTurnIn = true
+TalkingHeadRuDB.autoPlayTurnIn = true
 
 -- Missing progress/turn-in recordings stay silent instead of replaying detail.
 questID = plainID
@@ -93,18 +93,18 @@ WV:Silence()
 WowVoiceDur[plainID .. 'a'] = old
 
 -- Supplemental OGG paths are independent of the primary pack's file extension.
-WowVoiceDB.ext = 'mp3'
+TalkingHeadRuDB.ext = 'mp3'
 assert(WV:SoundPath(plainID, 'a') == prefix .. externalAudio[plainID .. 'a'].file)
-WowVoiceDB.ext = 'ogg'
+TalkingHeadRuDB.ext = 'ogg'
 
 soundOK = false
 assert(not WV:ReplayQuest(plainID))
 restored('1', '0.37')
 soundOK = true
-WowVoiceDB.enabled = false
+TalkingHeadRuDB.enabled = false
 count = #plays
 assert(not WV:ReplayQuest(plainID) and #plays == count)
-WowVoiceDB.enabled = true
+TalkingHeadRuDB.enabled = true
 local supplemental = CatQuestVoicePack
 CatQuestVoicePack = nil
 assert(not WV:HasQuestAudio(plainID) and WV:HasQuestAudio(179))
@@ -119,7 +119,7 @@ WV:Silence()
 local before = #plays
 questID = plainID
 event('QUEST_DETAIL'); event('QUEST_PROGRESS'); event('QUEST_COMPLETE')
-assert(#plays == before and not frames.WowVoiceTalkingHead:IsShown()
+assert(#plays == before and not frames.TalkingHeadRu:IsShown()
     and WV.questQueue:Count() == 0, 'Missing external audio cannot show a head or enter the queue')
 WV.questQueue:Clear()
 C_AddOns.IsAddOnLoaded = loaded
@@ -131,7 +131,7 @@ WV:Silence()
 questCache()[97250] = nil
 npcGUID = 'Creature-0-1-0-1-999-0000000099'
 assert(WV:ReplayQuest(97250))
-local head = frames.WowVoiceTalkingHead
+local head = frames.TalkingHeadRu
 assert(head.Name.text == 'Рубака Логмар' and head.Model.creatureID == 5911)
 assert(not head.Icon.visible and not questCache()[97250])
 assert(plays[#plays].file == WV:SoundPath(97250, 'a'))
@@ -152,8 +152,8 @@ print('PASS: pre-update Forever quest recovers Logmar, preserves captured identi
 
 -- All bundled identities resolve by ID; confirmed multiple/non-NPC starters
 -- suppress Classic guesses, while an absent supplemental entry keeps fallback.
-local savedQuests = WowVoiceDB.questSpeakers
-WowVoiceDB.questSpeakers = {}
+local savedQuests = TalkingHeadRuDB.questSpeakers
+TalkingHeadRuDB.questSpeakers = {}
 local recovered, blocked = 0, 0
 for id, starter in pairs(WowVoiceForeverSpeakers) do
     local speaker = WV:GetReplaySpeaker(id).speaker
@@ -175,5 +175,5 @@ questCache()[179] = nil
 WowVoiceForeverSpeakers[179] = nil
 assert(WV:GetReplaySpeaker(179).speaker.npcID == 658)
 WowVoiceForeverSpeakers[179] = starter
-WowVoiceDB.questSpeakers = savedQuests
+TalkingHeadRuDB.questSpeakers = savedQuests
 print('PASS: entire Forever starter index, explicit exclusions, captured priority and Classic fallback')

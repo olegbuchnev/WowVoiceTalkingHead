@@ -27,6 +27,18 @@ end
 
 -- Same gameplay queue receives production dialog and acceptance events.
 assert(Q.enabled and SLASH_WOWVOICEQUEUELAB1 == '/tt')
+-- Upstream WowVoice can leave its detached frame under this shared global.
+-- The lab must call our live handler even if that global is stale or missing.
+local liveFrame = WowVoiceFrame
+WowVoiceFrame = CreateFrame('Frame')
+assert(Lab:Accept(ids[1]))
+assert(Q.current and Q.current.context.questId == ids[1], 'lab must use its own event frame, not the detached upstream global')
+Lab:Reset()
+WowVoiceFrame = nil
+assert(Lab:Accept(ids[1]))
+assert(Q.current and Q.current.context.questId == ids[1], 'lab must work without the shared frame global')
+Lab:Reset()
+WowVoiceFrame = liveFrame
 local originalHandler = WowVoiceFrame:GetScript('OnEvent')
 local emitted = {}
 WowVoiceFrame:SetScript('OnEvent', function(frame, name, ...)
@@ -50,7 +62,7 @@ assert(not Q.current and Q:Count() == 0)
 
 -- Next lives only in the queue toolbar; adding entries does not change head text space.
 Lab:Accept(ids[1])
-local head = WowVoiceTalkingHead
+local head = TalkingHeadRu
 local normalNameWidth = head.Name:GetWidth()
 assert(not head.Next and not frames.WowVoiceQuestQueuePlayer:IsShown())
 count = #plays
@@ -88,7 +100,7 @@ local text, replay = WowVoiceAudioSources.Text, WowVoice.GetReplaySpeaker
 WowVoiceAudioSources.Text = function() return nil end
 WowVoice.GetReplaySpeaker = function() return { speaker = {} } end
 Lab:Accept(ids[1])
-assert(WowVoiceTalkingHead.Body.text == '')
+assert(TalkingHeadRu.Body.text == '')
 WowVoiceAudioSources.Text, WowVoice.GetReplaySpeaker = text, replay
 Lab:Reset()
 a = offer(ids[1], 1001)
@@ -306,7 +318,7 @@ Lab:Reset()
 a = offer(ids[1], 1001); Q:Accept(ids[1], 'lab')
 b = offer(ids[2], 2002); Q:Accept(ids[2], 'lab')
 WowVoice:SetQueueAutoPlay(false)
-WowVoiceTalkingHead.Close.scripts.OnClick()
+TalkingHeadRu.Close.scripts.OnClick()
 assert(Q.paused and not Q.current and Q:Count() == 1 and a.status == 'skipped')
 c = offer(ids[3], 1001); Q:Accept(ids[3], 'lab')
 count = #plays
@@ -334,20 +346,20 @@ for _, background in ipairs({'1','0'}) do
         c = offer(ids[3], 3003); Q:Accept(ids[3], 'lab')
         local oldHandle, oldStops, oldMusicStops = plays[#plays].handle, #stops, musicStops
         local checkbox = frames.WowVoiceQuestQueuePlayer.Autoplay.Check
-        if button == 'cross' then WowVoiceTalkingHead.Close.scripts.OnClick()
-        else WowVoiceTalkingHead.scripts.OnClick(WowVoiceTalkingHead, 'RightButton') end
+        if button == 'cross' then TalkingHeadRu.Close.scripts.OnClick()
+        else TalkingHeadRu.scripts.OnClick(TalkingHeadRu, 'RightButton') end
         assert(not Q.current and not Q.paused and Q:Count() == 2 and a.status == 'skipped')
-        assert(WowVoiceDB.queueAutoPlay and checkbox:GetChecked(), 'dismissal must retain autoplay')
+        assert(TalkingHeadRuDB.queueAutoPlay and checkbox:GetChecked(), 'dismissal must retain autoplay')
         if background == '1' then assert(#stops == oldStops + 1 and stops[#stops] == oldHandle)
         else assert(musicStops == oldMusicStops + 1) end
         step()
-        assert(Q.current == b and WowVoiceTalkingHead:IsShown(), 'next head must survive old playback cleanup')
+        assert(Q.current == b and TalkingHeadRu:IsShown(), 'next head must survive old playback cleanup')
         if background == '1' then assert(plays[#plays].file == WowVoice:SoundPath(ids[2], 'a'))
         else assert(musicFiles[#musicFiles] == WowVoice:SoundPath(ids[2], 'a')) end
         finish(); assert(Q.current == c, 'autoplay continues after the skipped track')
-        WowVoiceTalkingHead.Close.scripts.OnClick(); step()
-        assert(not Q.current and Q:Count() == 0 and not WowVoiceTalkingHead:IsShown())
-        assert(WowVoiceDB.queueAutoPlay, 'closing the last track preserves the saved choice')
+        TalkingHeadRu.Close.scripts.OnClick(); step()
+        assert(not Q.current and Q:Count() == 0 and not TalkingHeadRu:IsShown())
+        assert(TalkingHeadRuDB.queueAutoPlay, 'closing the last track preserves the saved choice')
         Q:Clear()
     end
 end
@@ -420,7 +432,7 @@ Q:Clear()
 -- Automatic transitions use one second across quests (0.7 fade + 0.3 hidden).
 a = offer(ids[1], 1001); Q:Accept(ids[1], 'lab')
 b = offer(ids[2], 2002); Q:Accept(ids[2], 'lab')
-local gapPlayer, gapHead = frames.WowVoiceQuestQueuePlayer, WowVoiceTalkingHead
+local gapPlayer, gapHead = frames.WowVoiceQuestQueuePlayer, TalkingHeadRu
 local _, gapAudioDuration = WowVoice:SoundPath(ids[1], 'a')
 tick(now + gapAudioDuration + 1)
 local gapStarted, gapSounds = now, #plays
@@ -514,14 +526,14 @@ a = offer(ids[1], 1001); Q:Accept(ids[1], 'lab')
 b = offer(ids[2], 2002); Q:Accept(ids[2], 'lab')
 local _, endingDuration = WowVoice:SoundPath(ids[1], 'a')
 tick(now + endingDuration + 1)
-WowVoiceTalkingHead.Close.scripts.OnClick()
+TalkingHeadRu.Close.scripts.OnClick()
 step()
 assert(Q.current == b and not Q.paused and Q:Count() == 1 and a.status == 'done')
-assert(WowVoiceDB.queueAutoPlay and WowVoiceTalkingHead:IsShown())
+assert(TalkingHeadRuDB.queueAutoPlay and TalkingHeadRu:IsShown())
 Q:Clear()
 -- With no remaining queue, closing a standalone preview does not mute future dialogs.
 a = offer(ids[1], 1001)
-WowVoiceTalkingHead.Close.scripts.OnClick()
+TalkingHeadRu.Close.scripts.OnClick()
 b = offer(ids[2], 2002)
 assert(Q.current == b)
 Q:Clear()
@@ -552,10 +564,10 @@ assert(#stops == stopsBefore and Q.current.context.questId == 179 and Q:Count() 
 Q:Clear()
 
 -- Honor autoplay options; cleanup all substitutions on handler errors.
-WowVoiceDB.autoPlayAccept = false
+TalkingHeadRuDB.autoPlayAccept = false
 count = #plays
 Lab:Accept(ids[1]); assert(#plays == count and Q:Count() == 0)
-WowVoiceDB.autoPlayAccept = true
+TalkingHeadRuDB.autoPlayAccept = true
 Lab:Reset()
 local speak = WowVoice.Speak
 WowVoice.Speak = function() error('fixture failure') end
@@ -641,7 +653,7 @@ assert(not Q.current and not a.group and not d.group and Q:Count() == 2)
 assert(realWaiting.group and b.group, 'keep other NPCs and real/test ownership separate')
 step(); assert(Q.current == b)
 WowVoice:SetQueueAutoPlay(false)
-WowVoiceTalkingHead.Close.scripts.OnClick()
+TalkingHeadRu.Close.scripts.OnClick()
 assert(Q.paused and realWaiting.group)
 Q:DeleteQuest(realWaiting); step()
 assert(not Q.current and Q:Count() == 0 and not Q.paused)
@@ -792,8 +804,8 @@ longQuest.title = string.rep('Длинное название задания ', 
 longQuest.speaker.name = string.rep('Длинное имя квестгивера ', 12)
 Q:Offer(longQuest); Q:Accept(ids[1], 'lab')
 offer(ids[2], 8102); Q:Accept(ids[2], 'lab')
-local previousWidth = WowVoiceTalkingHead:GetWidth()
-WowVoiceTalkingHead:SetWidth(350)
+local previousWidth = TalkingHeadRu:GetWidth()
+TalkingHeadRu:SetWidth(350)
 WowVoice:RefreshQuestQueuePlayer()
 local longRow = rowFor(Q.current)
 local _, queueTextSize = longRow.Title:GetFont()
@@ -807,7 +819,7 @@ end
 assert(longHeader and longHeader.height >= longHeader.Name:GetStringHeight() + 10 and longHeader.height > 40)
 assert(frames.WowVoiceQuestQueueScroll.visible and frames.WowVoiceQuestQueuePlayer.height == 280)
 Q:Clear()
-WowVoiceTalkingHead:SetWidth(previousWidth)
+TalkingHeadRu:SetWidth(previousWidth)
 nativeWordWrap = previousWrap
 
 -- Giver tiles have transparent gaps, contain all their stages, and follow row motion.

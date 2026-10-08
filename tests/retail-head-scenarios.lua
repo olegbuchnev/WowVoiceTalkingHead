@@ -1,17 +1,17 @@
 -- Existing users may have hidden the head and selected either removed theme.
 for _, preset in ipairs({'classic','ellesmere'}) do
-    WowVoiceDB = {headEnabled=false, headPreset=preset, headWidth=520,
+    TalkingHeadRuDB = {headEnabled=false, headPreset=preset, headWidth=520,
         headHeight=200, headScale=1.2, headPosition={'CENTER','CENTER',123,-200},
         button='always', buttonPos={'CENTER','CENTER',0,100},
         autoPlayAccept=false, autoPlayAcceptDefaultOnApplied=true, playlistAutoPlayApplied=2,
         autoPlayTurnIn=false, trackerButtons=false, trackerProgressPulse=false}
     event('ADDON_LOADED')
-    assert(WowVoiceDB.headEnabled==nil and WowVoiceDB.headPreset==nil)
-    assert(WowVoiceDB.button==nil and WowVoiceDB.buttonPos==nil)
-    assert(not WowVoiceDB.autoPlayAccept and not WowVoiceDB.autoPlayTurnIn
-        and WowVoiceDB.trackerButtons==nil and WowVoiceDB.trackerProgressPulse==nil)
+    assert(TalkingHeadRuDB.headEnabled==nil and TalkingHeadRuDB.headPreset==nil)
+    assert(TalkingHeadRuDB.button==nil and TalkingHeadRuDB.buttonPos==nil)
+    assert(not TalkingHeadRuDB.autoPlayAccept and not TalkingHeadRuDB.autoPlayTurnIn
+        and TalkingHeadRuDB.trackerButtons==nil and TalkingHeadRuDB.trackerProgressPulse==nil)
     assert(WowVoice:ReplayQuest(179))
-    local head=frames.WowVoiceTalkingHead
+    local head=frames.TalkingHeadRu
     assert(head.visible and head.RetailBackground.visible and head.PortraitOverlay.visible)
     assert(head.width==520 and head.height==200 and head.scale==1.2)
     local settings=WowVoice:GetHeadSettings()

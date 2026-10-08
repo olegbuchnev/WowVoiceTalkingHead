@@ -19,7 +19,7 @@ local function settings(enabled, volume)
     restored('1','0.37')
 end
 local _, duration = WV:SoundPath(179,'a')
-assert(WowVoiceDB.channel=='auto')
+assert(TalkingHeadRuDB.channel=='auto')
 
 -- Music starts even when the user disabled it or set its volume to zero.
 -- A replacement keeps the original settings; finish/close/logout restore them.
@@ -38,7 +38,7 @@ for _, enabled in ipairs({'0','1'}) do
         if ending=='timer' then tick(now+duration+0.051)
         elseif ending=='close' then WV:Silence()
         else event('PLAYER_LOGOUT') end
-        assert(music[#music].file == 'Interface\\AddOns\\WowVoiceTalkingHead\\Media\\silence.ogg',
+        assert(music[#music].file == 'Interface\\AddOns\\TalkingHeadRu\\Media\\silence.ogg',
             'all Music stop paths must use our bundled silence, never an external voice-pack file')
         settings(enabled,'0')
     end
@@ -71,12 +71,12 @@ settings('0','0.42')
 
 -- Explicit overrides remain available. Existing duck opt-out is independent.
 command('channel music')
-WowVoiceDB.ducknpc=false
+TalkingHeadRuDB.ducknpc=false
 assert(WV:ReplayQuest(179))
 assert(music[#music].dialog=='1' and music[#music].dialogVolume=='0.37')
 WV:Silence()
 settings('0','0.42')
-WowVoiceDB.ducknpc=true
+TalkingHeadRuDB.ducknpc=true
 command('channel sound')
 cvars.Sound_EnableSoundWhenGameIsInBG='0'
 count=#plays
@@ -89,7 +89,7 @@ musicOK=false
 assert(not WV:ReplayQuest(192))
 settings('0','0.42')
 assert(not WV:HasQuestAudio(192))
-assert(not WowVoiceDB.listenedQuests[playerGUID][192])
+assert(not TalkingHeadRuDB.listenedQuests[playerGUID][192])
 assert(not frames.WowVoiceTicker.visible)
 musicOK=true
 assert(WV:ReplayQuest(179))
@@ -198,7 +198,7 @@ command('stopmode silence')
 
 -- Explicit relative attenuation works the same way in either transport,
 -- and opting out of NPC suppression does not bypass Dialog volume matching.
-WowVoiceDB.ducknpc=false
+TalkingHeadRuDB.ducknpc=false
 command('volume 0.5')
 for _, background in ipairs({'0','1'}) do
     cvars.Sound_EnableSoundWhenGameIsInBG=background

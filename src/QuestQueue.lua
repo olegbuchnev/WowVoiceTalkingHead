@@ -230,10 +230,10 @@ end
 
 function Q:Offer(context)
     if not WV:SoundPath(context.questId, context.section) then return end
-    if WowVoiceDB and WowVoiceDB.autoPlay == false then return end
-    if WowVoiceDB and (context.section == "a" and WowVoiceDB.autoPlayAccept ~= true
-        or context.section ~= "a" and WowVoiceDB.autoPlayTurnIn == false) then return end
-    if WowVoiceDB and WowVoiceDB.queueDescriptionsOnly and context.section ~= "a" then return end
+    if TalkingHeadRuDB and TalkingHeadRuDB.autoPlay == false then return end
+    if TalkingHeadRuDB and (context.section == "a" and TalkingHeadRuDB.autoPlayAccept ~= true
+        or context.section ~= "a" and TalkingHeadRuDB.autoPlayTurnIn == false) then return end
+    if TalkingHeadRuDB and TalkingHeadRuDB.queueDescriptionsOnly and context.section ~= "a" then return end
     local id = key(context)
     if context.section == "p" then
         local completion = self.offers[questKey(context.questId, context.queueOwner) .. ":c"]
@@ -257,7 +257,7 @@ function Q:Offer(context)
 end
 
 function Q:Accept(id, owner)
-    if WowVoiceDB and WowVoiceDB.autoPlay == false then return end
+    if TalkingHeadRuDB and TalkingHeadRuDB.autoPlay == false then return end
     local identity = questKey(id, owner)
     self.completed[identity], self.removals[identity] = nil, nil
     local record = self.offers[tostring(owner or "game") .. ":" .. id .. ":a"]
@@ -268,7 +268,7 @@ function Q:Accept(id, owner)
         return
     end
     -- A description merely opened before disabling autoplay is not queued yet.
-    if WowVoiceDB and WowVoiceDB.autoPlayAccept ~= true and not record.group then return end
+    if TalkingHeadRuDB and TalkingHeadRuDB.autoPlayAccept ~= true and not record.group then return end
     record.accepted = true
     self:Add(record)
     self:OrderQuestStages(record)
@@ -320,7 +320,7 @@ function Q:DeleteNPC(id)
 end
 
 function Q:PlaybackStarted(context)
-    if WowVoiceDB and WowVoiceDB.autoPlay == false and not self.starting then return end
+    if TalkingHeadRuDB and TalkingHeadRuDB.autoPlay == false and not self.starting then return end
     if not context then return end
     self.gap = nil
     local record = self.starting
@@ -343,7 +343,7 @@ function Q:PlaybackStarted(context)
     if self.nextRecord == record then self.nextRecord = nil end
     -- A new queue still starts its first line. The remembered mode controls
     -- advancement, including explicit playback from the journal or tracker.
-    self.paused = (WowVoiceDB and WowVoiceDB.queueAutoPlay == false)
+    self.paused = (TalkingHeadRuDB and TalkingHeadRuDB.queueAutoPlay == false)
         or (self.starting ~= nil and self.paused) or false
     local previousRefresh = self.forceRefresh
     self.forceRefresh = true
@@ -466,8 +466,8 @@ function Q:SaveSession()
     -- Core calls this before stopping audio on PLAYER_LOGOUT (also /reload).
     if self.loggingOut then return end
     self.loggingOut = true
-    WowVoiceQueueDB = nil
-    if not WowVoiceDB or not WowVoiceDB.enabled then return end
+    TalkingHeadRuQueueDB = nil
+    if not TalkingHeadRuDB or not TalkingHeadRuDB.enabled then return end
     local saved = { version = 1, savedAt = GetServerTime(), paused = self.paused, records = {}, completed = {} }
     for _, group in ipairs(self.groups) do
         for _, record in ipairs(group.records) do
@@ -482,16 +482,16 @@ function Q:SaveSession()
             end
         end
     end
-    if #saved.records > 0 then WowVoiceQueueDB = saved end
+    if #saved.records > 0 then TalkingHeadRuQueueDB = saved end
 end
 
 function Q:RestoreSession()
-    local saved = WowVoiceQueueDB
-    WowVoiceQueueDB = nil -- Consume once; zoning or login must not extend the saved deadline.
+    local saved = TalkingHeadRuQueueDB
+    TalkingHeadRuQueueDB = nil -- Consume once; zoning or login must not extend the saved deadline.
     if type(saved) ~= "table" or saved.version ~= 1 or type(saved.savedAt) ~= "number"
         or type(saved.records) ~= "table" then return end
     local elapsed = GetServerTime() - saved.savedAt
-    if elapsed < 0 or elapsed >= 300 or not WowVoiceDB or not WowVoiceDB.enabled
+    if elapsed < 0 or elapsed >= 300 or not TalkingHeadRuDB or not TalkingHeadRuDB.enabled
         or self:Count() > 0 then return end
     self.paused = saved.paused == true
     local group
@@ -521,13 +521,13 @@ function Q:RestoreSession()
 end
 
 function WV:SetQueueDescriptionsOnly(enabled)
-    WowVoiceDB.queueDescriptionsOnly = enabled == true
+    TalkingHeadRuDB.queueDescriptionsOnly = enabled == true
     if self.RefreshHeadOptions then self:RefreshHeadOptions() end
 end
 
 function WV:SetQueueAutoPlay(enabled)
-    WowVoiceDB.queueAutoPlay = enabled == true
-    Q:SetPaused(not WowVoiceDB.queueAutoPlay)
+    TalkingHeadRuDB.queueAutoPlay = enabled == true
+    Q:SetPaused(not TalkingHeadRuDB.queueAutoPlay)
 end
 
 function Q:Event(event, id, owner)

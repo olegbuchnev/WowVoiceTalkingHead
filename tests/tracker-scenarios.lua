@@ -1,6 +1,6 @@
 event('ADDON_LOADED')
 local WV=WowVoice
-assert(WowVoiceDB.trackerButtons==nil,'obsolete tracker preference is removed')
+assert(TalkingHeadRuDB.trackerButtons==nil,'obsolete tracker preference is removed')
 assert(#plays==0)
 
 -- The tracker may load later than WowVoice. Use the same nested active-block
@@ -50,11 +50,11 @@ command('options')
 local panel=frames.WowVoiceOptionsPanel
 assert(not panel.TrackerButtons and not panel.TrackerProgressPulse)
 local count,stopCount=#plays,#stops
-WowVoiceDB.trackerButtons=false
+TalkingHeadRuDB.trackerButtons=false
 tracker:Update()
 assert(play.visible and other.visible and #plays==count and #stops==stopCount)
 event('ADDON_LOADED')
-assert(WowVoiceDB.trackerButtons==nil)
+assert(TalkingHeadRuDB.trackerButtons==nil)
 tracker:Update()
 assert(play.visible and other.visible)
 
@@ -79,11 +79,11 @@ assert(not play.visible,'recycling to a quest without audio must hide the button
 second.poiButton:Hide()
 tracker:Update()
 assert(other.points[1][2]==second.HeaderText,'Ellesmere can hide the stock marker')
-WowVoiceDB.enabled=false
+TalkingHeadRuDB.enabled=false
 count,stopCount=#plays,#stops
 other.scripts.OnClick(other)
 assert(#plays==count and #stops==stopCount)
-WowVoiceDB.enabled=true
+TalkingHeadRuDB.enabled=true
 local created=#allFrames
 for i=1,5 do events.scripts.OnEvent(events,'ADDON_LOADED','OtherAddon'); tracker:Update() end
 assert(#allFrames==created,'refreshes must reuse buttons')

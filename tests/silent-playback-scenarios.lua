@@ -17,12 +17,12 @@ local function record(id, section)
 end
 local function noPresentation()
     assert(not Q.current and Q:Count() == 0)
-    assert(not frames.WowVoiceTalkingHead or not frames.WowVoiceTalkingHead:IsShown())
+    assert(not frames.TalkingHeadRu or not frames.TalkingHeadRu:IsShown())
 end
 -- Neither library: all transports and stages reject automatic/manual playback.
 for _, channel in ipairs({'auto', 'music', 'sound'}) do
     for _, background in ipairs({'0', '1'}) do
-        WowVoiceDB.channel = channel
+        TalkingHeadRuDB.channel = channel
         cvars.Sound_EnableSoundWhenGameIsInBG = background
         for _, section in ipairs({'a', 'p', 'c'}) do
             local item = record(179, section)
@@ -37,7 +37,7 @@ for _, channel in ipairs({'auto', 'music', 'sound'}) do
     end
 end
 PlaySoundFile, StopSound, PlayMusic, StopMusic, SetCVar = realPlay, realStop, realMusic, realStopMusic, realCVar
-WowVoiceDB.channel = 'auto'
+TalkingHeadRuDB.channel = 'auto'
 cvars.Sound_EnableSoundWhenGameIsInBG = '1'
 loaded.WowVoiceSounds, loaded.CatQuest_Voices = true, true
 WV:RefreshAudioSources()
@@ -64,16 +64,16 @@ Q:Accept(86576)
 assert(Q:Count() == 1 and Q.current.context.questId == 179)
 Q:Clear()
 -- Restore drops old unvoiced entries, preserves voiced ones and a paused state.
-WowVoiceQueueDB = {version = 1, savedAt = GetServerTime(), paused = true, records = {
+TalkingHeadRuQueueDB = {version = 1, savedAt = GetServerTime(), paused = true, records = {
     record(86576, 'c'), record(86576), record(179), record(999999),
 }}
 Q:RestoreSession()
 assert(Q:Count() == 1 and Q.paused and Q:Waiting().context.questId == 179)
-assert(not frames.WowVoiceTalkingHead:IsShown())
+assert(not frames.TalkingHeadRu:IsShown())
 assert(Q:Start(Q:Waiting(), true) and Q.current.context.questId == 179)
 Q:Clear()
 loaded.WowVoiceSounds = false
-WowVoiceQueueDB = {version = 1, savedAt = GetServerTime(), records = {record(179)}}
+TalkingHeadRuQueueDB = {version = 1, savedAt = GetServerTime(), records = {record(179)}}
 Q:RestoreSession()
 noPresentation()
 -- Late loading restores real playback normally.

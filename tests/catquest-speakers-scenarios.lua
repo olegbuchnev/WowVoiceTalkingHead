@@ -1,14 +1,14 @@
 event('ADDON_LOADED')
 local WV = WowVoice
-WowVoiceDB.questSpeakers = {[playerGUID] = {}}
-local quests = WowVoiceDB.questSpeakers[playerGUID]
+TalkingHeadRuDB.questSpeakers = {[playerGUID] = {}}
+local quests = TalkingHeadRuDB.questSpeakers[playerGUID]
 for _, id in ipairs({98245, 98246}) do
     local context = WV:GetReplaySpeaker(id)
     assert(context.speaker.npcID == 270637 and context.speaker.displayID == 11740)
     assert(context.speaker.name == '[Howin Kindfeather]')
     assert(not quests[id], 'Imported NPC metadata must remain transient')
     assert(WV:ReplayQuest(id))
-    local head = frames.WowVoiceTalkingHead
+    local head = frames.TalkingHeadRu
     assert(head:IsShown() and head.Model.displayID == 11740 and not head.Icon.visible)
     assert(head.Name.text == 'Howin Kindfeather', 'Imported outer brackets must not appear in the heading')
     assert(WowVoiceCatQuestSpeakers.npcs[270637][4] == '[Howin Kindfeather]', 'Source metadata must stay intact')

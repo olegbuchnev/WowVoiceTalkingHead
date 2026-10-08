@@ -28,7 +28,20 @@ if disable and not disableForCharacter() then
 end
 
 local upstream = _G.WowVoice
-if not upstream or upstream.displayName == "WowVoice TalkingHead" then return end
+if not upstream or upstream.displayName == "TalkingHead Ru"
+    or upstream.displayName == "WowVoice TalkingHead" then return end
+
+-- Upstream already printed these during its ADDON_LOADED, before our files
+-- could run. Remove only its startup notices; keep errors and other chat.
+local chat = DEFAULT_CHAT_FRAME
+if chat and chat.RemoveMessagesByPredicate then
+    chat:RemoveMessagesByPredicate(function(text)
+        if type(text) ~= "string" then return false end
+        text = text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+        return text:match("^WowVoice: загружен%. Квестов в индексе: %d+%. Команды: /wv$") ~= nil
+            or text == "WowVoice: Понравился WowVoice? Угости разработчика пивом на Boosty — набери /wv boosty"
+    end)
+end
 
 -- At startup upstream has not received PLAYER_LOGIN or quest events yet.
 -- Silence also restores audio settings if it was started before our load.

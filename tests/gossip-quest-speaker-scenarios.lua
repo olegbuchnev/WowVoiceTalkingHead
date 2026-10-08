@@ -1,6 +1,6 @@
 event('ADDON_LOADED')
 local WV = WowVoice
-WowVoiceDB.autoPlayAccept = true
+TalkingHeadRuDB.autoPlayAccept = true
 questID = 2842
 local title, description = 'Главный инженер Скути', 'Описание из диалога Совика'
 GetTitleText = function() return title end
@@ -16,7 +16,7 @@ end
 npcGUID, npcName, npcDisplay = 'Creature-0-1-0-1-999-0000000001', 'Unrelated target', 7777
 assert(WowVoiceForeverSpeakers[2842].npcID==3413)
 event('QUEST_DETAIL')
-local head = frames.WowVoiceTalkingHead
+local head = frames.TalkingHeadRu
 assert(head.visible and head.Name.text=='Совик' and head.Model.creatureID==3413)
 assert(not head.Icon.visible and head.Title.text==title)
 assert(plays[#plays].file=='Interface\\AddOns\\WowVoiceSounds\\2842a.ogg')

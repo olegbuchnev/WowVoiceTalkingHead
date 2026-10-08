@@ -32,7 +32,7 @@ local en = record(999997, 'English NPC', 'English quest', 'English dialogue.')
 -- A voiced fixture without Russian metadata exercises native English fonts.
 WowVoiceDur['999997a'] = 10
 Q:Add(ru); Q:Add(en); assert(Q:Start(ru))
-local head, player = frames.WowVoiceTalkingHead, frames.WowVoiceQuestQueuePlayer
+local head, player = frames.TalkingHeadRu, frames.WowVoiceQuestQueuePlayer
 assert(head.Name:GetText() == ru.context.speaker.name)
 assert(head.Body:GetText() == (english and WowVoiceAudioSources.Text(179, 'a') or ru.context.text))
 assert(head.Name:GetFont() == 'Fonts\\MORPHEUS_CYR.TTF')
@@ -82,7 +82,7 @@ assert((head.Body:GetFont() ~= L.cyrillicFont) == english)
 Q:Clear()
 
 -- The source still supplies Russian text and the same sound file on an English client.
-WowVoiceDB.sharedQuestVoice = 'catquest'
+TalkingHeadRuDB.sharedQuestVoice = 'catquest'
 assert(WV:ReplayQuest(179))
 assert(plays[#plays].file:find('CatQuest_Voices', 1, true))
 assert(head.Body:GetText():find('[\208-\211][\128-\191]'))

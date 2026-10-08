@@ -10,8 +10,8 @@ UIParent:SetAlpha(0)
 UIParent:Hide()
 SetUIVisibility(false)
 assert(WV:ReplayQuest(179))
-local head=frames.WowVoiceTalkingHead
-local anchor=frames.WowVoiceTalkingHeadAnchor
+local head=frames.TalkingHeadRu
+local anchor=frames.TalkingHeadRuAnchor
 assert(anchor:GetParent()==nil)
 local function visibleTogether()
     assert(head:IsVisible() and head.Background:IsVisible()
@@ -56,7 +56,7 @@ UIParent:Hide()
 UIParent:SetAlpha(0)
 SetUIVisibility(false)
 local started=now
-tick(started+WowVoiceDur['179a']+WowVoiceDB.tail+0.01)
+tick(started+WowVoiceDur['179a']+TalkingHeadRuDB.tail+0.01)
 restored('1','0.37')
 now=now+0.5
 head.scripts.OnUpdate()

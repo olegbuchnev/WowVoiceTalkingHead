@@ -15,12 +15,12 @@ function run(file) {
   if (status !== lua.LUA_OK) throw Error(to_jsstring(lua.lua_tostring(L, -1)));
 }
 for (const file of ['mock.lua', 'journal-mock.lua', 'portrait-mock.lua', 'queue-lab-mock.lua']) run(path.join(__dirname, file));
-for (const file of fs.readFileSync(path.join(source, 'WowVoiceTalkingHead.toc'), 'utf8').split(/\r?\n/).filter(s => s.endsWith('.lua'))) {
+for (const file of fs.readFileSync(path.join(source, 'TalkingHeadRu.toc'), 'utf8').split(/\r?\n/).filter(s => s.endsWith('.lua'))) {
   if (/QueueLab/i.test(file)) throw Error('Development module in release TOC');
   run(path.join(source, file));
 }
 for (const file of fs.readdirSync(source).filter(name => name.endsWith('.toc'))) {
-  if (!fs.readFileSync(path.join(source, file), 'utf8').includes('## SavedVariablesPerCharacter: WowVoiceQueueDB')) {
+  if (!fs.readFileSync(path.join(source, file), 'utf8').includes('## SavedVariablesPerCharacter: TalkingHeadRuQueueDB')) {
     throw Error('Queue persistence missing from ' + file);
   }
 }
@@ -39,7 +39,7 @@ for (const testCase of ['sound', 'music', 'silent', 'disabled-first', 'paused', 
   lua.lua_setglobal(L, to_luastring('restoreTestCase'));
   for (const file of ['mock.lua', 'journal-mock.lua', 'portrait-mock.lua', 'queue-lab-mock.lua']) run(path.join(__dirname, file));
   run(path.join(__dirname, 'queue-loading-setup.lua'));
-  for (const file of fs.readFileSync(path.join(source, 'WowVoiceTalkingHead.toc'), 'utf8').split(/\r?\n/).filter(s => s.endsWith('.lua'))) {
+  for (const file of fs.readFileSync(path.join(source, 'TalkingHeadRu.toc'), 'utf8').split(/\r?\n/).filter(s => s.endsWith('.lua'))) {
     run(path.join(source, file));
   }
   run(path.join(__dirname, 'queue-loading-scenarios.lua'));

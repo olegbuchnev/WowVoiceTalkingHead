@@ -9,6 +9,31 @@ function CreateFrame(kind, name, ...)
 end
 upstreamTest = {disableCalls=0, saves=0, stops=0, callbacks=0}
 local test = upstreamTest
+test.startupMessages = {
+    '|cff66ccffWowVoice|r: загружен. Квестов в индексе: 3134. Команды: /wv',
+    '|cff66ccffWowVoice|r: |cffffd100Понравился WowVoice? Угости разработчика пивом на Boosty|r — набери /wv boosty',
+    'WowVoice: загружен. Квестов в индексе: 4205. Команды: /wv',
+    'WowVoice: Понравился WowVoice? Угости разработчика пивом на Boosty — набери /wv boosty',
+}
+test.retainedMessages = {
+    'OtherAddon: loaded',
+    '|cff66ccffWowVoice TalkingHead|r: Voices: WowVoice — https://boosty.to/wowvoice; Cathey — https://boosty.to/cathey',
+    '|cff66ccffWowVoice|r: ОЗВУЧКА НЕ УСТАНОВЛЕНА.',
+    '[Player]: WowVoice: загружен. Квестов в индексе: 3134. Команды: /wv',
+    'OtherAddon: Понравился WowVoice? Угости разработчика пивом на Boosty — набери /wv boosty',
+}
+for _, text in ipairs(test.retainedMessages) do DEFAULT_CHAT_FRAME:AddMessage(text) end
+-- Seed history even without upstream to ensure those modes leave it alone.
+for _, text in ipairs(test.startupMessages) do DEFAULT_CHAT_FRAME:AddMessage(text) end
+if upstreamTestMode ~= 'no-chat-removal' then
+    function DEFAULT_CHAT_FRAME:RemoveMessagesByPredicate(predicate)
+        assert(not predicate(nil) and not predicate({}))
+        for i = #messages, 1, -1 do
+            if predicate(messages[i]) then table.remove(messages, i) end
+        end
+    end
+end
+test.addMessage = DEFAULT_CHAT_FRAME.AddMessage
 local loaded = upstreamTestMode ~= 'absent' and upstreamTestMode ~= 'disabled'
 local enabled = {WowVoice=upstreamTestMode ~= 'disabled', WowVoiceSounds=true, CatQuest=true, CatQuest_Voices=true}
 function UnitName(unit)

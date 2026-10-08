@@ -1,5 +1,5 @@
 local WV = WowVoice
-local head, anchor = frames.WowVoiceTalkingHead, frames.WowVoiceTalkingHeadAnchor
+local head, anchor = frames.TalkingHeadRu, frames.TalkingHeadRuAnchor
 local panel = frames.WowVoiceOptionsPanel
 local oldEnum = Enum
 Enum = { FontStringScaleAnimationMode = { Vertex = 1 } }
@@ -60,7 +60,7 @@ for _, p in ipairs(points) do
         local x, y = location(p)
         near(x, px, 'numeric scale must hold the chosen point'); near(y, py)
     end
-    local saved = WowVoiceDB.headPosition
+    local saved = TalkingHeadRuDB.headPosition
     local camera = head.Model.cameraRefreshes
     panel.ScaleSlider.scripts.OnMouseDown(panel.ScaleSlider, 'LeftButton')
     local group = head.TextScaleLayer.Group
@@ -86,7 +86,7 @@ for _, p in ipairs(points) do
         head.scripts.OnUpdate(head)
         local x, y = location(p)
         near(x, px, 'live scaling must hold the chosen point'); near(y, py)
-        assert(WowVoiceDB.headPosition == saved, 'dragging must not rewrite the saved position')
+        assert(TalkingHeadRuDB.headPosition == saved, 'dragging must not rewrite the saved position')
         assert(head.Model.cameraRefreshes == camera, 'anchor selection must not reintroduce camera flicker')
     end
     group.Play = play
@@ -98,7 +98,7 @@ for _, p in ipairs(points) do
     panel.ScaleInput:SetText('83')
     panel.ScaleInput.scripts.OnEnterPressed(panel.ScaleInput)
     x, y = location(p); near(x, px); near(y, py)
-    local settings, stored = WV:GetHeadSettings(), WowVoiceDB.headPosition
+    local settings, stored = WV:GetHeadSettings(), TalkingHeadRuDB.headPosition
     panel.ScaleSlider.scripts.OnMouseDown(panel.ScaleSlider, 'LeftButton')
     panel.ScaleSlider:SetValue(143.7)
     head.scripts.OnUpdate(head)
@@ -106,10 +106,10 @@ for _, p in ipairs(points) do
     after = WV:GetHeadSettings()
     near(after.x, settings.x, 'closing options must restore the pre-drag position')
     near(after.y, settings.y); near(after.scale, settings.scale)
-    assert(WowVoiceDB.headAnchor == p[1])
-    assert(WowVoiceDB.headPosition[1] == stored[1] and WowVoiceDB.headPosition[2] == stored[2])
-    near(WowVoiceDB.headPosition[3], stored[3], 'cancel must restore saved offsets')
-    near(WowVoiceDB.headPosition[4], stored[4])
+    assert(TalkingHeadRuDB.headAnchor == p[1])
+    assert(TalkingHeadRuDB.headPosition[1] == stored[1] and TalkingHeadRuDB.headPosition[2] == stored[2])
+    near(TalkingHeadRuDB.headPosition[3], stored[3], 'cancel must restore saved offsets')
+    near(TalkingHeadRuDB.headPosition[4], stored[4])
     -- A newly shown panel restores the same anchor and screen-relative offsets.
     panel:Show()
     WV:EnsureHeadPreview()
@@ -125,7 +125,7 @@ for _, p in ipairs(points) do
     UIParent:SetSize(1920, 1080)
     frames.WowVoiceHeadScaleEvents.scripts.OnEvent()
     -- Moving in test mode must retain the choice and persist the new offsets.
-    local storedBeforeMove = WowVoiceDB.headPosition
+    local storedBeforeMove = TalkingHeadRuDB.headPosition
     panel.PositionX:SetFocus(); panel.PositionX:SetText('999')
     WV:SetWindowsUnlocked(true)
     head.scripts.OnDragStart()
@@ -138,14 +138,14 @@ for _, p in ipairs(points) do
             'X must follow the selected point before mouse release')
         assert(math.abs(tonumber(panel.PositionY:GetText()) - (center[2] + ay)) <= 0.005001,
             'Y must follow the selected point before mouse release')
-        assert(WowVoiceDB.headPosition == storedBeforeMove, 'live display must not save position every frame')
+        assert(TalkingHeadRuDB.headPosition == storedBeforeMove, 'live display must not save position every frame')
     end
     anchor:ClearAllPoints(); anchor:SetPoint('CENTER', UIParent, 'CENTER', -82, 63)
     head.scripts.OnDragStop()
     assert(not head.draggingPosition)
     after = WV:GetHeadSettings()
     near(after.x, -82); near(after.y, 63)
-    assert(WowVoiceDB.headPosition[1] == p[1] and WowVoiceDB.headAnchor == p[1])
+    assert(TalkingHeadRuDB.headPosition[1] == p[1] and TalkingHeadRuDB.headAnchor == p[1])
     panel.Buttons.center.scripts.OnClick()
     after = WV:GetHeadSettings(); near(after.x, -head:GetScale()); near(after.y, 63)
     local visibleCenterX = location({'CENTER', 0.5, 0.5})
@@ -199,19 +199,19 @@ for _, p in ipairs(points) do
     WV:SetHeadScale(0.73)
     near(tonumber(panel.PositionX:GetText()), wantedX)
     near(tonumber(panel.PositionY:GetText()), wantedY)
-    local saved = WowVoiceDB.headPosition
+    local saved = TalkingHeadRuDB.headPosition
     panel.PositionX:SetFocus(); panel.PositionX:SetText('-')
     panel.Buttons.applyPosition.scripts.OnClick()
-    assert(WowVoiceDB.headPosition == saved and panel.PositionX:GetText() == '-')
+    assert(TalkingHeadRuDB.headPosition == saved and panel.PositionX:GetText() == '-')
     panel.PositionX:SetText('999')
     panel.PositionX.scripts.OnEscapePressed()
     near(tonumber(panel.PositionX:GetText()), wantedX)
-    assert(WowVoiceDB.headPosition == saved)
+    assert(TalkingHeadRuDB.headPosition == saved)
     -- A valid X and invalid Y must not partially commit.
     panel.PositionX:SetFocus(); panel.PositionX:SetText('12')
     panel.PositionY:SetText('wrong')
     panel.Buttons.applyPosition.scripts.OnClick()
-    assert(WowVoiceDB.headPosition == saved)
+    assert(TalkingHeadRuDB.headPosition == saved)
     panel:Hide(); panel:Show()
     near(tonumber(panel.PositionX:GetText()), wantedX)
     near(tonumber(panel.PositionY:GetText()), wantedY)
@@ -246,13 +246,13 @@ assert(bounds.y - anchor:GetHeight()/2 >= -UIParent:GetHeight()/2 - 0.00001)
 WV:SetHeadScale(0.5, true); head.scripts.OnUpdate(head)
 local back = WV:GetHeadSettings(); near(back.x, edge.x); near(back.y, edge.y)
 WV:EndHeadScalePreview(true)
-local savedPoint, savedPosition = WowVoiceDB.headAnchor, WowVoiceDB.headPosition
+local savedPoint, savedPosition = TalkingHeadRuDB.headAnchor, TalkingHeadRuDB.headPosition
 assert(not WV:SetHeadAnchor('INVALID'))
-assert(WowVoiceDB.headAnchor == savedPoint and WowVoiceDB.headPosition == savedPosition)
+assert(TalkingHeadRuDB.headAnchor == savedPoint and TalkingHeadRuDB.headPosition == savedPosition)
 for _, bad in ipairs({math.huge, -math.huge, 'wrong'}) do
     assert(not WV:SetHeadAnchorPosition(bad, 1))
     assert(not WV:SetHeadAnchorPosition(1, bad))
-    assert(WowVoiceDB.headPosition == savedPosition)
+    assert(TalkingHeadRuDB.headPosition == savedPosition)
 end
 assert(not WV:SetHeadAnchorPosition(0/0, 1))
 -- Choosing a point during real playback leaves sound/model identity untouched.
@@ -268,7 +268,7 @@ assert(#plays == played and #stops == stopped and head.Model:GetDisplayInfo() ==
 head.scripts.OnDragStart()
 assert(not anchor.moving, 'choosing a point must not turn real playback into a movable test')
 panel.Buttons.reset.scripts.OnClick()
-assert(WowVoiceDB.headPosition == nil and WowVoiceDB.headAnchor == nil)
+assert(TalkingHeadRuDB.headPosition == nil and TalkingHeadRuDB.headAnchor == nil)
 assert(WV:GetHeadScale() == 0.5 and WV:GetHeadAnchor() == 'BOTTOM')
 selected('BOTTOM')
 near(tonumber(panel.PositionX:GetText()), head:GetScale())
@@ -278,7 +278,7 @@ WV:Silence()
 panel:Show()
 panel.PositionX:SetText('0'); panel.PositionY:SetText('120,5')
 panel.Buttons.applyPosition.scripts.OnClick()
-assert(head:IsShown() and WowVoiceDB.headAnchor == 'BOTTOM')
+assert(head:IsShown() and TalkingHeadRuDB.headAnchor == 'BOTTOM')
 local offsetX, offsetY = WV:GetHeadAnchorPosition()
 near(offsetX, 0); near(offsetY, 120.5)
 panel.PositionX:SetText('99999'); panel.PositionY:SetText('-99999')

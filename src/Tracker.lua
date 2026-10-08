@@ -13,11 +13,11 @@ local reminderTestQuest, reminderTestStarted
 local lastProgressQuest
 
 local function enabled()
-    return WowVoiceDB ~= nil
+    return TalkingHeadRuDB ~= nil
 end
 
 local function pulseEnabled()
-    return enabled() and WowVoiceDB.enabled ~= false
+    return enabled() and TalkingHeadRuDB.enabled ~= false
 end
 
 local function descriptionQueued(id)
@@ -228,21 +228,21 @@ local function resetQuestReminder(id)
 end
 
 local function listenedQuests(incremental)
-    local guid = UnitGUID("player")
-    if not (WowVoiceDB and guid) then return end
-    WowVoiceDB.listenedQuests = WowVoiceDB.listenedQuests or {}
-    if not WowVoiceDB.reminderCooldown30Minutes then
+    local guid = WV.PublicValue(UnitGUID("player"))
+    if not (TalkingHeadRuDB and guid) then return end
+    TalkingHeadRuDB.listenedQuests = TalkingHeadRuDB.listenedQuests or {}
+    if not TalkingHeadRuDB.reminderCooldown30Minutes then
         -- Previous builds stored one-hour deadlines. Keep the original start
         -- time when shortening existing pauses, including other characters.
-        for _, quests in pairs(WowVoiceDB.listenedQuests) do
+        for _, quests in pairs(TalkingHeadRuDB.listenedQuests) do
             for id, expiresAt in pairs(quests) do
                 if type(expiresAt) == "number" then quests[id] = expiresAt - 30 * 60 end
             end
         end
-        WowVoiceDB.reminderCooldown30Minutes = true
+        TalkingHeadRuDB.reminderCooldown30Minutes = true
     end
-    WowVoiceDB.listenedQuests[guid] = WowVoiceDB.listenedQuests[guid] or {}
-    local listened = WowVoiceDB.listenedQuests[guid]
+    TalkingHeadRuDB.listenedQuests[guid] = TalkingHeadRuDB.listenedQuests[guid] or {}
+    local listened = TalkingHeadRuDB.listenedQuests[guid]
     local now = currentTimestamp()
     for id, expiresAt in pairs(listened) do
         -- Old session booleans have no playback time and cannot establish

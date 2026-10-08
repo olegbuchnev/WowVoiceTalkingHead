@@ -130,7 +130,9 @@ try {
         $assets = @($assets | Where-Object { $_.state -eq 'uploaded' -and $_.name -match '\.zip$' })
         $counts = @{ full = $null; addon = $null }
         foreach ($asset in $assets) {
-            $kind = if ($asset.name -match '^WowVoice(?:TalkingHead)?-.+-addon-only\.zip$') { 'addon' }
+            $kind = if ($asset.name -match '^TalkingHeadRu-.+-full\.zip$') { 'full' }
+                elseif ($asset.name -match '^TalkingHeadRu-.+\.zip$') { 'addon' }
+                elseif ($asset.name -match '^WowVoice(?:TalkingHead)?-.+-addon-only\.zip$') { 'addon' }
                 elseif ($asset.name -match '^WowVoice(?:TalkingHead)?-.+-lite\.zip$') { continue }
                 elseif ($asset.name -match '^WowVoice(?:TalkingHead)?-.+\.zip$') { 'full' }
                 else { continue }
@@ -190,7 +192,7 @@ a{color:#a7e0c6}code{background:#29372f;padding:2px 6px;border-radius:4px}.notes
 <p><a href="downloads.csv" download>Скачать таблицу CSV для Excel</a></p>
 <p>Для обновления снова запусти <code>stats.cmd</code>. Эта страница — сохранённый снимок, перезагрузка браузера не запрашивает новые данные.</p>
 <div class="notes"><p>Известные наши проверочные скачивания исключены. Остальные повторные и проверочные скачивания остаются в счётчиках. Это не число уникальных пользователей и не отдельный счётчик нажатий на сайте. Скачивания с pCloud и скачивания библиотек с CurseForge сюда не входят.</p>
-<p>Учитываются архивы аддона (addon-only) и полные архивы прошлых выпусков, прикреплённые к существующим опубликованным релизам, включая предварительные. Другие файлы, исторические lite-архивы и автоматически созданные GitHub архивы исходников исключены. Удалённые или заменённые файлы не сохраняют прежний счётчик в этом отчёте. «—» означает, что архива такого типа в релизе нет.</p>
+<p>Учитываются архивы аддона (включая прежние addon-only) и полные архивы прошлых выпусков, прикреплённые к существующим опубликованным релизам, включая предварительные. Другие файлы, исторические lite-архивы и автоматически созданные GitHub архивы исходников исключены. Удалённые или заменённые файлы не сохраняют прежний счётчик в этом отчёте. «—» означает, что архива такого типа в релизе нет.</p>
 <p>Отчёт хранится только на этом компьютере и не публикуется. Исходные счётчики публичного репозитория доступны через GitHub API.</p></div>
 </main></body></html>
 "@

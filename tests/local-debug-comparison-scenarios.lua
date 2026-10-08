@@ -37,11 +37,11 @@ WV:Silence()
 WV:SetSharedQuestVoice('wowvoice')
 assert(row:GetHeight() == 52 and popup.columns == 8)
 assert(row.PlayButtons.wowvoice:IsEnabled() and row.PlayButtons.catquest:IsEnabled())
-assert(row.PlayButtons.wowvoice.Icon.texture == 'Interface\\AddOns\\WowVoiceTalkingHead\\Media\\Play.tga')
+assert(row.PlayButtons.wowvoice.Icon.texture == 'Interface\\AddOns\\TalkingHeadRu\\Media\\Play.tga')
 assert(not row.PlayButtons.wowvoice.backdrop and not row.PlayButtons.catquest.backdrop, 'Play buttons must have no frames')
 assert(row.PlayButtons.wowvoice.Icon.vertexColor[3] == 1 and row.PlayButtons.catquest.Icon.vertexColor[1] == 1)
 local results, startCount = popup.matches, #plays
-local listened = WowVoiceDB.listenedQuests and WowVoiceDB.listenedQuests[playerGUID]
+local listened = TalkingHeadRuDB.listenedQuests and TalkingHeadRuDB.listenedQuests[playerGUID]
 local deadline = listened and listened[179]
 local lastKey = WV.lastKey
 click(row, 'wowvoice')
@@ -50,17 +50,17 @@ assert(plays[#plays].file == WV:SoundPath(179, 'a'))
 click(row, 'catquest')
 assert(#plays == startCount + 2 and stops[#stops] == previous)
 assert(plays[#plays].file == 'Interface\\AddOns\\CatQuest_Voices\\Sounds\\q\\179.ogg')
-assert(frames.WowVoiceTalkingHead.Name.text == WV:GetReplaySpeaker(179).speaker.name)
-assert(frames.WowVoiceTalkingHead.Body.text == WowVoiceAudioSources.Text(179, 'a'))
+assert(frames.TalkingHeadRu.Name.text == WV:GetReplaySpeaker(179).speaker.name)
+assert(frames.TalkingHeadRu.Body.text == WowVoiceAudioSources.Text(179, 'a'))
 assert(WV.lastKey == lastKey and (listened and listened[179]) == deadline, 'A/B must not change regular playback/cooldowns')
 assert(panel.QuestID:GetText() == '179' and popup.matches == results)
 assert(row.PlayButtons.catquest.SelectedMark.visible and not row.PlayButtons.wowvoice.SelectedMark.visible)
 assert(not row.Selection, 'Source selection must not outline the tile')
-assert(row.PlayButtons.catquest.SelectedMark.texture == 'Interface\\AddOns\\WowVoiceTalkingHead\\Media\\PlaySelected.tga')
+assert(row.PlayButtons.catquest.SelectedMark.texture == 'Interface\\AddOns\\TalkingHeadRu\\Media\\PlaySelected.tga')
 local started, sound = now, plays[#plays].handle
 tick(started + 30)
 assert(stops[#stops] ~= sound, 'CatQuest must not use the shorter Classic timer')
-tick(started + 30.446792 + WowVoiceDB.tail + .01)
+tick(started + 30.446792 + TalkingHeadRuDB.tail + .01)
 assert(stops[#stops] == sound, 'CatQuest must stop using its own duration')
 WV:Silence()
 for _, sex in ipairs({2,3}) do

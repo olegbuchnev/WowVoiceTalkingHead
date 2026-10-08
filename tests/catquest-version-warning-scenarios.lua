@@ -42,9 +42,9 @@ local warning = frames.WowVoiceOptionsPanel.AudioSourceWarning
 if older then
     assert(warning:IsShown() and warning.title == 'Устаревшая озвучка CatQuest')
     assert(warning.message:find('Обновите CatQuest Voices до версии ' .. WowVoiceCatQuestAudio.sourceVersion, 1, true))
-    assert(not warning.message:find('Обновление WowVoice TalkingHead', 1, true))
+    assert(not warning.message:find('Обновление TalkingHead Ru', 1, true))
 elseif mode == 'newer' or mode == 'double-digit' then
-    assert(warning:IsShown() and warning.message:find('Обновление WowVoice TalkingHead', 1, true))
+    assert(warning:IsShown() and warning.message:find('Обновление TalkingHead Ru', 1, true))
     assert(warning.message:find('включая новые и изменённые записи', 1, true))
     assert(warning.message:find('Голова и очередь могут завершаться позже звука', 1, true))
 elseif mode == 'current' or mode == 'absent' then

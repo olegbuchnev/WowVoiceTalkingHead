@@ -12,10 +12,10 @@ assert(panel.QueueHeight.minValue == 280 and panel.QueueHeight.maxValue == 600)
 assert(panel.QueueScale.minValue == 80 and panel.QueueScale.maxValue == 120)
 assert(WV:GetQuestQueueHeight() == 280 and not panel.QueueDescriptionsOnly:GetChecked())
 WV:ToggleHeadPreview(true)
-assert(WowVoiceTalkingHead.EditBorder:IsShown() and not WV:IsQuestQueuePreview(),
+assert(TalkingHeadRu.EditBorder:IsShown() and not WV:IsQuestQueuePreview(),
     'unlocking the head alone must not unlock the playlist')
 WV:ToggleHeadPreview(true)
-assert(not WowVoiceTalkingHead.EditBorder:IsShown() and not WV:IsQuestQueuePreview())
+assert(not TalkingHeadRu.EditBorder:IsShown() and not WV:IsQuestQueuePreview())
 
 -- Empty-queue positioning uses display-only samples, never gameplay quests or audio.
 local sounds = #plays
@@ -27,7 +27,7 @@ toggleFrames()
 local player = frames.WowVoiceQuestQueuePlayer
 local anchorPoint, relative, relativePoint, dx, dy = player:GetPoint()
 assert(anchorPoint == 'TOPLEFT' and relative == ChatFrame1 and relativePoint == 'TOPLEFT')
-assert(dx == 0 and dy == 280 + 24 and not WowVoiceDB.queuePosition,
+assert(dx == 0 and dy == 280 + 24 and not TalkingHeadRuDB.queuePosition,
     'the default reserves room for the playlist above the chat without saving a manual override')
 assert(not panel.Buttons.queueResetPosition)
 assert(player:IsShown() and player.editing and player:GetHeight() == 280)
@@ -35,7 +35,7 @@ assert(Q:Count() == 0 and #plays == sounds and player.EditOverlay:IsShown())
 assert(player.clampRectInsets[2] == player.EditOverlay.points[2][4]
     and player.clampRectInsets[2] == -12,
     'native dragging must let the yellow right edge reach the screen edge')
-assert(WowVoiceTalkingHead:IsShown() and WowVoiceTalkingHead.EditBorder:IsShown(),
+assert(TalkingHeadRu:IsShown() and TalkingHeadRu.EditBorder:IsShown(),
     'unlocking the playlist also opens a framed, silent head preview')
 assert(not panel.LockFrames:GetChecked())
 local preview = player.preview
@@ -87,8 +87,8 @@ assert(preview.current == heldSample, 'keep sample order stable while dragging')
 player:ClearAllPoints()
 player:SetPoint('TOPLEFT', UIParent, 'BOTTOMLEFT', 180, 750)
 player.EditOverlay.scripts.OnDragStop()
-assert(not player.moving and WowVoiceDB.queuePosition.x == 180 and WowVoiceDB.queuePosition.y == 750)
-local headScale = WowVoiceTalkingHead:GetScale()
+assert(not player.moving and TalkingHeadRuDB.queuePosition.x == 180 and TalkingHeadRuDB.queuePosition.y == 750)
+local headScale = TalkingHeadRu:GetScale()
 local originalScale = player:GetScale()
 panel.QueueScale:SetValue(110)
 assert(WV:GetQuestQueueScale() == 1.1 and math.abs(player:GetScale() - originalScale * 1.1) < 0.001)
@@ -96,7 +96,7 @@ local _, _, _, scaledX, scaledY = player:GetPoint()
 assert(math.abs(scaledX * player:GetScale() - 180) < 0.001
     and math.abs(scaledY * player:GetScale() - 750) < 0.001,
     'scaling holds the saved screen position, rather than scaling the offsets')
-assert(WowVoiceTalkingHead:GetScale() == headScale and #plays == sounds)
+assert(TalkingHeadRu:GetScale() == headScale and #plays == sounds)
 panel.QueueScaleInput:SetText('79')
 panel.QueueScaleInput.scripts.OnEnterPressed(panel.QueueScaleInput)
 assert(WV:GetQuestQueueScale() == 1.1)
@@ -105,7 +105,7 @@ panel.QueueScaleInput.scripts.OnEnterPressed(panel.QueueScaleInput)
 assert(WV:GetQuestQueueScale() == 1.15)
 panel.QueueHeight:SetValue(460)
 assert(WV:GetQuestQueueHeight() == 460 and player:GetHeight() == 460 and player:GetWidth() == 380)
-assert(player:GetPoint() == 'TOPLEFT' and WowVoiceDB.queuePosition.y == 750,
+assert(player:GetPoint() == 'TOPLEFT' and TalkingHeadRuDB.queuePosition.y == 750,
     'height changes keep the saved top edge fixed')
 panel.QueueHeightInput:SetText('279')
 panel.QueueHeightInput.scripts.OnEnterPressed(panel.QueueHeightInput)
@@ -117,9 +117,9 @@ panel:Hide()
 assert(not WV:IsQuestQueuePreview() and not player:IsShown() and Q:Count() == 0 and #plays == sounds)
 assert(not player.preview, 'closing options discards preview records and their timer')
 assert(panel.LockFrames:GetChecked() and not WV:IsWindowsUnlocked(), 'closing options locks both frames')
-assert(not WowVoiceTalkingHead:IsShown() and not WowVoiceTalkingHead.EditBorder:IsShown())
+assert(not TalkingHeadRu:IsShown() and not TalkingHeadRu.EditBorder:IsShown())
 event('ADDON_LOADED')
-assert(WV:GetQuestQueueHeight() == 520 and WowVoiceDB.queuePosition.y == 750,
+assert(WV:GetQuestQueueHeight() == 520 and TalkingHeadRuDB.queuePosition.y == 750,
     'saved position and height survive settings initialization')
 assert(WV:GetQuestQueueScale() == 1.15)
 
@@ -135,26 +135,26 @@ local realCount = Q:Count()
 for _ = 1, 4 do player.scripts.OnUpdate(player, 6.1) end
 assert(Q.current == current and Q:Count() == realCount and #plays == sounds,
     'cycling the preview cannot advance, replace or append to live audio')
-assert(WowVoiceTalkingHead.EditBorder:IsShown())
-WowVoiceTalkingHead.scripts.OnDragStart()
-assert(frames.WowVoiceTalkingHeadAnchor.moving and WowVoiceTalkingHead.draggingPosition,
+assert(TalkingHeadRu.EditBorder:IsShown())
+TalkingHeadRu.scripts.OnDragStart()
+assert(frames.TalkingHeadRuAnchor.moving and TalkingHeadRu.draggingPosition,
     'the linked head is movable even during live audio')
 toggleFrames()
 assert(not player.editing and player:GetHeight() < 600 and Q.current == current)
-assert(not WowVoiceTalkingHead.EditBorder:IsShown() and not WowVoiceTalkingHead.draggingPosition
-    and not frames.WowVoiceTalkingHeadAnchor.moving and WowVoiceTalkingHead:IsShown(),
+assert(not TalkingHeadRu.EditBorder:IsShown() and not TalkingHeadRu.draggingPosition
+    and not frames.TalkingHeadRuAnchor.moving and TalkingHeadRu:IsShown(),
     'locking the playlist finishes the head drag while preserving live playback')
-WowVoiceTalkingHead.scripts.OnDragStart()
-assert(not WowVoiceTalkingHead.draggingPosition, 'the live head must be locked again')
+TalkingHeadRu.scripts.OnDragStart()
+assert(not TalkingHeadRu.draggingPosition, 'the live head must be locked again')
 toggleFrames()
-WowVoiceTalkingHead.Close.scripts.OnClick()
+TalkingHeadRu.Close.scripts.OnClick()
 assert(panel.LockFrames:GetChecked() and not player.editing and Q.current == current and #plays == sounds,
     'closing an unlocked head locks both frames without stopping current audio')
-local onlyDescriptions = WowVoiceDB.queueDescriptionsOnly
+local onlyDescriptions = TalkingHeadRuDB.queueDescriptionsOnly
 panel.Buttons.queueReset.scripts.OnClick()
 assert(WV:GetQuestQueueHeight() == 280 and player:GetHeight() == 280)
-assert(WV:GetQuestQueueScale() == 1 and not WowVoiceDB.queuePosition and select(2, player:GetPoint()) == ChatFrame1)
-assert(WowVoiceDB.queueDescriptionsOnly == onlyDescriptions, 'layout reset leaves playback preferences intact')
+assert(WV:GetQuestQueueScale() == 1 and not TalkingHeadRuDB.queuePosition and select(2, player:GetPoint()) == ChatFrame1)
+assert(TalkingHeadRuDB.queueDescriptionsOnly == onlyDescriptions, 'layout reset leaves playback preferences intact')
 panel:Hide()
 assert(player:IsShown() and not player.editing and Q.current == current and #plays == sounds)
 Lab:Reset()
@@ -162,7 +162,7 @@ Lab:Reset()
 -- The master switch blocks new entries and closes editing, preserving playback.
 WV:OpenOptions()
 Lab:Accept(pool[1].id); Lab:Accept(pool[2].id)
-local acceptPreference, turnInPreference = WowVoiceDB.autoPlayAccept, WowVoiceDB.autoPlayTurnIn
+local acceptPreference, turnInPreference = TalkingHeadRuDB.autoPlayAccept, TalkingHeadRuDB.autoPlayTurnIn
 panel.QueueHeight:SetValue(460)
 toggleFrames()
 player.EditOverlay.scripts.OnDragStart()
@@ -174,7 +174,7 @@ panel.AutoPlay:SetChecked(false)
 panel.AutoPlay.scripts.OnClick(panel.AutoPlay)
 assert(Q:Count() == queuedCount and Q.current == queuedCurrent and #plays == queuedSounds and player:IsShown())
 assert(not player.moving and not player.editing and not WV:IsQuestQueuePreview())
-assert(WowVoiceDB.queuePosition.x == 220 and WowVoiceDB.queuePosition.y == 790,
+assert(TalkingHeadRuDB.queuePosition.x == 220 and TalkingHeadRuDB.queuePosition.y == 790,
     'disabling during a drag saves the current position before hiding the preview')
 assert(WV:GetQuestQueueHeight() == 460 and not panel.QueueHeightInput.focus)
 assert(not panel.QueueHeightInput.mouseEnabled and panel.QueueHeightInput.alpha == 0.45)
@@ -187,14 +187,14 @@ end
 for _, label in ipairs(panel.QueueLabels) do assert(label.alpha == 0.45) end
 assert(panel.LockFrames:GetChecked())
 toggleFrames()
-assert(player.editing and WowVoiceTalkingHead.EditBorder:IsShown() and not panel.LockFrames:GetChecked()
+assert(player.editing and TalkingHeadRu.EditBorder:IsShown() and not panel.LockFrames:GetChecked()
     and #plays == queuedSounds, 'the common lock can position both frames while automatic startup is disabled')
 toggleFrames()
-assert(not player.editing and panel.LockFrames:GetChecked() and not WowVoiceTalkingHead.EditBorder:IsShown())
+assert(not player.editing and panel.LockFrames:GetChecked() and not TalkingHeadRu.EditBorder:IsShown())
 WV:PreviewQuestQueue(true)
 assert(not player.editing, 'stale preview requests must not reopen editing while autoplay is off')
 player.EditOverlay.scripts.OnDragStop()
-assert(player:IsShown() and WowVoiceDB.queuePosition.y == 790)
+assert(player:IsShown() and TalkingHeadRuDB.queuePosition.y == 790)
 assert(not panel.AutoPlayAccept:IsEnabled() and not panel.AutoPlayTurnIn:IsEnabled())
 assert(not panel.QueueDescriptionsOnly:IsEnabled())
 sounds = #plays
@@ -206,21 +206,21 @@ assert(#plays == sounds + 1 and not Q.current and Q:Count() == queuedCount-1,
 WV:Silence()
 Q:Clear()
 event('ADDON_LOADED')
-assert(WowVoiceDB.autoPlay == false)
+assert(TalkingHeadRuDB.autoPlay == false)
 panel.AutoPlay:SetChecked(true)
 panel.AutoPlay.scripts.OnClick(panel.AutoPlay)
 assert(panel.AutoPlayAccept:IsEnabled() and panel.AutoPlayTurnIn:IsEnabled())
-assert(WowVoiceDB.autoPlayAccept == acceptPreference and WowVoiceDB.autoPlayTurnIn == turnInPreference)
+assert(TalkingHeadRuDB.autoPlayAccept == acceptPreference and TalkingHeadRuDB.autoPlayTurnIn == turnInPreference)
 assert(panel.QueueHeight:IsEnabled() and panel.QueueHeightInput.mouseEnabled)
 assert(panel.QueueScale:IsEnabled() and panel.QueueScaleInput.mouseEnabled)
-assert(WV:GetQuestQueueHeight() == 460 and WowVoiceDB.queuePosition.y == 790)
+assert(WV:GetQuestQueueHeight() == 460 and TalkingHeadRuDB.queuePosition.y == 790)
 for _, label in ipairs(panel.QueueLabels) do assert(label.alpha == 1) end
 assert(not WV:IsQuestQueuePreview(), 're-enabling should not reopen the editor automatically')
 -- Also preserve a position from a completed drag, while the editor is still open.
 toggleFrames()
 assert(player:IsShown() and player:GetPoint() == 'TOPLEFT')
 WV:SetAutoPlayEnabled(false)
-assert(not player:IsShown() and not player.editing and WowVoiceDB.queuePosition.y == 790)
+assert(not player:IsShown() and not player.editing and TalkingHeadRuDB.queuePosition.y == 790)
 WV:SetAutoPlayEnabled(true)
 Lab:Reset()
 
@@ -272,7 +272,7 @@ for _, uiScale in ipairs({1, 0.75}) do
         WV:SetQuestQueueScale(scale)
         WV:PreviewQuestQueue(true)
         local left, top = WV:GetTalkingHeadPanelBounds()
-        for _, border in ipairs({player.EditOverlay, frames.WowVoiceTalkingHead.EditBorder}) do
+        for _, border in ipairs({player.EditOverlay, frames.TalkingHeadRu.EditBorder}) do
             near(border.backdrop.edgeSize*border:GetEffectiveScale(), 1)
             assert(border.backdropBorderColor[4] == 1, 'edit outlines must have the same color on different backgrounds')
         end
@@ -281,7 +281,7 @@ for _, uiScale in ipairs({1, 0.75}) do
         assert(100+width < left)
         player:ClearAllPoints()
         player:SetPoint('TOPLEFT', UIParent, 'BOTTOMLEFT', 100/ratio, (top-8)/ratio)
-        local headX, headY = frames.WowVoiceTalkingHeadAnchor:GetCenter()
+        local headX, headY = frames.TalkingHeadRuAnchor:GetCenter()
         player.EditOverlay.scripts.OnDragStart()
         player.scripts.OnUpdate(player, 0.01)
         assert(player.AlignmentGuide:IsShown())
@@ -314,10 +314,10 @@ for _, uiScale in ipairs({1, 0.75}) do
         player.scripts.OnUpdate(player, 0.01)
         assert(player.AlignmentGuide:IsShown())
         player.EditOverlay.scripts.OnDragStop()
-        near(WowVoiceDB.queuePosition.x, 125)
-        near(WowVoiceDB.queuePosition.y, top)
+        near(TalkingHeadRuDB.queuePosition.x, 125)
+        near(TalkingHeadRuDB.queuePosition.y, top)
         assert(not player.AlignmentGuide:IsShown())
-        local hx, hy = frames.WowVoiceTalkingHeadAnchor:GetCenter()
+        local hx, hy = frames.TalkingHeadRuAnchor:GetCenter()
         near(hx, headX); near(hy, headY)
         -- Overlapping panels do not trigger this side-by-side alignment.
         player:ClearAllPoints()
@@ -367,8 +367,8 @@ for _, uiScale in ipairs({1, 0.75}) do
                 near(player.dragging.finalX, wantedX)
                 near(player.dragging.finalY, wantedY)
                 player.EditOverlay.scripts.OnDragStop()
-                near(WowVoiceDB.queuePosition.x, wantedX)
-                near(WowVoiceDB.queuePosition.y, wantedY)
+                near(TalkingHeadRuDB.queuePosition.x, wantedX)
+                near(TalkingHeadRuDB.queuePosition.y, wantedY)
                 assert(not player.AlignmentGuide:IsShown())
             end
         end
@@ -378,14 +378,14 @@ end
 GetCursorPosition, UIParent.scale = oldCursor, oldUIScale
 frames.WowVoiceHeadScaleEvents.scripts.OnEvent()
 -- Numeric placement is atomic, accepts signed decimals and shares the screen-center origin.
-local beforePosition = WowVoiceDB.queuePosition
+local beforePosition = TalkingHeadRuDB.queuePosition
 panel.QueuePositionX:SetFocus()
 panel.QueuePositionX:SetText('-120,5')
 panel.QueuePositionX.scripts.OnTabPressed(panel.QueuePositionX)
 assert(panel.QueuePositionY.focus and not panel.QueuePositionX.focus)
 panel.QueuePositionY:SetText('bad')
 panel.Buttons.applyQueuePosition.scripts.OnClick()
-assert(WowVoiceDB.queuePosition == beforePosition, 'invalid Y must not partially apply X')
+assert(TalkingHeadRuDB.queuePosition == beforePosition, 'invalid Y must not partially apply X')
 WV:RefreshHeadOptions()
 assert(panel.QueuePositionX:GetText() == '-120,5' and panel.QueuePositionY:GetText() == 'bad')
 panel.QueuePositionY:SetText('200.25')
@@ -397,9 +397,9 @@ assert(player.autoPreview and not player.editing and panel.LockFrames:GetChecked
 panel.QueuePositionX:SetFocus(); panel.QueuePositionX:SetText('999')
 panel.QueuePositionX.scripts.OnEscapePressed()
 near(tonumber(panel.QueuePositionX:GetText()), nx)
-beforePosition = WowVoiceDB.queuePosition
+beforePosition = TalkingHeadRuDB.queuePosition
 assert(not WV:SetQuestQueuePosition(math.huge, 0) and not WV:SetQuestQueuePosition(0, 0/0))
-assert(WowVoiceDB.queuePosition == beforePosition)
+assert(TalkingHeadRuDB.queuePosition == beforePosition)
 panel.QueuePositionX:SetText('99999'); panel.QueuePositionY:SetText('99999')
 panel.Buttons.applyQueuePosition.scripts.OnClick()
 local ratio = player:GetEffectiveScale()/UIParent:GetEffectiveScale()
@@ -407,7 +407,7 @@ near(tonumber(panel.QueuePositionX:GetText()), UIParent:GetWidth()/2-(player:Get
 near(tonumber(panel.QueuePositionY:GetText()), UIParent:GetHeight()/2)
 panel.QueuePositionX:SetFocus(); panel.QueuePositionX:SetText('123')
 panel.Buttons.queueReset.scripts.OnClick()
-assert(not panel.editingQueuePosition and not WowVoiceDB.queuePosition)
+assert(not panel.editingQueuePosition and not TalkingHeadRuDB.queuePosition)
 panel:Hide()
 assert(not panel.QueuePositionX.focus and not panel.QueuePositionY.focus)
 -- Even an untouched default location uses the visible top-left as its scale pivot.
@@ -419,7 +419,7 @@ for _, chat in ipairs({false, scaleChat}) do
     ChatFrame1 = chat or nil
     WV:ResetQuestQueueLayout()
     WV:PreviewQuestQueue(true)
-    assert(not WowVoiceDB.queuePosition)
+    assert(not TalkingHeadRuDB.queuePosition)
     local pivotX, pivotY = WV:GetQuestQueuePosition()
     for _, percent in ipairs({80, 120, 100}) do
         panel.QueueScale:SetValue(percent)
@@ -462,7 +462,7 @@ local current, count, soundCount = Q.current, Q:Count(), #plays
 local initialX, initialY = WV:GetQuestQueuePosition()
 UIParent:Show()
 UIParent:SetAlpha(0)
-assert(visibleAlpha(control) == 0 and visibleAlpha(player) > 0 and WowVoiceTalkingHead:IsVisible(),
+assert(visibleAlpha(control) == 0 and visibleAlpha(player) > 0 and TalkingHeadRu:IsVisible(),
     'DialogueUI fade must not fade the playlist or talking head')
 UIParent:Hide()
 assert(visibleAlpha(control) == 0 and visibleAlpha(player) > 0,
@@ -473,7 +473,7 @@ for _, scale in ipairs({0.75, 1}) do
     UIParent.scale = scale
     frames.WowVoiceHeadScaleEvents.scripts.OnEvent()
     queueRoot.scripts.OnEvent()
-    near(player:GetEffectiveScale(), WowVoiceTalkingHead:GetEffectiveScale() * WV:GetQuestQueueScale())
+    near(player:GetEffectiveScale(), TalkingHeadRu:GetEffectiveScale() * WV:GetQuestQueueScale())
     assert(visibleAlpha(player) > 0)
 end
 assert(Q.current == current and Q:Count() == count and #plays == soundCount,

@@ -36,7 +36,7 @@ end
 local colors = { wowvoice = {0.25, 0.7, 1}, catquest = {1, 0.55, 0.2} }
 local function playIcon(parent, color)
     local icon = parent:CreateTexture(nil, "ARTWORK")
-    icon:SetTexture("Interface\\AddOns\\WowVoiceTalkingHead\\Media\\Play.tga")
+    icon:SetTexture("Interface\\AddOns\\TalkingHeadRu\\Media\\Play.tga")
     icon:SetSize(24, 24)
     icon:SetPoint("CENTER", parent, "CENTER", 0, 0)
     icon:SetVertexColor(unpack(color))
@@ -45,7 +45,7 @@ end
 
 local function unavailableMark(parent)
     local mark = parent:CreateTexture(nil, "OVERLAY")
-    mark:SetTexture("Interface\\AddOns\\WowVoiceTalkingHead\\Media\\QueueClose.png")
+    mark:SetTexture("Interface\\AddOns\\TalkingHeadRu\\Media\\QueueClose.png")
     -- This glyph's diagonal tips reach the play icon's rim at equal texture
     -- size. Anchor to the icon itself: legend frames are smaller than buttons.
     mark:SetAllPoints(parent.Icon)
@@ -99,7 +99,7 @@ local function attachQuestSuggestions(frame, input)
             source = Comparison.Resolve(id, "wowvoice") and "wowvoice" or "catquest"
         end
         if not Comparison.Resolve(id, source) then
-            DEFAULT_CHAT_FRAME:AddMessage("WowVoice TalkingHead: для описания этого квеста нет записи в установленном аудиопаке")
+            DEFAULT_CHAT_FRAME:AddMessage("TalkingHead Ru: для описания этого квеста нет записи в установленном аудиопаке")
             return false
         end
         input:ClearFocus()
@@ -132,7 +132,7 @@ local function attachQuestSuggestions(frame, input)
                     button.Icon = playIcon(button, colors[source])
                     button.UnavailableMark = unavailableMark(button)
                     button.SelectedMark = button:CreateTexture(nil, "OVERLAY")
-                    button.SelectedMark:SetTexture("Interface\\AddOns\\WowVoiceTalkingHead\\Media\\PlaySelected.tga")
+                    button.SelectedMark:SetTexture("Interface\\AddOns\\TalkingHeadRu\\Media\\PlaySelected.tga")
                     button.SelectedMark:SetAllPoints(button.Icon)
                     button.SelectedMark:Hide()
                     button:SetScript("OnEnter", function(self)

@@ -4,7 +4,7 @@ command('options')
 WV:RefreshHeadOptions()
 local panel=frames.WowVoiceOptionsPanel
 local slider,input=panel.ScaleSlider,panel.ScaleInput
-local head,anchor=frames.WowVoiceTalkingHead,frames.WowVoiceTalkingHeadAnchor
+local head,anchor=frames.TalkingHeadRu,frames.TalkingHeadRuAnchor
 local function assertTextScaling(smooth)
     for _,text in ipairs({head.Name,head.Body,head.TextMeasure}) do
         assert(text:GetSmoothScaling()==smooth,'smooth glyph scaling must only be active during dragging')
@@ -19,11 +19,11 @@ local played,stopped=#plays,#stops
 WV:ToggleHeadPreview()
 for _,percent in ipairs({50,87,100,150}) do
     slider:SetValue(percent)
-    assert(head:GetScale()==percent/100 and WowVoiceDB.headScale==percent/100)
+    assert(head:GetScale()==percent/100 and TalkingHeadRuDB.headScale==percent/100)
     assert(input:GetText()==tostring(percent))
     assert(math.abs(anchor:GetWidth()-head:GetWidth()*percent/100)<0.0001)
     assert(anchor:GetHeight()==head:GetHeight()*percent/100)
-    assert(WowVoiceDB.headPosition==nil,'scaling must retain the automatic action-bar anchor')
+    assert(TalkingHeadRuDB.headPosition==nil,'scaling must retain the automatic action-bar anchor')
 end
 assert(#plays==played and #stops==stopped,'changing scale must not play audio')
 -- Dragging must never call the model/text layout path until release.
@@ -63,7 +63,7 @@ for _,percent in ipairs({110,80,112}) do
     slider.scripts.OnUpdate(slider)
     WV:RefreshHeadOptions()
     assert(input:GetText()==tostring(percent) and slider.value==percent)
-    assert(snapshot:GetScale()==percent/100 and head:GetScale()==1.5 and WowVoiceDB.headScale==1.5 and scaleCalls==0,
+    assert(snapshot:GetScale()==percent/100 and head:GetScale()==1.5 and TalkingHeadRuDB.headScale==1.5 and scaleCalls==0,
         'dragging must scale the captured texture, never the live panel')
     assert(head:GetParent()==capture and head.Model:GetEffectiveScale()==capturedScale)
     assert(capture.captures==1 and snapshot.Texture.snapshotID==1,'reuse one immutable capture throughout the drag')
@@ -105,7 +105,7 @@ panel:Hide()
 mouseDown=false
 panel:Show()
 slider.scripts.OnUpdate(slider)
-assert(head:GetScale()==0.9 and WowVoiceDB.headScale==0.9 and scaleCalls==2)
+assert(head:GetScale()==0.9 and TalkingHeadRuDB.headScale==0.9 and scaleCalls==2)
 assert(not head.Model:GetPaused(),'closing options must unpause the model')
 assertTextScaling(false)
 assert(head:GetParent()==anchor and not snapshot:IsShown() and capture.snapshotID==nil)
@@ -119,7 +119,7 @@ for _,mode in ipairs({'error','empty','apply-failed'}) do
     assert(WV:SetHeadScale(1.2,true))
     for i=1,6 do capture:RenderFrame() end
     assert(head:GetParent()==anchor and head:GetScale()==1.2 and not snapshot:IsShown())
-    assert(head.Model:GetPaused() and WowVoiceDB.headScale==0.9)
+    assert(head.Model:GetPaused() and TalkingHeadRuDB.headScale==0.9)
     local refreshes=head.Model.cameraRefreshes
     local rectUpdates=head.TextScroll.scrollRectUpdates
     local frozenOffset,frozenPlan=head.TextScroll:GetVerticalScroll(),head.scrollPlan
@@ -166,16 +166,16 @@ for _,mode in ipairs({'empty','apply-nil'}) do
     assert(math.abs(visual:GetScale()-0.901)<0.000001 and input:GetText()=='90')
     slider:SetValue(90.4)
     visual.scripts.OnUpdate(visual)
-    assert(math.abs(visual:GetScale()-0.904)<0.000001 and WowVoiceDB.headScale==0.9,
+    assert(math.abs(visual:GetScale()-0.904)<0.000001 and TalkingHeadRuDB.headScale==0.9,
         'sub-percent changes must render without writing the saved scale')
     slider.scripts.OnMouseUp(slider,'LeftButton')
-    assert(head:GetScale()==0.9 and slider.value==90 and WowVoiceDB.headScale==0.9,
+    assert(head:GetScale()==0.9 and slider.value==90 and TalkingHeadRuDB.headScale==0.9,
         'release must remove fractional preview scale even when the saved percent is unchanged')
     slider.scripts.OnMouseDown(slider,'LeftButton')
     slider:SetValue(90.6)
     for i=1,6 do capture:RenderFrame() end
     slider.scripts.OnMouseUp(slider,'LeftButton')
-    assert(head:GetScale()==0.91 and WowVoiceDB.headScale==0.91 and input:GetText()=='91',
+    assert(head:GetScale()==0.91 and TalkingHeadRuDB.headScale==0.91 and input:GetText()=='91',
         'release must commit the nearest whole percent')
     assertTextScaling(false)
 end
@@ -196,7 +196,7 @@ assertTextScaling(false)
 assert(slider.value==87 and head:GetScale()==0.87 and not input.focus)
 for _,text in ipairs({'','49','151','abc','87.5','1e2'}) do
     enter(text)
-    assert(head:GetScale()==0.87 and WowVoiceDB.headScale==0.87 and input.focus)
+    assert(head:GetScale()==0.87 and TalkingHeadRuDB.headScale==0.87 and input.focus)
     assert(panel.Status:GetText()~='')
 end
 input.scripts.OnEscapePressed(input)
@@ -242,7 +242,7 @@ samePivot(); assert(settings.scale==1)
 assert(slider.value==100 and input:GetText()=='100')
 WV:SetHeadScale(1.25)
 panel.Buttons.reset.scripts.OnClick()
-assert(WowVoiceDB.headPosition==nil and head:GetScale()==1.25,'position reset must preserve scale')
+assert(TalkingHeadRuDB.headPosition==nil and head:GetScale()==1.25,'position reset must preserve scale')
 panel:Hide()
 panel:Show()
 assert(input:GetText()=='125' and slider.value==125 and not head:IsShown())
@@ -271,7 +271,7 @@ assert(not head.Model:GetPaused() and head:GetScale()==1.1,'stopping playback mu
 assert(not snapshot:IsShown() and head:GetParent()==anchor,'stopping audio must remove the visible snapshot')
 UIParent:SetSize(700,400)
 local ok,reason=WV:SetHeadScale(1.5)
-assert(not ok and reason and WowVoiceDB.headScale==1.1,'oversized panels must leave settings unchanged')
+assert(not ok and reason and TalkingHeadRuDB.headScale==1.1,'oversized panels must leave settings unchanged')
 UIParent:SetSize(1920,1080)
 UIParent.scale=1
 WV:ResetHeadSettings()
@@ -482,14 +482,14 @@ assert(head:IsShown() and starts==1 and head.Model:GetPaused() and math.abs(head
 assert(#plays==playsBefore and #stops==stopsBefore,'automatic preview must not start audio')
 held=false
 slider.scripts.OnMouseUp(slider,'LeftButton')
-assert(head:IsShown() and not head.Model:GetPaused() and WowVoiceDB.headScale==1.15,
+assert(head:IsShown() and not head.Model:GetPaused() and TalkingHeadRuDB.headScale==1.15,
     'release must retain the panel during its fade and commit the saved scale')
 held=true
 slider.scripts.OnMouseDown(slider,'LeftButton')
 slider:SetValue(126.2); head.scripts.OnUpdate(head)
 assert(starts==1,'dragging an existing test must not toggle it off or restart it')
 panel:Hide(); held=false
-assert(not head:IsShown() and WowVoiceDB.headScale==1.15 and not head.TextScaleLayer.Group.playing,
+assert(not head:IsShown() and TalkingHeadRuDB.headScale==1.15 and not head.TextScaleLayer.Group.playing,
     'closing options must cancel a drag and close the automatically opened test')
 panel:Show()
 assert(WV:ReplayQuest(179))

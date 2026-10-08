@@ -7,12 +7,12 @@ BottomManagedFrameContainer:SetSize(573,1)
 assert(BottomManagedFrameContainer:GetCenter()==nil)
 command('options')
 WV:GetHeadSettings()
-local head,anchor=frames.WowVoiceTalkingHead,frames.WowVoiceTalkingHeadAnchor
+local head,anchor=frames.TalkingHeadRu,frames.TalkingHeadRuAnchor
 assert(anchor:GetCenter()~=nil and anchor:GetPoint()=='BOTTOM')
 do
     local settings=WV:GetHeadSettings()
     assert(type(settings.x)=='number' and type(settings.y)=='number')
-    assert(WowVoiceDB.headPosition==nil)
+    assert(TalkingHeadRuDB.headPosition==nil)
 end
 assert(WV:ReplayQuest(179))
 assert(head:IsVisible() and head.Model.portraitReady and anchor:GetCenter()~=nil)
@@ -27,21 +27,21 @@ BottomManagedFrameContainer:ClearAllPoints()
 assert(anchor:GetCenter()==nil)
 head.scripts.OnUpdate()
 assert(select(2,anchor:GetPoint())==UIParent and anchor:GetCenter()~=nil)
-assert(#plays==played and #stops==stopped and WowVoiceDB.headPosition==nil)
+assert(#plays==played and #stops==stopped and TalkingHeadRuDB.headPosition==nil)
 
 -- Simulate GetCenter remaining nil until the client's next layout pass.
 local getCenter=anchor.GetCenter
 anchor.GetCenter=function() return nil,nil end
-WowVoiceDB.headPosition={'CENTER','CENTER',123,-200}
+TalkingHeadRuDB.headPosition={'CENTER','CENTER',123,-200}
 local settings=WV:GetHeadSettings()
 assert(settings.x==123 and settings.y==-200)
-assert(WowVoiceDB.headPosition[3]==123 and WowVoiceDB.headPosition[4]==-200)
-WowVoiceDB.headPosition={'BOTTOMLEFT','BOTTOMLEFT',20,30}
+assert(TalkingHeadRuDB.headPosition[3]==123 and TalkingHeadRuDB.headPosition[4]==-200)
+TalkingHeadRuDB.headPosition={'BOTTOMLEFT','BOTTOMLEFT',20,30}
 settings=WV:GetHeadSettings()
 assert(settings.x==20+head:GetWidth()/2-UIParent:GetWidth()/2)
 assert(settings.y==30+head:GetHeight()/2-UIParent:GetHeight()/2)
 WV:ResetHeadPosition()
-assert(WowVoiceDB.headPosition==nil)
+assert(TalkingHeadRuDB.headPosition==nil)
 settings=WV:GetHeadSettings()
 assert(type(settings.x)=='number' and type(settings.y)=='number')
 anchor.GetCenter=getCenter

@@ -1,17 +1,17 @@
 event('ADDON_LOADED')
 local WV=WowVoice
-assert(WowVoiceDB.autoPlayTurnIn==true, 'turn-in autoplay defaults on')
+assert(TalkingHeadRuDB.autoPlayTurnIn==true, 'turn-in autoplay defaults on')
 command('options')
 local panel=frames.WowVoiceOptionsPanel
 assert(panel.AutoPlayTurnIn:GetChecked()==true)
 
 -- Exercise the actual control, including updating an existing saved database.
-WowVoiceDB.autoPlayTurnIn=nil
+TalkingHeadRuDB.autoPlayTurnIn=nil
 event('ADDON_LOADED')
-assert(WowVoiceDB.autoPlayTurnIn==true)
+assert(TalkingHeadRuDB.autoPlayTurnIn==true)
 panel.AutoPlayTurnIn:SetChecked(false)
 panel.AutoPlayTurnIn.scripts.OnClick(panel.AutoPlayTurnIn)
-assert(WowVoiceDB.autoPlayTurnIn==false and WowVoiceDB.autoPlayAccept==true)
+assert(TalkingHeadRuDB.autoPlayTurnIn==false and TalkingHeadRuDB.autoPlayAccept==true)
 event('ADDON_LOADED')
 WV:RefreshHeadOptions()
 assert(panel.AutoPlayTurnIn:GetChecked()==false, 'opt-out survives initialization')
@@ -24,7 +24,7 @@ for _,id in ipairs({179,861,3911}) do
     end
 end
 assert(#plays==0 and #stops==0)
-assert(not frames.WowVoiceTalkingHead or not frames.WowVoiceTalkingHead:IsShown())
+assert(not frames.TalkingHeadRu or not frames.TalkingHeadRu:IsShown())
 restored('1','0.37')
 
 -- Acceptance stays automatic and turn-in events do not replace active audio.
@@ -49,7 +49,7 @@ WV:Silence()
 count,stopped=#plays,#stops
 panel.AutoPlayTurnIn:SetChecked(true)
 panel.AutoPlayTurnIn.scripts.OnClick(panel.AutoPlayTurnIn)
-assert(#plays==count and #stops==stopped and WowVoiceDB.autoPlayAccept==false)
+assert(#plays==count and #stops==stopped and TalkingHeadRuDB.autoPlayAccept==false)
 event('ADDON_LOADED')
 WV:RefreshHeadOptions()
 assert(panel.AutoPlayTurnIn:GetChecked()==true)

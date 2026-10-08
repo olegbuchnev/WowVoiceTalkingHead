@@ -1,15 +1,15 @@
 event('ADDON_LOADED')
-WowVoiceDB.autoPlayAccept = true
+TalkingHeadRuDB.autoPlayAccept = true
 event('PLAYER_LOGIN')
 command('debug on')
 local WV=WowVoice
 
 -- Viewing is transient; accept commits the exact appearance for this character.
 event('QUEST_DETAIL')
-local head = frames.WowVoiceTalkingHead
+local head = frames.TalkingHeadRu
 assert(head.visible and head.Model.displayID==1234 and head.Model.animation==60)
 assert(head.Name.text==npcName and head.Title.text==GetTitleText())
-assert(not WowVoiceDB.questSpeakers or not questCache() or not questCache()[179])
+assert(not TalkingHeadRuDB.questSpeakers or not questCache() or not questCache()[179])
 portraitEvent('QUEST_ACCEPTED',179)
 assert(questCache()[179].displayID==1234 and questCache()[179].npcID==658)
 local first=questCache()[179]
@@ -35,7 +35,7 @@ local stopsBefore=#stops
 portraitEvent('QUEST_TURNED_IN',179)
 portraitEvent('QUEST_REMOVED',179)
 assert(not questCache()[179] and head.visible and #stops==stopsBefore)
-tick(now+WowVoiceDur['179c']+WowVoiceDB.tail+0.01)
+tick(now+WowVoiceDur['179c']+TalkingHeadRuDB.tail+0.01)
 assert(head.visible and head.Model.animation==0)
 now=now+1
 head.scripts.OnUpdate()
@@ -106,13 +106,13 @@ now=now+2
 assert(head.visible and #plays==soundCount)
 head.scripts.OnUpdate()
 assert(head.Progress.value>0)
-local anchor=frames.WowVoiceTalkingHeadAnchor
-local beforeDrag=WowVoiceDB.headPosition
+local anchor=frames.TalkingHeadRuAnchor
+local beforeDrag=TalkingHeadRuDB.headPosition
 head.scripts.OnDragStart(head)
 assert(not anchor.moving)
 head.scripts.OnDragStop(head)
-assert(WowVoiceDB.headPosition==beforeDrag)
-command('head reset'); assert(WowVoiceDB.headPosition==nil and anchor.points[1][1]=='BOTTOM')
+assert(TalkingHeadRuDB.headPosition==beforeDrag)
+command('head reset'); assert(TalkingHeadRuDB.headPosition==nil and anchor.points[1][1]=='BOTTOM')
 command('diag'); assert(has('Portrait:'))
 WV:Silence(); restored('1','0.37')
 command('debug off'); messages={}

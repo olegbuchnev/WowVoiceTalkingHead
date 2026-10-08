@@ -97,7 +97,7 @@ end
 print('PASS: all model IDs resolve, female orcs have dedicated framing, other orc/tauren mappings preserve accepted framing')
 
 WV:ToggleHeadPreview()
-local head=frames.WowVoiceTalkingHead
+local head=frames.TalkingHeadRu
 head.Model.modelFileID=8125066
 head.Model:CompleteLoad(1234)
 assert(head.Model.cameraProfile=='model:8125066' and head.Model.cameraFileID==8125066

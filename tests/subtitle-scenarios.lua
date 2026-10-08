@@ -1,11 +1,11 @@
 event('ADDON_LOADED')
-WowVoiceDB.autoPlayAccept = true
+TalkingHeadRuDB.autoPlayAccept = true
 event('PLAYER_LOGIN')
 local WV=WowVoice
 local description=string.rep('A long description with words and spaces. ',80)
 GetQuestText=function() return description end
 event('QUEST_DETAIL')
-local head=frames.WowVoiceTalkingHead
+local head=frames.TalkingHeadRu
 assert(head.Body.text==description and head.textRange>0)
 assert(head.TextScroll.scroll==0)
 local started=now
@@ -83,8 +83,8 @@ restored('1','0.37')
 sounds=#plays
 command('options'); command('options')
 local panel=frames.WowVoiceOptionsPanel
-local anchor=frames.WowVoiceTalkingHeadAnchor
-assert(panel.visible and #settingsCategories==1 and settingsCategories[1].name=='WowVoice TalkingHead')
+local anchor=frames.TalkingHeadRuAnchor
+assert(panel.visible and #settingsCategories==1 and settingsCategories[1].name=='TalkingHead Ru')
 assert(panel.Presets==nil and panel.Enabled==nil)
 local function fill(width,height,scale,x,y)
     return WV:ApplyHeadSettings({width=width,height=height,scale=scale/100,x=x,y=y})
@@ -92,29 +92,29 @@ end
 assert(head.RetailBackground.visible)
 assert(panel.Fields==nil and panel.Buttons.apply==nil)
 fill(520,260,125,125.5,-250.25)
-local p=WowVoiceDB.headPosition
+local p=TalkingHeadRuDB.headPosition
 assert(p[1]=='CENTER' and p[2]=='CENTER' and p[3]==125.5 and p[4]==-250.25)
 assert(head.width==520 and head.height==260 and head.scale==1.25)
 assert(anchor.width==650 and anchor.height==325)
 assert(head.TextScroll.width==326 and head.TextScroll.height==195)
 panel.Buttons.center.scripts.OnClick()
-assert(WowVoiceDB.headPosition[3]==-1.25 and WowVoiceDB.headPosition[4]==-250.25)
+assert(TalkingHeadRuDB.headPosition[3]==-1.25 and TalkingHeadRuDB.headPosition[4]==-250.25)
 assert(select(1,WV:GetHeadAnchorPosition())==0, 'horizontal center uses the visible panel at any scale')
-local unchanged=WowVoiceDB.headPosition
+local unchanged=TalkingHeadRuDB.headPosition
 for _,bad in ipairs({'bad','',math.huge}) do
     assert(not fill(520,260,125,bad,0))
-    assert(WowVoiceDB.headPosition==unchanged)
+    assert(TalkingHeadRuDB.headPosition==unchanged)
 end
 assert(not fill(520,260,10,0,0))
-assert(WowVoiceDB.headPosition==unchanged and head.scale==1.25)
+assert(TalkingHeadRuDB.headPosition==unchanged and head.scale==1.25)
 assert(not fill(1000,600,200,0,0))
-assert(WowVoiceDB.headPosition==unchanged,'oversized panel must be rejected')
+assert(TalkingHeadRuDB.headPosition==unchanged,'oversized panel must be rejected')
 fill(520,260,125,999999,-999999)
-assert(WowVoiceDB.headPosition[3]==(1920-anchor.width)/2+13*head.scale)
-assert(WowVoiceDB.headPosition[4]==-(1080-anchor.height)/2)
+assert(TalkingHeadRuDB.headPosition[3]==(1920-anchor.width)/2+13*head.scale)
+assert(TalkingHeadRuDB.headPosition[4]==-(1080-anchor.height)/2)
 fill(520,260,125,125.5,-250.25)
 panel.Buttons.reset.scripts.OnClick()
-assert(WowVoiceDB.headPosition==nil and anchor.points[1][1]=='BOTTOM')
+assert(TalkingHeadRuDB.headPosition==nil and anchor.points[1][1]=='BOTTOM')
 assert(head.width==520 and head.height==260 and head.scale==1.25, 'position reset preserves size')
 WV:ResetHeadSettings()
 print('PASS: native Settings category, legacy geometry, centering, validation and screen bounds')
@@ -132,10 +132,10 @@ assert(head.TextScroll.scroll==0,'preview loops after 30 seconds')
 head.scripts.OnDragStart(head); assert(anchor.moving)
 anchor:ClearAllPoints(); anchor:SetPoint('CENTER',UIParent,'CENTER',123,-234)
 head.scripts.OnDragStop(head)
-assert(not anchor.moving and WowVoiceDB.headPosition[3]==123 and WowVoiceDB.headPosition[4]==-234)
+assert(not anchor.moving and TalkingHeadRuDB.headPosition[3]==123 and TalkingHeadRuDB.headPosition[4]==-234)
 WV:RefreshHeadOptions()
 assert(head.visible and head.mouseEnabled and head.Model.unit=='player')
-assert(WowVoiceDB.headPosition[3]==123 and WowVoiceDB.headPosition[4]==-234)
+assert(TalkingHeadRuDB.headPosition[3]==123 and TalkingHeadRuDB.headPosition[4]==-234)
 assert(#plays==sounds and #stops==beforeStops)
 restored('1','0.37')
 panel:Hide(); assert(not head.visible and not head.mouseEnabled)
@@ -183,7 +183,7 @@ do
         and head.Name.text=='Тестовый персонаж')
     head.scripts.OnDragStart(head); assert(anchor.moving)
     head.scripts.OnDragStop(head); assert(not anchor.moving)
-    tick(now+WowVoiceDur['179a']+WowVoiceDB.tail+1)
+    tick(now+WowVoiceDur['179a']+TalkingHeadRuDB.tail+1)
     head.scripts.OnUpdate()
     assert(head.visible and head.mouseEnabled and head.Model.unit=='player',
         'the old playback deadline must not close or replace the preview')

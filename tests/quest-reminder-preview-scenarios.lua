@@ -47,7 +47,7 @@ assert(messages[1][2] == 1 and messages[1][3] == 1 and messages[1][4] == 0)
 assert(messages[1][1] == 'Objective for 179: 1/5')
 assert(replay[179].ProgressGlow.visible and not replay[192].ProgressGlow.visible,
     'only the selected quest glows')
-assert(#plays == 0 and not WowVoiceDB.listenedQuests and not WowVoiceDB.lastAcceptedQuest,
+assert(#plays == 0 and not TalkingHeadRuDB.listenedQuests and not TalkingHeadRuDB.lastAcceptedQuest,
     'showing mock must not start audio, a cooldown or an acceptance record')
 updateAt(start + 4.9)
 assert(frame.visible and frame.alpha < 1, 'fade fits within five seconds')
@@ -117,31 +117,31 @@ assert(#messages == count and not frame.visible)
 command('remindertest 179')
 frame.scripts.OnClick(frame)
 assert(not frame.visible and plays[#plays].file:find('179a.ogg', 1, true))
-assert(not WowVoiceDB.listenedQuests or not WowVoiceDB.listenedQuests[playerGUID]
-    or not WowVoiceDB.listenedQuests[playerGUID][179], 'mock playback must not start a cooldown')
+assert(not TalkingHeadRuDB.listenedQuests or not TalkingHeadRuDB.listenedQuests[playerGUID]
+    or not TalkingHeadRuDB.listenedQuests[playerGUID][179], 'mock playback must not start a cooldown')
 assert(not replay[179].ProgressGlow.visible, 'click also clears test glow')
 WV:Silence()
 command('remindertest 179')
 updateAt(now + 6)
 assert(not frame.visible and replay[179].ProgressGlow.visible)
 replay[179].scripts.OnClick(replay[179])
-assert(not WowVoiceDB.listenedQuests or not WowVoiceDB.listenedQuests[playerGUID]
-    or not WowVoiceDB.listenedQuests[playerGUID][179], 'mock tracker click must not start a cooldown either')
+assert(not TalkingHeadRuDB.listenedQuests or not TalkingHeadRuDB.listenedQuests[playerGUID]
+    or not TalkingHeadRuDB.listenedQuests[playerGUID][179], 'mock tracker click must not start a cooldown either')
 WV:Silence()
 assert(WV:ReplayQuest(179), 'ordinary replay still works after test ends')
-local deadline = WowVoiceDB.listenedQuests[playerGUID][179]
+local deadline = TalkingHeadRuDB.listenedQuests[playerGUID][179]
 assert(deadline == serverNow + 1800, 'ordinary replay still sets the real cooldown')
 command('remindertest 179')
-assert(replay[179].ProgressGlow.visible and WowVoiceDB.listenedQuests[playerGUID][179] == deadline,
+assert(replay[179].ProgressGlow.visible and TalkingHeadRuDB.listenedQuests[playerGUID][179] == deadline,
     'mock can preview an existing cooldown without changing it')
 serverNow = serverNow + 30
 frame.scripts.OnClick(frame)
-assert(WowVoiceDB.listenedQuests[playerGUID][179] == deadline, 'mock playback never extends or clears a real cooldown')
+assert(TalkingHeadRuDB.listenedQuests[playerGUID][179] == deadline, 'mock playback never extends or clears a real cooldown')
 command('remindertest 192')
 updateAt(now + 11)
 assert(not WV:IsQuestReminderTest(192), 'expired mock cannot exempt later manual playback')
 assert(WV:ReplayQuest(192))
-assert(WowVoiceDB.listenedQuests[playerGUID][192] == serverNow + 1800)
+assert(TalkingHeadRuDB.listenedQuests[playerGUID][192] == serverNow + 1800)
 command('remindertest off')
 WV:Silence()
 -- Use rendered message bounds, not the fixed container height or message count.

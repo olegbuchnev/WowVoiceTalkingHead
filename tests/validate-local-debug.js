@@ -8,7 +8,7 @@ function run(file) {
   if (status !== lua.LUA_OK) throw Error(to_jsstring(lua.lua_tostring(L, -1)));
 }
 for (const file of ['mock.lua', 'journal-mock.lua', 'portrait-mock.lua', 'local-debug-mock.lua']) run(path.join(__dirname, file));
-for (const file of fs.readFileSync(path.join(root, 'WowVoiceTalkingHead.toc'), 'utf8').split(/\r?\n/).filter(s => s.endsWith('.lua'))) run(path.join(root, file));
+for (const file of fs.readFileSync(path.join(root, 'TalkingHeadRu.toc'), 'utf8').split(/\r?\n/).filter(s => s.endsWith('.lua'))) run(path.join(root, file));
 run(path.join(__dirname, 'catquest-pack-mock.lua'));
 run(path.join(__dirname, 'local-debug-release-scenarios.lua'));
 run(path.join(__dirname, 'local-debug-scenarios.lua'));

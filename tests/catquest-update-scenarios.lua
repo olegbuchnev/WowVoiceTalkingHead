@@ -25,7 +25,7 @@ assert(WV:ReplayQuest(5) and plays[#plays].file == migrated.path)
 local handle = plays[#plays].handle
 tick(now + 19.893625)
 assert(stops[#stops] ~= handle, 'the old 0.2.2 duration must not end the longer 0.3.0 recording')
-tick(now + (20.10425 - 19.893625) + WowVoiceDB.tail + 0.01)
+tick(now + (20.10425 - 19.893625) + TalkingHeadRuDB.tail + 0.01)
 assert(stops[#stops] == handle)
 for _, playerSex in ipairs({2,3}) do
     sex = playerSex
@@ -114,7 +114,7 @@ for _, playerSex in ipairs({2,3}) do
     assert(resolved and resolved.duration == 10.25 and not resolved.verified)
     assert(resolved.path:find(playerSex == 3 and '_f.ogg' or '_m.ogg', 1, true))
     assert(S.Text(newID,'a','catquest') == (playerSex == 3 and 'New female text.' or 'New male text.'))
-    assert(WV:ReplayQuest(newID) and frames.WowVoiceTalkingHead.Body:GetText() == S.Text(newID,'a','catquest'))
+    assert(WV:ReplayQuest(newID) and frames.TalkingHeadRu.Body:GetText() == S.Text(newID,'a','catquest'))
     WV:Silence()
 end
 sex = 2
@@ -122,11 +122,11 @@ assert(S.Resolve(newID,'c').path:find('99998_t.ogg',1,true))
 assert(S.QuestIDs()[newID] and WowVoiceComparison.QuestIDs()[newID])
 assert(WowVoiceComparison.Known(newID,'catquest') and not WowVoiceComparison.Known(newID,'wowvoice'))
 assert(WowVoiceComparison.Play(newID,'catquest') and plays[#plays].file == S.Resolve(newID,'a').path)
-assert(frames.WowVoiceTalkingHead.Body:GetText() == 'New male text.')
+assert(frames.TalkingHeadRu.Body:GetText() == 'New male text.')
 WV:Silence()
 record.c = {m={{0,' Changed wording. '},{3,'Second sentence.'}},f={{0,'New female wording.'}}}
 assert(S.Text(99108,'a','catquest') == 'Changed wording. Second sentence.')
-assert(WV:ReplayQuest(99108) and frames.WowVoiceTalkingHead.Body:GetText() == 'Changed wording. Second sentence.')
+assert(WV:ReplayQuest(99108) and frames.TalkingHeadRu.Body:GetText() == 'Changed wording. Second sentence.')
 WV:Silence()
 record.c = nil
 assert(S.Text(99108,'a','catquest') == nil and S.Text(99108,'a') ~= nil,
@@ -142,7 +142,7 @@ assert(S.Resolve(132,'a').duration == 21.25 and WV:ReplayQuest(132))
 local oldPackHandle, oldPackStarted = plays[#plays].handle, now
 tick(oldPackStarted + 21.180792)
 assert(stops[#stops] ~= oldPackHandle, 'small index errors must not cut this old-pack recording')
-tick(oldPackStarted + 21.25 + WowVoiceDB.tail + 0.01)
+tick(oldPackStarted + 21.25 + TalkingHeadRuDB.tail + 0.01)
 assert(stops[#stops] == oldPackHandle)
 quests[132] = old132
 -- Runtime CatQuest remains usable even when our optional snapshots are absent.
@@ -168,7 +168,7 @@ local first, second = S.Resolve(newID, 'a'), S.Resolve(99108, 'a')
 local function context(id)
     return {questId=id,section='a',title='Updated library',speaker={npcID=id,name='NPC'}}
 end
-WowVoiceDB.autoPlay, WowVoiceDB.autoPlayAccept, WowVoiceDB.queueAutoPlay = true, true, true
+TalkingHeadRuDB.autoPlay, TalkingHeadRuDB.autoPlayAccept, TalkingHeadRuDB.queueAutoPlay = true, true, true
 Q:Offer(context(newID)); Q:Accept(newID)
 Q:Offer(context(99108)); Q:Accept(99108)
 assert(Q.current.context.questId == newID and Q:Count() == 2 and plays[#plays].file == first.path)
@@ -178,7 +178,7 @@ assert(#plays == playCount and #stops == stopCount and Q.current.context.questId
     'source refresh must retain active audio, head and queue')
 tick(now + first.duration - 0.01)
 assert(Q.current.context.questId == newID and stops[#stops] ~= activeHandle)
-tick(now + WowVoiceDB.tail + 0.03)
+tick(now + TalkingHeadRuDB.tail + 0.03)
 tick(Q.gap.deadline)
 frames.WowVoiceQuestQueueDriver.scripts.OnUpdate()
 assert(Q.current.context.questId == 99108 and plays[#plays].file == second.path)
@@ -199,7 +199,7 @@ assert(Q.current.context.questId == newID and music[#music] == first.path)
 local started = now
 tick(started + first.duration - 0.01)
 assert(Q.current.context.questId == newID)
-tick(started + first.duration + WowVoiceDB.tail + 0.01)
+tick(started + first.duration + TalkingHeadRuDB.tail + 0.01)
 assert(musicStops > 0)
 tick(Q.gap.deadline)
 frames.WowVoiceQuestQueueDriver.scripts.OnUpdate()

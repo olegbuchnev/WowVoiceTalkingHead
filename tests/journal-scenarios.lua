@@ -80,10 +80,10 @@ first.questID=179
 QuestLogQuests_Update()
 QuestMapFrame_ShowQuestDetails(179)
 assert(play.visible and detailPlay.visible and first.Checkbox.points[1][4]==-26)
-WowVoiceDB.enabled=false
+TalkingHeadRuDB.enabled=false
 play.scripts.OnClick(play)
 assert(#plays==count and #stops==stopCount)
-WowVoiceDB.enabled=true
+TalkingHeadRuDB.enabled=true
 tick(now+40)
 restored('1','0.37')
 
@@ -117,9 +117,9 @@ for _, control in ipairs({play,detailPlay,noAudio}) do
 end
 assert(play.alpha==0.7,'hover feedback must reset')
 assert(#plays==count and #stops==stopCount)
-WowVoiceDB.playTooltips=true
+TalkingHeadRuDB.playTooltips=true
 event('ADDON_LOADED')
-assert(WowVoiceDB.playTooltips==nil,'obsolete preference must be removed')
+assert(TalkingHeadRuDB.playTooltips==nil,'obsolete preference must be removed')
 -- Hovering our controls must not touch another addon's tooltip.
 GameTooltip:SetOwner(QuestMapFrame); GameTooltip:Show()
 detailPlay.scripts.OnEnter(detailPlay)

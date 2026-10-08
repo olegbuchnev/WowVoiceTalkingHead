@@ -13,9 +13,9 @@ UnitSex = function() return sex end
 local prefix = 'Interface\\AddOns\\CatQuest_Voices\\Sounds\\q\\'
 -- Stale manually installed CatVoices and preferences must never affect selection.
 WowVoiceCatVoicePack = {schemaVersion=1,sourceVersion='0.2.2',entries={['99162a']={file='99162.ogg',duration=1}}}
-WowVoiceDB.audioSource = 'bundled'
+TalkingHeadRuDB.audioSource = 'bundled'
 event('ADDON_LOADED')
-assert(WowVoiceDB.audioSource == nil and S.Status().id == 'catquest')
+assert(TalkingHeadRuDB.audioSource == nil and S.Status().id == 'catquest')
 assert(WV:SoundPath(99162,'a') == prefix .. '99162.ogg')
 assert(WV:SoundPath(179,'a'):find('WowVoiceSounds',1,true))
 assert(S.QuestIDs()[99162])
@@ -27,7 +27,7 @@ for _, variant in ipairs({{2,'m',42.481708},{3,'f',38.629833}}) do
     local handle = plays[#plays].handle
     tick(now + seconds - .1)
     assert(stops[#stops] ~= handle)
-    tick(now + .1 + WowVoiceDB.tail + .01)
+    tick(now + .1 + TalkingHeadRuDB.tail + .01)
     assert(stops[#stops] == handle)
 end
 assert(WV:SoundPath(98430,'p') == nil and not WV:HasQuestAudio(99080))
@@ -51,10 +51,10 @@ WV:Silence()
 assert(S.Status() == nil and not WV:HasQuestAudio(99162))
 local before = #plays
 questID = 99162
-WowVoiceDB.autoPlayAccept = true
+TalkingHeadRuDB.autoPlayAccept = true
 event('QUEST_DETAIL'); event('QUEST_PROGRESS'); event('QUEST_COMPLETE')
 assert(not WV:ReplayQuest(99162))
-assert(#plays == before and not frames.WowVoiceTalkingHead:IsShown()
+assert(#plays == before and not frames.TalkingHeadRu:IsShown()
     and WV.questQueue:Count() == 0, 'Absent audio cannot show a head or enter the queue')
 WV.questQueue:Clear()
 messages = {}; event('PLAYER_LOGIN')
@@ -75,14 +75,14 @@ GetQuestLogQuestText = function() error('No selected quest') end
 for _, variant in ipairs({{2,'Приветствую, юный герой.'},{3,'Приветствую, юный героиня.'}}) do
     sex = variant[1]
     assert(WV:ReplayQuest(99108))
-    assert(frames.WowVoiceTalkingHead.Body:GetText():find(variant[2],1,true))
+    assert(frames.TalkingHeadRu.Body:GetText():find(variant[2],1,true))
     WV:Silence()
 end
 assert(S.Text(99108,'c'):find('героиня',1,true))
 assert(S.Text(99108,'p') == nil and S.Text(nil,'a') == nil)
 assert(S.Text(99080,'c') == nil)
 WV:StartTalkingHead({questId=99108, section='a', text='Captured game text'},now+40,40)
-assert(frames.WowVoiceTalkingHead.Body:GetText() == 'Captured game text')
+assert(frames.TalkingHeadRu.Body:GetText() == 'Captured game text')
 WV:StopTalkingHead()
 loaded.CatQuest_Voices = false; CatQuestVoicePack = nil
 assert(S.Text(99108,'a'):find('героиня',1,true))
@@ -147,7 +147,7 @@ assert(WV:GetSharedQuestVoice() == 'catquest', 'saved preference lost on initial
 loaded.CatQuest_Voices = false; WV:RefreshAudioSources()
 assert(not choices.catquest:IsEnabled() and not choices.wowvoice:IsEnabled())
 assert(choices.wowvoice:GetChecked() and not choices.catquest:GetChecked())
-assert(WowVoiceDB.sharedQuestVoice == 'wowvoice', 'Unavailable source must reset the saved preference')
+assert(TalkingHeadRuDB.sharedQuestVoice == 'wowvoice', 'Unavailable source must reset the saved preference')
 assert(not WV:SetSharedQuestVoice('catquest'))
 assert(WV:SoundPath(179, 'a'):find('WowVoiceSounds', 1, true))
 local hint = panel.SharedVoiceTooltip
@@ -179,11 +179,11 @@ WV:Silence(); WV:SetSharedQuestVoice('wowvoice')
 local originalLoaded = C_AddOns.IsAddOnLoaded
 local originalExists, originalError = C_AddOns.DoesAddOnExist, C_AddOns.DoesAddOnHaveLoadError
 C_AddOns.DoesAddOnExist = function(name) return name ~= 'CatQuest_Voices' end
-WowVoiceDB.sharedQuestVoice = 'catquest'
+TalkingHeadRuDB.sharedQuestVoice = 'catquest'
 WV:RefreshAudioSources()
 assert(CatQuestVoicePack.quests and originalLoaded('CatQuest_Voices'))
 assert(not S.Status() and not choices.catquest:IsEnabled() and not WV:SetSharedQuestVoice('catquest'))
-assert(WowVoiceDB.sharedQuestVoice == 'wowvoice' and choices.wowvoice:GetChecked())
+assert(TalkingHeadRuDB.sharedQuestVoice == 'wowvoice' and choices.wowvoice:GetChecked())
 assert(WV:SoundPath(179, 'a'):find('WowVoiceSounds', 1, true))
 C_AddOns.DoesAddOnExist = function() return true end
 C_AddOns.IsAddOnLoaded = function(name) return true, name ~= 'CatQuest_Voices' end
@@ -201,6 +201,6 @@ assert(S.Status() and choices.catquest:IsEnabled())
 assert(WV:SetSharedQuestVoice('catquest'))
 loaded.CatQuest_Voices = false
 WV:RefreshAudioSourceOptions()
-assert(WowVoiceDB.sharedQuestVoice == 'wowvoice' and choices.wowvoice:GetChecked())
+assert(TalkingHeadRuDB.sharedQuestVoice == 'wowvoice' and choices.wowvoice:GetChecked())
 loaded.CatQuest_Voices = true; WV:RefreshAudioSources()
 print('PASS: external-only supplement, stale CatVoices ignored, absent audio skipped, Classic independent, exact timings, text, compatibility and late loading')

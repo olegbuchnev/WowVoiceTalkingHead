@@ -26,7 +26,7 @@ local function capture()
         return false
     end
     baseline = {quests=quests, shared=quests[179], metadata=S.Metadata, resolve=S.Resolve,
-        audio=WowVoiceCatQuestAudio, preference=WowVoiceDB.sharedQuestVoice,
+        audio=WowVoiceCatQuestAudio, preference=TalkingHeadRuDB.sharedQuestVoice,
         version=status.version}
     return true
 end
@@ -97,7 +97,7 @@ local function oneShotOn()
             end
             return true
         end
-        if hadHandle and path == "Interface\\AddOns\\WowVoiceTalkingHead\\Media\\silence.ogg" then return true end
+        if hadHandle and path == "Interface\\AddOns\\TalkingHeadRu\\Media\\silence.ogg" then return true end
         return original(path)
     end)
     hook("StopMusic", function(original, ...)
@@ -115,9 +115,9 @@ local function restore()
     oneShotOff()
     baseline.quests[179], baseline.quests[NEW_ID] = baseline.shared, nil
     S.Metadata, S.Resolve, WowVoiceCatQuestAudio = baseline.metadata, baseline.resolve, baseline.audio
-    WowVoiceDB.sharedQuestVoice = baseline.preference
+    TalkingHeadRuDB.sharedQuestVoice = baseline.preference
     if baseline.testChannel ~= nil then
-        if WowVoiceDB.channel == "auto" then WowVoiceDB.channel = baseline.testChannel end
+        if TalkingHeadRuDB.channel == "auto" then TalkingHeadRuDB.channel = baseline.testChannel end
         baseline.testChannel = nil
     end
     routes, mode = {}, "reset"
@@ -156,7 +156,7 @@ local function future(changed)
         end
     end
     mode = changed and "changed" or "future"
-    WowVoiceDB.sharedQuestVoice = "catquest"
+    TalkingHeadRuDB.sharedQuestVoice = "catquest"
     WV:RefreshAudioSources()
     return true
 end
@@ -202,8 +202,8 @@ local function queueReady()
             end
         end
     end
-    if not WowVoiceDB.enabled or not WowVoiceDB.autoPlay or not WowVoiceDB.autoPlayAccept
-        or not WowVoiceDB.queueAutoPlay then
+    if not TalkingHeadRuDB.enabled or not TalkingHeadRuDB.autoPlay or not TalkingHeadRuDB.autoPlayAccept
+        or not TalkingHeadRuDB.queueAutoPlay then
         say("Включите озвучку, автозапуск, получение заданий и автовоспроизведение очереди.")
         return
     end
@@ -292,7 +292,7 @@ traceOn = function()
         end
         state.current = {id=id,started=GetTime()}
         log(string.format("START %s timer=%.3f tail=%.3f OGG=%s", tostring(id),
-            record and record.duration or 0, tonumber(WowVoiceDB.tail) or 0.05,
+            record and record.duration or 0, tonumber(TalkingHeadRuDB.tail) or 0.05,
             audio and string.format("%.3f", audio.duration) or "unknown"))
     end)
     hook(WV.questQueue, "PlaybackStopped", function(_, reason)
@@ -303,8 +303,8 @@ traceOn = function()
             state.current = nil
         end
     end)
-    log("ON build=" .. BUILD .. " mode=" .. mode .. " channel=" .. tostring(WowVoiceDB.channel)
-        .. " stopmode=" .. tostring(WowVoiceDB.stopmode)
+    log("ON build=" .. BUILD .. " mode=" .. mode .. " channel=" .. tostring(TalkingHeadRuDB.channel)
+        .. " stopmode=" .. tostring(TalkingHeadRuDB.stopmode)
         .. " oneshot=" .. tostring(oneShot ~= nil)
         .. " background=" .. tostring(GetCVar("Sound_EnableSoundWhenGameIsInBG")))
 end
@@ -318,8 +318,8 @@ local function test(ids)
         return
     end
     if not future(true) then return end
-    baseline.testChannel = WowVoiceDB.channel
-    WowVoiceDB.channel = "auto"
+    baseline.testChannel = TalkingHeadRuDB.channel
+    TalkingHeadRuDB.channel = "auto"
     traceOn()
     queue(ids)
 end

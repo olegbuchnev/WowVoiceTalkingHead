@@ -247,7 +247,7 @@ function CreateFrame(kind,name,parent,template)
             if snapshotMode=='error' then error('Snapshot failed') end
             if snapshotMode=='empty' then return nil end
             self.snapshotID=self.captures
-            local source=frames.WowVoiceTalkingHead
+            local source=frames.TalkingHeadRu
             assert(source:GetParent()==self and source:IsShown(),'snapshot source must be a visible child')
             self.sourceScale=source:GetEffectiveScale()
             self.sourceScroll=source.TextScroll.scroll
@@ -281,4 +281,4 @@ function portraitEvent(event,id)
     assert(f.events[event], 'unregistered portrait event '..event)
     f.scripts.OnEvent(f,event,id)
 end
-function questCache() return WowVoiceDB.questSpeakers[playerGUID] end
+function questCache() return TalkingHeadRuDB.questSpeakers[playerGUID] end

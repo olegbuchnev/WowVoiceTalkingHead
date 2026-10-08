@@ -5,7 +5,7 @@ local rows={}
 for i=1,32 do rows[i]='aaaa bbbb' end
 local function show(text,duration)
     WV:StartTalkingHead({questId=179,section='a',title='Test',text=text},now+(duration or 180),duration)
-    return frames.WowVoiceTalkingHead
+    return frames.TalkingHeadRu
 end
 local head=show(table.concat(rows,'\n'),96)
 local started=now

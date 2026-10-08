@@ -1,4 +1,6 @@
 export function artifactKind(name) {
+  if (/^TalkingHeadRu-.+-full\.zip$/.test(name)) return 'full';
+  if (/^TalkingHeadRu-.+\.zip$/.test(name)) return 'addon';
   if (/^WowVoice(?:TalkingHead)?-.+-addon-only\.zip$/.test(name)) return 'addon';
   if (/^WowVoice(?:TalkingHead)?-.+-lite\.zip$/.test(name)) return 'lite';
   if (/^WowVoice(?:TalkingHead)?-.+\.zip$/.test(name)) return 'full';

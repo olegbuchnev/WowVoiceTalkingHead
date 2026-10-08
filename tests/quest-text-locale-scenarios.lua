@@ -8,7 +8,7 @@ local playerSex = 2
 function UnitSex() return playerSex end
 texts['179a'] = { male = 'Русское описание для героя.', female = 'Русское описание для героини.' }
 texts['179c'] = { common = 'Русское завершение.' }
-local head = frames.WowVoiceTalkingHead
+local head = frames.TalkingHeadRu
 local gameText = english and 'Current game dialogue.' or 'Настоящий текст задания из игры.'
 local function start(section)
     Q:Clear()
@@ -34,11 +34,11 @@ end
 -- Save the original English/Russian game capture, not substituted subtitles.
 start('a')
 Q:SaveSession()
-local saved = WowVoiceQueueDB
+local saved = TalkingHeadRuQueueDB
 assert(saved.records[1].context.text == gameText)
 Q:Clear()
 Q.loggingOut = nil
-WowVoiceQueueDB = saved
+TalkingHeadRuQueueDB = saved
 Q:RestoreSession()
 frames.WowVoiceQuestQueueDriver.scripts.OnUpdate()
 assert(head.Body:GetText() == (english and texts['179a'].female or gameText))

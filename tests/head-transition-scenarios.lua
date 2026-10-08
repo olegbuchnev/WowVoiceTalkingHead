@@ -5,12 +5,12 @@ local function near(actual, expected)
 end
 local function advance(t)
     tick(t)
-    local h=frames.WowVoiceTalkingHead
+    local h=frames.TalkingHeadRu
     if h and h.visible then h.scripts.OnUpdate() end
 end
 local function start()
     assert(WV:ReplayQuest(179))
-    return frames.WowVoiceTalkingHead,now
+    return frames.TalkingHeadRu,now
 end
 
 local function opacity(h, expected, modelReady)
@@ -35,7 +35,7 @@ do
 
     -- Audio stops/restores Dialog first; the model idles while fading for 1s.
     local sound=plays[#plays].handle
-    advance(t+WowVoiceDur['179a']+WowVoiceDB.tail+0.01)
+    advance(t+WowVoiceDur['179a']+TalkingHeadRuDB.tail+0.01)
     local ended=now
     assert(h.visible and h.Model.displayID>0 and h.Model.animation==0 and not h.Model.talkAnimation)
     assert(stops[#stops]==sound)
@@ -50,7 +50,7 @@ end
 for _, closing in ipairs({false,true}) do
     for _, button in ipairs({'cross','right'}) do
         local h,t=start()
-        advance(t+(closing and WowVoiceDur['179a']+WowVoiceDB.tail+0.01 or 0.3))
+        advance(t+(closing and WowVoiceDur['179a']+TalkingHeadRuDB.tail+0.01 or 0.3))
         local count=#stops
         if button=='cross' then h.Close.scripts.OnClick()
         else h.scripts.OnClick(h,'RightButton') end
@@ -63,7 +63,7 @@ end
 
 -- New audio/preview during a fade appears immediately, with no stale close.
 local h,t=start()
-advance(t+WowVoiceDur['179a']+WowVoiceDB.tail+0.01)
+advance(t+WowVoiceDur['179a']+TalkingHeadRuDB.tail+0.01)
 advance(now+0.5)
 local nextStart=now
 assert(WV:ReplayQuest(861))
@@ -81,28 +81,28 @@ h.scripts.OnClick(h,'RightButton'); assert(not h.visible)
 -- Missing models fade their document icon instead.
 local setCreature=h.Model.SetCreature
 h.Model.SetCreature=function() end
-local saved=WowVoiceDB.questSpeakers
-WowVoiceDB.questSpeakers={}
+local saved=TalkingHeadRuDB.questSpeakers
+TalkingHeadRuDB.questSpeakers={}
 h,t=start()
 advance(t+0.375)
 assert(h.Icon.visible and h.Model.alpha==0); opacity(h,1,false)
 h.Model:CompleteLoad(10658)
 assert(not h.Icon.visible and h.Model.alpha==1); opacity(h,1)
-advance(t+WowVoiceDur['179a']+WowVoiceDB.tail+0.01)
+advance(t+WowVoiceDur['179a']+TalkingHeadRuDB.tail+0.01)
 h.Model:CompleteLoad(10658)
 assert(h.Model.animation==0 and not h.Model.talkAnimation)
 advance(now+0.5); opacity(h,0.5)
 WV:Silence(); assert(not h.visible)
 h.Model:CompleteLoad(10658); assert(not h.visible)
 h.Model.SetCreature=setCreature
-WowVoiceDB.questSpeakers=saved
+TalkingHeadRuDB.questSpeakers=saved
 print('PASS: instant appearance, no mid-playback fades, synchronized model/UI fade, immediate close, replacement, preview and late model safety')
 
 -- A reused completed bar has no visible fill at the start of the next line,
 -- even when the native renderer has not yet updated its hidden geometry.
 for _, afterFade in ipairs({false, true}) do
     h,t=start()
-    advance(t+WowVoiceDur['179a']+WowVoiceDB.tail+0.01)
+    advance(t+WowVoiceDur['179a']+TalkingHeadRuDB.tail+0.01)
     near(h.Progress.value,1)
     if afterFade then advance(now+2) end
     local show, staleFill = h.Show, false
@@ -125,7 +125,7 @@ print('PASS: completed progress stays hidden at zero when a new head starts, dur
 -- Exercise that nonzero interval instead of only the frozen mock clock.
 for _, afterFade in ipairs({false, true}) do
     h,t=start()
-    advance(t+WowVoiceDur['179a']+WowVoiceDB.tail+0.01)
+    advance(t+WowVoiceDur['179a']+TalkingHeadRuDB.tail+0.01)
     near(h.Progress.Fill:GetWidth(), h.Progress:GetWidth())
     if afterFade then advance(now+2) end
     local clock, show, barShow = WV.PlaybackTime, h.Show, h.Progress.Show

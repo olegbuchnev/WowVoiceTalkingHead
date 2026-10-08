@@ -4,8 +4,8 @@ command('options')
 assert(frames.WowVoiceOptionsPanel.Presets==nil)
 playerDisplayID=0
 assert(WV:ToggleHeadPreview())
-local head=frames.WowVoiceTalkingHead
-local anchor=frames.WowVoiceTalkingHeadAnchor
+local head=frames.TalkingHeadRu
+local anchor=frames.TalkingHeadRuAnchor
 assert(anchor.points[1][2]==UIParent and anchor.points[1][3]=='BOTTOM'
     and anchor.points[1][4]==0 and anchor.points[1][5]==96,
     'clients without the managed container use the Retail XML fallback')
@@ -21,11 +21,11 @@ bottomContainer:SetPoint('BOTTOM',UIParent,'BOTTOM',0,210)
 assert(WV:GetHeadSettings().y==initialY+60 and WV:GetHeadSettings().x==0,
     'default follows the bottom action-bar boundary as Blizzard moves it')
 do
-    assert(WowVoiceDB.headPosition==nil and anchor.points[1][2]==bottomContainer,
+    assert(TalkingHeadRuDB.headPosition==nil and anchor.points[1][2]==bottomContainer,
         'changing appearance must retain the automatic default anchor')
 end
 WV:HideHeadPreview()
-assert(WowVoiceDB.headPosition==nil,'closing an unmoved preview must not freeze the default position')
+assert(TalkingHeadRuDB.headPosition==nil,'closing an unmoved preview must not freeze the default position')
 WV:ToggleHeadPreview()
 assert(WV:ApplyHeadSettings({width=570,height=155,scale=1,x=123,y=-200,enabled=true}))
 bottomContainer:ClearAllPoints()
@@ -33,7 +33,7 @@ bottomContainer:SetPoint('BOTTOM',UIParent,'BOTTOM',0,260)
 assert(WV:GetHeadSettings().x==123 and WV:GetHeadSettings().y==-200,
     'a saved position takes priority over the managed default')
 WV:ResetHeadPosition()
-assert(WowVoiceDB.headPosition==nil and anchor.points[1][2]==bottomContainer,
+assert(TalkingHeadRuDB.headPosition==nil and anchor.points[1][2]==bottomContainer,
     'position reset restores the managed default')
 BottomManagedFrameContainer=nil
 WV:ResetHeadPosition()

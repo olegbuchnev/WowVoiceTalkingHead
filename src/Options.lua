@@ -1,5 +1,5 @@
 local L = WowVoiceLocale
--- Built-in options page: Settings -> AddOns -> WowVoice.
+-- Built-in options page: Settings -> AddOns -> TalkingHead Ru.
 local WV = _G.WowVoice
 local panel, category
 
@@ -56,7 +56,7 @@ local function refreshVersions()
         or updated and ("Установлена: " .. source.version .. ". Полностью проверена: " .. tostring(supported)
             .. ".\nОзвучка работает по индексу библиотеки, включая новые и изменённые записи."
             .. "\nГолова и очередь могут завершаться позже звука."
-            .. "\nОбновление WowVoice TalkingHead после проверки библиотеки вернёт точные таймеры.") or nil
+            .. "\nОбновление TalkingHead Ru после проверки библиотеки вернёт точные таймеры.") or nil
     if incompatible or updated then warning:Show() else warning:Hide() end
     local width = 0
     for addon, text in pairs(panel.VersionLabels) do
@@ -159,9 +159,9 @@ function WV:RefreshHeadOptions()
         else dot.Border:SetVertexColor(0.6, 0.6, 0.6) end
     end
     refreshPosition()
-    panel.AutoPlayAccept:SetChecked(WowVoiceDB.autoPlayAccept == true)
-    panel.AutoPlayTurnIn:SetChecked(WowVoiceDB.autoPlayTurnIn ~= false)
-    local autoPlay = WowVoiceDB.autoPlay ~= false
+    panel.AutoPlayAccept:SetChecked(TalkingHeadRuDB.autoPlayAccept == true)
+    panel.AutoPlayTurnIn:SetChecked(TalkingHeadRuDB.autoPlayTurnIn ~= false)
+    local autoPlay = TalkingHeadRuDB.autoPlay ~= false
     panel.AutoPlay:SetChecked(autoPlay)
     for _, control in ipairs({ panel.AutoPlayAccept, panel.AutoPlayTurnIn }) do
         control:SetEnabled(autoPlay)
@@ -170,7 +170,7 @@ function WV:RefreshHeadOptions()
         control.Description:SetAlpha(autoPlay and 1 or 0.45)
     end
     if panel.QueueHeight then
-        panel.QueueDescriptionsOnly:SetChecked(WowVoiceDB.queueDescriptionsOnly == true)
+        panel.QueueDescriptionsOnly:SetChecked(TalkingHeadRuDB.queueDescriptionsOnly == true)
         for _, control in ipairs({ panel.QueueDescriptionsOnly, panel.QueueHeight, panel.QueueScale,
             panel.Buttons.queueReset, panel.Buttons.applyQueuePosition }) do
             control:SetEnabled(autoPlay)
@@ -222,7 +222,7 @@ local function createPanel()
     label(WV.displayName, "GameFontNormalLarge", 16, -16, 280, 28)
     panel.VersionLabels = {}
     for index, item in ipairs({
-        { "WowVoiceTalkingHead", "Аддон" },
+        { "TalkingHeadRu", "Аддон" },
         { "WowVoiceSounds", "Озвучка WowVoice" },
         { "AudioSource", "Доп. озвучка" },
     }) do
@@ -551,7 +551,7 @@ local function createPanel()
         heightInput:SetNumeric(true)
         heightInput:SetMaxLetters(3)
         local function applyHeight(value)
-            if WowVoiceDB.autoPlay == false then return false end
+            if TalkingHeadRuDB.autoPlay == false then return false end
             local ok, reason = WV:SetQuestQueueHeight(value)
             status(reason)
             if ok then WV:EnsureQuestQueuePreview(); WV:FinishAutoQuestQueuePreview(2); WV:RefreshHeadOptions() end
@@ -589,7 +589,7 @@ local function createPanel()
         scaleInput:SetNumeric(true)
         scaleInput:SetMaxLetters(3)
         local function applyQueueScale(percent)
-            if WowVoiceDB.autoPlay == false then return false end
+            if TalkingHeadRuDB.autoPlay == false then return false end
             local ok, reason = WV:SetQuestQueueScale(percent and percent / 100)
             status(reason)
             if ok then
@@ -603,7 +603,7 @@ local function createPanel()
             if not panel.refreshingQueue then applyQueueScale(math.floor(value + 0.5)) end
         end)
         scaleSlider:SetScript("OnMouseDown", function(_, button)
-            if button ~= "LeftButton" or WowVoiceDB.autoPlay == false then return end
+            if button ~= "LeftButton" or TalkingHeadRuDB.autoPlay == false then return end
             panel.draggingQueueScale = true
             WV:EnsureQuestQueuePreview()
         end)
@@ -619,7 +619,7 @@ local function createPanel()
         scaleInput:SetScript("OnEditFocusLost", function() WV:RefreshHeadOptions() end)
         panel.QueueLabels[#panel.QueueLabels + 1] = label("Координаты верхнего левого угла", "GameFontNormal", 20, -1030, 540, 20)
         local function applyQueuePosition()
-            if WowVoiceDB.autoPlay == false then return end
+            if TalkingHeadRuDB.autoPlay == false then return end
             local function number(text)
                 text = text:match("^%s*(.-)%s*$"):gsub(",", ".")
                 return text:match("^[+-]?%d*%.?%d+$") and tonumber(text)
@@ -759,5 +759,5 @@ local events = CreateFrame("Frame")
 events:RegisterEvent("PLAYER_LOGIN")
 events:RegisterEvent("ADDON_LOADED")
 events:SetScript("OnEvent", function(_, event)
-    if WowVoiceDB or event == "PLAYER_LOGIN" then register() end
+    if TalkingHeadRuDB or event == "PLAYER_LOGIN" then register() end
 end)

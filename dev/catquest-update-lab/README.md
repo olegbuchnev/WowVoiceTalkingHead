@@ -19,9 +19,9 @@
    ```
 
 3. Скопируй папку `artifacts/catquest-update-test/WowVoiceCatQuestUpdateLab`
-   целиком в `Interface/AddOns` своей Forever Beta, рядом с `WowVoiceTalkingHead`.
+   целиком в `Interface/AddOns` своей Forever Beta, рядом с `TalkingHeadRu`.
    Внутри неё должны лежать `WowVoiceCatQuestUpdateLab.toc` и `Lab.lua`.
-4. Запусти игру. Включи `WowVoiceTalkingHead`, `WowVoiceSounds`, `CatQuest`,
+4. Запусти игру. Включи `TalkingHeadRu`, `WowVoiceSounds`, `CatQuest`,
    `CatQuest_Voices` и `WowVoiceCatQuestUpdateLab`. Для этих сценариев нужен
    именно CatQuest Voices 0.4.0, проверенный текущими метаданными WowVoice.
 5. В `/thead` включи озвучку, автозапуск и получение заданий. В очереди включи

@@ -14,8 +14,8 @@ local reminderID
 WV.TestQuestReminder = function(_, id) reminderID = id end
 command('remindertest 179'); assert(reminderID == 179)
 command('remindertest off'); assert(reminderID == false)
-command('debug on'); assert(WowVoiceDB.debug)
-command('debug off'); assert(not WowVoiceDB.debug)
+command('debug on'); assert(TalkingHeadRuDB.debug)
+command('debug off'); assert(not TalkingHeadRuDB.debug)
 assert(SLASH_WOWVOICELOCALDEBUG2 == '/wvdebug')
 local opened = 0
 WV.OpenOptions = function() opened = opened + 1 end

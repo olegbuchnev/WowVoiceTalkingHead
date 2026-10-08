@@ -2,7 +2,7 @@ event('ADDON_LOADED')
 local WV, S, Q = WowVoice, WowVoiceAudioSources, WowVoice.questQueue
 local loaded = {WowVoiceSounds=true, CatQuest_Voices=true}
 C_AddOns.IsAddOnLoaded = function(name) return loaded[name] == true end
-WowVoiceDB.sharedQuestVoice = 'wowvoice'
+TalkingHeadRuDB.sharedQuestVoice = 'wowvoice'
 local prefix = 'Interface\\AddOns\\CatQuest_Voices\\Sounds\\q\\'
 local classicOnly
 for key in pairs(WowVoiceDur) do
@@ -53,7 +53,7 @@ messages = {}
 event('PLAYER_LOGIN')
 assert(not has('Не загружена основная база'), 'CatQuest alone is a valid audio installation')
 assert(WV:IsCatQuestAutoplaySuppressed() and CatQuestDB.autoBooks and CatQuestDB.lore)
-assert(WV:GetSharedQuestVoice() == 'catquest' and WowVoiceDB.sharedQuestVoice == 'wowvoice')
+assert(WV:GetSharedQuestVoice() == 'catquest' and TalkingHeadRuDB.sharedQuestVoice == 'wowvoice')
 assert(not WV:SetSharedQuestVoice('wowvoice'), 'a disabled pack cannot be selected')
 assert(WV:HasQuestAudio(179) and not WV:HasQuestAudio(classicOnly))
 assert(journalButtons[179]:IsShown() and trackerButtons[179]:IsShown())
@@ -76,10 +76,10 @@ assert(not choices.catquest:IsEnabled() and not choices.wowvoice:IsEnabled())
 assert(panel.SharedVoiceTooltip.message:find('WowVoice Sounds', 1, true))
 
 local before = #plays
-assert(not WV:ReplayQuest(classicOnly) and #plays == before and not frames.WowVoiceTalkingHead:IsShown())
+assert(not WV:ReplayQuest(classicOnly) and #plays == before and not frames.TalkingHeadRu:IsShown())
 Q:Clear()
 assert(WV:ReplayQuest(179) and plays[#plays].file == prefix .. '179.ogg')
-assert(frames.WowVoiceTalkingHead:IsShown())
+assert(frames.TalkingHeadRu:IsShown())
 Q:Clear()
 questID = 179
 event('QUEST_DETAIL')
@@ -95,7 +95,7 @@ Q:Clear()
 before = #plays
 questID = classicOnly
 event('QUEST_DETAIL'); event('QUEST_PROGRESS'); event('QUEST_COMPLETE')
-assert(#plays == before and not Q.current and not frames.WowVoiceTalkingHead:IsShown())
+assert(#plays == before and not Q.current and not frames.TalkingHeadRu:IsShown())
 Q:Clear()
 
 -- Records queued before reload resolve their current source at playback time.
@@ -119,8 +119,8 @@ cvars.Sound_EnableSoundWhenGameIsInBG = '0'
 cvars.Sound_EnableMusic, cvars.Sound_MusicVolume = '0', '0.42'
 assert(WV:ReplayQuest(179) and music[#music] == prefix .. '179.ogg')
 local _, duration = WV:SoundPath(179, 'a')
-tick(now + duration + WowVoiceDB.tail + 0.01)
-assert(#music == 2 and music[2] == 'Interface\\AddOns\\WowVoiceTalkingHead\\Media\\silence.ogg',
+tick(now + duration + TalkingHeadRuDB.tail + 0.01)
+assert(#music == 2 and music[2] == 'Interface\\AddOns\\TalkingHeadRu\\Media\\silence.ogg',
     'CatQuest-only playback must use the same bundled silence without changing stop mode')
 assert(musicStops == 1 and cvars.Sound_EnableMusic == '0' and cvars.Sound_MusicVolume == '0.42')
 Q:Clear()
@@ -128,7 +128,7 @@ tick(now + 0.3)
 assert(cvars.Sound_EnableMusic == '0')
 cvars.Sound_EnableSoundWhenGameIsInBG = '1'
 tick(now + 1)
-frames.WowVoiceTalkingHead.scripts.OnUpdate()
+frames.TalkingHeadRu.scripts.OnUpdate()
 
 -- Neither source loaded: stale indexes/globals cannot enable sound, but the UI works.
 loaded.CatQuest_Voices = false
@@ -136,7 +136,7 @@ WV:RefreshAudioSources()
 assert(not WV:HasQuestAudio(179) and WV:SoundPath(179, 'a') == nil)
 assert(not journalButtons[179]:IsShown() and not trackerButtons[179]:IsShown())
 before = #plays
-assert(not WV:ReplayQuest(179) and #plays == before and not frames.WowVoiceTalkingHead:IsShown())
+assert(not WV:ReplayQuest(179) and #plays == before and not frames.TalkingHeadRu:IsShown())
 Q:Clear()
 assert(panel.SharedVoiceTooltip.message:find('Нет доступной озвучки', 1, true))
 
@@ -154,7 +154,7 @@ assert(WV:ClassicSoundPath(179, 'a') == nil)
 C_AddOns.DoesAddOnExist = nil
 
 WV:RefreshAudioSources()
-assert(WowVoiceDB.sharedQuestVoice == 'wowvoice' and WV:GetSharedQuestVoice() == 'wowvoice')
+assert(TalkingHeadRuDB.sharedQuestVoice == 'wowvoice' and WV:GetSharedQuestVoice() == 'wowvoice')
 assert(choices.wowvoice:IsEnabled() and choices.wowvoice:GetChecked())
 assert(WV:SoundPath(179, 'a'):find('WowVoiceSounds', 1, true))
 assert(WV:HasQuestAudio(classicOnly) and journalButtons[classicOnly]:IsShown() and trackerButtons[classicOnly]:IsShown())

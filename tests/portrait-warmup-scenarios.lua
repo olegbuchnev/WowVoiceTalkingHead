@@ -1,6 +1,6 @@
 event('ADDON_LOADED')
 event('PLAYER_LOGIN')
-WowVoiceDB.questSpeakers = {}
+TalkingHeadRuDB.questSpeakers = {}
 local WV = WowVoice
 local rows = {{isHeader=true},{questID=179},{questID=861},{questID=176},
     {questID=999999},{questID=7649},{questID=179}}
@@ -42,7 +42,7 @@ assert(not requests[240] and not requests[999999])
 local count=0
 for _ in pairs(requests) do count=count+1 end
 assert(count==2 and #plays==0 and #stops==0)
-assert(not frames.WowVoiceTalkingHead, 'background warmup must not create a visible head')
+assert(not frames.TalkingHeadRu, 'background warmup must not create a visible head')
 assert(frames.WowVoiceWarmPortraitNPC658.alpha==0)
 assert(frames.WowVoiceWarmPortraitNPC658.modelAlpha==0,
     'warmup geometry must be invisible independently of frame alpha')
@@ -51,7 +51,7 @@ assert(frames.WowVoiceWarmPortraitNPC658.visible,
 print('PASS: login warms unique journal givers gradually, skipping headers, receivers, items and quests without audio')
 
 assert(WV:ReplayQuest(861))
-local head=frames.WowVoiceTalkingHead
+local head=frames.TalkingHeadRu
 assert(head.Icon.visible and head.Model.alpha==0)
 assert(not head.Model.portraitReady and not head.Model.cameraRefreshes,
     'metadata alone must not initialize the camera or hide the placeholder')

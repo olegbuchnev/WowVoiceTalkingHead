@@ -1,4 +1,13 @@
 local test = upstreamTest
+local removeStartup = test.upstream ~= nil and upstreamTestMode ~= 'no-chat-removal'
+for _, text in ipairs(test.startupMessages) do
+    assert(has(text) ~= removeStartup, 'remove upstream startup notices only during takeover')
+end
+assert(#messages == #test.retainedMessages + (removeStartup and 0 or #test.startupMessages))
+for i, text in ipairs(test.retainedMessages) do
+    assert(messages[i] == text, 'preserve unrelated chat, warnings and our credits in order')
+end
+assert(DEFAULT_CHAT_FRAME.AddMessage == test.addMessage, 'do not install a permanent chat filter')
 if upstreamTestMode == 'early-login' then
     assert(test.disableCalls == 0 and test.stops == 1, 'detach handlers even before the player is ready')
     test.playerReady = true
@@ -25,9 +34,10 @@ end
 assert(not WowVoiceIndex.upstream and not WowVoiceDur.upstream, 'our metadata must replace upstream tables')
 -- The client restores our SavedVariables after the TOC files, then delivers
 -- ADDON_LOADED. Existing preferences must survive the takeover.
-WowVoiceDB = {enabled=true, channel='sound', queueAutoPlay=false, sharedQuestVoice='wowvoice'}
+TalkingHeadRuDB = {enabled=true, channel='sound', queueAutoPlay=false, sharedQuestVoice='wowvoice'}
 event('ADDON_LOADED')
-assert(WowVoiceDB.enabled and not WowVoiceDB.queueAutoPlay)
+assert(TalkingHeadRuDB.enabled and not TalkingHeadRuDB.queueAutoPlay)
+assert(TalkingHeadRuDB ~= WowVoiceDB, 'our settings no longer share the upstream database')
 assert(SlashCmdList.WOWVOICETALKINGHEAD, 'our commands remain available')
 assert(WowVoice:ReplayQuest(179) and #plays == 1, 'our player uses the still-enabled sound pack')
 assert(plays[1].file:find('WowVoiceSounds', 1, true))

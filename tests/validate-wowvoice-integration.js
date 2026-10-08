@@ -1,7 +1,7 @@
 const fs = require('fs'), path = require('path');
 const { lua, lauxlib, lualib, to_luastring, to_jsstring } = require('fengari');
 const source = process.argv[2];
-for (const mode of ['loaded', 'disabled', 'absent', 'legacy', 'cvar', 'early-login']) {
+for (const mode of ['loaded', 'disabled', 'absent', 'legacy', 'cvar', 'early-login', 'no-chat-removal']) {
   const L = lauxlib.luaL_newstate();
   lualib.luaL_openlibs(L);
   function run(file) {
@@ -13,7 +13,7 @@ for (const mode of ['loaded', 'disabled', 'absent', 'legacy', 'cvar', 'early-log
   lua.lua_pushstring(L, to_luastring(mode));
   lua.lua_setglobal(L, to_luastring('upstreamTestMode'));
   run(path.join(__dirname, 'wowvoice-integration-setup.lua'));
-  for (const file of fs.readFileSync(path.join(source, 'WowVoiceTalkingHead.toc'), 'utf8')
+  for (const file of fs.readFileSync(path.join(source, 'TalkingHeadRu.toc'), 'utf8')
     .split(/\r?\n/).filter(line => line.endsWith('.lua'))) run(path.join(source, file));
   run(path.join(__dirname, 'wowvoice-integration-scenarios.lua'));
   lua.lua_close(L);

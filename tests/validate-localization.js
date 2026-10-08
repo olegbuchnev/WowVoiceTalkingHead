@@ -15,7 +15,7 @@ for (const locale of ['enUS', 'enGB', 'ruRU']) {
       QuestTitleFont = russian and 'Fonts\\\\MORPHEUS_CYR.TTF' or 'Fonts\\\\MORPHEUS.ttf',
     }, { __index = function() return russian and 'Fonts\\\\FRIZQT___CYR.TTF' or 'Fonts\\\\FRIZQT__.TTF' end })
   `, 'locale');
-  for (const file of fs.readFileSync(path.join(root, 'src/WowVoiceTalkingHead.toc'), 'utf8')
+  for (const file of fs.readFileSync(path.join(root, 'src/TalkingHeadRu.toc'), 'utf8')
     .split(/\r?\n/).filter(line => line.endsWith('.lua'))) run('src/' + file);
   run('tests/catquest-pack-mock.lua');
   run('tests/localization-scenarios.lua');

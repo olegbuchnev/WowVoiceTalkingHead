@@ -68,8 +68,8 @@ end
 function Comparison.Play(id, source)
     local recording = Comparison.Resolve(id, source)
     if not recording then return false end
-    if not (WowVoiceDB and WowVoiceDB.enabled) then
-        DEFAULT_CHAT_FRAME:AddMessage(L["WowVoice TalkingHead: озвучка выключена. Включить: /thead on"])
+    if not (TalkingHeadRuDB and TalkingHeadRuDB.enabled) then
+        DEFAULT_CHAT_FRAME:AddMessage(L["TalkingHead Ru: озвучка выключена. Включить: /thead on"])
         return false
     end
     local ok = WV:PreviewQuestAudio(id, recording.path, recording.duration, recording.text, recording.sourceID, recording.verified)

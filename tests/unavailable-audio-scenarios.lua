@@ -45,8 +45,8 @@ tracker:Update(); WV:RefreshJournalButtons()
 assert(not trackerPlay.visible and not journalPlay.visible, 'UI refresh cannot restore failed recording')
 local count=#plays
 assert(not WV:ReplayQuest(179) and #plays==count, 'known failure is not retried by hidden controls')
-assert(not (WowVoiceDB.listenedQuests and WowVoiceDB.listenedQuests[playerGUID]
-    and WowVoiceDB.listenedQuests[playerGUID][179]), 'failed playback is not marked as heard')
+assert(not (TalkingHeadRuDB.listenedQuests and TalkingHeadRuDB.listenedQuests[playerGUID]
+    and TalkingHeadRuDB.listenedQuests[playerGUID][179]), 'failed playback is not marked as heard')
 restored('1','0.37')
 
 -- Runtime failures are transient. A successful NPC playback can also recover

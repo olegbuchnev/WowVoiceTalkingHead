@@ -60,7 +60,7 @@ end
 -- Only fixture data and persistent observations are substituted. The normal
 -- QUEST_DETAIL / QUEST_PROGRESS / QUEST_COMPLETE handlers make every playback decision.
 function Lab:Start(record)
-    local frame = WowVoiceFrame
+    local frame = WV.eventFrame
     local handler = frame and frame:GetScript("OnEvent")
     if not handler then self:Changed("Не найден обработчик событий аддона."); return false end
     local replacements = {

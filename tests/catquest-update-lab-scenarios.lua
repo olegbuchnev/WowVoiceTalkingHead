@@ -2,7 +2,7 @@ event('ADDON_LOADED')
 local WV, S, Q = WowVoice, WowVoiceAudioSources, WowVoice.questQueue
 local run = SlashCmdList.WOWVOICECATQUESTUPDATELAB
 local original, metadata, resolve, snapshot = CatQuestVoicePack.quests[179], S.Metadata, S.Resolve, WowVoiceCatQuestAudio
-local preference = WowVoiceDB.sharedQuestVoice
+local preference = TalkingHeadRuDB.sharedQuestVoice
 run('report')
 assert(has('REPORT build=20261002-3 mode=reset oneshot=false trace=false lines=0'))
 assert(has('Журнал пуст:'), 'report must explain an empty session instead of silently doing nothing')
@@ -13,7 +13,7 @@ run('changed')
 assert(S.Resolve(179,'a').path:find('6_m.ogg',1,true) and not S.Resolve(179,'a').verified)
 assert(S.Text(179,'a','catquest'):find('[ТЕСТ ОБНОВЛЕНИЯ]',1,true))
 assert(S.Resolve(99998,'a').path:find('5.ogg',1,true) and WowVoiceComparison.Known(99998,'catquest'))
-WowVoiceDB.autoPlay, WowVoiceDB.autoPlayAccept, WowVoiceDB.queueAutoPlay = true, true, true
+TalkingHeadRuDB.autoPlay, TalkingHeadRuDB.autoPlayAccept, TalkingHeadRuDB.queueAutoPlay = true, true, true
 run('queue')
 assert(Q.current.context.questId == 179 and Q.current.context.queueOwner == 'catquest-update-lab')
 assert(Q:Count() == 2 and plays[#plays].file:find('6_m.ogg',1,true))
@@ -30,7 +30,7 @@ assert(S.Resolve(179,'a').path:find('6_m.ogg',1,true))
 run('reset')
 assert(S.Metadata == metadata and S.Resolve == resolve and WowVoiceCatQuestAudio == snapshot)
 assert(CatQuestVoicePack.quests[179] == original and CatQuestVoicePack.quests[99998] == nil)
-assert(WowVoiceDB.sharedQuestVoice == preference and not S.Status().updated)
+assert(TalkingHeadRuDB.sharedQuestVoice == preference and not S.Status().updated)
 -- The helper never replaces ordinary queued quests, even during reset.
 Q:Offer({questId=179,section='a',title='Real quest'}); Q:Accept(179)
 local current, playsBefore, stopsBefore = Q.current, #plays, #stops
@@ -45,15 +45,15 @@ PlayMusic = observedMusic
 StopMusic = function() musicStops = musicStops + 1 end
 local observedStopMusic = StopMusic
 local startedMethod, stoppedMethod = Q.PlaybackStarted, Q.PlaybackStopped
-local channel = WowVoiceDB.channel
-WowVoiceDB.channel = 'music'
+local channel = TalkingHeadRuDB.channel
+TalkingHeadRuDB.channel = 'music'
 run('changed'); run('trace'); run('queue')
 local firstStart = now
 assert(Q.current.context.questId == 179 and musicCalls[#musicCalls]:find('6_m.ogg',1,true))
 local firstDuration = S.Resolve(179,'a').duration
 tick(firstStart + firstDuration - 0.01)
 assert(musicStops == 0 and Q.current.status == 'playing')
-tick(firstStart + firstDuration + WowVoiceDB.tail + 0.01)
+tick(firstStart + firstDuration + TalkingHeadRuDB.tail + 0.01)
 assert(musicStops == 1 and has('STOP 179 elapsed=') and has('reason=duration timer'))
 tick(Q.gap.deadline)
 frames.WowVoiceQuestQueueDriver.scripts.OnUpdate()
@@ -63,13 +63,13 @@ run('mark')
 assert(has('MARK 99998 elapsed=0.000'))
 tick(secondStart + secondDuration - 0.01)
 assert(musicStops == 1 and Q.current.context.questId == 99998 and Q.current.status == 'playing')
-tick(secondStart + secondDuration + WowVoiceDB.tail + 0.01)
+tick(secondStart + secondDuration + TalkingHeadRuDB.tail + 0.01)
 assert(musicStops == 2 and Q.current == nil and has('STOP 99998 elapsed='))
 assert(has('START 99998 timer=20.350') and has('OGG=20.104'))
 run('solo')
 assert(Q:Count() == 1 and Q.current.context.questId == 99998,
     'solo must use the same queue path with only the second recording')
-tick(now + secondDuration + WowVoiceDB.tail + 0.01)
+tick(now + secondDuration + TalkingHeadRuDB.tail + 0.01)
 assert(musicStops == 3 and Q.current == nil)
 run('reset')
 assert(PlayMusic == observedMusic and StopMusic == observedStopMusic)
@@ -89,7 +89,7 @@ local expectedDuration = S.Resolve(179,'a').duration
 tick(oneShotStart + snapshot.entries['6a'].audio.male.duration + 0.1)
 assert(stops[#stops] ~= oneShotHandle and Q.current.context.questId == 179,
     'one-shot must not replace the approximate queue timer with lab-only measurements')
-tick(oneShotStart + expectedDuration + WowVoiceDB.tail + 0.01)
+tick(oneShotStart + expectedDuration + TalkingHeadRuDB.tail + 0.01)
 assert(stops[#stops] == oneShotHandle and #musicCalls == beforeMusic)
 tick(Q.gap.deadline)
 frames.WowVoiceQuestQueueDriver.scripts.OnUpdate()
@@ -127,7 +127,7 @@ assert(PlayMusic == observedMusic and StopMusic == observedStopMusic)
 assert(PlaySoundFile == originalSound and StopSound == originalStopSound)
 -- With background enabled, the default test uses production Master, retaining disabled/quiet zone music.
 -- No separate trace/channel steps or experimental Music interception required.
-WowVoiceDB.channel = 'auto'
+TalkingHeadRuDB.channel = 'auto'
 local musicCount, musicStopCount = #musicCalls, musicStops
 local setCVar = SetCVar
 SetCVar = function(key, value)
@@ -140,13 +140,13 @@ cvars.Sound_EnableMusic, cvars.Sound_MusicVolume = '0', '0'
 cvars.Sound_EnableSoundWhenGameIsInBG = '1'
 run('test')
 assert(Q:Count() == 2 and Q.current.context.questId == 179)
-assert(WowVoiceDB.channel == 'auto' and plays[#plays].channel == 'Master')
+assert(TalkingHeadRuDB.channel == 'auto' and plays[#plays].channel == 'Master')
 assert(has('oneshot=false') and has('PlaySoundFile RESULT ok=true handle='))
-tick(now + S.Resolve(179,'a').duration + WowVoiceDB.tail + 0.01)
+tick(now + S.Resolve(179,'a').duration + TalkingHeadRuDB.tail + 0.01)
 tick(Q.gap.deadline)
 frames.WowVoiceQuestQueueDriver.scripts.OnUpdate()
 assert(Q.current.context.questId == 99998 and plays[#plays].channel == 'Master')
-tick(now + S.Resolve(99998,'a').duration + WowVoiceDB.tail + 0.01)
+tick(now + S.Resolve(99998,'a').duration + TalkingHeadRuDB.tail + 0.01)
 assert(Q.current == nil and #musicCalls == musicCount and musicStops == musicStopCount,
     'Master test must never start or stop the music stream')
 local reportStart = #messages
@@ -156,14 +156,14 @@ assert(reported:find('PlaySoundFile channel=Master',1,true) and reported:find('m
 assert(not reported:find('PlayMusic',1,true) and not reported:find('StopMusic',1,true))
 assert(reported:find('STOP 179',1,true) and reported:find('STOP 99998',1,true))
 run('reset')
-assert(WowVoiceDB.channel == 'auto' and PlayMusic == observedMusic and StopMusic == observedStopMusic)
+assert(TalkingHeadRuDB.channel == 'auto' and PlayMusic == observedMusic and StopMusic == observedStopMusic)
 for _, enabled in ipairs({'0','1'}) do
     for _, volume in ipairs({'0','0.03'}) do
         cvars.Sound_EnableMusic, cvars.Sound_MusicVolume = enabled, volume
         run('test solo')
         assert(Q:Count() == 1 and Q.current.context.questId == 99998 and plays[#plays].channel == 'Master')
         run('reset')
-        assert(WowVoiceDB.channel == 'auto' and cvars.Sound_EnableMusic == enabled and cvars.Sound_MusicVolume == volume)
+        assert(TalkingHeadRuDB.channel == 'auto' and cvars.Sound_EnableMusic == enabled and cvars.Sound_MusicVolume == volume)
     end
 end
 soundOK = false
@@ -176,34 +176,34 @@ SetCVar = setCVar
 -- does not restart the active line; the next line switches to Master.
 cvars.Sound_EnableMusic, cvars.Sound_MusicVolume = '0', '0.03'
 cvars.Sound_EnableSoundWhenGameIsInBG = '0'
-WowVoiceDB.channel = 'sound'
+TalkingHeadRuDB.channel = 'sound'
 local autoPlayCount = #plays
 run('test')
-assert(WowVoiceDB.channel == 'auto' and #plays == autoPlayCount)
+assert(TalkingHeadRuDB.channel == 'auto' and #plays == autoPlayCount)
 assert(musicCalls[#musicCalls]:find('6_m.ogg',1,true) and cvars.Sound_EnableSoundWhenGameIsInBG == '0')
 local autoMusicCount, autoStops = #musicCalls, musicStops
 cvars.Sound_EnableSoundWhenGameIsInBG = '1'
 tick(now + 1)
 assert(#musicCalls == autoMusicCount and #plays == autoPlayCount and musicStops == autoStops,
     'changing background preference must not move or restart active Music')
-tick(now + S.Resolve(179,'a').duration + WowVoiceDB.tail)
+tick(now + S.Resolve(179,'a').duration + TalkingHeadRuDB.tail)
 assert(cvars.Sound_EnableMusic == '0' and cvars.Sound_MusicVolume == '0.03')
 tick(Q.gap.deadline)
 frames.WowVoiceQuestQueueDriver.scripts.OnUpdate()
 assert(Q.current.context.questId == 99998 and plays[#plays].channel == 'Master')
 run('reset')
-assert(WowVoiceDB.channel == 'sound', 'reset restores the preference from before the automatic test')
+assert(TalkingHeadRuDB.channel == 'sound', 'reset restores the preference from before the automatic test')
 -- A blocked experiment must preserve the player's queue and preference.
-WowVoiceDB.channel = 'sound'
+TalkingHeadRuDB.channel = 'sound'
 Q:Offer({questId=179,section='a',title='Real quest'}); Q:Accept(179)
 local ordinary, ordinaryPlays = Q.current, #plays
 run('test')
-assert(Q.current == ordinary and #plays == ordinaryPlays and WowVoiceDB.channel == 'sound')
+assert(Q.current == ordinary and #plays == ordinaryPlays and TalkingHeadRuDB.channel == 'sound')
 Q:Clear()
 cvars.Sound_EnableSoundWhenGameIsInBG = background
-PlayMusic, StopMusic, WowVoiceDB.channel = originalMusic, originalStopMusic, channel
+PlayMusic, StopMusic, TalkingHeadRuDB.channel = originalMusic, originalStopMusic, channel
 run('future')
 local lifecycle = frames.WowVoiceCatQuestUpdateLabLifecycle
 lifecycle.scripts.OnEvent(lifecycle,'PLAYER_LOGOUT')
-assert(S.Metadata == metadata and S.Resolve == resolve and WowVoiceDB.sharedQuestVoice == preference)
+assert(S.Metadata == metadata and S.Resolve == resolve and TalkingHeadRuDB.sharedQuestVoice == preference)
 print('PASS: update lab scenarios, isolated queue/solo, both Music track timers, diagnostic hooks/report and reset restoration')

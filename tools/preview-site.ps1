@@ -15,10 +15,10 @@ $node = (Get-Command node -ErrorAction Stop).Source
 # Run the real packager in an isolated workspace, away from published/pCloud ZIPs.
 New-Item -ItemType Directory -Path $fixture | Out-Null
 try {
-  foreach ($name in @('build.ps1', 'USER_README.md', 'src')) {
+  foreach ($name in @('build.ps1', 'src')) {
     Copy-Item -LiteralPath (Join-Path $repo $name) -Destination $fixture -Recurse
   }
-  $tocPath = Join-Path $fixture 'src\WowVoiceTalkingHead.toc'
+  $tocPath = Join-Path $fixture 'src\TalkingHeadRu.toc'
   $version = [regex]::Match([IO.File]::ReadAllText($tocPath), '(?m)^## Version:\s*(\S+)').Groups[1].Value + '-preview'
   foreach ($toc in Get-ChildItem -LiteralPath (Join-Path $fixture 'src') -Filter '*.toc') {
     $text = [IO.File]::ReadAllText($toc.FullName)
@@ -27,7 +27,7 @@ try {
   }
   & (Join-Path $fixture 'build.ps1') -Task PackageAddon
   New-Item -ItemType Directory -Path $downloads -Force | Out-Null
-  $addon = "WowVoiceTalkingHead-$version-addon-only.zip"
+  $addon = "TalkingHeadRu-$version.zip"
   Copy-Item -LiteralPath (Join-Path $fixture "artifacts\WoWVoice\$addon") -Destination (Join-Path $downloads $addon) -Force
   $cat = [regex]::Match([IO.File]::ReadAllText((Join-Path $fixture 'src\CatQuestAudio.lua')), 'sourceVersion\s*=\s*"([^"]+)"').Groups[1].Value
   if (-not $cat) { throw 'Missing CatQuest source version for preview.' }

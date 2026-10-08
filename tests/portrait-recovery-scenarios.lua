@@ -1,12 +1,12 @@
 event('ADDON_LOADED')
 event('PLAYER_LOGIN')
 local WV = WowVoice
-WowVoiceDB.questSpeakers = {}
+TalkingHeadRuDB.questSpeakers = {}
 local originalIndex = WowVoiceIndex
 local function replay(id)
     WV:Silence()
     assert(WV:ReplayQuest(id))
-    return frames.WowVoiceTalkingHead
+    return frames.TalkingHeadRu
 end
 
 -- Real metadata resolves by quest ID even when the journal title differs.

@@ -6,7 +6,7 @@ for (const name of fs.readdirSync(path.join(root, 'src')).filter(name => name.en
   assert(!/^##\s*(?:Dependencies|RequiredDeps):/mi.test(toc), `${name} must load without audio packs`);
   assert.match(toc, /^## OptionalDeps: WowVoice, WowVoiceSounds, CatQuest_Voices\s*$/m,
     'Upstream takeover and sound libraries may only set optional loading order');
-  assert.strictEqual(toc.split(/\r?\n/).find(line => line.endsWith('.lua')), 'WowVoiceIntegration.lua',
+  assert.deepStrictEqual(toc.split(/\r?\n/).filter(line => line.endsWith('.lua')).slice(0, 2), ['LegacyAddonBlocker.lua', 'WowVoiceIntegration.lua'],
     'Detach upstream before replacing its globals');
 }
 const { duration } = require('../tools/import-forever-audio');

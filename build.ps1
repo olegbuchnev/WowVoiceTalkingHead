@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-  [ValidateSet('Validate', 'Test', 'Deploy', 'DeployAddon', 'Package', 'PackageAddon')]
+  [ValidateSet('Validate', 'Test', 'DeployAddon', 'Package', 'PackageAddon')]
   [string]$Task = 'Validate',
   [ValidateSet('ForeverBeta')]
   [string]$Target = 'ForeverBeta',
@@ -19,10 +19,10 @@ $ArtifactsRoot = Join-Path $RepoRoot 'artifacts'
 $SoundTocs = @('WowVoiceSounds.toc', 'WowVoiceSounds_Mainline.toc')
 $QueueLabModules = @('State.lua', 'Runtime.lua', 'Window.lua', 'Commands.lua')
 $QueueLabExplicit = $PSBoundParameters.ContainsKey('QueueLab')
-if ($QueueLab -and $Task -notin @('Deploy', 'DeployAddon')) {
-  throw '-QueueLab is allowed only for local Deploy/DeployAddon, never release packaging.'
+if ($QueueLab -and $Task -ne 'DeployAddon') {
+  throw '-QueueLab is allowed only for local DeployAddon, never release packaging.'
 }
-if ($LocalDebug -and $Task -notin @('Deploy', 'DeployAddon')) {
+if ($LocalDebug -and $Task -ne 'DeployAddon') {
   throw '-LocalDebug is a legacy deployment flag. The voice catalogue is included in all builds.'
 }
 
@@ -76,7 +76,7 @@ function Remove-CheckedDirectory {
 }
 
 function Get-AddonVersion {
-  $line = Get-Content -LiteralPath (Join-Path $AddonSource 'WowVoiceTalkingHead.toc') -Encoding UTF8 |
+  $line = Get-Content -LiteralPath (Join-Path $AddonSource 'TalkingHeadRu.toc') -Encoding UTF8 |
     Where-Object { $_ -match '^##\s+Version:\s*(.+?)\s*$' } | Select-Object -First 1
   if (-not $line) { throw 'Missing addon version.' }
   $version = [regex]::Match($line, '^##\s+Version:\s*(.+?)\s*$').Groups[1].Value
@@ -86,10 +86,6 @@ function Get-AddonVersion {
 
 function Test-AddonLayout {
   param([switch]$AddonOnly)
-  $guideName = 'USER_README.md'
-  if (-not (Test-Path -LiteralPath (Join-Path $RepoRoot $guideName) -PathType Leaf)) {
-    throw "Missing $guideName for the release archive."
-  }
   $classicFiles = @{}
   $classicQuests = @{}
   foreach ($match in [regex]::Matches([IO.File]::ReadAllText((Join-Path $AddonSource 'Durations.lua')), '\["([0-9]+[apc])"\]')) {
@@ -104,7 +100,7 @@ function Test-AddonLayout {
   if ($classicFiles.Count -eq 0) { throw 'Empty Classic audio index.' }
   $runtimeSilence = Join-Path $AddonSource 'Media\silence.ogg'
   if (-not (Test-Path -LiteralPath $runtimeSilence -PathType Leaf) -or (Get-Item -LiteralPath $runtimeSilence).Length -eq 0) {
-    throw 'Missing service audio: WowVoiceTalkingHead/Media/silence.ogg'
+    throw 'Missing service audio: TalkingHeadRu/Media/silence.ogg'
   }
   $sources = if ($AddonOnly) { @($AddonSource) } else { @($AddonSource, $SoundSource) }
   foreach ($source in $sources) {
@@ -122,7 +118,7 @@ function Test-AddonLayout {
       }
     }
   }
-  foreach ($tocName in @('WowVoiceTalkingHead.toc', 'WowVoiceTalkingHead_Mainline.toc', 'WowVoiceTalkingHead_Standard.toc')) {
+  foreach ($tocName in @('TalkingHeadRu.toc', 'TalkingHeadRu_Mainline.toc', 'TalkingHeadRu_Standard.toc')) {
     $toc = Join-Path $AddonSource $tocName
     if (-not (Test-Path -LiteralPath $toc -PathType Leaf)) { throw "Missing TOC: $toc" }
     $lines = @(Get-Content -LiteralPath $toc -Encoding UTF8)
@@ -139,7 +135,7 @@ function Test-AddonLayout {
     }
   }
   if ($AddonOnly) {
-    Write-Host "Validated WowVoice TalkingHead $(Get-AddonVersion) runtime for addon-only update."
+    Write-Host "Validated TalkingHead Ru $(Get-AddonVersion) runtime for addon-only update."
     return
   }
   $soundFiles = @(Get-ChildItem -LiteralPath $SoundSource -Force)
@@ -153,7 +149,7 @@ function Test-AddonLayout {
       throw "Sound TOC must contain metadata only: $name"
     }
   }
-  Write-Host "Validated WowVoice TalkingHead $(Get-AddonVersion) and $($classicFiles.Count) Classic recordings."
+  Write-Host "Validated TalkingHead Ru $(Get-AddonVersion) and $($classicFiles.Count) Classic recordings."
 }
 
 function Resolve-AddOnsDirectory {
@@ -190,7 +186,6 @@ function Resolve-AddOnsDirectory {
 }
 
 function Invoke-Deploy {
-  param([switch]$AddonOnly)
   $addons = Resolve-AddOnsDirectory
   # Local defaults are opt-in and apply only to environment-based deployment.
   # An explicit switch (including -QueueLab:$false) always wins.
@@ -205,34 +200,30 @@ function Invoke-Deploy {
       }
     }
   }
-  $destination = Join-Path $addons 'WowVoiceTalkingHead'
-  $sounds = Join-Path $addons 'WowVoiceSounds'
-  Assert-DirectChildPath $destination $addons 'WowVoiceTalkingHead'
-  Assert-DirectChildPath $sounds $addons 'WowVoiceSounds'
+  $destination = Join-Path $addons 'TalkingHeadRu'
+  $legacyDestination = Join-Path $addons 'WowVoiceTalkingHead'
+  Assert-DirectChildPath $destination $addons 'TalkingHeadRu'
+  Assert-DirectChildPath $legacyDestination $addons 'WowVoiceTalkingHead'
   Assert-NoReparseTree $destination
-  if (-not $AddonOnly) {
-    Assert-NoReparseTree $sounds
-  }
+  Assert-NoReparseTree $legacyDestination
 
-  # Back up before the first write. Classic audio is restored from the source
-  # library without copying that large library into every backup.
+  # Back up before the first write. Deployment never modifies sound libraries.
   $backups = Join-Path $RepoRoot 'backups'
   Assert-DirectChildPath $backups $RepoRoot 'backups'
   Assert-NoReparsePath $backups
   $backup = Join-Path $backups ((Get-Date -Format 'yyyyMMdd-HHmmss-fff') + '-' + [guid]::NewGuid().ToString('N').Substring(0, 6))
   New-Item -ItemType Directory -Path $backup -Force | Out-Null
   if (Test-Path -LiteralPath $destination) {
-    Copy-Item -LiteralPath $destination -Destination (Join-Path $backup 'WowVoiceTalkingHead') -Recurse
+    Copy-Item -LiteralPath $destination -Destination (Join-Path $backup 'TalkingHeadRu') -Recurse
   }
-  if (-not $AddonOnly) {
-    New-Item -ItemType Directory -Path (Join-Path $backup 'WowVoiceSounds') | Out-Null
-    foreach ($name in $SoundTocs) {
-      $file = Join-Path $sounds $name
-      if (Test-Path -LiteralPath $file) { Copy-Item -LiteralPath $file -Destination (Join-Path $backup 'WowVoiceSounds') }
-    }
+  if (Test-Path -LiteralPath $legacyDestination) {
+    Copy-Item -LiteralPath $legacyDestination -Destination (Join-Path $backup 'WowVoiceTalkingHead') -Recurse
   }
   $addons | Set-Content -LiteralPath (Join-Path $backup 'destination.txt') -Encoding UTF8
   Write-Host "Backup: $backup"
+
+  # Retire the previous addon after backup; SavedVariables in WTF stay untouched.
+  Remove-CheckedDirectory $legacyDestination $addons 'WowVoiceTalkingHead'
 
   New-Item -ItemType Directory -Path $destination -Force | Out-Null
   $sourcePrefix = $AddonSource.TrimEnd('\', '/') + '\'
@@ -268,23 +259,14 @@ function Invoke-Deploy {
       }
     }
     $entries = ($QueueLabModules | ForEach-Object { 'QueueLab\' + $_ }) -join "`r`n"
-    foreach ($toc in Get-ChildItem -LiteralPath $destination -Filter 'WowVoiceTalkingHead*.toc' -File) {
+    foreach ($toc in Get-ChildItem -LiteralPath $destination -Filter 'TalkingHeadRu*.toc' -File) {
       $contents = [IO.File]::ReadAllText($toc.FullName).TrimEnd() + "`r`n" + $entries + "`r`n"
       [IO.File]::WriteAllText($toc.FullName, $contents, [Text.UTF8Encoding]::new($false))
     }
     Write-Host 'QueueLab enabled locally: /tt after /reload. Source TOCs and release packages unchanged.'
   }
-  if ($AddonOnly) {
-    Write-Host "Deployed WowVoice TalkingHead to ${Target}: $addons"
-    Write-Host 'Sound libraries unchanged. Use /reload in game to load the updated addon.'
-    return
-  }
-  New-Item -ItemType Directory -Path $sounds -Force | Out-Null
-  foreach ($file in Get-ChildItem -LiteralPath $SoundSource -File) {
-    Copy-Item -LiteralPath $file.FullName -Destination (Join-Path $sounds $file.Name) -Force
-  }
-  Write-Host "Deployed WowVoice TalkingHead and WowVoiceSounds to ${Target}: $addons"
-  Write-Host 'Fully restart the game to load newly added audio.'
+  Write-Host "Deployed TalkingHead Ru to ${Target}: $addons"
+  Write-Host 'Sound libraries unchanged. Fully restart the game after switching to the TalkingHeadRu folder.'
 }
 
 function Invoke-Package {
@@ -300,25 +282,16 @@ function Invoke-Package {
   $stage = Join-Path $ArtifactsRoot $stageName
   New-Item -ItemType Directory -Path $stage | Out-Null
   try {
-    Copy-Item -LiteralPath $AddonSource -Destination (Join-Path $stage 'WowVoiceTalkingHead') -Recurse
-    $packagePaths = @((Join-Path $stage 'WowVoiceTalkingHead'))
+    Copy-Item -LiteralPath $AddonSource -Destination (Join-Path $stage 'TalkingHeadRu') -Recurse
+    $packagePaths = @((Join-Path $stage 'TalkingHeadRu'))
     if (-not $AddonOnly) {
       Copy-Item -LiteralPath $SoundSource -Destination (Join-Path $stage 'WowVoiceSounds') -Recurse
       $packagePaths += (Join-Path $stage 'WowVoiceSounds')
     }
-    # Convert the guide's Markdown to plain text for opening in Notepad.
-    $guide = [IO.File]::ReadAllText((Join-Path $RepoRoot 'USER_README.md'))
-    $guide = $guide -replace '(?m)^\s*```[^\r\n]*\r?\n', ''
-    $guide = $guide -replace '(?m)^#{1,6}\s+', ''
-    $guide = $guide -replace '\[([^\]]+)\]\(([^)]+)\)', '$1 ($2)'
-    $guide = $guide.Replace('**', '').Replace('`', '')
-    $guide = $guide -replace '\r?\n', "`r`n"
-    [IO.File]::WriteAllText((Join-Path $stage 'README.txt'), $guide, [Text.UTF8Encoding]::new($true))
-    $suffix = if ($AddonOnly) { '-addon-only' } else { '' }
-    $zipName = 'WowVoiceTalkingHead-' + (Get-AddonVersion) + $suffix + '.zip'
+    $suffix = if ($AddonOnly) { '' } else { '-full' }
+    $zipName = 'TalkingHeadRu-' + (Get-AddonVersion) + $suffix + '.zip'
     $pendingZip = Join-Path $stage $zipName
     $zip = Join-Path $release $zipName
-    $packagePaths += (Join-Path $stage 'README.txt')
     Compress-Archive -LiteralPath $packagePaths -DestinationPath $pendingZip
     # Publish only a completed ZIP; preserve the previous release on build failure.
     if (Test-Path -LiteralPath $zip -PathType Leaf) {
@@ -328,7 +301,7 @@ function Invoke-Package {
     }
     foreach ($directory in @($ArtifactsRoot, $release)) {
       foreach ($old in Get-ChildItem -LiteralPath $directory -Filter '*.zip' -File) {
-        $oldKind = if ($old.Name -like '*-addon-only.zip') { 'addon' } elseif ($old.Name -like '*-lite.zip') { 'lite' } else { 'full' }
+        $oldKind = if ($old.Name -like 'TalkingHeadRu-*-full.zip') { 'full' } elseif ($old.Name -like 'TalkingHeadRu-*.zip' -or $old.Name -like '*-addon-only.zip') { 'addon' } elseif ($old.Name -like '*-lite.zip') { 'lite' } else { 'full' }
         $kind = if ($AddonOnly) { 'addon' } else { 'full' }
         $sameKind = $oldKind -eq $kind
         if ($sameKind -and -not (Test-PathEquals $old.FullName $zip)) {
@@ -410,8 +383,7 @@ Test-AddonLayout -AddonOnly:($Task -in @('PackageAddon', 'DeployAddon'))
 switch ($Task) {
   'Validate' { }
   'Test' { Invoke-Tests }
-  'Deploy' { Invoke-Deploy }
-  'DeployAddon' { Invoke-Deploy -AddonOnly }
+  'DeployAddon' { Invoke-Deploy }
   'Package' { Invoke-Package }
   'PackageAddon' { Invoke-Package -AddonOnly }
 }

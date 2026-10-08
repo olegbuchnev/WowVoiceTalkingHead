@@ -66,7 +66,7 @@ C_QuestLog.GetInfo = function() error('No quest rows should be read') end
 SlashCmdList.WOWVOICELOCALDEBUG('179')
 clickTile(panel.Suggestions.Rows[1])
 assert(#plays > 0 and plays[#plays].file:find('179a', 1, true))
-assert(frames.WowVoiceTalkingHead:IsShown())
+assert(frames.TalkingHeadRu:IsShown())
 local playingCount, stopCount = #plays, #stops
 assert(isSelected(panel.Suggestions.Rows[1]))
 local summary = panel.CatalogSummary:GetText()
@@ -87,7 +87,7 @@ assert(fullCount > 1000, 'Back must restore the full catalogue')
 for _, row in ipairs(panel.Suggestions.Rows) do assert(not isSelected(row)) end
 panel.QuestID:SetText('179')
 assert(not isSelected(panel.Suggestions.Rows[1]), 'Cleared selection must not reappear after filtering')
-assert(#plays == playingCount and #stops == stopCount and frames.WowVoiceTalkingHead:IsShown(),
+assert(#plays == playingCount and #stops == stopCount and frames.TalkingHeadRu:IsShown(),
     'View navigation must not interrupt or restart quest playback')
 clickTile(panel.Suggestions.Rows[1])
 playingCount, stopCount = #plays, #stops
@@ -102,7 +102,7 @@ panel.QuestID:SetText('179')
 assert(not isSelected(panel.Suggestions.Rows[1]), 'Closing Settings must clear the selected source')
 assert(#plays == playingCount and #stops == stopCount, 'Closing Settings must preserve playback')
 WV:Silence()
-assert(not frames.WowVoiceTalkingHead:IsShown())
+assert(not frames.TalkingHeadRu:IsShown())
 local count = #plays
 for _, value in ipairs({'0', '-1', '1.5', 'abc', '1e3', ''}) do
     panel.QuestID:SetText(value)

@@ -7,7 +7,7 @@ for _, value in ipairs({'remindertest', 'remindertest 179', 'remindertest off',
     'test 179', 'stoptest', 'debug on', 'diag', 'perf', 'source', 'queuelab', 'queuetest'}) do
     messages = {}
     command(value)
-    assert(not WowVoiceDB.debug and not frames.WowVoiceQuestReminderPreview)
+    assert(not TalkingHeadRuDB.debug and not frames.WowVoiceQuestReminderPreview)
     assert(has('/thead help'), 'Unknown development commands should use ordinary release help')
     for _, message in ipairs(messages) do
         for _, name in ipairs({'remindertest', 'stoptest', 'diag', 'perf', 'debug', 'source', 'queuelab', 'queuetest'}) do

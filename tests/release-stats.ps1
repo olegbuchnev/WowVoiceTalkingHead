@@ -35,7 +35,7 @@ try {
             return @([pscustomobject]@{id=21; name='WowVoiceTalkingHead-1.zip'; state='uploaded'; download_count=5})
         }
         if ($Id -eq 3) {
-            return @([pscustomobject]@{id=31; name='WowVoiceTalkingHead-1.2.5-forever-addon-only.zip'; state='uploaded'; download_count=7})
+            return @([pscustomobject]@{id=31; name='TalkingHeadRu-1.2.5-forever.zip'; state='uploaded'; download_count=7})
         }
     }
     $statsFixture = @{ Mode = 'embedded'; Requests = 0 }

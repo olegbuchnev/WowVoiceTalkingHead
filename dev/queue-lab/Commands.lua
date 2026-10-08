@@ -26,7 +26,7 @@ SlashCmdList.WOWVOICETALKINGHEAD = function(input)
              using the selected method. Continued audio means the method failed.
 ]]
         local path = WV:SoundPath(179, "a")
-        msg("канал: %s | способ остановки: %s", Playback:mode(), WowVoiceDB.stopmode)
+        msg("канал: %s | способ остановки: %s", Playback:mode(), TalkingHeadRuDB.stopmode)
         msg("играю 179a, оборву через 3 с — слушай, замолчит ли")
         Playback:Play(path, 60)
         local t = CreateFrame("Frame")
@@ -43,16 +43,16 @@ SlashCmdList.WOWVOICETALKINGHEAD = function(input)
     elseif cmd == "debug" then
         rest = strlower(strtrim(rest or ""))
         if rest == "on" then
-            WowVoiceDB.debug = true
+            TalkingHeadRuDB.debug = true
         elseif rest == "off" then
-            WowVoiceDB.debug = false
+            TalkingHeadRuDB.debug = false
         elseif rest == "" then
-            WowVoiceDB.debug = not WowVoiceDB.debug
+            TalkingHeadRuDB.debug = not TalkingHeadRuDB.debug
         else
             msg("использование: /thead debug on|off")
             return
         end
-        msg("отладка %s", WowVoiceDB.debug and "включена" or "выключена")
+        msg("отладка %s", TalkingHeadRuDB.debug and "включена" or "выключена")
 
     elseif cmd == "perf" then
         if WV.Work then WV.Work:Report() end
@@ -80,20 +80,20 @@ SlashCmdList.WOWVOICETALKINGHEAD = function(input)
         msg("PlaySoundFile: %s | StopSound: %s | PlayMusic: %s",
             type(PlaySoundFile), type(StopSound), type(PlayMusic))
         msg("канал: %s (настройка %s), остановка звука: %s",
-            Playback:mode(), WowVoiceDB.channel,
+            Playback:mode(), TalkingHeadRuDB.channel,
             Playback:canStop() and "поддерживается" or "нет, откат на музыку")
         msg("множитель громкости диалогов: %.2f | сдвиг остановки: %+.2f с",
-            WowVoiceDB.volume, WowVoiceDB.tail)
+            TalkingHeadRuDB.volume, TalkingHeadRuDB.tail)
         msg("сейчас в клиенте: музыка %s, громкость музыки %s",
             GetCVar("Sound_EnableMusic") == "1" and "вкл" or "ВЫКЛ",
             GetCVar("Sound_MusicVolume"))
         local d = 0
         if _G.WowVoiceDur then for _ in pairs(_G.WowVoiceDur) do d = d + 1 end end
         msg("формат: %s | индекс: %d названий | длительностей: %d",
-            WowVoiceDB.ext, n, d)
+            TalkingHeadRuDB.ext, n, d)
         msg("глушение приветствия NPC: %s (канал Dialog)",
-            WowVoiceDB.ducknpc and "вкл" or "выкл")
-        msg("имена файлов: <quest_id><секция>.%s", WowVoiceDB.ext)
+            TalkingHeadRuDB.ducknpc and "вкл" or "выкл")
+        msg("имена файлов: <quest_id><секция>.%s", TalkingHeadRuDB.ext)
         msg("пример пути: %s", WV:SoundPath(179, "a"))
         msg("UI.lua (журнал): %s",
             WV.RefreshJournalButtons and "загружен" or "НЕ ЗАГРУЖЕН — нужен полный перезапуск игры")

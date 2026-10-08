@@ -1,31 +1,31 @@
 -- Runs against the public TOC before the development harness is loaded.
 local WV, Q = WowVoice, WowVoice.questQueue
 assert(Q.enabled and not WowVoiceQueueLab and not SLASH_WOWVOICEQUEUELAB1)
-WowVoiceDB = { autoPlay = false, autoPlayAccept = false, autoPlayTurnIn = false,
+TalkingHeadRuDB = { autoPlay = false, autoPlayAccept = false, autoPlayTurnIn = false,
     autoPlayAcceptDefaultOnApplied = true, volume = 0.6 }
 event('ADDON_LOADED')
-assert(WowVoiceDB.autoPlay and WowVoiceDB.autoPlayAccept and WowVoiceDB.autoPlayTurnIn
-    and WowVoiceDB.playlistAutoPlayApplied == 2 and WowVoiceDB.volume == 0.6)
-assert(WowVoiceDB.queueAutoPlay == true, 'continuous playback defaults on once')
-WowVoiceDB.queueAutoPlay = false
+assert(TalkingHeadRuDB.autoPlay and TalkingHeadRuDB.autoPlayAccept and TalkingHeadRuDB.autoPlayTurnIn
+    and TalkingHeadRuDB.playlistAutoPlayApplied == 2 and TalkingHeadRuDB.volume == 0.6)
+assert(TalkingHeadRuDB.queueAutoPlay == true, 'continuous playback defaults on once')
+TalkingHeadRuDB.queueAutoPlay = false
 event('ADDON_LOADED')
-assert(WowVoiceDB.queueAutoPlay == false, 'a later autoplay choice survives default initialization')
-WowVoiceDB.queueAutoPlay = true
+assert(TalkingHeadRuDB.queueAutoPlay == false, 'a later autoplay choice survives default initialization')
+TalkingHeadRuDB.queueAutoPlay = true
 -- The previously shipped test archive already set the boolean migration flag.
-WowVoiceDB.playlistAutoPlayApplied = true
-WowVoiceDB.autoPlay, WowVoiceDB.autoPlayAccept, WowVoiceDB.autoPlayTurnIn = false, false, false
-WowVoiceDB.trackerButtons, WowVoiceDB.queueDescriptionsOnly = false, true
+TalkingHeadRuDB.playlistAutoPlayApplied = true
+TalkingHeadRuDB.autoPlay, TalkingHeadRuDB.autoPlayAccept, TalkingHeadRuDB.autoPlayTurnIn = false, false, false
+TalkingHeadRuDB.trackerButtons, TalkingHeadRuDB.queueDescriptionsOnly = false, true
 event('ADDON_LOADED')
-assert(WowVoiceDB.autoPlay and WowVoiceDB.autoPlayAccept and WowVoiceDB.autoPlayTurnIn
-    and WowVoiceDB.playlistAutoPlayApplied == 2)
-assert(WowVoiceDB.trackerButtons == nil and WowVoiceDB.queueDescriptionsOnly and WowVoiceDB.volume == 0.6,
+assert(TalkingHeadRuDB.autoPlay and TalkingHeadRuDB.autoPlayAccept and TalkingHeadRuDB.autoPlayTurnIn
+    and TalkingHeadRuDB.playlistAutoPlayApplied == 2)
+assert(TalkingHeadRuDB.trackerButtons == nil and TalkingHeadRuDB.queueDescriptionsOnly and TalkingHeadRuDB.volume == 0.6,
     'playback migration preserves active preferences and removes the obsolete tracker setting')
-WowVoiceDB.queueDescriptionsOnly = false
+TalkingHeadRuDB.queueDescriptionsOnly = false
 WV:SetAutoPlayEnabled(false)
 WV:SetAutoPlayAcceptEnabled(false)
 WV:SetAutoPlayTurnInEnabled(false)
 event('ADDON_LOADED')
-assert(not WowVoiceDB.autoPlay and not WowVoiceDB.autoPlayAccept and not WowVoiceDB.autoPlayTurnIn,
+assert(not TalkingHeadRuDB.autoPlay and not TalkingHeadRuDB.autoPlayAccept and not TalkingHeadRuDB.autoPlayTurnIn,
     'migration must not override a later opt-out')
 WV:SetAutoPlayEnabled(true)
 WV:SetAutoPlayAcceptEnabled(true)
@@ -51,7 +51,7 @@ local function step()
     if frame.visible then frame.scripts.OnUpdate() end
 end
 local function resetRuntime(keepPreferences)
-    if not keepPreferences then WowVoiceDB.queueAutoPlay = true end
+    if not keepPreferences then TalkingHeadRuDB.queueAutoPlay = true end
     Q:Clear()
     Q.groups, Q.offers, Q.completed, Q.removals = {}, {}, {}, {}
     Q.current, Q.nextRecord, Q.gap, Q.loggingOut = nil, nil, nil, nil
@@ -60,19 +60,19 @@ local function resetRuntime(keepPreferences)
 end
 local function restore(saved, elapsed)
     resetRuntime(true)
-    WowVoiceQueueDB = saved
+    TalkingHeadRuQueueDB = saved
     serverNow = saved.savedAt + (elapsed or 0)
     Q:RestoreSession()
 end
 
 -- Real event routing works without /tt: viewing, accepting and turn-in do not interrupt.
-assert(not WowVoiceTalkingHead, 'exercise paused restore before any head has been created')
-WowVoiceQueueDB = { version = 1, savedAt = serverNow, paused = true, records = {
+assert(not TalkingHeadRu, 'exercise paused restore before any head has been created')
+TalkingHeadRuQueueDB = { version = 1, savedAt = serverNow, paused = true, records = {
     { context = { questId = ids[1], section = 'a', title = 'Saved quest' }, giver = { npcID = 100 } }
 } }
 local silent = #plays
 Q:RestoreSession()
-assert(frames.WowVoiceQuestQueuePlayer:IsShown() and not WowVoiceTalkingHead:IsShown()
+assert(frames.WowVoiceQuestQueuePlayer:IsShown() and not TalkingHeadRu:IsShown()
     and #plays == silent and Q.paused, 'paused queue is accessible immediately after a fresh login')
 resetRuntime()
 questID = ids[1]
@@ -110,7 +110,7 @@ for _, background in ipairs({'0', '1'}) do
             assert(Q:Count() == 0 and not Q.current)
             if afterFade then
                 tick(now + 2)
-                WowVoiceTalkingHead.scripts.OnUpdate()
+                TalkingHeadRu.scripts.OnUpdate()
             end
             local player = frames.WowVoiceQuestQueuePlayer
             assert(not player:IsShown())
@@ -146,19 +146,19 @@ offer(4, 'a', 444, 'lab')
 local _, interruptedDuration = WV:SoundPath(ids[1], 'a')
 tick(now + interruptedDuration * 0.6)
 event('PLAYER_LOGOUT')
-local saved = WowVoiceQueueDB
+local saved = TalkingHeadRuQueueDB
 assert(saved and #saved.records == 5 and saved.records[1].context.questId == ids[1])
 assert(saved.records[1].context ~= a.context and saved.records[1].context.speaker ~= a.context.speaker)
 assert(saved.records[2].context.section == 'p' and saved.records[2].context.speaker.npcID == 999)
 assert(saved.records[2].giver.npcID == 100 and saved.completed[ids[1]])
 event('PLAYER_LOGOUT')
-assert(WowVoiceQueueDB == saved, 'a repeated logout event cannot replace the pre-stop snapshot')
+assert(TalkingHeadRuQueueDB == saved, 'a repeated logout event cannot replace the pre-stop snapshot')
 resetRuntime()
-WowVoiceQueueDB = saved
+TalkingHeadRuQueueDB = saved
 serverNow = saved.savedAt + 299
 local sounds = #plays
 frames.WowVoiceQuestQueueEvents.scripts.OnEvent(nil, 'PLAYER_ENTERING_WORLD')
-assert(Q:Count() == 5 and not Q.current and #plays == sounds and not WowVoiceQueueDB)
+assert(Q:Count() == 5 and not Q.current and #plays == sounds and not TalkingHeadRuQueueDB)
 assert(Q.groups[1].speaker.npcID == 100 and Q.nextRecord.context.questId == ids[3])
 assert(Q.completed['game:' .. ids[1]])
 -- Entering the world is not yet permission to start audio. Loading time and
@@ -170,7 +170,7 @@ step()
 assert(not Q.current and #plays == sounds, 'loading cannot start or expire a restored line')
 frames.WowVoiceQuestQueueEvents.scripts.OnEvent(nil, 'LOADING_SCREEN_DISABLED')
 assert(not Q.current and #plays == sounds, 'audio starts on the frame after loading completes')
-local restoredModel = frames.WowVoiceTalkingHead.Model
+local restoredModel = frames.TalkingHeadRu.Model
 local completeLoad = restoredModel.CompleteLoad
 function restoredModel:CompleteLoad(display)
     completeLoad(self, display)
@@ -180,7 +180,7 @@ step()
 local restartedAt = now
 assert(Q.current.context.questId == ids[1] and #plays == sounds + 1, 'interrupted line restarts once in-world')
 assert(Q.current.context.text == 'Actual captured dialog')
-frames.WowVoiceTalkingHead.scripts.OnUpdate()
+frames.TalkingHeadRu.scripts.OnUpdate()
 assert(restoredModel.animation == 60 and not restoredModel.paused,
     'playlist restored after reload must restart its model animation after native loading')
 restoredModel.CompleteLoad = completeLoad
@@ -189,32 +189,32 @@ frames.WowVoiceQuestQueueEvents.scripts.OnEvent(nil, 'LOADING_SCREEN_DISABLED')
 step()
 assert(#plays == sounds + 1, 'zoning cannot restart a restored playlist')
 tick(restartedAt + interruptedDuration - 0.01)
-frames.WowVoiceTalkingHead.scripts.OnUpdate()
+frames.TalkingHeadRu.scripts.OnUpdate()
 assert(Q.current and Q.current.status == 'playing' and not Q.gap
-    and WowVoiceTalkingHead.Progress.value < 1,
+    and TalkingHeadRu.Progress.value < 1,
     'the restarted line and head retain the full duration regardless of prior playback and loading')
-tick(restartedAt + interruptedDuration + WowVoiceDB.tail + 0.01)
+tick(restartedAt + interruptedDuration + TalkingHeadRuDB.tail + 0.01)
 assert(Q.gap and Q.current.status == 'done' and #plays == sounds + 1,
     'only a complete new duration finishes restored audio')
 
 -- Exactly five minutes expires; normal play has no age limit.
 restore(saved, 300)
-step(); assert(Q:Count() == 0 and not Q.current and not WowVoiceQueueDB)
+step(); assert(Q:Count() == 0 and not Q.current and not TalkingHeadRuQueueDB)
 restore(saved, -1)
 assert(Q:Count() == 0)
 restore(saved, 0)
 step(); serverNow = serverNow + 3600
 assert(Q:Count() == 5 and Q.current)
 event('PLAYER_LOGOUT')
-assert(WowVoiceQueueDB.savedAt == serverNow)
+assert(TalkingHeadRuQueueDB.savedAt == serverNow)
 
 -- Closing the head with autoplay disabled drops the line and preserves the pause.
 resetRuntime()
 offer(1); offer(2)
 WV:SetQueueAutoPlay(false)
-WowVoiceTalkingHead.Close.scripts.OnClick()
+TalkingHeadRu.Close.scripts.OnClick()
 event('PLAYER_LOGOUT')
-local paused = WowVoiceQueueDB
+local paused = TalkingHeadRuQueueDB
 assert(paused.paused and #paused.records == 1 and paused.records[1].context.questId == ids[2])
 restore(paused, 10)
 sounds = #plays
@@ -225,13 +225,13 @@ assert(Q:Start(Q:Waiting()) and Q.current.context.questId == ids[2])
 resetRuntime()
 local skipped = offer(1)
 offer(2)
-WowVoiceTalkingHead.Close.scripts.OnClick()
-assert(skipped.status == 'skipped' and not Q.current and not Q.paused and WowVoiceDB.queueAutoPlay)
+TalkingHeadRu.Close.scripts.OnClick()
+assert(skipped.status == 'skipped' and not Q.current and not Q.paused and TalkingHeadRuDB.queueAutoPlay)
 event('PLAYER_LOGOUT')
-local afterSkip = WowVoiceQueueDB
+local afterSkip = TalkingHeadRuQueueDB
 assert(not afterSkip.paused and #afterSkip.records == 1 and afterSkip.records[1].context.questId == ids[2])
 restore(afterSkip, 1); step()
-assert(Q.current.context.questId == ids[2] and WowVoiceDB.queueAutoPlay)
+assert(Q.current.context.questId == ids[2] and TalkingHeadRuDB.queueAutoPlay)
 
 -- Completed audio in the automatic gap must not be replayed.
 resetRuntime()
@@ -240,7 +240,7 @@ local _, duration = WV:SoundPath(ids[1], 'a')
 tick(now + duration + 1)
 assert(Q.gap and Q.current.status == 'done')
 event('PLAYER_LOGOUT')
-local gap = WowVoiceQueueDB
+local gap = TalkingHeadRuQueueDB
 assert(#gap.records == 1 and gap.records[1].context.questId == ids[2] and not gap.paused)
 restore(gap, 1); step()
 assert(Q.current.context.questId == ids[2])
@@ -283,7 +283,7 @@ assert(Q.paused and not Q.current and not Q.gap and running.status == 'done'
 assert(autoplayButton.Label.text == 'Автовоспроизведение' and not autoplayButton.Check:GetChecked())
 assert(frames.WowVoiceQuestQueuePlayer:IsShown(), 'paused playlist remains visible')
 Q:SaveSession()
-local autoplayPaused = WowVoiceQueueDB
+local autoplayPaused = TalkingHeadRuQueueDB
 assert(autoplayPaused.paused and #autoplayPaused.records == 2)
 restore(autoplayPaused, 1); step()
 assert(Q.paused and not Q.current and #plays == played
@@ -302,8 +302,8 @@ autoplayButton.scripts.OnClick(autoplayButton)
 assert(Q.paused and not Q.current and not Q.gap and Q:Count() == 1
     and not autoplayButton.Check:GetChecked() and #stops == stopped)
 tick(now + 2); step()
-WowVoiceTalkingHead.scripts.OnUpdate(WowVoiceTalkingHead, 2)
-assert(not WowVoiceTalkingHead:IsShown() and #plays == played,
+TalkingHeadRu.scripts.OnUpdate(TalkingHeadRu, 2)
+assert(not TalkingHeadRu:IsShown() and #plays == played,
     'head fades normally while the paused queue waits')
 Q:Event('QUEST_REMOVED', ids[2]); step()
 assert(Q:Count() == 0 and not Q.paused, 'abandonment still clears waiting quests while paused')
@@ -349,7 +349,7 @@ assert(Q.current == lastWaiting and Q.paused and #plays == played + 2 and not ne
 local lastPlayer = frames.WowVoiceQuestQueuePlayer
 assert(lastPlayer.fading, 'the sole playing line fades even with autoplay disabled')
 lastPlayer.scripts.OnUpdate(lastPlayer, 0.25)
-assert(not lastPlayer:IsShown() and Q.current == lastWaiting and WowVoiceTalkingHead:IsShown())
+assert(not lastPlayer:IsShown() and Q.current == lastWaiting and TalkingHeadRu:IsShown())
 WV:RefreshQuestQueuePlayer()
 assert(not lastPlayer:IsShown(), 'refresh does not reveal the last playing line')
 local _, lastDuration = WV:SoundPath(ids[3], 'a')
@@ -443,7 +443,7 @@ for _, section in ipairs({'a', 'p', 'c'}) do
         assert(Q:Count() == count, 'an unaccepted offer must not become a new queued description after disabling')
     end
     Q:SaveSession()
-    local retained = WowVoiceQueueDB
+    local retained = TalkingHeadRuQueueDB
     local played = #plays
     assert(Q:Start(pending) and Q.current == pending and #plays == played+1,
         'manual Play of an already queued line must still work')
@@ -467,9 +467,9 @@ print('PASS: per-type switches block only new entries; queued a/p/c play manuall
 
 -- Clear, missing audio and harness records cannot revive stale work.
 resetRuntime(); offer(1, 'a', 1, 'lab')
-event('PLAYER_LOGOUT'); assert(not WowVoiceQueueDB)
+event('PLAYER_LOGOUT'); assert(not TalkingHeadRuQueueDB)
 resetRuntime(); offer(1); offer(2); Q:Clear()
-event('PLAYER_LOGOUT'); assert(not WowVoiceQueueDB)
+event('PLAYER_LOGOUT'); assert(not TalkingHeadRuQueueDB)
 restore(saved, 1)
 soundOK = false
 for _ = 1, 8 do step() end
@@ -479,14 +479,14 @@ resetRuntime()
 WV:SetAutoPlayEnabled(false)
 WV:SetAutoPlayAcceptEnabled(false); WV:SetAutoPlayTurnInEnabled(false)
 WV:SetQueueDescriptionsOnly(true)
-WowVoiceQueueDB = saved; Q:RestoreSession()
-assert(Q:Count() == 5 and not WowVoiceQueueDB, 'all existing stages restore regardless of admission settings')
+TalkingHeadRuQueueDB = saved; Q:RestoreSession()
+assert(Q:Count() == 5 and not TalkingHeadRuQueueDB, 'all existing stages restore regardless of admission settings')
 step()
 assert(Q.current.context.questId == ids[1] and Q.current.context.section == 'a')
 offer(4); offer(4, 'p'); offer(4, 'c')
 assert(Q:Count() == 5, 'master-off blocks all new quest entries')
 Q:SaveSession()
-assert(WowVoiceQueueDB and #WowVoiceQueueDB.records == 5, 'master-off does not disable saving')
+assert(TalkingHeadRuQueueDB and #TalkingHeadRuQueueDB.records == 5, 'master-off does not disable saving')
 assert(Q:Next() and Q.current.context.section == 'p', 'manual Next works with all admission switches off')
 local _, progressDuration = WV:SoundPath(ids[1], 'p')
 tick(now + progressDuration + 1)
@@ -502,10 +502,10 @@ print('PASS: master-off and descriptions-only preserve pending audio, manual/aut
 resetRuntime(); running = offer(1); waiting = offer(2)
 played, stopped = #plays, #stops
 autoplayButton.Check.scripts.OnClick(autoplayButton.Check)
-assert(WowVoiceDB.queueAutoPlay == false and Q.paused and Q.current == running
+assert(TalkingHeadRuDB.queueAutoPlay == false and Q.paused and Q.current == running
     and #plays == played and #stops == stopped)
 Q:Clear()
-assert(Q:Count() == 0 and not Q.paused and WowVoiceDB.queueAutoPlay == false,
+assert(Q:Count() == 0 and not Q.paused and TalkingHeadRuDB.queueAutoPlay == false,
     'clearing the queue does not erase the remembered mode')
 played = #plays
 running = offer(1); waiting = offer(2)
@@ -514,26 +514,26 @@ assert(Q.current == running and Q.paused and #plays == played + 1
 tick(now + pauseDuration + 1); step()
 assert(not Q.current and Q.paused and Q:Waiting() == waiting and #plays == played + 1)
 Q:SaveSession()
-local rememberedSession = WowVoiceQueueDB
+local rememberedSession = TalkingHeadRuQueueDB
 event('ADDON_LOADED')
-assert(WowVoiceDB.queueAutoPlay == false)
+assert(TalkingHeadRuDB.queueAutoPlay == false)
 restore(rememberedSession, 1); step()
-assert(WowVoiceDB.queueAutoPlay == false and Q.paused and not Q.current and #plays == played + 1)
+assert(TalkingHeadRuDB.queueAutoPlay == false and Q.paused and not Q.current and #plays == played + 1)
 nextControl.scripts.OnClick(nextControl)
 assert(Q.current.context.questId == ids[2] and Q.paused and #plays == played + 2)
 tick(now + nextDuration + 1); step()
-assert(Q:Count() == 0 and WowVoiceDB.queueAutoPlay == false)
+assert(Q:Count() == 0 and TalkingHeadRuDB.queueAutoPlay == false)
 running = offer(3); waiting = offer(4)
 assert(Q.current == running and Q.paused)
 assert(WV:PlayQueuedQuest({ context = { questId = ids[1], section = 'a', title = 'Manual journal replay',
     speaker = { npcID = 100, name = 'NPC', displayID = 1234 } } }))
-assert(Q.current.context.questId == ids[1] and Q.paused and WowVoiceDB.queueAutoPlay == false,
+assert(Q.current.context.questId == ids[1] and Q.paused and TalkingHeadRuDB.queueAutoPlay == false,
     'manual playback outside the playlist respects the remembered advancement mode')
 tick(now + pauseDuration + 1); step()
 assert(not Q.current and Q.paused and Q:Waiting() == waiting)
 played = #plays
 autoplayButton.scripts.OnClick(autoplayButton)
-assert(WowVoiceDB.queueAutoPlay == true and not Q.paused and Q.current == waiting and #plays == played + 1)
+assert(TalkingHeadRuDB.queueAutoPlay == true and not Q.paused and Q.current == waiting and #plays == played + 1)
 Q:Clear()
 running = offer(1); waiting = offer(2)
 assert(not Q.paused and autoplayButton.Check:GetChecked())
@@ -544,6 +544,6 @@ assert(Q.current == waiting and not Q.paused)
 resetRuntime()
 print('PASS: toolbar autoplay choice persists across empty queues and reload, preserves first-line launch, single playback and continuous resume')
 resetRuntime()
-WowVoiceQueueDB = { version = 1, savedAt = serverNow, records = { false, { context = {} } } }
+TalkingHeadRuQueueDB = { version = 1, savedAt = serverNow, records = { false, { context = {} } } }
 Q:RestoreSession(); assert(Q:Count() == 0)
 print('PASS: public playlist, one-time autoplay migration, per-character logout snapshot, 5-minute expiry, paused/gap restore, ordering and stand exclusion')

@@ -1,6 +1,6 @@
 # Development guide
 
-WowVoice TalkingHead is a Forever Beta build based on WowVoice, with talking
+TalkingHead Ru is a Forever Beta build based on WowVoice, with talking
 heads and quest playback controls. This repository keeps its development sources
 outside the live World of Warcraft installation. Runtime addon files live under
 `src/`; tests and build tools stay outside that directory and are never deployed.
@@ -13,13 +13,34 @@ that pack and alternate recordings of shared quests. No CatQuest audio is copied
 or redistributed. Shared recordings use the source selected in options (WowVoice by default).
 This build targets **WoW Forever Beta, Interface 16001**.
 
-The in-game title is **WowVoice TalkingHead**, and its addon ID and folder are
-`WowVoiceTalkingHead`. The command `/thead` opens settings; `/thead help` lists commands.
+Updated beta clients can return secret NPC GUIDs, names and model display IDs.
+`WowVoice.PublicValue` drops restricted values before identity parsing, debug
+formatting or persistence. Portrait capture tries accessible npc/questnpc tokens,
+then uses the existing quest-giver metadata fallback for descriptions only.
+Progress and completion never infer a receiver from giver metadata. Clients
+without `issecretvalue` retain normal capture behavior. The regression scenario
+`tests/secret-speaker-scenarios.lua` checks playback and identity fallbacks with
+mocked restricted values; actual client restrictions still need in-game testing.
+
+The in-game title is **TalkingHead Ru**, and its addon ID and folder are
+`TalkingHeadRu`. The command `/thead` opens settings; `/thead help` lists commands.
+Only the `TalkingHeadRu/` runtime addon ships. WoW saves account settings in
+`TalkingHeadRuDB` and per-character queue state in `TalkingHeadRuQueueDB`, using
+`TalkingHeadRu.lua` at their respective SavedVariables scopes. There is no legacy
+loader or import: users configure the addon again once when switching from
+WowVoiceTalkingHead. DeployAddon backs up and removes any old WowVoiceTalkingHead
+folder, then updates TalkingHeadRu; it never edits WTF.
+Existing published release URLs keep their historical names.
+`LegacyAddonBlocker.lua` disables a leftover WowVoiceTalkingHead for the current
+character before normal initialization. It does not import saves or force-load
+the old addon. If the old runtime is already loaded (or loads later in the same
+session), it offers a user-initiated UI reload after PLAYER_LOGIN; disabling alone
+cannot unload its existing code. Without the old runtime there is no reload prompt.
 The original `/wv` and `/wowvoice` aliases are not registered; the bundled audio folder is `WowVoiceSounds`.
 The cloud sync directory also retains its existing name and shared link.
 
 For installation and in-game usage, see the [user guide in Russian](../USER_README.md).
-The release archive includes that guide as plain-text `README.txt` (UTF-8).
+The guide stays in the repository and on the website; no README is added to the ZIP root.
 
 Primary audio uses ordinary filenames such as `179a.ogg`; the runtime has no
 activation or filename hashing. Activation globals from other addons are ignored.
@@ -32,7 +53,7 @@ from release archives.
 ## Layout
 
 Developer slash handlers live in `dev/queue-lab/Commands.lua`, injected only
-by local `Deploy`/`DeployAddon -QueueLab`. All references below to `/thead`
+by local `DeployAddon -QueueLab`. All references below to `/thead`
 `remindertest`, `test`, `stoptest`, `diag`, `perf`, `debug` and `source` require
 that module. Release archives contain neither those handlers nor their help
 entries. Shared runtime methods remain available to the local harness.
@@ -74,17 +95,17 @@ The playlist toolbar measures translated labels and divides spare width between
 its two gaps, keeping Clear all and Next at the edges in both supported languages.
 
 ```text
-src/                             Runtime files copied to AddOns/WowVoiceTalkingHead
+src/                             Runtime files copied to AddOns/TalkingHeadRu
 soundpack/                       Complete Classic audio and two Forever TOCs
 tests/                           Lua tests with WoW API mocks and pipeline checks
 config/build.env.local.ps1      Local environment variables (gitignored)
 build.ps1 / build.cmd             Validate, test, deploy and package pipeline
-USER_README.md                   Russian user guide; converted to README.txt for packaging
+USER_README.md                   Russian user guide for the repository and website
 artifacts/WoWVoice/              Latest full and addon-only ZIPs; stable cloud sync folder (gitignored)
 backups/                         Backups created before deployment (gitignored)
 ```
 
-Edit `src/`, then run Deploy. The installed `AddOns\WowVoiceTalkingHead` directory is a
+Edit `src/`, then run DeployAddon. The installed `AddOns\TalkingHeadRu` directory is a
 deployment destination, not the project's source directory. OGG files are local
 build inputs (gitignored) and are included in the complete release archive.
 Generate Classic metadata with `tools/generate-classic-metadata.js <WowVoiceSounds directory>`.
@@ -151,44 +172,40 @@ Run from the repository root in Windows PowerShell or Command Prompt:
 .\build.cmd -Task Test
 ```
 
-### Deploy to Forever Beta
+### DeployAddon to Forever Beta
 
 ```shell
-.\build.cmd -Task Deploy -Target ForeverBeta
+.\build.cmd -Task DeployAddon -Target ForeverBeta
 ```
 
 ### Build release package
 
 Build a release archive only when explicitly requested. Routine changes can be
 tested and deployed locally while accumulating the next release; do not run
-Package after every change or update the shared pCloud archive automatically.
-
-```shell
-.\build.cmd -Task Package
-```
-
-Package creates the new ZIP in a temporary staging directory, then places it in
-`artifacts/WoWVoice/` and removes older full ZIPs, including archives left directly in
-`artifacts/` by earlier builds. The `WoWVoice` directory is never recreated, so it
-can be paired with a cloud folder for synchronization. A failed archive build
-leaves the previous release in place.
-
-### Build a small addon update (without audio)
+PackageAddon after every change or update the shared pCloud archive automatically.
 
 ```shell
 .\build.cmd -Task PackageAddon
 ```
 
-Creates `artifacts/WoWVoice/WowVoiceTalkingHead-<version>-addon-only.zip` containing only
-`WowVoiceTalkingHead/` and the same plain-text `README.txt` from `USER_README.md` as the full archive. Use it to
-deliver code fixes to users who already have the full sound library installed.
+PackageAddon creates `TalkingHeadRu-<version>.zip` in a temporary staging directory,
+then places it in `artifacts/WoWVoice/` and removes older addon ZIPs, including
+the previous `-addon-only.zip` names and archives left directly in `artifacts/`.
+The `WoWVoice` directory is never recreated, so it
+can be paired with a cloud folder for synchronization. A failed archive build
+leaves the previous release in place.
+
+The archive contains only `TalkingHeadRu/`, with no loose files at its root.
+It supports both first installation and updates; users install
+their voice libraries separately through CurseForge.
 It includes the entire runtime addon, including textures and audio indexes,
 and can be built without a local `soundpack/` directory.
 Runtime layout and TOC checks still run. The version is not changed.
 
-The shared folder retains one full release and one addon-only update. Building
-either kind replaces only that kind, preserving the other archive and the short
-link. Full releases remain necessary for first installation or new recordings.
+The legacy `Package` task remains available for the old bundled format and creates
+`TalkingHeadRu-<version>-full.zip`. The shared folder retains at most one archive
+of each kind. Building either kind replaces only that kind, preserving the other
+archive and the short link. Current releases use PackageAddon.
 
 For pCloud, configure Sync once between the local `artifacts/WoWVoice` folder and
 a cloud folder named `WoWVoice`, then share the cloud folder's link. Each Package
@@ -295,7 +312,7 @@ IntelliJ IDEA shows a Run/Play gutter icon for each command block when
 **Languages & Frameworks | Markdown**. Use the repository root as the working
 directory.
 
-Deploy and Package run Validate first; PackageAddon checks runtime files without
+DeployAddon and Package run Validate first; PackageAddon checks runtime files without
 requiring audio sources. Test runs separately. All build tasks require Windows
 PowerShell 5.1. Test locates Node.js/npm through
 PATH, `NODE_EXE`, IntelliJ's local Node runtimes or standard installation
@@ -886,14 +903,14 @@ and set the Forever Beta AddOns directory. The example uses a fictional path:
 $env:WOWVOICE_FOREVER_BETA_ADDONS = 'D:\ExampleWoW\_classic_beta_\Interface\AddOns'
 ```
 
-Deploy and DeployAddon load this file automatically in the build process only.
+DeployAddon load this file automatically in the build process only.
 Its assignments override inherited environment variables; without the file,
 the inherited variable is used. Windows user/system environment settings are
 not modified. Other tasks do not load or require the local environment file.
 Repository paths are derived from the script location.
 
 Set `$env:WOWVOICE_QUEUE_LAB = '1'` in the local environment file to include
-the `/tt` harness on every Deploy/DeployAddon. The default is off.
+the `/tt` harness on every DeployAddon. The default is off.
 Explicit `-QueueLab` or `-QueueLab:$false` overrides this preference.
 Explicit `-ConfigPath` deployment ignores the environment preference;
 release packages always exclude the harness.
@@ -976,17 +993,17 @@ only the affected file in the comparison view. Normal playback retains its own p
 Both release archive types include the catalogue. The old deployment flag `-LocalDebug`
 is accepted as a no-op; ordinary deployment removes obsolete local panel/index files.
 
-Before writing any files, Deploy creates `backups/<timestamp-id>/` containing
-the existing `WowVoiceTalkingHead` directory and the two sound pack TOC files it will
-replace. It then synchronizes `src/` into `AddOns\WowVoiceTalkingHead`, removing old files
+Before writing any files, DeployAddon creates `backups/<timestamp-id>/` containing
+the existing `TalkingHeadRu` and `WowVoiceTalkingHead` directories. It then synchronizes `src/` into `AddOns\TalkingHeadRu`, removing old files
 that are no longer present in the source. Existing IDE workspace state under
 the installed addon's `.idea` directory is preserved.
 
-The complete Classic audio and its two TOCs are copied into WowVoiceSounds.
-Existing extra files are preserved. CatVoices, CatQuest and CatQuest_Voices
-are never changed by deployment. The large Classic audio library is not backed up.
+Sound libraries, including WowVoiceSounds and its TOCs, CatVoices, CatQuest and
+CatQuest_Voices are never changed or backed up by deployment.
 Other addons and WTF are not modified. Fully restart after adding new sounds.
-To roll back, restore WowVoiceTalkingHead and sound TOCs from the backup;
+To roll back the rename, remove the new TalkingHeadRu folder and restore the old
+WowVoiceTalkingHead folder from the backup. For later updates restore TalkingHeadRu
+and, if included, sound TOCs from the backup;
 destination.txt records the target directory.
 
 ## Release package
@@ -1014,18 +1031,17 @@ source archive and add its publication date; an unknown version shows no guessed
 date. The current Classic 1.0.1 archive was published on 2026-08-13 (GitHub asset
 upload date), independently of the original v1.0 release's earlier creation date.
 
-Package creates a ZIP archive, using the version from `src/WowVoiceTalkingHead.toc`:
+Package creates a ZIP archive, using the version from `src/TalkingHeadRu.toc`:
 
 ```text
-artifacts/WoWVoice/WowVoiceTalkingHead-<version>.zip
+artifacts/WoWVoice/TalkingHeadRu-<version>-full.zip
 ```
 
 The ZIP contains:
 
 ```text
-WowVoiceTalkingHead/              Complete addon from src/
+TalkingHeadRu/                    Complete addon from src/
 WowVoiceSounds/                   Complete Classic audio and two Forever TOCs
-README.txt                        Plain-text Russian user guide from USER_README.md
 ```
 
 Tests, development tools, IDE settings, backups and internal manifests are excluded.
@@ -1200,8 +1216,9 @@ explicit test-only routing, keeps queue entries transient, and restores index,
 metadata, resolver and original preference on reset/reload/logout. It is excluded
 from both release packages. See [in-game instructions](../dev/catquest-update-lab/README.md).
 
-Package contains WowVoiceTalkingHead and WowVoiceSounds. PackageAddon contains
-only WowVoiceTalkingHead. Both include the same text, NPC and compatibility data.
+Package contains TalkingHeadRu and WowVoiceSounds.
+PackageAddon contains only TalkingHeadRu.
+Both include the same text, NPC and compatibility data.
 PackageLite was removed because it would now duplicate Package. Neither build
 needs a local catvoices directory; existing legacy audio is not deleted automatically.
 

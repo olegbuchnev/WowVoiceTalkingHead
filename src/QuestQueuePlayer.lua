@@ -90,13 +90,13 @@ local function newPreview()
 end
 
 function WV:GetQuestQueueHeight()
-    local height = WowVoiceDB and tonumber(WowVoiceDB.queueHeight)
+    local height = TalkingHeadRuDB and tonumber(TalkingHeadRuDB.queueHeight)
     if not height or height ~= height then height = MIN_HEIGHT end
     return math.max(MIN_HEIGHT, math.min(MAX_HEIGHT, math.floor(height + 0.5)))
 end
 
 function WV:GetQuestQueueScale()
-    local scale = WowVoiceDB and tonumber(WowVoiceDB.queueScale)
+    local scale = TalkingHeadRuDB and tonumber(TalkingHeadRuDB.queueScale)
     if not scale or scale ~= scale then scale = 1 end
     return math.max(0.8, math.min(1.2, scale))
 end
@@ -108,7 +108,7 @@ local function positionPlayer(head)
     player:SetScale(ratio)
     WV:UpdateFrameEditBorder(player.EditOverlay)
     player:ClearAllPoints()
-    local saved = WowVoiceDB and WowVoiceDB.queuePosition
+    local saved = TalkingHeadRuDB and TalkingHeadRuDB.queuePosition
     if type(saved) == "table" and type(saved.x) == "number" and type(saved.y) == "number"
         and saved.x == saved.x and saved.y == saved.y and math.abs(saved.x) < 100000 and math.abs(saved.y) < 100000 then
         player:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", saved.x / ratio, saved.y / ratio)
@@ -191,14 +191,14 @@ local function finishDrag()
     player.dragging = nil
     player.AlignmentGuide:Hide()
     if type(drag) == "table" then
-        WowVoiceDB.queuePosition = { x = drag.finalX, y = drag.finalY }
+        TalkingHeadRuDB.queuePosition = { x = drag.finalX, y = drag.finalY }
         if WV.RefreshQuestQueuePositionOptions then WV:RefreshQuestQueuePositionOptions(true) end
         return
     end
     local x, y = player:GetCenter()
     if x and y then
         local ratio = player:GetEffectiveScale() / UIParent:GetEffectiveScale()
-        WowVoiceDB.queuePosition = { x = (x - player:GetWidth() / 2) * ratio,
+        TalkingHeadRuDB.queuePosition = { x = (x - player:GetWidth() / 2) * ratio,
             y = (y + player:GetHeight() / 2) * ratio }
     end
     if WV.RefreshQuestQueuePositionOptions then WV:RefreshQuestQueuePositionOptions(true) end
@@ -341,7 +341,7 @@ local function removeButton(parent, callback)
     local b = CreateFrame("Button", nil, parent)
     b:SetSize(20, 20)
     b.Icon = b:CreateTexture(nil, "ARTWORK")
-    b.Icon:SetTexture("Interface\\AddOns\\WowVoiceTalkingHead\\Media\\QueueClose.png")
+    b.Icon:SetTexture("Interface\\AddOns\\TalkingHeadRu\\Media\\QueueClose.png")
     b.Icon:SetSize(16, 16)
     b.Icon:SetPoint("CENTER")
     b.Icon:SetDesaturated(true)
@@ -365,7 +365,7 @@ local function createBackground(owner)
     for row = 1, 3 do
         for column = 1, 3 do
             local texture = owner:CreateTexture(nil, "BACKGROUND")
-            texture:SetTexture("Interface\\AddOns\\WowVoiceTalkingHead\\Media\\TalkingHeads")
+            texture:SetTexture("Interface\\AddOns\\TalkingHeadRu\\Media\\TalkingHeads")
             texture:SetTexCoord(x[column]/1024, x[column + 1]/1024, y[row]/1024, y[row + 1]/1024)
             owner.BackgroundParts[#owner.BackgroundParts + 1] = { texture = texture, row = row, column = column }
         end
@@ -592,7 +592,7 @@ local function create()
     end)
     player = CreateFrame("Frame", "WowVoiceQuestQueuePlayer", root)
     player:SetFrameStrata("FULLSCREEN_DIALOG")
-    player:SetFrameLevel(WowVoiceTalkingHead:GetFrameLevel())
+    player:SetFrameLevel(TalkingHeadRu:GetFrameLevel())
     player:SetClampedToScreen(true)
     -- Clamp to the tiles/edit outline, excluding the empty right margin.
     player:SetClampRectInsets(0, -PANEL_RIGHT, 0, 0)
@@ -668,7 +668,7 @@ local function create()
         autoplay.ColorParts[#autoplay.ColorParts + 1] = part
     end
     local mark = autoplay.Check:CreateTexture(nil, "ARTWORK")
-    mark:SetTexture("Interface\\AddOns\\WowVoiceTalkingHead\\Media\\QueueCheck")
+    mark:SetTexture("Interface\\AddOns\\TalkingHeadRu\\Media\\QueueCheck")
     mark:SetSize(12, 12)
     mark:SetPoint("CENTER")
     autoplay.Check.Mark = mark
@@ -695,7 +695,7 @@ local function create()
     nextButton.Label:ClearAllPoints()
     nextButton.Label:SetPoint("RIGHT", nextButton, "RIGHT", 0, 0)
     nextButton.Icon = nextButton:CreateTexture(nil, "ARTWORK")
-    nextButton.Icon:SetTexture("Interface\\AddOns\\WowVoiceTalkingHead\\Media\\QueueNext")
+    nextButton.Icon:SetTexture("Interface\\AddOns\\TalkingHeadRu\\Media\\QueueNext")
     nextButton.Icon:SetSize(14, 14)
     nextButton.Icon:SetPoint("RIGHT", nextButton.Label, "LEFT", -6, 0)
     nextButton.ColorParts = { nextButton.Icon }
@@ -803,7 +803,7 @@ local function create()
 end
 
 function WV:RefreshQuestQueuePlayer(layoutMode)
-    local head = WowVoiceTalkingHead
+    local head = TalkingHeadRu
     local editing = player and player.editing
     local previewing = player and player.preview ~= nil
     local view = previewing and player.preview or Q
@@ -952,7 +952,7 @@ function WV:GetQuestQueuePosition()
     local settings = self:GetHeadSettings()
     if not player then
         -- Reading options must not create or show an empty playlist.
-        local saved = WowVoiceDB.queuePosition
+        local saved = TalkingHeadRuDB.queuePosition
         local ratio = settings.scale * self:GetQuestQueueScale()
         local x, y = 20, self:GetQuestQueueHeight()*ratio + 240
         if type(saved) == "table" and type(saved.x) == "number" and type(saved.y) == "number"
@@ -971,7 +971,7 @@ function WV:GetQuestQueuePosition()
     if not player:IsShown() then
         player:SetWidth(380)
         player:SetHeight(self:GetQuestQueueHeight())
-        positionPlayer(WowVoiceTalkingHead)
+        positionPlayer(TalkingHeadRu)
     end
     local drag = player.dragging
     if type(drag) == "table" and drag.finalX then
@@ -988,7 +988,7 @@ function WV:SetQuestQueuePosition(x, y)
         or math.abs(x) == math.huge or math.abs(y) == math.huge then
         return false, "Введите числа в поля X и Y. Допускаются минус и дробная часть."
     end
-    if WowVoiceDB.autoPlay == false then return false, "Включите автозапуск озвучки." end
+    if TalkingHeadRuDB.autoPlay == false then return false, "Включите автозапуск озвучки." end
     self:GetQuestQueuePosition()
     if not player then
         create()
@@ -1000,8 +1000,8 @@ function WV:SetQuestQueuePosition(x, y)
     x = math.max(0, math.min(UIParent:GetWidth() - (player:GetWidth()-PANEL_RIGHT)*ratio,
         x + UIParent:GetWidth()/2))
     y = math.max(player:GetHeight()*ratio, math.min(UIParent:GetHeight(), y + UIParent:GetHeight()/2))
-    WowVoiceDB.queuePosition = { x = x, y = y }
-    positionPlayer(WowVoiceTalkingHead)
+    TalkingHeadRuDB.queuePosition = { x = x, y = y }
+    positionPlayer(TalkingHeadRu)
     if self.RefreshQuestQueuePositionOptions then self:RefreshQuestQueuePositionOptions(true) end
     return true
 end
@@ -1010,14 +1010,14 @@ function WV:SetQuestQueueHeight(height)
     if type(height) ~= "number" or height ~= height or height < MIN_HEIGHT or height > MAX_HEIGHT then
         return false, "Введите высоту от 280 до 600."
     end
-    WowVoiceDB.queueHeight = math.floor(height + 0.5)
+    TalkingHeadRuDB.queueHeight = math.floor(height + 0.5)
     self:RefreshQuestQueuePlayer("instant")
     return true
 end
 
 function WV:PreviewQuestQueue(show, allowDisabled)
     if show then
-        if not allowDisabled and WowVoiceDB and WowVoiceDB.autoPlay == false then return end
+        if not allowDisabled and TalkingHeadRuDB and TalkingHeadRuDB.autoPlay == false then return end
         self:GetHeadSettings()
         create()
         if not player.preview then
@@ -1076,9 +1076,9 @@ function WV:SetQuestQueueScale(scale)
         -- Freeze the visible top-left corner before changing scale, including
         -- the automatic placement above chat that has no saved position yet.
         local x, y = self:GetQuestQueuePosition()
-        WowVoiceDB.queuePosition = { x = x + UIParent:GetWidth()/2, y = y + UIParent:GetHeight()/2 }
+        TalkingHeadRuDB.queuePosition = { x = x + UIParent:GetWidth()/2, y = y + UIParent:GetHeight()/2 }
     end
-    WowVoiceDB.queueScale = scale
+    TalkingHeadRuDB.queueScale = scale
     self:RefreshQuestQueuePlayer("instant")
     return true
 end
@@ -1089,6 +1089,6 @@ end
 
 function WV:ResetQuestQueueLayout()
     finishDrag()
-    WowVoiceDB.queuePosition, WowVoiceDB.queueHeight, WowVoiceDB.queueScale = nil, nil, nil
+    TalkingHeadRuDB.queuePosition, TalkingHeadRuDB.queueHeight, TalkingHeadRuDB.queueScale = nil, nil, nil
     self:RefreshQuestQueuePlayer("instant")
 end
