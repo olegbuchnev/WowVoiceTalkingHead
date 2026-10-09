@@ -9,8 +9,8 @@ C_AddOns.GetAddOnMetadata = function(name, field)
     if name == 'CatQuest_Voices' and field == 'Version' then return version end
 end
 CatQuestVoicePack = {quests={
-    [179]={d=30.4,v='dwarf-male'},
-    [6]={d=23.2,g=1,v='human-male'},
+    [179]={d=30.7,v='dwarf-male'},
+    [6]={d=23.3,g=1,v='human-male'},
     [98246]={d=28.9,v='dwarf-male'},
 }}
 for id, entry in pairs(CatQuestVoicePack.quests) do
@@ -60,14 +60,14 @@ assert(row.PlayButtons.catquest.SelectedMark.texture == 'Interface\\AddOns\\Talk
 local started, sound = now, plays[#plays].handle
 tick(started + 30)
 assert(stops[#stops] ~= sound, 'CatQuest must not use the shorter Classic timer')
-tick(started + 30.446792 + TalkingHeadRuDB.tail + .01)
+tick(started + 30.738 + TalkingHeadRuDB.tail + .01)
 assert(stops[#stops] == sound, 'CatQuest must stop using its own duration')
 WV:Silence()
 for _, sex in ipairs({2,3}) do
     UnitSex = function() return sex end
     local recording = C.Resolve(6, 'catquest')
     assert(recording.path:find(sex == 3 and '6_f.ogg' or '6_m.ogg', 1, true))
-    assert(recording.duration == (sex == 3 and 23.139708 or 23.226042))
+    assert(recording.duration == (sex == 3 and 23.324292 or 23.25375))
 end
 UnitSex = sexAPI
 -- Failed CatQuest playback cannot hide a working Classic recording.
@@ -170,7 +170,7 @@ assert(row.PlayButtons.wowvoice:IsShown() and not row.PlayButtons.catquest:IsSho
     'Absent CatQuest recording must leave the right side empty')
 loaded.CatVoices = false
 loaded.CatQuest_Voices = true
-version = '0.4.0'
+version = '0.6.0'
 row = tile(179)
 assert(row.PlayButtons.catquest:IsEnabled(), 'An updated pack keeps compatible comparison recordings')
 version = auditedVersion

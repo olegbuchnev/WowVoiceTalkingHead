@@ -6,7 +6,7 @@
 На английском клиенте кнопки плеера отображаются на английском, настройки — на русском.
 Говорящая голова использует шрифты заданий Blizzard, включая их кириллические варианты.
 
-**[Скачать аддон](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.2.5-forever/WowVoiceTalkingHead-1.2.5-forever-addon-only.zip)** ·
+**[Скачать аддон](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.2.6-forever/TalkingHeadRu-1.2.6-forever.zip)** ·
 [Инструкция](USER_README.md) ·
 [Сообщить об ошибке](https://github.com/olegbuchnev/WowVoiceTalkingHead/issues)
 
@@ -80,22 +80,41 @@ TalkingHead Ru. Автозапуск квестов и кнопки «Читат
 
 ## Установка
 
+> **Аддон переименован в TalkingHead Ru для публикации на CurseForge.**
+>
+> **⚠ Обновляетесь со старой версии?**
+>
+> Перед установкой новой версии **полностью закройте игру**. Рекомендуется
+> вручную удалить старую папку аддона и его сохранения. Все пути ниже указаны
+> от папки `_classic_beta_`:
+>
+> - `Interface/AddOns/WowVoiceTalkingHead/` — старая папка аддона.
+> - `WTF/Account/<аккаунт>/SavedVariables/WowVoiceTalkingHead.lua` — старые настройки.
+> - `WTF/Account/<аккаунт>/<сервер>/<персонаж>/SavedVariables/WowVoiceTalkingHead.lua` — старая очередь персонажа.
+>
+> Если рядом есть файлы `WowVoiceTalkingHead.lua.bak`, удалите и их.
+> Вместо `<аккаунт>`, `<сервер>` и `<персонаж>` откройте соответствующие папки;
+> повторите очистку для аккаунтов и персонажей, на которых использовали старый аддон.
+>
+> **Прежние настройки и очередь не переносятся.** Положение, масштаб панелей
+> и остальные параметры потребуется настроить заново один раз.
+> Сохранения новой версии `TalkingHeadRu.lua` удалять не нужно.
+
 > **⚠ Если раньше скачивали наш полный архив**
 >
 > При переходе на [WowVoice из CurseForge](https://www.curseforge.com/wow/addons/wowvoice-classic/files/all?page=1&pageSize=20&gameVersionTypeId=88568&showAlphaFiles=hide)
-> закройте игру и удалите старую папку `WowVoiceSounds` из `Interface/AddOns`,
+> закройте игру и удалите старую папку `_classic_beta_/Interface/AddOns/WowVoiceSounds/`,
 > затем установите библиотеку из CurseForge. Это нужно сделать только один раз.
-> Настройки и история TalkingHead сохранятся.
 
-1. **[Скачайте аддон](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.2.5-forever/WowVoiceTalkingHead-1.2.5-forever-addon-only.zip)**.
-   Закройте игру и скопируйте папку аддона из архива
+1. **[Скачайте аддон](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.2.6-forever/TalkingHeadRu-1.2.6-forever.zip)**.
+   Закройте игру и скопируйте папку `TalkingHeadRu` из архива
    в `_classic_beta_/Interface/AddOns/`.
 2. **Установите одну или обе озвучки для Forever:**
    [WowVoice](https://www.curseforge.com/wow/addons/wowvoice-classic/files/all?page=1&pageSize=20&gameVersionTypeId=88568&showAlphaFiles=hide)
    или [CatQuest](https://www.curseforge.com/wow/addons/catquest/files/all?page=1&pageSize=20&gameVersionTypeId=88568&showAlphaFiles=hide)
    вместе с [CatQuest Voices](https://www.curseforge.com/wow/addons/catquest-voices/files/all?page=1&pageSize=20&gameVersionTypeId=88568&showAlphaFiles=hide).
    Папки библиотек также поместите в `AddOns`.
-3. **Запустите игру** и включите TalkingHead и выбранные библиотеки в списке модификаций.
+3. **Запустите игру** и включите TalkingHead Ru и выбранные библиотеки в списке модификаций.
    Для WowVoice нужна `WowVoiceSounds`; для CatQuest — `CatQuest` и `CatQuest_Voices`.
 
 Основной аддон `WowVoice` из комплекта CurseForge TalkingHead отключает автоматически,
@@ -108,9 +127,8 @@ TalkingHead показывает одну общую строку со ссыл�
 при обычном обновлении TalkingHead удалять их не нужно.
 
 В новой сборке папка аддона называется `TalkingHeadRu`, файл настроек —
-`TalkingHeadRu.lua`. При переходе удалите старую папку `WowVoiceTalkingHead` из
-`AddOns` и полностью перезапустите игру. Прежние настройки и очередь не переносятся:
-расположение и остальные параметры нужно настроить заново один раз.
+`TalkingHeadRu.lua`. При переходе выполните очистку по инструкции в начале раздела.
+Последующие обновления сохраняют настройки.
 В опубликованных ранее архивах используется прежнее имя папки.
 Если старую папку забыли удалить, TalkingHead Ru автоматически отключит прежний
 аддон. Если он уже загрузился, нажмите «Перезагрузить интерфейс» в уведомлении
@@ -135,14 +153,45 @@ TalkingHead показывает одну общую строку со ссыл�
 Если что-то не работает, есть вопрос или идея для улучшения — напишите.
 О проблеме также можно сообщить по ссылке «Сообщить об ошибке» внизу страницы.
 
-Аддон использует озвучку двух авторов:
+Аддон использует две библиотеки озвучки:
 
-- **[WowVoice](https://boosty.to/wowvoice)** — основной пакет классических заданий.
-- **[Cathey](https://boosty.to/cathey)** — альтернативная озвучка общих заданий и дополнительные квесты Forever из CatQuest.
+- **[WowVoice](https://boosty.to/wowvoice)** — озвучка классических заданий.
+- **[CatQuest](https://boosty.to/cathey)** — альтернативная озвучка классических заданий и дополнительные квесты Forever.
 
 Поддержать авторов озвучки можно по ссылкам выше.
 
 ## Что нового
+
+<details name="releases">
+<summary><strong>Версия 1.2.6-forever</strong> · <time datetime="2026-10-09">9 октября 2026</time></summary>
+
+- **Обновлена поддержка CatQuest 0.5.0.** В библиотеке CatQuest появилось ещё 951 задание с озвучкой. Обновлены тексты реплик, длительности записей и данные персонажей.
+- **Аддон переименован в TalkingHead Ru.** Новое название используется в списке модификаций и настройках. Оставшаяся старая версия WowVoiceTalkingHead отключается автоматически, чтобы избежать конфликтов.
+- **Исправлена ошибка при запуске озвучки после обновления беты**, связанная с ограниченным доступом к данным персонажей.
+- **Исправлены подсказки в настройках на английском клиенте:** русский текст отображается корректно, а размер подсказки соответствует содержимому.
+- **Убраны стартовые и рекламные сообщения оригинального WowVoice** при включённом TalkingHead Ru.
+
+> **Аддон переименован в TalkingHead Ru для публикации на CurseForge.**
+>
+> **⚠ Обновляетесь со старой версии?**
+>
+> Перед установкой новой версии **полностью закройте игру**. Рекомендуется
+> вручную удалить старую папку аддона и его сохранения. Все пути ниже указаны
+> от папки `_classic_beta_`:
+>
+> - `Interface/AddOns/WowVoiceTalkingHead/` — старая папка аддона.
+> - `WTF/Account/<аккаунт>/SavedVariables/WowVoiceTalkingHead.lua` — старые настройки.
+> - `WTF/Account/<аккаунт>/<сервер>/<персонаж>/SavedVariables/WowVoiceTalkingHead.lua` — старая очередь персонажа.
+>
+> Если рядом есть файлы `WowVoiceTalkingHead.lua.bak`, удалите и их.
+> Вместо `<аккаунт>`, `<сервер>` и `<персонаж>` откройте соответствующие папки;
+> повторите очистку для аккаунтов и персонажей, на которых использовали старый аддон.
+>
+> **Прежние настройки и очередь не переносятся.** Положение, масштаб панелей
+> и остальные параметры потребуется настроить заново один раз.
+> Сохранения новой версии `TalkingHeadRu.lua` удалять не нужно.
+
+</details>
 
 <details name="releases">
 <summary><strong>Версия 1.2.5-forever</strong> · <time datetime="2026-10-04">4 октября 2026</time></summary>

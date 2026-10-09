@@ -51,11 +51,11 @@ local function refreshVersions()
         or outdated and "Устаревшая озвучка CatQuest" or "Непроверенная озвучка CatQuest"
     warning.message = incompatible and tostring(reason or "Индекс озвучки недоступен.")
         or outdated and ("Установлена: " .. source.version .. ". Полностью проверена: " .. tostring(supported)
-            .. ".\nОзвучка работает по индексу библиотеки. Голова и очередь могут завершаться позже звука."
+            .. ".\nОзвучка работает по индексу библиотеки. Говорящая голова и очередь могут завершаться позже звука."
             .. "\nОбновите CatQuest Voices до версии " .. tostring(supported) .. ".")
         or updated and ("Установлена: " .. source.version .. ". Полностью проверена: " .. tostring(supported)
             .. ".\nОзвучка работает по индексу библиотеки, включая новые и изменённые записи."
-            .. "\nГолова и очередь могут завершаться позже звука."
+            .. "\nГоворящая голова и очередь могут завершаться позже звука."
             .. "\nОбновление TalkingHead Ru после проверки библиотеки вернёт точные таймеры.") or nil
     if incompatible or updated then warning:Show() else warning:Hide() end
     local width = 0
@@ -249,8 +249,8 @@ local function createPanel()
                 GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
                 GameTooltip:AddLine(self.title, 1, 0.82, 0.25)
                 GameTooltip:AddLine(self.message, 1, 1, 1, true)
-                L.OptionsTooltip(GameTooltip)
                 GameTooltip:Show()
+                L.OptionsTooltip(GameTooltip)
             end)
             local function hideTooltip(self)
                 if GameTooltip:IsOwned(self) then GameTooltip:Hide() end
@@ -703,8 +703,8 @@ local function createPanel()
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:AddLine("Выбор озвучки", 1, 0.82, 0)
         GameTooltip:AddLine(hint.message, 1, 1, 1, true)
-        L.OptionsTooltip(GameTooltip)
         GameTooltip:Show()
+        L.OptionsTooltip(GameTooltip)
     end
     local function hideVoiceTooltip(self)
         if GameTooltip:IsOwned(self) then GameTooltip:Hide() end

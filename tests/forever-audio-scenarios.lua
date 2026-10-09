@@ -47,8 +47,8 @@ for _, variant in ipairs({{2, entry.male}, {3, entry.female}}) do
 end
 sex = 2
 
--- JSON-only quest 99080 has completion audio; its earlier stages are text-only.
-questID = 99080
+-- JSON-only quest 1462 has completion audio; its earlier stages are text-only.
+questID = 1462
 assert(not WV:HasQuestAudio(questID))
 assert(WV:SoundPath(questID, 'a') == nil and WV:SoundPath(questID, 'p') == nil)
 count = #plays
@@ -58,7 +58,7 @@ WV.questQueue:Clear()
 for _, variant in ipairs({{2, 'm'}, {3, 'f'}}) do
     sex = variant[1]
     event('QUEST_COMPLETE')
-    assert(plays[#plays].file == prefix .. '99080_t_' .. variant[2] .. '.ogg')
+    assert(plays[#plays].file == prefix .. '1462_t.ogg')
     WV:Silence()
 end
 sex = 2

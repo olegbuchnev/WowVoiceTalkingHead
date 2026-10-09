@@ -2,7 +2,7 @@ local WV, S = WowVoice, WowVoiceAudioSources
 local mode = catquestWarningTestMode
 local older = mode == 'old-login' or mode == 'old-late'
 local loaded = mode ~= 'absent' and mode ~= 'old-late'
-local version = older and '0.2.2' or mode == 'newer' and '0.5.0'
+local version = older and '0.2.2' or mode == 'newer' and '0.6.0'
     or mode == 'double-digit' and '0.10.0' or mode == 'unknown' and 'nightly' or WowVoiceCatQuestAudio.sourceVersion
 if mode == 'missing' then version = nil end
 local metadata, isLoaded = C_AddOns.GetAddOnMetadata, C_AddOns.IsAddOnLoaded
@@ -46,7 +46,7 @@ if older then
 elseif mode == 'newer' or mode == 'double-digit' then
     assert(warning:IsShown() and warning.message:find('Обновление TalkingHead Ru', 1, true))
     assert(warning.message:find('включая новые и изменённые записи', 1, true))
-    assert(warning.message:find('Голова и очередь могут завершаться позже звука', 1, true))
+    assert(warning.message:find('Говорящая голова и очередь могут завершаться позже звука', 1, true))
 elseif mode == 'current' or mode == 'absent' then
     assert(not warning:IsShown())
 elseif mode == 'missing' or mode == 'unknown' then

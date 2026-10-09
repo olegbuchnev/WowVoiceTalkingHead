@@ -90,6 +90,7 @@ function L.SetOptionsText(widget, text)
 end
 
 -- Apply the font only to the tooltip's current lines, restoring it on hide.
+-- Call after Show: tooltip initialization/OnShow skins can replace line fonts.
 local tooltips = setmetatable({}, { __mode = "k" })
 function L.OptionsTooltip(tooltip)
     if not english or not tooltip.NumLines or not tooltip.GetName or not tooltip.HookScript then return end
@@ -110,4 +111,7 @@ function L.OptionsTooltip(tooltip)
             end
         end
     end
+    -- Recompute wrapping and bounds with the Cyrillic metrics. Since it is
+    -- already visible, Show does not rerun the OnShow font replacement.
+    tooltip:Show()
 end

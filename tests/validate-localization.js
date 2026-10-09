@@ -19,6 +19,7 @@ for (const locale of ['enUS', 'enGB', 'ruRU']) {
     .split(/\r?\n/).filter(line => line.endsWith('.lua'))) run('src/' + file);
   run('tests/catquest-pack-mock.lua');
   run('tests/localization-scenarios.lua');
+  run('tests/options-tooltip-localization-scenarios.lua');
   run('tests/quest-text-locale-scenarios.lua');
   run('tests/reminder-localization-scenarios.lua');
   lua.lua_close(state);

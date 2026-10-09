@@ -43,7 +43,7 @@ const markdown = new Marked({
   },
   renderer: {
     blockquote({ tokens }) {
-      const notice = tokens[0]?.text?.startsWith('**⚠ ');
+      const notice = tokens.some(token => token.type === 'paragraph' && token.text?.startsWith('**⚠ '));
       return `<blockquote${notice ? ' class="installation-notice"' : ''}>${this.parser.parse(tokens)}</blockquote>\n`;
     },
     html({ text }) {
@@ -161,7 +161,7 @@ function page(content, isGuide = false) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Русская озвучка квестов для WoW Forever Beta. Скачать WowVoice TalkingHead, установить аддон и настроить воспроизведение.">
+  <meta name="description" content="Русская озвучка квестов для WoW Forever Beta. Скачать TalkingHead Ru, установить аддон и настроить воспроизведение.">
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#181a1b">
   <title>${isGuide ? 'Инструкция — ' : ''}${escape(title)}</title>
@@ -173,10 +173,10 @@ function page(content, isGuide = false) {
   <a class="skip-link" href="#content">Перейти к содержанию</a>
   <div class="layout">
     <header class="sidebar">
-      <a class="brand" href="index.html">WowVoice<span>TalkingHead</span></a>
+      <a class="brand" href="index.html">TalkingHead Ru</a>
       <p class="tagline">Русская озвучка квестов<br>для WoW Forever Beta</p>
       <div class="downloads" aria-label="Скачать аддон">
-        <div class="download-card" role="group" aria-label="Скачать WowVoice TalkingHead">
+        <div class="download-card" role="group" aria-label="Скачать TalkingHead Ru">
           <a class="button primary" href="${escape(addonInfo.url || addon)}"><span>Скачать аддон <span class="artifact-size">${escape(addonInfo.size)}</span></span><span aria-hidden="true">↓</span></a>
           <div class="download-info">
             <p class="download-note">Для установки и обновления. Озвучку скачайте отдельно: можно подключить одну или обе библиотеки ниже.</p>

@@ -19,7 +19,7 @@ assert(TalkingHeadRuDB.audioSource == nil and S.Status().id == 'catquest')
 assert(WV:SoundPath(99162,'a') == prefix .. '99162.ogg')
 assert(WV:SoundPath(179,'a'):find('WowVoiceSounds',1,true))
 assert(S.QuestIDs()[99162])
-for _, variant in ipairs({{2,'m',42.481708},{3,'f',38.629833}}) do
+for _, variant in ipairs({{2,'m',41.534833},{3,'f',41.944792}}) do
     sex = variant[1]
     local file, seconds = WV:SoundPath(98430,'a')
     assert(file == prefix .. '98430_' .. variant[2] .. '.ogg' and seconds == variant[3])
@@ -30,21 +30,23 @@ for _, variant in ipairs({{2,'m',42.481708},{3,'f',38.629833}}) do
     tick(now + .1 + TalkingHeadRuDB.tail + .01)
     assert(stops[#stops] == handle)
 end
-assert(WV:SoundPath(98430,'p') == nil and not WV:HasQuestAudio(99080))
+assert(WV:SoundPath(98430,'p') == nil and WV:HasQuestAudio(99080))
 local file, seconds = WV:SoundPath(99080,'c')
-assert(file == prefix .. '99080_t_f.ogg' and seconds == 33.259542)
+assert(file == prefix .. '99080_t_f.ogg' and seconds == 31.619458)
+assert(S.Resolve(16, 'c').verified and S.Resolve(16, 'c').duration == 4.373417)
 CatQuestVoicePack.quests[98430].d = 40
 assert(WV:HasQuestAudio(98430) and S.Resolve(98430,'a').duration == 40.25)
 assert(not S.Resolve(98430,'a').verified, 'a changed live record cannot inherit an exact snapshot timer')
-CatQuestVoicePack.quests[98430].d = 42.5
+CatQuestVoicePack.quests[98430].d = 41.9
+local original99080 = CatQuestVoicePack.quests[99080]
 CatQuestVoicePack.quests[99080] = {t={d=1}}
 assert(WV:SoundPath(99080,'c') == prefix .. '99080_t.ogg')
 assert(S.Resolve(99080,'c').duration == 1.25 and not S.Resolve(99080,'c').verified)
-CatQuestVoicePack.quests[99080] = nil
-version = '0.5.0'
+CatQuestVoicePack.quests[99080] = original99080
+version = '0.6.0'
 assert(S.Status().updated and WV:HasQuestAudio(98430) and WV:HasQuestAudio(179))
-assert(S.Resolve(98430, 'a').duration == 42.75, 'updated packs use the live maximum plus rounding/index-error allowance')
-assert(S.Resolve(99080, 'c') == nil, 'JSON-only recovery is limited to its audited release')
+assert(S.Resolve(98430, 'a').duration == 42.15, 'updated packs use the live maximum plus rounding/index-error allowance')
+assert(S.Resolve(16, 'c') == nil, 'JSON-only recovery is limited to its audited release')
 version = auditedVersion
 loaded.CatQuest_Voices = false
 WV:Silence()
@@ -72,7 +74,7 @@ WV:RefreshAudioSources()
 -- Texts are retained in our addon, including sex variants and game-text priority.
 C_QuestLog.GetLogIndexForQuestID = function() return nil end
 GetQuestLogQuestText = function() error('No selected quest') end
-for _, variant in ipairs({{2,'Приветствую, юный герой.'},{3,'Приветствую, юный героиня.'}}) do
+for _, variant in ipairs({{2,'Приветствую тебя, герой.'},{3,'Приветствую тебя, героиня.'}}) do
     sex = variant[1]
     assert(WV:ReplayQuest(99108))
     assert(frames.TalkingHeadRu.Body:GetText():find(variant[2],1,true))
@@ -80,7 +82,8 @@ for _, variant in ipairs({{2,'Приветствую, юный герой.'},{3,
 end
 assert(S.Text(99108,'c'):find('героиня',1,true))
 assert(S.Text(99108,'p') == nil and S.Text(nil,'a') == nil)
-assert(S.Text(99080,'c') == nil)
+assert(S.Text(16,'c') == nil)
+assert(S.Text(99080,'c') ~= nil, '0.5.0 now supplies the previously missing transcript')
 WV:StartTalkingHead({questId=99108, section='a', text='Captured game text'},now+40,40)
 assert(frames.TalkingHeadRu.Body:GetText() == 'Captured game text')
 WV:StopTalkingHead()
@@ -94,18 +97,18 @@ assert(panel.AudioSourceCaption:GetText() == 'Озвучка CatQuest:')
 assert(panel.VersionLabels.AudioSource:GetText() == auditedVersion)
 loaded.CatQuest_Voices = false; WV:RefreshAudioSources()
 assert(panel.VersionLabels.AudioSource:GetText() == 'недоступна')
-loaded.CatQuest_Voices = true; version = '0.5.0'
+loaded.CatQuest_Voices = true; version = '0.6.0'
 local colors
 panel.VersionLabels.AudioSource.SetTextColor = function(self, ...) colors = {...} end
 WV:RefreshAudioSources()
-assert(S.Status().updated and panel.VersionLabels.AudioSource:GetText() == '0.5.0')
+assert(S.Status().updated and panel.VersionLabels.AudioSource:GetText() == '0.6.0')
 assert(colors[1] == 1 and colors[2] == .82)
 local warning = panel.AudioSourceWarning
 assert(warning:IsShown())
 warning.scripts.OnEnter(warning)
 assert(GameTooltip:IsOwned(warning) and GameTooltip.visible)
 assert(GameTooltip.lines[1]:find('Непроверенная озвучка',1,true))
-assert(GameTooltip.lines[2]:find('0.5.0',1,true) and GameTooltip.lines[2]:find(auditedVersion,1,true))
+assert(GameTooltip.lines[2]:find('0.6.0',1,true) and GameTooltip.lines[2]:find(auditedVersion,1,true))
 version = auditedVersion; WV:RefreshAudioSources()
 assert(S.Status().id == 'catquest' and not warning:IsShown() and not GameTooltip.visible)
 -- Saved preference applies to all normal playback, with stage-specific fallback.
@@ -154,7 +157,7 @@ local hint = panel.SharedVoiceTooltip
 hint.scripts.OnEnter(hint)
 assert(GameTooltip.visible and GameTooltip.lines[2]:find('установите', 1, true))
 hint.scripts.OnLeave(hint)
-loaded.CatQuest_Voices = true; version = '0.5.0'; WV:RefreshAudioSources()
+loaded.CatQuest_Voices = true; version = '0.6.0'; WV:RefreshAudioSources()
 assert(choices.catquest:IsEnabled() and WV:SoundPath(179, 'a'):find('WowVoiceSounds', 1, true))
 assert(WV:SetSharedQuestVoice('catquest'))
 WV:RefreshAudioSources()

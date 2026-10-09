@@ -1,0 +1,54 @@
+name: Publish addon release
+
+on:
+  push:
+    tags:
+      - 'v*-forever'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: addon-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Check version and extract release notes
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:RELEASE_TAG -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+-forever$') {
+            throw 'Unexpected release tag.'
+          }
+          $version = $env:RELEASE_TAG.Substring(1)
+          foreach ($toc in Get-ChildItem src -Filter '*.toc') {
+            $match = [regex]::Match((Get-Content $toc.FullName -Raw), '(?m)^## Version:\s*(\S+)')
+            if ($match.Groups[1].Value -ne $version) { throw "Version mismatch: $($toc.Name)" }
+          }
+          $readme = Get-Content README.md -Raw -Encoding utf8
+          $pattern = '(?s)<summary><strong>Версия ' + [regex]::Escape($version) + '</strong>.*?</summary>\s*(.*?)\s*</details>'
+          $notes = [regex]::Match($readme, $pattern)
+          if (-not $notes.Success -or -not $notes.Groups[1].Value.Trim()) { throw 'Missing release notes.' }
+          $notes.Groups[1].Value.Trim() | Set-Content (Join-Path $env:RUNNER_TEMP 'release-notes.md') -Encoding utf8
+      - name: Build addon ZIP
+        shell: pwsh
+        run: ./build.ps1 -Task PackageAddon
+      - name: Publish release with ZIP
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          $version = $env:RELEASE_TAG.Substring(1)
+          $archive = "artifacts/WoWVoice/TalkingHeadRu-$version.zip"
+          $notes = Join-Path $env:RUNNER_TEMP 'release-notes.md'
+          gh release create $env:RELEASE_TAG $archive --verify-tag --draft --title "TalkingHead Ru $version" --notes-file $notes
+          if ($LASTEXITCODE -ne 0) { throw 'Release upload failed.' }
+          gh release edit $env:RELEASE_TAG --draft=false --latest
+          if ($LASTEXITCODE -ne 0) { throw 'Release publication failed.' }

@@ -41,7 +41,11 @@ TalkingHeadRuDB.channel = 'auto'
 cvars.Sound_EnableSoundWhenGameIsInBG = '1'
 loaded.WowVoiceSounds, loaded.CatQuest_Voices = true, true
 WV:RefreshAudioSources()
--- Real reported quest: description exists, progress and turn-in do not.
+-- 0.5.0 added this quest's turn-in. Temporarily remove it to preserve the
+-- original 86576 regression: missing stages cannot queue a silent head.
+assert(WowVoiceAudioSources.Resolve(86576, 'c').verified)
+local turnin86576 = CatQuestVoicePack.quests[86576].t
+CatQuestVoicePack.quests[86576].t = nil
 assert(WV:SoundPath(86576, 'a') and not WV:SoundPath(86576, 'p') and not WV:SoundPath(86576, 'c'))
 assert(not WV:SoundPath(999999, 'a'), 'Unknown IDs cannot invent Classic filenames')
 assert(WV:ReplayQuest(179))
@@ -81,4 +85,5 @@ loaded.CatQuest_Voices = true
 WV:RefreshAudioSources()
 assert(WV:ReplayQuest(179) and plays[#plays].file:find('CatQuest_Voices', 1, true))
 Q:Clear()
+CatQuestVoicePack.quests[86576].t = turnin86576
 print('PASS: missing libraries/stages never show a head, real 86576 regression, admission/acceptance/restore and late audio loading')
