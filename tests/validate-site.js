@@ -17,6 +17,40 @@ const { createHash } = require('crypto');
   assert.throws(() => formatArtifactSize(0));
   // Use a temporary site root with fake published releases, not live GitHub.
   const root = path.resolve(__dirname, '..');
+  // Exercise the real bootstrap without making analytics requests.
+  const siteScript = fs.readFileSync(path.join(root, 'site/site.js'), 'utf8');
+  const endpoint = 'https://tove2889.goatcounter.com/count';
+  for (const [origin, pathname, configured, enabled] of [
+    ['https://olegbuchnev.github.io', '/WowVoiceTalkingHead/', true, true],
+    ['https://olegbuchnev.github.io', '/WowVoiceTalkingHead/guide.html', true, true],
+    ['https://olegbuchnev.github.io', '/WowVoiceTalkingHead/', false, false],
+    ['http://localhost:8000', '/WowVoiceTalkingHead/', true, false],
+    ['null', '/C:/site/index.html', true, false],
+    ['https://olegbuchnev.github.io', '/another-project/', true, false],
+  ]) {
+    const appended = [];
+    let onLoad, bound = 0;
+    const context = {
+      window: { location: { origin, pathname }, goatcounter: { bind_events() { bound++; } } },
+      document: {
+        body: { dataset: configured ? { clickAnalytics: endpoint } : {} },
+        head: { appendChild(script) { appended.push(script); } },
+        createElement() { return { dataset: {}, addEventListener(name, fn) { assert.equal(name, 'load'); onLoad = fn; } }; },
+        querySelector() { return null; }, querySelectorAll() { return []; },
+      },
+    };
+    require('node:vm').runInNewContext(siteScript, context);
+    assert.equal(appended.length, enabled ? 1 : 0);
+    assert.equal(bound, 0);
+    if (enabled) {
+      assert.equal(appended[0].dataset.goatcounter, endpoint);
+      assert.deepEqual(JSON.parse(appended[0].dataset.goatcounterSettings), { no_onload: true });
+      onLoad();
+      assert.equal(bound, 1);
+      delete context.window.goatcounter;
+      assert.doesNotThrow(onLoad, 'A blocked counter must not break the site');
+    }
+  }
   const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'wowvoice-site-'));
   try {
     for (const dir of ['tools', 'site', 'docs/images']) fs.mkdirSync(path.join(fixture, dir), {recursive:true});
@@ -65,6 +99,9 @@ const { createHash } = require('crypto');
       assert.equal(result.status,0,result.stderr);
       for (const name of ['index.html','guide.html']) {
         const html=fs.readFileSync(path.join(fixture,'artifacts/site',name),'utf8');
+        assert(html.includes(`data-click-analytics="${endpoint}"`));
+        assert.equal((html.match(/data-goatcounter-click="curseforge-open"/g) || []).length, 1);
+        assert(html.includes('data-goatcounter-no-session="1"'));
         assert(html.includes('444,4 КБ') && !html.includes('700 МБ') && !html.includes('555,6 МБ'));
         assert.equal((html.match(/class="download-card"/g)||[]).length,1);
         assert.equal((html.match(/class="optional-voices"/g)||[]).length,2);
@@ -116,6 +153,9 @@ const { createHash } = require('crypto');
     const result=run('--preview');
     assert.equal(result.status,0,result.stderr);
     const previewHtml=fs.readFileSync(path.join(previewRoot,'index.html'),'utf8');
+    for (const name of ['index.html', 'guide.html']) {
+      assert(!fs.readFileSync(path.join(previewRoot, name), 'utf8').includes('data-click-analytics='));
+    }
     assert(previewHtml.includes('Релиз ещё не опубликован') && previewHtml.includes('23,5 КБ'));
     assert(!previewHtml.includes(urls.full) && !previewHtml.includes(urls.addon));
     assert.equal((previewHtml.match(new RegExp(`href="downloads/${preview.addon}"`,'g'))||[]).length,9);
@@ -124,6 +164,7 @@ const { createHash } = require('crypto');
     assert.deepEqual(fs.readFileSync(path.join(previewRoot,changedURL)), Buffer.from([3]));
     console.log('PASS: one addon download, exact size and release date, two matching voice sections with Forever links and visible migration notice');
     console.log('PASS: unpublished or unverifiable downloads rejected; offline preview needs only the addon ZIP, no bundled audio');
+    console.log('PASS: click-only analytics enabled on the published site, excluded from preview and local copies');
     console.log('PASS: Markdown/HTML/guide screenshots use hashed filenames; replacing image bytes changes its URL in published and preview builds');
   } finally {
     assert.equal(path.dirname(fixture),path.resolve(os.tmpdir()));

@@ -54,6 +54,37 @@ nav a:hover, nav a[aria-current] { text-decoration: underline; }
 .voice-feature { border: 0; padding: 0; margin: 32px 0; }
 .voice-feature p:last-child { margin-bottom: 0; }
 .preview-banner { padding: 12px 24px; text-align: center; background: #342d20; color: #edcb85; font-size: 14px; }
+.release-banner { display: grid; grid-template-columns: 80px minmax(0, 1fr) auto; align-items: center; gap: 28px; max-width: 1112px; margin: 32px auto 0; padding: 28px 32px; border: 1px solid #404040; border-top: 3px solid #f16436; border-radius: 3px; background: #242424; }
+.release-brand-mark { display: grid; place-items: center; width: 80px; height: 80px; background: #f16436; color: #fff; border-radius: 2px; }
+.release-brand-mark svg { display: block; width: 64px; height: 64px; }
+.release-banner-copy { min-width: 0; }
+.release-banner .release-label { margin: 0 0 8px; color: #ff875c; font-size: 11px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; }
+.release-banner h2 { margin: 0 0 12px; color: #fff; font-size: clamp(23px, 2.4vw, 28px); font-weight: 700; letter-spacing: -.6px; text-wrap: balance; }
+.release-banner-copy > p:last-child { margin: 0; color: #bdbdbd; font-size: 15px; line-height: 1.65; }
+.release-banner-copy strong { color: #eee; }
+.curseforge-button { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 56px; padding: 14px 18px; border-radius: 2px; background: #f16436; border-color: #f16436; color: #111; font-size: 17px; font-weight: 600; line-height: 24px; letter-spacing: normal; text-align: center; }
+/* Segoe UI's visible letters sit below the centre of its line box. */
+.curseforge-button-label { transform: translateY(-1px); }
+.curseforge-button svg { display: block; flex: 0 0 18px; }
+.curseforge-button:hover { background: #ff8054; border-color: #ff8054; color: #171717; }
+.release-banner + .layout { padding-top: 40px; }
+@media (max-width: 1208px) {
+  .release-banner { margin-left: 48px; margin-right: 48px; }
+}
+@media (max-width: 900px) {
+  .release-banner { grid-template-columns: 64px minmax(0, 1fr); gap: 20px; margin-left: 28px; margin-right: 28px; padding: 24px; }
+  .release-brand-mark { width: 64px; height: 64px; }
+  .release-brand-mark svg { width: 52px; height: 52px; }
+  .curseforge-button { grid-column: 2; justify-self: start; }
+}
+@media (max-width: 700px) {
+  .release-banner { grid-template-columns: 48px minmax(0, 1fr); align-items: start; gap: 20px 16px; margin: 22px 22px 0; padding: 22px 20px; }
+  .release-brand-mark { width: 48px; height: 48px; }
+  .release-brand-mark svg { width: 40px; height: 40px; }
+  .release-banner h2 { font-size: 23px; }
+  .curseforge-button { grid-column: 1 / -1; width: 100%; }
+  .release-banner + .layout { padding-top: 32px; }
+}
 main { min-width: 0; }
 h1, h2, h3 { line-height: 1.3; font-weight: 600; letter-spacing: -.5px; }
 h1 { font-size: clamp(28px, 3vw, 38px); margin: 0 0 22px; }

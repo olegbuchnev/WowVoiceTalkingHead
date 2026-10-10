@@ -168,9 +168,20 @@ function page(content, isGuide = false) {
   <link rel="stylesheet" href="${pageAssets.get('style.css').url}">
   <script src="${pageAssets.get('site.js').url}" defer></script>
 </head>
-<body>
+<body${previewMode ? '' : ' data-click-analytics="https://tove2889.goatcounter.com/count"'}>
   ${previewMode ? '<aside class="preview-banner">Предпросмотр следующего выпуска. Кнопка «Скачать аддон» скачивает локальный тестовый ZIP. Релиз ещё не опубликован.</aside>' : ''}
   <a class="skip-link" href="#content">Перейти к содержанию</a>
+  <aside class="release-banner" aria-labelledby="curseforge-release-title">
+    <div class="release-brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 40 40" width="64" height="64" focusable="false"><path fill="currentColor" d="M29.4889 15.285C29.4889 15.285 36.8392 14.1158 38 10.7058H26.7401V8H2L5.0477 11.5674V15.2225C5.0477 15.2225 12.7377 14.8191 15.7124 17.0946C19.7842 20.9017 11.1328 26.048 11.1328 26.048L9.64927 31C11.9691 28.7718 16.3905 25.8892 24.4969 26.0282C21.412 27.0117 18.3101 28.5478 15.8952 31H32.2824L30.7393 26.048C30.7393 26.048 18.8623 18.9833 29.4889 15.2855V15.285Z"/></svg>
+    </div>
+    <div class="release-banner-copy">
+      <p class="release-label">Уже доступно</p>
+      <h2 id="curseforge-release-title">TalkingHead Ru теперь на CurseForge</h2>
+      <p>Установка и обновления через приложение.<br>Версия игры — <strong>Forever Beta</strong>.</p>
+    </div>
+    <a class="button curseforge-button" href="https://www.curseforge.com/wow/addons/talkinghead-ru" data-goatcounter-click="curseforge-open" data-goatcounter-title="Переход на CurseForge" data-goatcounter-no-session="1"><span class="curseforge-button-label">Открыть на CurseForge</span><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="18" height="18"><path d="M6 18 18 6M6 6h12v12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/></svg></a>
+  </aside>
   <div class="layout">
     <header class="sidebar">
       <a class="brand" href="index.html">TalkingHead Ru</a>

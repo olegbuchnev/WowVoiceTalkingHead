@@ -6,10 +6,12 @@ $fixture = Join-Path $parent $leaf
 New-Item -ItemType Directory -Path (Join-Path $fixture 'tools') -Force | Out-Null
 $savedGitHubToken = $env:GITHUB_TOKEN
 $savedGhToken = $env:GH_TOKEN
+$savedGoatToken = $env:GOATCOUNTER_API_TOKEN
 try {
     # No real credential helper, authentication or network is used by fixtures.
     $env:GITHUB_TOKEN = 'stats-fixture-token'
     $env:GH_TOKEN = $null
+    $env:GOATCOUNTER_API_TOKEN = $null
     Copy-Item -LiteralPath (Join-Path (Split-Path -Parent $PSScriptRoot) 'tools/release-stats.ps1') -Destination (Join-Path $fixture 'tools/release-stats.ps1')
     New-Item -ItemType Directory -Path (Join-Path $fixture 'config') -Force | Out-Null
     $ledgerPath = Join-Path $fixture 'config/release-download-checks.json'
@@ -38,9 +40,23 @@ try {
             return @([pscustomobject]@{id=31; name='TalkingHeadRu-1.2.5-forever.zip'; state='uploaded'; download_count=7})
         }
     }
-    $statsFixture = @{ Mode = 'embedded'; Requests = 0 }
+    $statsFixture = @{ Mode = 'embedded'; Requests = 0; GoatMode = 'ok'; GoatRequests = 0 }
     function Invoke-RestMethod {
         param($Uri, $Headers, $TimeoutSec)
+        if ($Uri -like 'https://tove2889.goatcounter.com/*') {
+            $statsFixture.GoatRequests++
+            if ($Headers.Authorization -ne 'Bearer goat-fixture-token' -or $Headers['Content-Type'] -ne 'application/json' -or
+                $Uri -notmatch '/api/v0/stats/hits\?path_by_name=true&include_paths=curseforge-open&limit=100&start=2026-10-10T00%3A00%3A00Z&end=') {
+                throw 'Invalid GoatCounter request.'
+            }
+            if ($statsFixture.GoatMode -eq 'error') { throw 'Request failed: goat-fixture-token' }
+            if ($statsFixture.GoatMode -eq 'empty') { return [pscustomobject]@{hits=$null; more=$false} }
+            if ($statsFixture.GoatMode -eq 'malformed') { return [pscustomobject]@{total=17} }
+            if ($statsFixture.GoatMode -eq 'wrong-event') {
+                return [pscustomobject]@{hits=@([pscustomobject]@{event=$true; path='another-event'; count=99}); more=$false}
+            }
+            return [pscustomobject]@{hits=@([pscustomobject]@{event=$true; path='curseforge-open'; count=17}); more=$false}
+        }
         $statsFixture.Requests++
         if ($Headers.ContainsKey('Authorization') -and $Headers.Authorization -ne 'Bearer stats-fixture-token') {
             throw 'Unexpected authentication header.'
@@ -91,6 +107,11 @@ try {
     }
     & (Join-Path $fixture 'tools/release-stats.ps1') -NoOpen
     if ($statsFixture.Requests -ne 1) { throw 'Embedded release assets must require only one request.' }
+    $clickPath = Join-Path $fixture 'artifacts/stats/curseforge-clicks.json'
+    $clickData = Get-Content -LiteralPath $clickPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    if ($statsFixture.GoatRequests -ne 0 -or $clickData.status -ne 'unconfigured' -or $null -ne $clickData.clicks) {
+        throw 'Missing GoatCounter credentials must not become zero or make network requests.'
+    }
     $data = Get-Content -LiteralPath (Join-Path $fixture 'artifacts/stats/downloads.json') -Raw -Encoding UTF8 | ConvertFrom-Json
     $row = $data.releases | Where-Object Release -eq 'v1'
     if ($row.Full -ne 9 -or $row.AddonOnly -ne 0 -or $row.Total -ne 9 -or @($data.assets).Count -ne 4 -or
@@ -158,6 +179,50 @@ try {
     & (Join-Path $fixture 'tools/release-stats.ps1') -NoOpen | Out-Null
     $large = Get-Content -LiteralPath (Join-Path $fixture 'artifacts/stats/downloads.json') -Raw -Encoding UTF8 | ConvertFrom-Json
     if ($statsFixture.Requests -ne 2 -or @($large.releases).Count -ne 101) { throw 'Releases must paginate completely.' }
+    $statsFixture.Mode = 'embedded'
+    $env:GOATCOUNTER_API_TOKEN = 'goat-fixture-token'
+    $clickLedger = Join-Path $fixture 'config/curseforge-click-checks.json'
+    [IO.File]::WriteAllText($clickLedger, '{"schemaVersion":1,"event":"curseforge-open","checks":[{"count":2},{"count":3}]}')
+    & (Join-Path $fixture 'tools/release-stats.ps1') -NoOpen | Out-Null
+    $clickData = Get-Content -LiteralPath $clickPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    if ($statsFixture.GoatRequests -ne 1 -or $clickData.status -ne 'ok' -or $clickData.rawClicks -ne 17 -or
+        $clickData.excludedClicks -ne 5 -or $clickData.clicks -ne 12) { throw 'Known click checks must be subtracted exactly once.' }
+    $clickHtml = Get-Content -LiteralPath (Join-Path $fixture 'artifacts/stats/index.html') -Raw -Encoding UTF8
+    $clickCsv = Import-Csv -LiteralPath (Join-Path $fixture 'artifacts/stats/curseforge-clicks.csv') -Encoding UTF8 -UseCulture
+    if ($clickHtml -notmatch 'Переходы на CurseForge с сайта</h2><strong>12</strong>' -or $clickCsv.clicks -ne 12 -or
+        $clickHtml -notmatch 'Всего ZIP<strong>42</strong>') { throw 'Clicks must be separate from ZIP downloads in HTML and CSV.' }
+    foreach ($mode in @('error', 'malformed', 'wrong-event')) {
+        $statsFixture.GoatMode = $mode
+        & (Join-Path $fixture 'tools/release-stats.ps1') -NoOpen | Out-Null
+        $stale = Get-Content -LiteralPath $clickPath -Raw -Encoding UTF8 | ConvertFrom-Json
+        if ($stale.status -ne 'stale' -or $stale.clicks -ne 12 -or $stale.collectedAtUTC -ne $clickData.collectedAtUTC) {
+            throw 'Analytics errors must preserve the last successful sample and its timestamp.'
+        }
+    }
+    Remove-Item -LiteralPath $clickPath
+    & (Join-Path $fixture 'tools/release-stats.ps1') -NoOpen | Out-Null
+    $unavailable = Get-Content -LiteralPath $clickPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    if ($unavailable.status -ne 'unavailable' -or $null -ne $unavailable.clicks) { throw 'An API error without cache must be unknown, not zero.' }
+    $statsFixture.GoatMode = 'empty'
+    & (Join-Path $fixture 'tools/release-stats.ps1') -NoOpen | Out-Null
+    $empty = Get-Content -LiteralPath $clickPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    if ($empty.status -ne 'ok' -or $empty.clicks -ne 0 -or $empty.excludedClicks -ne 0) { throw 'A not-yet-recorded event is zero, never negative.' }
+    $statsFixture.GoatMode = 'ok'
+    [IO.File]::WriteAllText($clickLedger, '{"schemaVersion":1,"event":"curseforge-open","checks":[{"count":50}]}')
+    & (Join-Path $fixture 'tools/release-stats.ps1') -NoOpen | Out-Null
+    $clamped = Get-Content -LiteralPath $clickPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    if ($clamped.clicks -ne 0 -or $clamped.excludedClicks -ne 17) { throw 'Deductions cannot make delayed counters negative.' }
+    $env:GOATCOUNTER_API_TOKEN = $null
+    [IO.File]::WriteAllText((Join-Path $fixture 'config/goatcounter-token.local.txt'), "goat-fixture-token`r`n")
+    [IO.File]::WriteAllText($clickLedger, '{"schemaVersion":1,"event":"curseforge-open","checks":[]}')
+    & (Join-Path $fixture 'tools/release-stats.ps1') -NoOpen | Out-Null
+    $localToken = Get-Content -LiteralPath $clickPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    if ($localToken.status -ne 'ok' -or $localToken.clicks -ne 17) { throw 'Local token file and empty deduction list must work.' }
+    foreach ($name in @('index.html','curseforge-clicks.csv','curseforge-clicks.json')) {
+        if ((Get-Content -LiteralPath (Join-Path $fixture "artifacts/stats/$name") -Raw -Encoding UTF8) -match 'goat-fixture-token') {
+            throw 'GoatCounter credentials must never appear in reports, including API failures.'
+        }
+    }
     foreach ($name in @('index.html','downloads.csv','downloads.json')) {
         if ((Get-Content -LiteralPath (Join-Path $fixture "artifacts/stats/$name") -Raw -Encoding UTF8) -match 'stats-fixture-token') {
             throw 'Credentials must never be written to reports.'
@@ -200,9 +265,11 @@ exit $LASTEXITCODE
         }
     }
     Write-Host 'PASS: addon-only releases and historical full archives, original CSV/JSON columns, adjusted counts, single request, complete pagination, authentication, stale-login fallback and useful rate-limit errors preserving the report; no network calls.'
+    Write-Host 'PASS: CurseForge event filter, token isolation, check deductions, separate counts, missing setup, cached failures and empty events; no network calls.'
 } finally {
     $env:GITHUB_TOKEN = $savedGitHubToken
     $env:GH_TOKEN = $savedGhToken
+    $env:GOATCOUNTER_API_TOKEN = $savedGoatToken
     $resolved = [IO.Path]::GetFullPath($fixture)
     if ([IO.Path]::GetDirectoryName($resolved) -ne $parent -or [IO.Path]::GetFileName($resolved) -ne $leaf) { throw 'Unsafe stats test path.' }
     Remove-Item -LiteralPath $resolved -Recurse -Force

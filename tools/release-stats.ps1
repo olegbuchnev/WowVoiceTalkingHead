@@ -99,6 +99,83 @@ function Count-Text($Value) {
     return ([long]$Value).ToString('N0', [Globalization.CultureInfo]::GetCultureInfo('ru-RU'))
 }
 
+function Get-CurseForgeClicks {
+    $result = [pscustomobject][ordered]@{
+        event = 'curseforge-open'; status = 'unconfigured'
+        startUTC = '2026-10-10T00:00:00Z'; collectedAtUTC = $null
+        rawClicks = $null; excludedClicks = $null; clicks = $null
+        message = 'Не подключено: добавьте API-токен в config/goatcounter-token.local.txt.'
+    }
+    $goatToken = $null
+    try {
+        $deductions = 0L
+        $clickLedger = Join-Path $root 'config\curseforge-click-checks.json'
+        if (Test-Path -LiteralPath $clickLedger) {
+            $ledger = Get-Content -LiteralPath $clickLedger -Raw -Encoding UTF8 | ConvertFrom-Json
+            if ($ledger.schemaVersion -ne 1 -or $ledger.event -cne $result.event) { throw 'Invalid click ledger.' }
+            foreach ($check in $ledger.checks) {
+                $n = 0L
+                if (-not [long]::TryParse([string]$check.count, [ref]$n) -or $n -lt 0) { throw 'Invalid click deduction.' }
+                $deductions = [long]($deductions + $n)
+            }
+        }
+        $goatToken = [Environment]::GetEnvironmentVariable('GOATCOUNTER_API_TOKEN')
+        $tokenFile = Join-Path $root 'config\goatcounter-token.local.txt'
+        if ([string]::IsNullOrWhiteSpace($goatToken) -and (Test-Path -LiteralPath $tokenFile)) {
+            $goatToken = Get-Content -LiteralPath $tokenFile -Raw -Encoding UTF8
+        }
+        if (-not [string]::IsNullOrWhiteSpace($goatToken)) {
+            $result.status = 'unavailable'
+            $now = [DateTimeOffset]::UtcNow
+            $end = $now.AddHours(1).ToString("yyyy-MM-dd'T'HH':00:00Z'")
+            $uri = 'https://tove2889.goatcounter.com/api/v0/stats/hits?path_by_name=true&include_paths=curseforge-open&limit=100' +
+                '&start=' + [Uri]::EscapeDataString($result.startUTC) + '&end=' + [Uri]::EscapeDataString($end)
+            $response = Invoke-RestMethod -Uri $uri -Headers @{
+                Authorization = 'Bearer ' + $goatToken.Trim()
+                'Content-Type' = 'application/json'; 'User-Agent' = 'TalkingHeadRu-local-stats'
+            } -TimeoutSec 30
+            if (-not $response.PSObject.Properties['hits'] -or $response.more) { throw 'Incomplete click response.' }
+            $allHits = @($response.hits | Where-Object { $null -ne $_ })
+            $hits = @($allHits | Where-Object { $_.event -eq $true -and $_.path -ceq $result.event })
+            if ($hits.Count -gt 1 -or $allHits.Count -ne $hits.Count) { throw 'Unexpected click response.' }
+            $raw = 0L
+            if ($hits.Count -eq 1 -and (-not [long]::TryParse([string]$hits[0].count, [ref]$raw) -or $raw -lt 0)) {
+                throw 'Invalid click counter.'
+            }
+            $result.rawClicks = $raw
+            $result.collectedAtUTC = $now.ToString('o')
+            $result.status = 'ok'
+            $result.message = 'Без известных проверочных переходов. Данные с 10.10.2026.'
+        }
+    } catch {
+        # Never include server response bodies or exception text: they may echo credentials.
+        $result.status = 'unavailable'
+        $result.message = 'Не удалось обновить переходы. Проверьте API-токен, право чтения статистики, соединение и файл вычетов.'
+    } finally { $goatToken = $null }
+    if ($result.status -ne 'ok') {
+        # Keep the last successful sample visibly dated instead of reporting a false zero.
+        $cacheFile = Join-Path $output 'curseforge-clicks.json'
+        try {
+            if (Test-Path -LiteralPath $cacheFile) {
+                $cached = Get-Content -LiteralPath $cacheFile -Raw -Encoding UTF8 | ConvertFrom-Json
+                if ($cached.event -ceq $result.event -and $cached.startUTC -eq $result.startUTC -and
+                    $cached.status -in @('ok', 'stale') -and $null -ne $cached.clicks) {
+                    $result.rawClicks = $cached.rawClicks
+                    $result.excludedClicks = $cached.excludedClicks
+                    $result.clicks = $cached.clicks
+                    $result.collectedAtUTC = $cached.collectedAtUTC
+                    $result.status = 'stale'
+                    $result.message += ' Показан предыдущий результат от ' + $cached.collectedAtUTC + '.'
+                }
+            }
+        } catch { <# Ignore an unreadable cache; unknown is better than zero. #> }
+    } else {
+        $result.excludedClicks = [Math]::Min($result.rawClicks, $deductions)
+        $result.clicks = $result.rawClicks - $result.excludedClicks
+    }
+    return $result
+}
+
 try {
     $token = Get-GitHubToken
     if ($token) { $headers.Authorization = 'Bearer ' + $token }
@@ -170,11 +247,12 @@ try {
             '</td><td>' + (Count-Text $row.Total) + '</td></tr>'
     }
     if (-not $rows.Count) { $tableRows = '<tr><td colspan="5">Опубликованных релизов пока нет.</td></tr>' }
+    $clicks = Get-CurseForgeClicks
     $html = @"
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
-<title>WowVoice — статистика скачиваний</title>
+<title>TalkingHead Ru — статистика</title>
 <style>
 :root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#202523;color:#e1e7e4;font:16px/1.6 system-ui,sans-serif}
 main{max-width:1020px;margin:48px auto;padding:0 24px}h1{font-size:28px;margin:0 0 8px}p{margin:8px 0 20px}.muted{color:#a9b7af}
@@ -182,14 +260,19 @@ main{max-width:1020px;margin:48px auto;padding:0 24px}h1{font-size:28px;margin:0
 .card strong{display:block;color:#a7e0c6;font-size:32px}.table{overflow-x:auto}table{border-collapse:collapse;width:100%;white-space:nowrap}
 th,td{padding:12px 14px;border-bottom:1px solid #415249;text-align:right}th:first-child,thead th:nth-child(2),tbody td:nth-child(2){text-align:left}thead{color:#a7e0c6}tbody th{font-weight:500}tfoot{font-weight:700}
 a{color:#a7e0c6}code{background:#29372f;padding:2px 6px;border-radius:4px}.notes{font-size:14px;color:#a9b7af;margin-top:28px}
+.clicks{border:1px solid #675044;border-left:3px solid #f16436;padding:20px;margin:28px 0;background:#2c2926}.clicks h2{font-size:20px;margin:0 0 8px}.clicks strong{display:block;font-size:32px;color:#ff976e}.clicks p:last-child{margin-bottom:0}
 </style></head><body><main>
-<h1>Скачивания WowVoice TalkingHead</h1>
+<h1>Статистика TalkingHead Ru</h1>
 <p class="muted">Локальный отчёт · GitHub Releases · обновлён $collectedDisplay</p>
 <div class="cards"><div class="card">Всего ZIP<strong>$(Count-Text $total)</strong></div><div class="card">Аддон<strong>$(Count-Text $totalAddon)</strong></div><div class="card">Старые полные архивы<strong>$(Count-Text $totalFull)</strong></div></div>
 <p class="muted">Начиная с 1.2.5 выпускается только архив аддона. Скачивания полных архивов прошлых релизов сохраняются в статистике и входят в общую сумму.</p>
 <div class="table"><table><thead><tr><th>Релиз</th><th title="Дата публикации по UTC">Дата релиза</th><th>Старый полный архив</th><th>Аддон</th><th>Всего</th></tr></thead>
 <tbody>$($tableRows -join "`n")</tbody><tfoot><tr><th colspan="2">Итого</th><td>$(Count-Text $totalFull)</td><td>$(Count-Text $totalAddon)</td><td>$(Count-Text $total)</td></tr></tfoot></table></div>
 <p><a href="downloads.csv" download>Скачать таблицу CSV для Excel</a></p>
+<section class="clicks"><h2>Переходы на CurseForge с сайта</h2><strong>$(Count-Text $clicks.clicks)</strong>
+<p class="muted">$(Escape-Html $clicks.message)</p>
+<p>Нажатия на кнопку «Открыть на CurseForge». Это не скачивания и не установки; в сумму ZIP выше не входят.</p>
+<p><a href="curseforge-clicks.csv" download>Скачать переходы CSV</a> · <a href="https://tove2889.goatcounter.com/">Открыть GoatCounter</a></p></section>
 <p>Для обновления снова запусти <code>stats.cmd</code>. Эта страница — сохранённый снимок, перезагрузка браузера не запрашивает новые данные.</p>
 <div class="notes"><p>Известные наши проверочные скачивания исключены. Остальные повторные и проверочные скачивания остаются в счётчиках. Это не число уникальных пользователей и не отдельный счётчик нажатий на сайте. Скачивания с pCloud и скачивания библиотек с CurseForge сюда не входят.</p>
 <p>Учитываются архивы аддона (включая прежние addon-only) и полные архивы прошлых выпусков, прикреплённые к существующим опубликованным релизам, включая предварительные. Другие файлы, исторические lite-архивы и автоматически созданные GitHub архивы исходников исключены. Удалённые или заменённые файлы не сохраняют прежний счётчик в этом отчёте. «—» означает, что архива такого типа в релизе нет.</p>
@@ -199,6 +282,9 @@ a{color:#a7e0c6}code{background:#29372f;padding:2px 6px;border-radius:4px}.notes
     # Do not touch the previous report until every request has succeeded.
     New-Item -ItemType Directory -Path $output -Force | Out-Null
     $displayRows | Export-Csv -LiteralPath (Join-Path $output 'downloads.csv') -NoTypeInformation -Encoding UTF8 -UseCulture
+    $clicks | Select-Object event, status, startUTC, collectedAtUTC, clicks |
+        Export-Csv -LiteralPath (Join-Path $output 'curseforge-clicks.csv') -NoTypeInformation -Encoding UTF8 -UseCulture
+    [IO.File]::WriteAllText((Join-Path $output 'curseforge-clicks.json'), ($clicks | ConvertTo-Json), [Text.UTF8Encoding]::new($false))
     [IO.File]::WriteAllText((Join-Path $output 'downloads.json'),
         ([ordered]@{ repository = $repo; collectedAtUTC = $collected; releases = $rows; assets = $details } | ConvertTo-Json -Depth 5),
         [Text.UTF8Encoding]::new($false))
@@ -206,6 +292,7 @@ a{color:#a7e0c6}code{background:#29372f;padding:2px 6px;border-radius:4px}.notes
     [IO.File]::WriteAllText($report, $html, [Text.UTF8Encoding]::new($false))
     $displayRows | Format-Table -AutoSize
     Write-Host "Total ZIP downloads: $total. Updated: $collectedDisplay"
+    Write-Host "CurseForge clicks: $(Count-Text $clicks.clicks) [$($clicks.status)]"
     Write-Host "Local report: $report"
     if (-not $NoOpen) { Invoke-Item -LiteralPath $report }
 } catch {

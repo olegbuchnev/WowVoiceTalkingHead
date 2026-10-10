@@ -1,3 +1,18 @@
+// Only the published project site loads analytics. Preview builds omit the
+// endpoint; the origin check also excludes local copies of production HTML.
+const clickAnalytics = document.body.dataset.clickAnalytics;
+if (clickAnalytics && window.location.origin === 'https://olegbuchnev.github.io'
+    && window.location.pathname.startsWith('/WowVoiceTalkingHead/')) {
+  const counter = document.createElement('script');
+  counter.src = 'https://gc.zgo.at/count.js';
+  counter.async = true;
+  counter.dataset.goatcounter = clickAnalytics;
+  // Count button clicks only, without sending a pageview on load.
+  counter.dataset.goatcounterSettings = JSON.stringify({ no_onload: true });
+  counter.addEventListener('load', () => window.goatcounter?.bind_events?.());
+  document.head.appendChild(counter);
+}
+
 // A sticky column taller than the viewport hits the page's bottom boundary
 // and jumps when release notes change the page height. Pin it only if it fits.
 const sidebar = document.querySelector('.sidebar');
