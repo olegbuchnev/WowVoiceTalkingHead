@@ -78,15 +78,23 @@ const { createHash } = require('crypto');
         if (!u.includes('/v2/')) throw Error('wrong compatibility tag');
         return new Response('WowVoiceCatQuestAudio = {sourceVersion = "0.2.2"}');
       }
+      if (u.endsWith('/src/WayfarerSource.lua')) {
+        if (!u.includes('/v2/')) throw Error('wrong Wayfarer compatibility tag');
+        return new Response('local AUDITED_CORE_VERSION = "0.7.0"');
+      }
+      if (u.endsWith('/src/WayfarerAudio.lua')) {
+        if (!u.includes('/v2/')) throw Error('wrong Wayfarer pack tag');
+        return new Response('WowVoiceWayfarerAudio = {packs={["Wayfarer_Voices_Alliance"] = {version="3.1.0"}}}');
+      }
       throw Error('Unexpected network request '+u);
     };`;
     fs.writeFileSync(path.join(fixture,'mock.mjs'),mock);
     const intro='# Test WowVoice\n\nDescription.\n\n';
     const body=`\n[Addon](${urls.addon})\n\n`
-      + ['Две озвучки на выбор','Установка','Возможности','Очередь озвучки','Настройки','Совместимость с CatQuest','Авторы и озвучка','Что нового']
+      + ['Три библиотеки озвучки','Установка','Возможности','Очередь озвучки','Настройки','Подключение библиотек','Авторы и озвучка','Что нового']
         .map(name=>`## ${name}\n\nContent. [Addon](${urls.addon})\n`
           + (name === 'Установка' ? '\n> **⚠ Если раньше скачивали наш полный архив**\n>\n> Удалите старую папку.\n' : '')
-          + (name === 'Две озвучки на выбор' ? '\n![Head](docs/images/head.png)\n' : '')
+          + (name === 'Три библиотеки озвучки' ? '\n![Head](docs/images/head.png)\n' : '')
           + (name === 'Очередь озвучки' ? '\n<p class="feature-image"><img src="docs/images/queue.png" width="320" alt="Queue"></p>\n' : '')).join('\n');
     fs.writeFileSync(path.join(fixture,'docs/images/head.png'),Buffer.from([1]));
     fs.writeFileSync(path.join(fixture,'docs/images/queue.png'),Buffer.from([2]));
@@ -104,9 +112,11 @@ const { createHash } = require('crypto');
         assert(html.includes('data-goatcounter-no-session="1"'));
         assert(html.includes('444,4 КБ') && !html.includes('700 МБ') && !html.includes('555,6 МБ'));
         assert.equal((html.match(/class="download-card"/g)||[]).length,1);
-        assert.equal((html.match(/class="optional-voices"/g)||[]).length,2);
+        assert.equal((html.match(/class="optional-voices"/g)||[]).length,3);
         assert(html.includes('Проверено с Voices 0.2.2'));
-        for (const slug of ['wowvoice-classic', 'catquest', 'catquest-voices']) {
+        assert(html.includes('Проверены Wayfarer 0.7.0 и модули 3.1.0'));
+        for (const slug of ['wowvoice-classic', 'catquest', 'catquest-voices', 'wayfarer-russian-voiceover',
+          'wayfarer-voices-alliance', 'wayfarer-voices-horde', 'wayfarer-voices-shared-quests']) {
           assert(html.includes(`https://www.curseforge.com/wow/addons/${slug}/files/all?page=1&amp;pageSize=20&amp;gameVersionTypeId=88568&amp;showAlphaFiles=hide`));
         }
         assert(!html.includes(`href="${urls.full}"`));
@@ -144,9 +154,12 @@ const { createHash } = require('crypto');
     assert.match(run().stderr,/Download is not a published release asset/);
     fs.writeFileSync(path.join(fixture,'mock.mjs'),mock.replace("return new Response('WowVoiceCatQuestAudio", "return new Response('', {status:404}); return new Response('WowVoiceCatQuestAudio"));
     assert.match(run().stderr,/Cannot verify CatQuest integration in v2/);
+    fs.writeFileSync(path.join(fixture,'mock.mjs'),mock.replace("return new Response('local AUDITED_CORE_VERSION", "return new Response('', {status:404}); return new Response('local AUDITED_CORE_VERSION"));
+    assert.equal(run().status, 0, 'Older releases without Wayfarer remain buildable');
+    assert.equal((fs.readFileSync(path.join(fixture,'artifacts/site/index.html'),'utf8').match(/class="optional-voices"/g)||[]).length, 2);
     const previewRoot=path.join(fixture,'artifacts/site-preview');
     fs.mkdirSync(path.join(previewRoot,'downloads'),{recursive:true});
-    const preview={version:'preview',addon:'TalkingHeadRu-preview.zip',catQuestVersion:'0.2.2'};
+    const preview={version:'1.3.0-forever-preview',releaseVersion:'1.3.0-forever',addon:'TalkingHeadRu-1.3.0-forever-preview.zip',catQuestVersion:'0.2.2',wayfarer:{core:'0.7.0',packs:['3.1.0']}};
     fs.writeFileSync(path.join(previewRoot,'preview.json'),JSON.stringify(preview));
     fs.writeFileSync(path.join(previewRoot,'downloads',preview.addon),Buffer.alloc(23456));
     fs.writeFileSync(path.join(fixture,'mock.mjs'),"globalThis.fetch = () => {throw Error('Preview must work offline')};");
@@ -157,12 +170,14 @@ const { createHash } = require('crypto');
       assert(!fs.readFileSync(path.join(previewRoot, name), 'utf8').includes('data-click-analytics='));
     }
     assert(previewHtml.includes('Релиз ещё не опубликован') && previewHtml.includes('23,5 КБ'));
+    assert(previewHtml.includes('Аддон: 1.3.0-forever'));
+    assert(previewHtml.includes('Проверены Wayfarer 0.7.0 и модули 3.1.0'));
     assert(!previewHtml.includes(urls.full) && !previewHtml.includes(urls.addon));
     assert.equal((previewHtml.match(new RegExp(`href="downloads/${preview.addon}"`,'g'))||[]).length,9);
     assert(previewHtml.includes(`href="downloads/${preview.addon}"`));
     assert(previewHtml.includes(`src="${changedURL}"`) && previewHtml.includes(`src="${headURL}"`));
     assert.deepEqual(fs.readFileSync(path.join(previewRoot,changedURL)), Buffer.from([3]));
-    console.log('PASS: one addon download, exact size and release date, two matching voice sections with Forever links and visible migration notice');
+    console.log('PASS: one addon download, exact size and release date, three matching voice sections with Forever links and visible migration notice');
     console.log('PASS: unpublished or unverifiable downloads rejected; offline preview needs only the addon ZIP, no bundled audio');
     console.log('PASS: click-only analytics enabled on the published site, excluded from preview and local copies');
     console.log('PASS: Markdown/HTML/guide screenshots use hashed filenames; replacing image bytes changes its URL in published and preview builds');

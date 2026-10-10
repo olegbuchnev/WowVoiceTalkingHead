@@ -42,7 +42,7 @@ assert(not panel.Play, 'Playback must use quest cells instead of a separate butt
 local buttonCount = 0
 for _ in pairs(panel.Buttons) do buttonCount = buttonCount + 1 end
 assert(buttonCount == 1 and not panel.Status and panel.QuestRange)
-assert(#panel.regions == 6 and panel.regions[1]:GetText() == 'Озвучка заданий', 'Expected heading, field, range, two source labels and catalogue summary')
+assert(#panel.regions == 7 and panel.regions[1]:GetText() == 'Озвучка заданий', 'Expected heading, field, range, three source labels and catalogue summary')
 assert(not panel.ClearFilter:IsEnabled())
 assert(not panel.ClearFilter:IsShown() and panel.ClearFilter.parent == panel.QuestID)
 assert(panel.ClearFilter.normalTexture.atlas == 'common-search-clearbutton')

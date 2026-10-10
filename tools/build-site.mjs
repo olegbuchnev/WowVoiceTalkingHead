@@ -118,7 +118,7 @@ async function previewArtifact(kind) {
   }
   const stat = await fs.stat(path.join(output, 'downloads', name));
   return { tag: preview.version, url: 'downloads/' + name, size: formatArtifactSize(stat.size),
-    html: '<p class="artifact-meta">Локальная тестовая сборка<br>Размер готового ZIP</p>' };
+    html: `<p class="artifact-meta">Аддон: ${escape(preview.releaseVersion || preview.version)}<br>Локальная тестовая сборка</p>` };
 }
 const addonInfo = previewMode ? await previewArtifact('addon') : await artifactInfo(addon);
 // Compatibility is tied to the downloadable addon, not unpublished main metadata.
@@ -132,6 +132,20 @@ async function compatibilityVersion() {
   return version;
 }
 const catQuestVersion = await compatibilityVersion();
+async function wayfarerCompatibility() {
+  if (previewMode) return preview.wayfarer;
+  const base = `https://raw.githubusercontent.com/olegbuchnev/WowVoiceTalkingHead/${encodeURIComponent(addonInfo.tag)}/src/`;
+  const coreResponse = await fetch(base + 'WayfarerSource.lua', {signal: AbortSignal.timeout(15000)});
+  if (coreResponse.status === 404) return null; // Releases before Wayfarer support.
+  if (!coreResponse.ok) throw Error(`Cannot verify Wayfarer integration in ${addonInfo.tag}`);
+  const core = /AUDITED_CORE_VERSION\s*=\s*"([^"]+)"/.exec(await coreResponse.text())?.[1];
+  const audioResponse = await fetch(base + 'WayfarerAudio.lua', {signal: AbortSignal.timeout(15000)});
+  if (!audioResponse.ok) throw Error(`Cannot verify Wayfarer pack versions in ${addonInfo.tag}`);
+  const packs = [...new Set([...((await audioResponse.text()).matchAll(/\["Wayfarer_Voices_(?:Alliance|Horde|Shared)"\]\s*=\s*\{version="([^"]+)"/g))].map(match => match[1]))];
+  if (!core || !packs.length) throw Error(`Missing Wayfarer compatibility metadata in ${addonInfo.tag}`);
+  return {core, packs};
+}
+const wayfarer = await wayfarerCompatibility();
 const screenshots = tokens.filter(token => token.type === 'paragraph' && token.tokens?.[0]?.type === 'image');
 if (!screenshots.length) throw Error('README is missing screenshots');
 const sections = new Map();
@@ -190,7 +204,7 @@ function page(content, isGuide = false) {
         <div class="download-card" role="group" aria-label="Скачать TalkingHead Ru">
           <a class="button primary" href="${escape(addonInfo.url || addon)}"><span>Скачать аддон <span class="artifact-size">${escape(addonInfo.size)}</span></span><span aria-hidden="true">↓</span></a>
           <div class="download-info">
-            <p class="download-note">Для установки и обновления. Озвучку скачайте отдельно: можно подключить одну или обе библиотеки ниже.</p>
+            <p class="download-note">Для установки и обновления. Озвучку скачайте отдельно: подключите одну или несколько библиотек ниже.</p>
             ${addonInfo.html}
           </div>
         </div>
@@ -209,9 +223,20 @@ function page(content, isGuide = false) {
             <a class="mirror" href="${escape(foreverFiles('catquest-voices'))}">CatQuest Voices на CurseForge ↗</a>
           </div>
         </div>
+        ${wayfarer ? `<div class="optional-voices">
+          <p class="optional-title">Озвучка Wayfarer</p>
+          <p class="download-note">Нужен основной Wayfarer. Рекомендуем установить все три квестовых модуля. Проверены Wayfarer ${escape(wayfarer.core)} и модули ${escape(wayfarer.packs.join(', '))}.</p>
+          <div class="curseforge-links">
+            <a class="mirror" href="${escape(foreverFiles('wayfarer-russian-voiceover'))}">Wayfarer на CurseForge ↗</a>
+            <a class="mirror" href="${escape(foreverFiles('wayfarer-voices-alliance'))}">Wayfarer Voices - Alliance на CurseForge ↗</a>
+            <a class="mirror" href="${escape(foreverFiles('wayfarer-voices-horde'))}">Wayfarer Voices - Horde на CurseForge ↗</a>
+            <a class="mirror" href="${escape(foreverFiles('wayfarer-voices-shared-quests'))}">Wayfarer Voices - Shared Quests на CurseForge ↗</a>
+          </div>
+        </div>` : ''}
       </div>
       <nav aria-label="Разделы сайта">
         <a href="${isGuide ? 'index.html' : ''}#voice-choice">Выбор озвучки</a>
+        <a href="${isGuide ? 'index.html' : ''}#подключение-библиотек">Подключение библиотек</a>
         <a href="${isGuide ? 'index.html' : ''}#installation">Установка</a>
         <a href="${isGuide ? 'index.html' : ''}#features">Возможности</a>
         <a href="${isGuide ? 'index.html' : ''}#whats-new">Что нового</a>
@@ -229,13 +254,13 @@ function page(content, isGuide = false) {
 }
 const gallery = markdown.parse(screenshots.map(token => token.raw).join('\n\n'));
 const content = `<div class="intro"><p class="eyebrow">WoW Forever Beta</p><h1>Квесты с русской озвучкой</h1>${markdown.parse(intro)}</div>
-  ${section('Две озвучки на выбор', 'voice-choice', 'voice-feature')}
+  ${section('Три библиотеки озвучки', 'voice-choice', 'voice-feature')}
   <div class="screenshots">${gallery}</div>
   ${section('Установка', 'installation')}
   ${section('Возможности', 'features')}
   ${section('Очередь озвучки', 'quest-queue', 'queue-feature')}
   ${section('Настройки', 'settings')}
-  ${section('Совместимость с CatQuest', 'catquest')}
+  ${section('Подключение библиотек', 'подключение-библиотек')}
   ${section('Авторы и озвучка', 'credits')}
   ${section('Что нового', 'whats-new')}`;
 await fs.mkdir(path.join(output, 'images'), { recursive: true });

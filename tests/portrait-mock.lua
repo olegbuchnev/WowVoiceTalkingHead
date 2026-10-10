@@ -159,6 +159,7 @@ function CreateFrame(kind,name,parent,template)
     function f:SetChecked(v) self.checked=v end
     function f:GetChecked() return self.checked end
     function f:SetEnabled(v) self.enabled=v end
+    function f:SetMotionScriptsWhileDisabled(v) self.motionWhileDisabled=v end
     function f:IsEnabled() return self.enabled~=false end
     function f:SetClampedToScreen() end
     function f:SetClampRectInsets(...) self.clampRectInsets={...} end

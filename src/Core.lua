@@ -14,6 +14,11 @@ PlayMusic/StopMusic by default.
 
 local ADDON = "TalkingHeadRu"
 local SOUND_ADDON = "WowVoiceSounds"
+local voiceCredits = {
+    { addon = SOUND_ADDON, name = "WowVoice", url = "https://boosty.to/wowvoice" },
+    { addon = "CatQuest_Voices", name = "CatQuest", url = "https://boosty.to/cathey" },
+    { addon = "Wayfarer", name = "Wayfarer", url = "https://discord.gg/sgTeeQCZvh" },
+}
 
 -- Text sections: a = accept, p = progress, c = complete
 local SECTION = { accept = "a", progress = "p", complete = "c" }
@@ -59,6 +64,60 @@ local catQuestOverride
 local catQuestAutoKeys = {"autoDetail", "autoProgress", "autoComplete"}
 local catQuestButtonsActive, catQuestRefreshPending
 local catQuestButtonVisibility, catQuestButtonHooks, catQuestParentHooks = {}, {}, {}
+local catQuestTrackerHooks, catQuestTrackerButtons = {}, {}
+local function suppressCatQuestButton(button, tracker)
+    if catQuestButtonVisibility[button] == nil then
+        catQuestButtonVisibility[button] = button:IsShown()
+    end
+    if not catQuestButtonHooks[button] then
+        catQuestButtonHooks[button] = true
+        button:HookScript("OnShow", function(self)
+            if catQuestButtonsActive then
+                if tracker then catQuestButtonVisibility[self] = true end
+                self:Hide()
+            end
+        end)
+    end
+    button:Hide()
+end
+local function hideCatQuestTrackerButtons(block)
+    if not catQuestButtonsActive or not (block and block.GetChildren) then return end
+    for _, button in ipairs({block:GetChildren()}) do
+        -- CatQuest's tracker extension keeps its icons/handler private. Match
+        -- its quest ID + exposed texture on direct quest-block children only.
+        local texture = rawget(button, "texture")
+        if type(rawget(button, "questId")) == "number" and button.questId == block.id
+            and texture and texture.GetAtlas and texture:GetAtlas() == "voicechat-icon-speaker"
+            and button.GetScript and type(button:GetScript("OnClick")) == "function" then
+            catQuestTrackerButtons[button] = block
+            suppressCatQuestButton(button, true)
+        end
+    end
+end
+local function updateCatQuestTrackers()
+    for _, name in ipairs({"QuestObjectiveTracker", "CampaignQuestObjectiveTracker"}) do
+        local tracker = _G[name]
+        if tracker then
+            if not catQuestTrackerHooks[tracker] and hooksecurefunc
+                and type(tracker.LayoutBlock) == "function" and type(tracker.OnFreeBlock) == "function" then
+                catQuestTrackerHooks[tracker] = true
+                hooksecurefunc(tracker, "LayoutBlock", function(_, block)
+                    hideCatQuestTrackerButtons(block)
+                    -- A late CatQuest hook may create the icon after ours.
+                    if catQuestButtonsActive and C_Timer and C_Timer.After then
+                        C_Timer.After(0, function() hideCatQuestTrackerButtons(block) end)
+                    end
+                end)
+                hooksecurefunc(tracker, "OnFreeBlock", function(_, block)
+                    for button, owner in pairs(catQuestTrackerButtons) do
+                        if owner == block then catQuestButtonVisibility[button] = nil end
+                    end
+                end)
+            end
+            if tracker.EnumerateActiveBlocks then tracker:EnumerateActiveBlocks(hideCatQuestTrackerButtons) end
+        end
+    end
+end
 local function updateCatQuestButtons(active)
     catQuestButtonsActive = active == true
     if not active then
@@ -73,16 +132,7 @@ local function updateCatQuestButtons(active)
         local click = button:GetScript("OnClick")
         if type(click) ~= "function" or (click ~= _G.CatQuest_ReadQuestLog
             and click ~= _G.CatQuest_Toggle) then return end
-        if catQuestButtonVisibility[button] == nil then
-            catQuestButtonVisibility[button] = button:IsShown()
-        end
-        if not catQuestButtonHooks[button] then
-            catQuestButtonHooks[button] = true
-            button:HookScript("OnShow", function(self)
-                if catQuestButtonsActive then self:Hide() end
-            end)
-        end
-        button:Hide()
+        suppressCatQuestButton(button)
     end
     -- Quest and NPC dialogue surfaces; ItemTextFrame keeps its book reader.
     -- CatQuest exposes the journal button; dialogue buttons are anonymous.
@@ -100,9 +150,11 @@ local function updateCatQuestButtons(active)
             for _, child in ipairs({parent:GetChildren()}) do hideButton(child) end
         end
     end
+    updateCatQuestTrackers()
 end
 
 function WV:UpdateCatQuestIntegration(release)
+    if self.UpdateWayfarerIntegration then self:UpdateWayfarerIntegration(release) end
     local db = _G.CatQuestDB
     local active = not release and TalkingHeadRuDB and TalkingHeadRuDB.enabled
         and type(db) == "table"
@@ -419,7 +471,7 @@ do
     -- duration: voice line length, or nil if unknown
     function Playback:Play(path, duration, context, sourceID, verified)
         if not path then return false end
-        if context and sourceID == "catquest" then
+        if context and (sourceID == "catquest" or sourceID == "wayfarer") then
             -- Queue/speaker contexts can be reused for a different source later.
             -- Keep source-specific text fallbacks out of SavedVariables.
             local copy = {}
@@ -572,33 +624,70 @@ end
 
 -- Returns path, duration, source version, source ID, verified timing.
 function WV:SoundPath(questId, section)
-    local duration = _G.WowVoiceDur and _G.WowVoiceDur[tostring(questId) .. section]
-    if not WowVoiceAudioSources.Loaded(SOUND_ADDON) or not duration or self:GetSharedQuestVoice() == "catquest" then
-        local extra = foreverAudio(questId, section)
-        if extra then return extra.path, extra.duration, extra.sourceVersion, extra.sourceID, extra.verified end
+    for _, id in ipairs(self:GetVoicePriority()) do
+        if id == "wowvoice" then
+            local path, duration, version, sourceID, verified = self:ClassicSoundPath(questId, section)
+            if path then return path, duration, version, sourceID, verified end
+        else
+            local extra = WowVoiceAudioSources.Resolve(questId, section, id)
+            if extra then return extra.path, extra.duration, extra.sourceVersion, extra.sourceID, extra.verified end
+        end
     end
-    return self:ClassicSoundPath(questId, section)
 end
 
-function WV:GetSharedQuestVoice()
-    -- A disabled primary pack temporarily makes CatQuest the only source.
-    -- Retain the saved preference for when WowVoice Sounds is enabled again.
-    if not WowVoiceAudioSources.Loaded(SOUND_ADDON) and WowVoiceAudioSources.Status() then return "catquest" end
-    if TalkingHeadRuDB and TalkingHeadRuDB.sharedQuestVoice == "catquest" then
-        if WowVoiceAudioSources.Status() then return "catquest" end
-        -- Keep the saved selection and radio buttons aligned with the fallback.
-        TalkingHeadRuDB.sharedQuestVoice = "wowvoice"
+local voiceSources = {"wowvoice", "catquest", "wayfarer"}
+local validVoiceSource = {wowvoice=true, catquest=true, wayfarer=true}
+function WV:GetVoicePriority()
+    local db, order, seen = TalkingHeadRuDB, {}, {}
+    local function add(id)
+        if type(id) == "string" and validVoiceSource[id] and not seen[id] then
+            seen[id] = true
+            order[#order + 1] = id
+        end
     end
-    return "wowvoice"
+    if db and type(db.voicePriority) == "table" then
+        for _, id in ipairs(db.voicePriority) do add(id) end
+    elseif db then
+        add(db.sharedQuestVoice) -- Migrate the former first-choice setting once.
+    end
+    for _, id in ipairs(voiceSources) do add(id) end
+    if db then
+        db.voicePriority = {order[1], order[2], order[3]}
+        db.sharedQuestVoice = order[1] -- Compatibility for local diagnostic tools.
+    end
+    return order
+end
+
+function WV:SetVoicePriority(order)
+    if not TalkingHeadRuDB or type(order) ~= "table" or #order ~= #voiceSources then return false end
+    local seen = {}
+    for _, id in ipairs(order) do
+        if type(id) ~= "string" or not validVoiceSource[id] or seen[id] then return false end
+        seen[id] = true
+    end
+    TalkingHeadRuDB.voicePriority = {order[1], order[2], order[3]}
+    TalkingHeadRuDB.sharedQuestVoice = order[1]
+    self:RefreshAudioSources()
+    return true
+end
+
+-- Legacy callers can still ask for the first loaded source or promote one.
+-- Availability never rewrites the user's saved order.
+function WV:GetSharedQuestVoice()
+    local order = self:GetVoicePriority()
+    for _, id in ipairs(order) do
+        if WowVoiceAudioSources.Available(id) then return id end
+    end
+    return order[1]
 end
 
 function WV:SetSharedQuestVoice(source)
-    if source ~= "wowvoice" and source ~= "catquest" then return false end
-    if source == "wowvoice" and not WowVoiceAudioSources.Loaded(SOUND_ADDON) then return false end
-    if source == "catquest" and not WowVoiceAudioSources.Status() then return false end
-    TalkingHeadRuDB.sharedQuestVoice = source
-    self:RefreshAudioSources()
-    return true
+    if not WowVoiceAudioSources.Available(source) then return false end
+    local order = {source}
+    for _, id in ipairs(self:GetVoicePriority()) do
+        if id ~= source then order[#order + 1] = id end
+    end
+    return self:SetVoicePriority(order)
 end
 
 -- Explicit WowVoice previews must remain independent of the saved preference.
@@ -779,7 +868,8 @@ function WV:HasQuestAudio(questId)
         and not unavailableQuestAudio[availabilityKey(questId)]
         and ((WowVoiceAudioSources.Loaded(SOUND_ADDON)
                 and _G.WowVoiceDur ~= nil and _G.WowVoiceDur[questId .. "a"] ~= nil)
-            or foreverAudio(questId, "a") ~= nil)
+            or foreverAudio(questId, "a") ~= nil
+            or WowVoiceAudioSources.Resolve(questId, "a", "wayfarer") ~= nil)
 end
 
 function WV:CanPresentQuest(questId)
@@ -841,12 +931,13 @@ f:RegisterEvent("PLAYER_LOGOUT")
 f:SetScript("OnEvent", function(self, event, arg1)
     if event == "ADDON_LOADED" then
         if arg1 ~= ADDON then
-            if arg1 == "CatQuest_Voices" or arg1 == SOUND_ADDON then
+            if arg1 == "CatQuest_Voices" or arg1 == SOUND_ADDON
+                or (type(arg1) == "string" and arg1:match("^Wayfarer")) then
                 WV:RefreshAudioSources()
             end
             -- CatQuest and the quest journal can load in either order. Defer
             -- until CatQuest's handler has initialized settings/created buttons.
-            if arg1 == "CatQuest" or type(_G.CatQuestDB) == "table" then
+            if arg1 == "CatQuest" or arg1 == "Wayfarer" or type(_G.CatQuestDB) == "table" then
                 scheduleCatQuestIntegration()
             end
             return
@@ -858,7 +949,7 @@ f:SetScript("OnEvent", function(self, event, arg1)
         TalkingHeadRuDB.playTooltips = nil -- Removed setting; our controls no longer show tooltips.
         TalkingHeadRuDB.trackerButtons, TalkingHeadRuDB.trackerProgressPulse = nil, nil -- Always available now.
         TalkingHeadRuDB.audioSource = nil -- Discard the obsolete bundled/external selector.
-        if TalkingHeadRuDB.sharedQuestVoice ~= "catquest" then TalkingHeadRuDB.sharedQuestVoice = "wowvoice" end
+        WV:GetVoicePriority()
         for k, v in pairs(defaults) do
             if TalkingHeadRuDB[k] == nil then TalkingHeadRuDB[k] = v end
         end
@@ -900,7 +991,13 @@ f:SetScript("OnEvent", function(self, event, arg1)
             TalkingHeadRuDB.tail3Migrated = true
         end
         WV:UpdateCatQuestIntegration()
-        msg("Озвучка: WowVoice — https://boosty.to/wowvoice; Cathey — https://boosty.to/cathey")
+        local links = {}
+        for _, source in ipairs(voiceCredits) do
+            if WowVoiceAudioSources.Loaded(source.addon) then
+                links[#links + 1] = source.name .. " — " .. source.url
+            end
+        end
+        if #links > 0 then msg("Озвучка: %s", table.concat(links, "; ")) end
 
     elseif event == "PLAYER_LOGIN" then
         WV:RefreshAudioSources()

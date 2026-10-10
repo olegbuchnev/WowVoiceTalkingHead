@@ -113,16 +113,12 @@ version = auditedVersion; WV:RefreshAudioSources()
 assert(S.Status().id == 'catquest' and not warning:IsShown() and not GameTooltip.visible)
 -- Saved preference applies to all normal playback, with stage-specific fallback.
 assert(WV:GetSharedQuestVoice() == 'wowvoice')
-local choices = panel.SharedVoiceButtons
-for _, choice in pairs(choices) do
-    assert(not choice.template and choice.Border.texture == 'Interface\\CHARACTERFRAME\\TempPortraitAlphaMask')
-    assert(choice.Label.parent == choice and choice.Label.point[1] == 'LEFT' and choice.Label.point[5] == 0,
-        'Radio captions must share the button vertical center and click target')
-    assert(not choice.scripts.OnEnter and not choice.scripts.OnLeave, 'Radio choices must not own a tooltip')
+local function voiceRow(id)
+    for _, row in ipairs(panel.VoicePriorityRows) do if row.sourceID == id then return row end end
 end
 assert(panel.SharedVoiceTooltip:GetWidth() == 22, 'Help tooltip must have a small explicit target')
-choices.catquest.scripts.OnClick(choices.catquest)
-assert(WV:GetSharedQuestVoice() == 'catquest' and choices.catquest:GetChecked())
+assert(WV:SetSharedQuestVoice('catquest'))
+assert(WV:GetSharedQuestVoice() == 'catquest' and (panel.VoicePriorityRows[1].sourceID == 'catquest'))
 assert(WV:SoundPath(179, 'a') == prefix .. '179.ogg')
 assert(WV:SoundPath(179, 'c') == prefix .. '179_t.ogg')
 assert(WV:ClassicSoundPath(179, 'a'):find('WowVoiceSounds', 1, true))
@@ -148,29 +144,34 @@ WV:SetSharedQuestVoice('catquest')
 event('ADDON_LOADED')
 assert(WV:GetSharedQuestVoice() == 'catquest', 'saved preference lost on initialization')
 loaded.CatQuest_Voices = false; WV:RefreshAudioSources()
-assert(not choices.catquest:IsEnabled() and not choices.wowvoice:IsEnabled())
-assert(choices.wowvoice:GetChecked() and not choices.catquest:GetChecked())
-assert(TalkingHeadRuDB.sharedQuestVoice == 'wowvoice', 'Unavailable source must reset the saved preference')
+assert(not voiceRow('catquest').available and voiceRow('wowvoice').available)
+assert(panel.VoicePriorityRows[1].sourceID == 'catquest')
+assert(TalkingHeadRuDB.sharedQuestVoice == 'catquest', 'Unavailable source must retain its saved rank')
 assert(not WV:SetSharedQuestVoice('catquest'))
 assert(WV:SoundPath(179, 'a'):find('WowVoiceSounds', 1, true))
 local hint = panel.SharedVoiceTooltip
 hint.scripts.OnEnter(hint)
-assert(GameTooltip.visible and GameTooltip.lines[2]:find('установите', 1, true))
+assert(GameTooltip.visible and GameTooltip.lines[2]:find('слева направо', 1, true))
+assert(not GameTooltip.lines[2]:find('установите', 1, true))
 hint.scripts.OnLeave(hint)
+local unavailable = voiceRow('catquest')
+unavailable.scripts.OnEnter(unavailable)
+assert(GameTooltip.visible and GameTooltip.lines[2]:find('CatQuest_Voices', 1, true))
+unavailable.scripts.OnLeave(unavailable)
 loaded.CatQuest_Voices = true; version = '0.6.0'; WV:RefreshAudioSources()
-assert(choices.catquest:IsEnabled() and WV:SoundPath(179, 'a'):find('WowVoiceSounds', 1, true))
+assert(voiceRow('catquest').available and WV:SoundPath(179, 'a') == prefix .. '179.ogg')
 assert(WV:SetSharedQuestVoice('catquest'))
 WV:RefreshAudioSources()
 assert(WV:GetSharedQuestVoice() == 'catquest', 'a newer library must not reset a saved source choice')
 local savedQuests = CatQuestVoicePack.quests
 CatQuestVoicePack.quests = false; WV:RefreshAudioSources()
-assert(not S.Status() and not choices.catquest:IsEnabled() and warning:IsShown())
+assert(not S.Status() and not voiceRow('catquest').available and warning:IsShown())
 assert(colors[1] == 1 and colors[2] == .25)
 assert(WV:GetSharedQuestVoice() == 'wowvoice', 'an invalid live index still falls back')
 CatQuestVoicePack.quests = savedQuests
 version = auditedVersion; WV:RefreshAudioSources()
-assert(choices.catquest:IsEnabled() and choices.wowvoice:GetChecked())
-assert(WV:GetSharedQuestVoice() == 'wowvoice', 'Restored library must not silently reselect CatQuest')
+assert(voiceRow('catquest').available and (panel.VoicePriorityRows[1].sourceID == 'catquest'))
+assert(WV:GetSharedQuestVoice() == 'catquest', 'Restored library must resume its saved rank')
 assert(WV:SetSharedQuestVoice('catquest'))
 assert(WV:SoundPath(179, 'a') == prefix .. '179.ogg')
 questID = 179; WV:Silence(); event('QUEST_DETAIL')
@@ -182,28 +183,28 @@ WV:Silence(); WV:SetSharedQuestVoice('wowvoice')
 local originalLoaded = C_AddOns.IsAddOnLoaded
 local originalExists, originalError = C_AddOns.DoesAddOnExist, C_AddOns.DoesAddOnHaveLoadError
 C_AddOns.DoesAddOnExist = function(name) return name ~= 'CatQuest_Voices' end
-TalkingHeadRuDB.sharedQuestVoice = 'catquest'
+WV:SetVoicePriority({'catquest','wowvoice','wayfarer'})
 WV:RefreshAudioSources()
 assert(CatQuestVoicePack.quests and originalLoaded('CatQuest_Voices'))
-assert(not S.Status() and not choices.catquest:IsEnabled() and not WV:SetSharedQuestVoice('catquest'))
-assert(TalkingHeadRuDB.sharedQuestVoice == 'wowvoice' and choices.wowvoice:GetChecked())
+assert(not S.Status() and not voiceRow('catquest').available and not WV:SetSharedQuestVoice('catquest'))
+assert(TalkingHeadRuDB.sharedQuestVoice == 'catquest' and (panel.VoicePriorityRows[1].sourceID == 'catquest'))
 assert(WV:SoundPath(179, 'a'):find('WowVoiceSounds', 1, true))
 C_AddOns.DoesAddOnExist = function() return true end
 C_AddOns.IsAddOnLoaded = function(name) return true, name ~= 'CatQuest_Voices' end
 WV:RefreshAudioSources()
-assert(not S.Status() and not choices.catquest:IsEnabled())
+assert(not S.Status() and not voiceRow('catquest').available)
 C_AddOns.IsAddOnLoaded = function() return true, true end
 C_AddOns.DoesAddOnHaveLoadError = function(name) return name == 'CatQuest_Voices' end
 WV:RefreshAudioSources()
-assert(not S.Status() and not choices.catquest:IsEnabled())
+assert(not S.Status() and not voiceRow('catquest').available)
 C_AddOns.DoesAddOnExist, C_AddOns.DoesAddOnHaveLoadError = originalExists, originalError
 C_AddOns.IsAddOnLoaded = originalLoaded
 WV:RefreshAudioSources()
-assert(S.Status() and choices.catquest:IsEnabled())
+assert(S.Status() and voiceRow('catquest').available)
 -- An options refresh alone must also show/save the fallback, without a full source refresh.
 assert(WV:SetSharedQuestVoice('catquest'))
 loaded.CatQuest_Voices = false
 WV:RefreshAudioSourceOptions()
-assert(TalkingHeadRuDB.sharedQuestVoice == 'wowvoice' and choices.wowvoice:GetChecked())
+assert(TalkingHeadRuDB.sharedQuestVoice == 'catquest' and (panel.VoicePriorityRows[1].sourceID == 'catquest'))
 loaded.CatQuest_Voices = true; WV:RefreshAudioSources()
 print('PASS: external-only supplement, stale CatVoices ignored, absent audio skipped, Classic independent, exact timings, text, compatibility and late loading')

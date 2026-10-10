@@ -38,7 +38,11 @@ jobs:
           $notes.Groups[1].Value.Trim() | Set-Content (Join-Path $env:RUNNER_TEMP 'release-notes.md') -Encoding utf8
       - name: Build addon ZIP
         shell: pwsh
-        run: ./build.ps1 -Task PackageAddon
+        run: |
+          ./build.ps1 -Task PackageAddon
+          $archive = Get-Item "artifacts/WoWVoice/TalkingHeadRu-$($env:GITHUB_REF_NAME.Substring(1)).zip"
+          $hash = (Get-FileHash -LiteralPath $archive.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $($archive.Name)" | Set-Content 'artifacts/WoWVoice/SHA256SUMS.txt' -Encoding ascii
       - name: Publish release with ZIP
         shell: pwsh
         env:
@@ -48,7 +52,7 @@ jobs:
           $version = $env:RELEASE_TAG.Substring(1)
           $archive = "artifacts/WoWVoice/TalkingHeadRu-$version.zip"
           $notes = Join-Path $env:RUNNER_TEMP 'release-notes.md'
-          gh release create $env:RELEASE_TAG $archive --verify-tag --draft --title "TalkingHead Ru $version" --notes-file $notes
+          gh release create $env:RELEASE_TAG $archive 'artifacts/WoWVoice/SHA256SUMS.txt' --verify-tag --draft --title "TalkingHead Ru $version" --notes-file $notes
           if ($LASTEXITCODE -ne 0) { throw 'Release upload failed.' }
           gh release edit $env:RELEASE_TAG --draft=false --latest
           if ($LASTEXITCODE -ne 0) { throw 'Release publication failed.' }

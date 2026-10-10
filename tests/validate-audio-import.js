@@ -84,6 +84,15 @@ try {
   const older = importPack(source, root);
   assert.equal(older.quests, 2);
   assert.deepEqual(older.jsonOnlyTurnIns, []);
+  // Updating CatQuest must preserve texts contributed by sibling Wayfarer packs.
+  const wayName = 'Wayfarer_Voices_Horde';
+  fs.mkdirSync(path.join(fixture,wayName));
+  fs.writeFileSync(path.join(fixture,wayName,'Index.lua'),
+    `Wayfarer.RegisterPack({name="${wayName}",format=1,version="3.1.0",q={[888]={a={t={{0,"Wayfarer text"}}}}}})`);
+  importPack(source,root);
+  const {dataTable} = require('../tools/import-forever-audio');
+  assert.equal(dataTable(textFile).entries['888a'].common,'Wayfarer text');
+  assert.equal(dataTable(textFile).entries['179a'].common,'Описание Classic');
   assert(!fs.existsSync(path.join(root, 'catvoices')), 'Importer must never generate a CatVoices pack');
   console.log('PASS: audio import, Lua priority, turn-in-only JSON recovery, Classic overlaps, stream validation and older packs');
 } finally {

@@ -35,7 +35,7 @@ click(row, 'catquest')
 assert(plays[#plays].file == 'Interface\\AddOns\\CatQuest_Voices\\Sounds\\q\\179.ogg')
 WV:Silence()
 WV:SetSharedQuestVoice('wowvoice')
-assert(row:GetHeight() == 52 and popup.columns == 8)
+assert(row:GetHeight() == 52 and popup.cellWidth >= 78, 'Tiles must fit three play buttons')
 assert(row.PlayButtons.wowvoice:IsEnabled() and row.PlayButtons.catquest:IsEnabled())
 assert(row.PlayButtons.wowvoice.Icon.texture == 'Interface\\AddOns\\TalkingHeadRu\\Media\\Play.tga')
 assert(not row.PlayButtons.wowvoice.backdrop and not row.PlayButtons.catquest.backdrop, 'Play buttons must have no frames')
@@ -94,9 +94,11 @@ for key in pairs(WowVoiceCatQuestAudio.entries) do
     if id then catquestCount = catquestCount + 1; union[id] = true end
 end
 local unionCount = 0
+local wayfarerCount = 0
+for id in pairs(WowVoiceWayfarerSource.QuestIDs(true, true)) do union[id] = true; wayfarerCount = wayfarerCount + 1 end
 for _ in pairs(union) do unionCount = unionCount + 1 end
-local offlineSummary = string.format('WowVoice: %d    CatQuest: %d    Всего без повторов: %d',
-    classicCount, catquestCount, unionCount)
+local offlineSummary = string.format('WowVoice: %d    CatQuest: %d    Wayfarer: %d    Всего без повторов: %d',
+    classicCount, catquestCount, wayfarerCount, unionCount)
 local function checkOffline(row)
     assert(row.PlayButtons.catquest:IsShown() and not row.PlayButtons.catquest:IsEnabled())
     assert(row.PlayButtons.catquest.UnavailableMark.visible)
@@ -109,7 +111,9 @@ C_AddOns.DoesAddOnExist = function(name) return name ~= 'CatQuest_Voices' end
 row = tile(179)
 assert(CatQuestVoicePack.quests and loaded.CatQuest_Voices, 'Keep stale index and loaded flag for this regression')
 checkOffline(row)
-assert(not WowVoiceOptionsPanel.SharedVoiceButtons.catquest:IsEnabled())
+for _, row in ipairs(WowVoiceOptionsPanel.VoicePriorityRows) do
+    if row.sourceID == 'catquest' then assert(not row.available) end
+end
 C_AddOns.DoesAddOnExist = existsAPI
 local fullLoadedAPI = C_AddOns.IsAddOnLoaded
 C_AddOns.IsAddOnLoaded = function(name) return loaded[name] == true, name ~= 'CatQuest_Voices' end
@@ -188,6 +192,22 @@ assert(row.PlayButtons.catquest:IsEnabled() and C.Resolve(179, 'catquest').durat
 CatQuestVoicePack = nil
 row = tile(179)
 checkOffline(row)
+local wayfarerName = 'Wayfarer_Voices_Alliance'
+loaded.Wayfarer, loaded[wayfarerName] = true, true
+Wayfarer = {Packs={list={{name=wayfarerName,format=1,version='3.1.0',model='v4',q={
+    [179]={a={d=3,t={{0,'Wayfarer text'}}}}, [99997]={a={d=4}}, [99998]={c={d=2}},
+}}}}}
+row = tile(179)
+assert(row.PlayButtons.wayfarer:IsEnabled() and panel.SourceLegend.wayfarer.Caption:GetText() == 'Wayfarer')
+click(row, 'wayfarer')
+assert(plays[#plays].file:find(wayfarerName,1,true) and row.PlayButtons.wayfarer.SelectedMark.visible)
+assert(WV:GetSharedQuestVoice() == 'wowvoice', 'Third catalogue button must not change normal preference')
+assert(C.QuestIDs()[99997] and not C.QuestIDs()[99998])
+loaded[wayfarerName] = false
+row = tile(179)
+assert(not row.PlayButtons.wayfarer:IsEnabled() and row.PlayButtons.wayfarer.UnavailableMark.visible)
+assert(panel.SourceLegend.wayfarer.Caption:GetText() == 'Wayfarer — недоступна')
+Wayfarer = nil
 C_AddOns.IsAddOnLoaded, C_AddOns.GetAddOnMetadata, UnitSex = loadedAPI, metadataAPI, sexAPI
 WV:RefreshAudioSources()
 print('PASS: A/B playback, offline catalogues/counts, source-colored unavailable marks, inline legend, restored libraries and isolated failures')

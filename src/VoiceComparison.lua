@@ -4,25 +4,28 @@ local WV = WowVoice
 local Comparison = WowVoiceComparison
 local unpack = unpack or table.unpack
 local panel
-local questIDs, questSummary, audioRevision, catQuestPresent
+local questIDs, questSummary, audioRevision, catQuestPresent, wayfarerPresent
 
 local function indexedQuestIDs()
     local hasCatQuest = Comparison.HasCatQuest()
-    if questIDs and audioRevision == WV.audioRevision and catQuestPresent == hasCatQuest then return questIDs end
+    local hasWayfarer = Comparison.SourceAvailable("wayfarer")
+    if questIDs and audioRevision == WV.audioRevision and catQuestPresent == hasCatQuest and wayfarerPresent == hasWayfarer then return questIDs end
     audioRevision = WV.audioRevision
     catQuestPresent = hasCatQuest
+    wayfarerPresent = hasWayfarer
     questIDs = {}
     -- Loaded CatQuest uses its current index; otherwise use our offline snapshot.
     -- Known recordings stay visible while unavailable; completion-only quests are excluded.
     for id in pairs(Comparison.QuestIDs()) do questIDs[#questIDs + 1] = id end
     table.sort(questIDs)
-    local wowvoice, catquest = 0, 0
+    local wowvoice, catquest, wayfarer = 0, 0, 0
     for _, id in ipairs(questIDs) do
         if Comparison.Known(id, "wowvoice") then wowvoice = wowvoice + 1 end
         if Comparison.Known(id, "catquest") then catquest = catquest + 1 end
+        if Comparison.Known(id, "wayfarer") then wayfarer = wayfarer + 1 end
     end
-    questSummary = string.format("WowVoice: %d    CatQuest: %d    Всего без повторов: %d",
-        wowvoice, catquest, #questIDs)
+    questSummary = string.format("WowVoice: %d    CatQuest: %d    Wayfarer: %d    Всего без повторов: %d",
+        wowvoice, catquest, wayfarer, #questIDs)
     return questIDs
 end
 
@@ -33,7 +36,7 @@ local function backdrop(frame, alpha)
     frame:SetBackdropBorderColor(0.3, 0.3, 0.3, 0.8)
 end
 
-local colors = { wowvoice = {0.25, 0.7, 1}, catquest = {1, 0.55, 0.2} }
+local colors = { wowvoice = {0.25, 0.7, 1}, catquest = {1, 0.55, 0.2}, wayfarer = {0.4, 0.85, 0.45} }
 local function playIcon(parent, color)
     local icon = parent:CreateTexture(nil, "ARTWORK")
     icon:SetTexture("Interface\\AddOns\\TalkingHeadRu\\Media\\Play.tga")
@@ -80,6 +83,7 @@ local function attachQuestSuggestions(frame, input)
     local selectedID, selectedSource
     local function updateSelection(row)
         for source, button in pairs(row.PlayButtons) do
+            if source == "wayfarer" and GameTooltip:IsOwned(button) then GameTooltip:Hide() end
             local known = row.questID and Comparison.Known(row.questID, source)
             if known then button:Show() else button:Hide() end
             local available = row.questID and Comparison.Resolve(row.questID, source) ~= nil
@@ -96,7 +100,9 @@ local function attachQuestSuggestions(frame, input)
     end
     frame.ListenQuest = function(id, source)
         if not source then
-            source = Comparison.Resolve(id, "wowvoice") and "wowvoice" or "catquest"
+            for _, candidate in ipairs(WV:GetVoicePriority()) do
+                if Comparison.Resolve(id, candidate) then source = candidate; break end
+            end
         end
         if not Comparison.Resolve(id, source) then
             DEFAULT_CHAT_FRAME:AddMessage("TalkingHead Ru: для описания этого квеста нет записи в установленном аудиопаке")
@@ -125,20 +131,36 @@ local function attachQuestSuggestions(frame, input)
                 row.Label:SetPoint("TOP", row, "TOP", 0, -4)
                 row.Label:SetHeight(18)
                 row.PlayButtons = {}
-                for _, source in ipairs({"wowvoice", "catquest"}) do
+                for sourceIndex, source in ipairs({"wowvoice", "catquest", "wayfarer"}) do
                     local button = CreateFrame("Button", nil, row)
                     button:SetSize(24, 24)
-                    button:SetPoint("BOTTOM", row, "BOTTOM", source == "wowvoice" and -13 or 13, 4)
+                    button:SetPoint("BOTTOM", row, "BOTTOM", (sourceIndex - 2) * 26, 4)
                     button.Icon = playIcon(button, colors[source])
                     button.UnavailableMark = unavailableMark(button)
                     button.SelectedMark = button:CreateTexture(nil, "OVERLAY")
                     button.SelectedMark:SetTexture("Interface\\AddOns\\TalkingHeadRu\\Media\\PlaySelected.tga")
                     button.SelectedMark:SetAllPoints(button.Icon)
                     button.SelectedMark:Hide()
+                    if button.SetMotionScriptsWhileDisabled then button:SetMotionScriptsWhileDisabled(true) end
                     button:SetScript("OnEnter", function(self)
                         if self:IsEnabled() then self.Icon:SetSize(26, 26) end
+                        if source == "wayfarer" and row.questID then
+                            local recording = Comparison.Resolve(row.questID, source)
+                            local names = WowVoiceWayfarerSource.PacksForQuest(row.questID, "a")
+                            GameTooltip:SetOwner(self, "ANCHOR_TOP")
+                            GameTooltip:AddLine(recording and "Wayfarer" or "Wayfarer: запись недоступна", 1, 0.82, 0.25)
+                            GameTooltip:AddLine(recording and recording.packName
+                                or table.concat(names, "\n"), 1, 1, 1, true)
+                            GameTooltip:Show()
+                            L.OptionsTooltip(GameTooltip)
+                        end
                     end)
-                    button:SetScript("OnLeave", function(self) self.Icon:SetSize(24, 24) end)
+                    local function hideTooltip(self)
+                        self.Icon:SetSize(24, 24)
+                        if source == "wayfarer" and GameTooltip:IsOwned(self) then GameTooltip:Hide() end
+                    end
+                    button:SetScript("OnLeave", hideTooltip)
+                    button:SetScript("OnHide", hideTooltip)
                     button:SetScript("OnClick", function(self)
                         if self:IsEnabled() then frame.ListenQuest(row.questID, source) end
                     end)
@@ -173,12 +195,12 @@ local function attachQuestSuggestions(frame, input)
         local ids = indexedQuestIDs()
         L.SetOptionsText(frame.QuestRange, #ids > 0 and (ids[1] .. "–" .. ids[#ids]) or "Индекс пуст")
         L.SetOptionsText(frame.CatalogSummary, questSummary)
-        for index, source in ipairs({"wowvoice", "catquest"}) do
+        for index, source in ipairs({"wowvoice", "catquest", "wayfarer"}) do
             local legend = frame.SourceLegend[source]
             local available = Comparison.SourceAvailable(source)
             sourceAppearance(legend.Marker, source, available)
             L.SetOptionsText(legend.Caption, legend.Name .. (available and "" or " — недоступна"))
-            local columnWidth = (frame:GetWidth() - 40) / 2
+            local columnWidth = (frame:GetWidth() - 40) / 3
             legend.Marker:ClearAllPoints()
             legend.Marker:SetPoint("TOPLEFT", frame, "TOPLEFT", 20 + (index - 1) * columnWidth, -88)
             legend.Caption:ClearAllPoints()
@@ -199,7 +221,7 @@ local function attachQuestSuggestions(frame, input)
         popup.matches, popup.matchCount = matches, #matches
         local width = math.max(240, frame:GetWidth() - 40)
         local gridWidth = width - padding - 28
-        popup.columns = math.max(1, math.min(12, math.floor((gridWidth + gap) / 62)))
+        popup.columns = math.max(1, math.min(12, math.floor((gridWidth + gap) / 88)))
         popup.cellWidth = (gridWidth - (popup.columns - 1) * gap) / popup.columns
         local gridHeight = math.ceil(#matches / popup.columns) * step - gap
         popup.viewportHeight = math.max(step, frame:GetHeight() - 136 - 2 * padding)
@@ -327,7 +349,7 @@ local function createPanel(options)
     range:SetTextColor(0.7, 0.7, 0.7)
     frame.QuestRange = range
     frame.CatQuestLegend, frame.SourceLegend = {}, {}
-    for index, entry in ipairs({{"wowvoice", "WowVoice"}, {"catquest", "CatQuest"}}) do
+    for index, entry in ipairs({{"wowvoice", "WowVoice"}, {"catquest", "CatQuest"}, {"wayfarer", "Wayfarer"}}) do
         local marker = CreateFrame("Frame", nil, frame)
         marker:SetSize(20, 20)
         marker:SetPoint("TOPLEFT", frame, "TOPLEFT", 20 + (index - 1) * 150, -88)

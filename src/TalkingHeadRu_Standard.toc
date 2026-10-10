@@ -2,12 +2,12 @@
 ## Title: TalkingHead Ru
 ## Group: TalkingHeadRu
 ## IconTexture: Interface\AddOns\TalkingHeadRu\Media\VoiceChat-Active.tga
-## Notes: Говорящая голова для заданий с подключаемой озвучкой WowVoice и CatQuest.
+## Notes: Говорящая голова для заданий с подключаемой озвучкой WowVoice, CatQuest и Wayfarer.
 ## Author: wowvoice
-## Version: 1.2.6-forever
+## Version: 1.3.0-forever
 ## SavedVariables: TalkingHeadRuDB
 ## SavedVariablesPerCharacter: TalkingHeadRuQueueDB
-## OptionalDeps: WowVoice, WowVoiceSounds, CatQuest_Voices
+## OptionalDeps: WowVoice, WowVoiceSounds, CatQuest_Voices, Wayfarer, Wayfarer_Voices, Wayfarer_Voices_v4, Wayfarer_Voices_Alliance, Wayfarer_Voices_Horde, Wayfarer_Voices_Shared, Wayfarer_Voices_Narrator
 
 LegacyAddonBlocker.lua
 WowVoiceIntegration.lua
@@ -16,10 +16,13 @@ Index.lua
 Durations.lua
 CatQuestAudio.lua
 QuestTexts.lua
+WayfarerAudio.lua
+WayfarerSource.lua
 AudioSources.lua
 ForeverSpeakers.lua
 CatQuestSpeakers.lua
 Core.lua
+WayfarerIntegration.lua
 Work.lua
 CameraModels.lua
 CameraProfiles.lua

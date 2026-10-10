@@ -70,21 +70,35 @@ function Get-ApiFailure($Failure) {
         }
     } elseif ($status -eq 401) {
         'GitHub rejected the saved login or token (HTTP 401). Refresh the login in Git or GH_TOKEN/GITHUB_TOKEN.'
-    } else { $Failure.Exception.Message }
+    } elseif ($status -eq 0) {
+        'Cannot connect to api.github.com. Check the network, VPN or proxy and retry later.'
+    } else { 'GitHub API request failed (HTTP ' + $status + '). Retry later.' }
     return [pscustomobject]@{ Status = $status; Message = $message }
+}
+
+function Invoke-GitHubRequest([string]$Uri) {
+    for ($attempt = 1; $attempt -le 3; $attempt++) {
+        try { return Invoke-RestMethod -Uri $Uri -Headers $headers -TimeoutSec 10 }
+        catch {
+            $failure = Get-ApiFailure $_
+            if ($attempt -eq 3 -or ($failure.Status -ne 0 -and $failure.Status -lt 500)) { throw }
+            Write-Warning "GitHub request failed; retrying ($($attempt + 1)/3)."
+            Start-Sleep -Seconds $attempt
+        }
+    }
 }
 
 function Get-Pages([string]$Route) {
     for ($page = 1; ; $page++) {
         $uri = "${api}${Route}?per_page=100&page=$page"
         try {
-            $items = @(Invoke-RestMethod -Uri $uri -Headers $headers -TimeoutSec 30)
+            $items = @(Invoke-GitHubRequest $uri)
         } catch {
             $failure = Get-ApiFailure $_
             # A stale optional login must not prevent access to public statistics.
             if ($failure.Status -eq 401 -and $headers.ContainsKey('Authorization')) {
                 $headers.Remove('Authorization')
-                try { $items = @(Invoke-RestMethod -Uri $uri -Headers $headers -TimeoutSec 30) }
+                try { $items = @(Invoke-GitHubRequest $uri) }
                 catch { throw (Get-ApiFailure $_).Message }
             } else { throw $failure.Message }
         }
@@ -194,10 +208,14 @@ try {
             $checksByAsset[[string]$id] = $count
         }
     }
-    $releases = @(Get-Pages '/releases' | Where-Object { -not $_.draft } |
-        Sort-Object published_at -Descending)
+    $githubStatus = 'ok'
+    $githubMessage = ''
+    $githubCollected = $null
     $rows = @()
     $details = @()
+    try {
+    $releases = @(Get-Pages '/releases' | Where-Object { -not $_.draft } |
+        Sort-Object published_at -Descending)
     foreach ($release in $releases) {
         # Release responses already include assets. Only potentially capped lists
         # need separate pagination; ordinary runs require one request for all releases.
@@ -231,23 +249,64 @@ try {
             Total = [long]$counts.full + [long]$counts.addon
         }
     }
+    } catch {
+        $githubStatus = 'unavailable'
+        $githubMessage = 'GitHub: ' + $_.Exception.Message
+        Write-Warning $githubMessage
+        # Discard partial pages. A cached sample is already adjusted; never deduct twice.
+        $rows = @()
+        $details = @()
+        $downloadsCache = Join-Path $output 'downloads.json'
+        try {
+            if (Test-Path -LiteralPath $downloadsCache) {
+                $cachedDownloads = Get-Content -LiteralPath $downloadsCache -Raw -Encoding UTF8 | ConvertFrom-Json
+                if ($cachedDownloads.repository -ne $repo) { throw 'Wrong cached repository.' }
+                $cachedRows = @($cachedDownloads.releases)
+                foreach ($cachedRow in $cachedRows) {
+                    [void][DateTime]::ParseExact($cachedRow.PublishedUTC, 'yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture)
+                    if ($cachedRow.Total -lt 0 -or $cachedRow.Total -ne ([long]$cachedRow.Full + [long]$cachedRow.AddonOnly)) {
+                        throw 'Invalid cached count.'
+                    }
+                }
+                $githubCollected = [string]$cachedDownloads.collectedAtUTC
+                if ([string]::IsNullOrWhiteSpace($githubCollected)) { throw 'Missing cache timestamp.' }
+                $rows = $cachedRows
+                $details = @($cachedDownloads.assets)
+                $githubStatus = 'stale'
+            }
+        } catch { <# An unreadable cache is unavailable, never a fresh zero. #> }
+        $githubMessage += if ($githubStatus -eq 'stale') {
+            ' Показаны сохранённые скачивания от ' + $githubCollected + '. Сейчас обновить их не удалось.'
+        } else { ' Сохранённых данных нет. Скачивания временно недоступны.' }
+    }
     $collectedAt = [DateTimeOffset]::UtcNow
     $collected = $collectedAt.ToString('yyyy-MM-dd HH:mm:ss') + ' UTC'
     $collectedDisplay = $collectedAt.ToString('d MMMM yyyy, HH:mm', $dateCulture) + ' UTC'
+    if ($githubStatus -eq 'ok') {
+        $githubCollected = $collected
+        $githubMessage = 'GitHub Releases · обновлено ' + $collectedDisplay
+    }
     $displayRows = @($rows | Select-Object Release, @{Name = 'Published'; Expression = {
         [DateTime]::ParseExact($_.PublishedUTC, 'yyyy-MM-dd',
             [Globalization.CultureInfo]::InvariantCulture).ToString('d MMMM yyyy', $dateCulture)
     }}, Full, AddonOnly, Total)
-    $totalFull = [long](($rows | Measure-Object Full -Sum).Sum)
-    $totalAddon = [long](($rows | Measure-Object AddonOnly -Sum).Sum)
+    $totalFull = if ($rows.Count) { [long](($rows | Measure-Object Full -Sum).Sum) } else { 0L }
+    $totalAddon = if ($rows.Count) { [long](($rows | Measure-Object AddonOnly -Sum).Sum) } else { 0L }
     $total = $totalFull + $totalAddon
+    if ($githubStatus -eq 'unavailable') { $totalFull = $null; $totalAddon = $null; $total = $null }
     $tableRows = foreach ($row in $displayRows) {
         '<tr><th scope="row">' + (Escape-Html $row.Release) + '</th><td>' + $row.Published +
             '</td><td>' + (Count-Text $row.Full) + '</td><td>' + (Count-Text $row.AddonOnly) +
             '</td><td>' + (Count-Text $row.Total) + '</td></tr>'
     }
-    if (-not $rows.Count) { $tableRows = '<tr><td colspan="5">Опубликованных релизов пока нет.</td></tr>' }
+    if (-not $rows.Count) {
+        $emptyMessage = if ($githubStatus -eq 'unavailable') { 'Данные GitHub временно недоступны.' } else { 'Опубликованных релизов пока нет.' }
+        $tableRows = '<tr><td colspan="5">' + $emptyMessage + '</td></tr>'
+    }
     $clicks = Get-CurseForgeClicks
+    $downloadsLink = if ($githubStatus -eq 'ok' -or (Test-Path -LiteralPath (Join-Path $output 'downloads.csv'))) {
+        '<p><a href="downloads.csv" download>Скачать таблицу CSV для Excel</a></p>'
+    } else { '' }
     $html = @"
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -263,12 +322,13 @@ a{color:#a7e0c6}code{background:#29372f;padding:2px 6px;border-radius:4px}.notes
 .clicks{border:1px solid #675044;border-left:3px solid #f16436;padding:20px;margin:28px 0;background:#2c2926}.clicks h2{font-size:20px;margin:0 0 8px}.clicks strong{display:block;font-size:32px;color:#ff976e}.clicks p:last-child{margin-bottom:0}
 </style></head><body><main>
 <h1>Статистика TalkingHead Ru</h1>
-<p class="muted">Локальный отчёт · GitHub Releases · обновлён $collectedDisplay</p>
+<p class="muted">Локальный отчёт · сформирован $collectedDisplay</p>
+<p class="muted">$(Escape-Html $githubMessage)</p>
 <div class="cards"><div class="card">Всего ZIP<strong>$(Count-Text $total)</strong></div><div class="card">Аддон<strong>$(Count-Text $totalAddon)</strong></div><div class="card">Старые полные архивы<strong>$(Count-Text $totalFull)</strong></div></div>
 <p class="muted">Начиная с 1.2.5 выпускается только архив аддона. Скачивания полных архивов прошлых релизов сохраняются в статистике и входят в общую сумму.</p>
 <div class="table"><table><thead><tr><th>Релиз</th><th title="Дата публикации по UTC">Дата релиза</th><th>Старый полный архив</th><th>Аддон</th><th>Всего</th></tr></thead>
 <tbody>$($tableRows -join "`n")</tbody><tfoot><tr><th colspan="2">Итого</th><td>$(Count-Text $totalFull)</td><td>$(Count-Text $totalAddon)</td><td>$(Count-Text $total)</td></tr></tfoot></table></div>
-<p><a href="downloads.csv" download>Скачать таблицу CSV для Excel</a></p>
+$downloadsLink
 <section class="clicks"><h2>Переходы на CurseForge с сайта</h2><strong>$(Count-Text $clicks.clicks)</strong>
 <p class="muted">$(Escape-Html $clicks.message)</p>
 <p>Нажатия на кнопку «Открыть на CurseForge». Это не скачивания и не установки; в сумму ZIP выше не входят.</p>
@@ -279,19 +339,23 @@ a{color:#a7e0c6}code{background:#29372f;padding:2px 6px;border-radius:4px}.notes
 <p>Отчёт хранится только на этом компьютере и не публикуется. Исходные счётчики публичного репозитория доступны через GitHub API.</p></div>
 </main></body></html>
 "@
-    # Do not touch the previous report until every request has succeeded.
+    # Refresh independent sources; never replace successful GitHub files on failure.
     New-Item -ItemType Directory -Path $output -Force | Out-Null
-    $displayRows | Export-Csv -LiteralPath (Join-Path $output 'downloads.csv') -NoTypeInformation -Encoding UTF8 -UseCulture
+    if ($githubStatus -eq 'ok') {
+        $displayRows | Export-Csv -LiteralPath (Join-Path $output 'downloads.csv') -NoTypeInformation -Encoding UTF8 -UseCulture
+    }
     $clicks | Select-Object event, status, startUTC, collectedAtUTC, clicks |
         Export-Csv -LiteralPath (Join-Path $output 'curseforge-clicks.csv') -NoTypeInformation -Encoding UTF8 -UseCulture
     [IO.File]::WriteAllText((Join-Path $output 'curseforge-clicks.json'), ($clicks | ConvertTo-Json), [Text.UTF8Encoding]::new($false))
-    [IO.File]::WriteAllText((Join-Path $output 'downloads.json'),
+    if ($githubStatus -eq 'ok') {
+      [IO.File]::WriteAllText((Join-Path $output 'downloads.json'),
         ([ordered]@{ repository = $repo; collectedAtUTC = $collected; releases = $rows; assets = $details } | ConvertTo-Json -Depth 5),
         [Text.UTF8Encoding]::new($false))
+    }
     $report = Join-Path $output 'index.html'
     [IO.File]::WriteAllText($report, $html, [Text.UTF8Encoding]::new($false))
     $displayRows | Format-Table -AutoSize
-    Write-Host "Total ZIP downloads: $total. Updated: $collectedDisplay"
+    Write-Host "Total ZIP downloads: $(Count-Text $total) [$githubStatus]. GitHub sample: $githubCollected"
     Write-Host "CurseForge clicks: $(Count-Text $clicks.clicks) [$($clicks.status)]"
     Write-Host "Local report: $report"
     if (-not $NoOpen) { Invoke-Item -LiteralPath $report }

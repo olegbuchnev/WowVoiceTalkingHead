@@ -27,6 +27,7 @@ local function capture()
     end
     baseline = {quests=quests, shared=quests[179], metadata=S.Metadata, resolve=S.Resolve,
         audio=WowVoiceCatQuestAudio, preference=TalkingHeadRuDB.sharedQuestVoice,
+        priority=WV.GetVoicePriority and WV:GetVoicePriority(),
         version=status.version}
     return true
 end
@@ -116,6 +117,7 @@ local function restore()
     baseline.quests[179], baseline.quests[NEW_ID] = baseline.shared, nil
     S.Metadata, S.Resolve, WowVoiceCatQuestAudio = baseline.metadata, baseline.resolve, baseline.audio
     TalkingHeadRuDB.sharedQuestVoice = baseline.preference
+    if baseline.priority then TalkingHeadRuDB.voicePriority = copy(baseline.priority) end
     if baseline.testChannel ~= nil then
         if TalkingHeadRuDB.channel == "auto" then TalkingHeadRuDB.channel = baseline.testChannel end
         baseline.testChannel = nil
@@ -144,10 +146,10 @@ local function future(changed)
         -- No third-party file edits: changed 179 uses existing quest 6 OGGs;
         -- new 99998 uses quest 5. Production resolver still constructs its path.
         routes[179], routes[NEW_ID] = 6, 5
-        S.Resolve = function(id, section)
-            local recording = baseline.resolve(id, section)
+        S.Resolve = function(id, section, sourceID)
+            local recording = baseline.resolve(id, section, sourceID)
             local target = routes[id]
-            if recording and target then
+            if recording and target and (sourceID == nil or sourceID == "catquest") then
                 local stem = target .. (section == "c" and "_t" or "")
                 local suffix = recording.variant == "x" and "" or "_" .. recording.variant
                 recording.path = "Interface\\AddOns\\CatQuest_Voices\\Sounds\\q\\" .. stem .. suffix .. ".ogg"
@@ -156,7 +158,8 @@ local function future(changed)
         end
     end
     mode = changed and "changed" or "future"
-    TalkingHeadRuDB.sharedQuestVoice = "catquest"
+    if WV.SetSharedQuestVoice then WV:SetSharedQuestVoice("catquest")
+    else TalkingHeadRuDB.sharedQuestVoice = "catquest" end
     WV:RefreshAudioSources()
     return true
 end

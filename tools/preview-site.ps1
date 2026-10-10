@@ -1,5 +1,8 @@
 [CmdletBinding()]
-param()
+param(
+  [ValidatePattern('^\d+\.\d+\.\d+-forever$')]
+  [string]$Version
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -19,19 +22,27 @@ try {
     Copy-Item -LiteralPath (Join-Path $repo $name) -Destination $fixture -Recurse
   }
   $tocPath = Join-Path $fixture 'src\TalkingHeadRu.toc'
-  $version = [regex]::Match([IO.File]::ReadAllText($tocPath), '(?m)^## Version:\s*(\S+)').Groups[1].Value + '-preview'
+  $releaseVersion = if ($Version) { $Version } else {
+    [regex]::Match([IO.File]::ReadAllText($tocPath), '(?m)^## Version:\s*(\S+)').Groups[1].Value
+  }
+  $previewVersion = $releaseVersion + '-preview'
   foreach ($toc in Get-ChildItem -LiteralPath (Join-Path $fixture 'src') -Filter '*.toc') {
     $text = [IO.File]::ReadAllText($toc.FullName)
-    $text = [regex]::Replace($text, '(?m)^## Version:[^\r\n]*', "## Version: $version")
+    $text = [regex]::Replace($text, '(?m)^## Version:[^\r\n]*', "## Version: $previewVersion")
     [IO.File]::WriteAllText($toc.FullName, $text, $utf8)
   }
   & (Join-Path $fixture 'build.ps1') -Task PackageAddon
   New-Item -ItemType Directory -Path $downloads -Force | Out-Null
-  $addon = "TalkingHeadRu-$version.zip"
+  $addon = "TalkingHeadRu-$previewVersion.zip"
   Copy-Item -LiteralPath (Join-Path $fixture "artifacts\WoWVoice\$addon") -Destination (Join-Path $downloads $addon) -Force
   $cat = [regex]::Match([IO.File]::ReadAllText((Join-Path $fixture 'src\CatQuestAudio.lua')), 'sourceVersion\s*=\s*"([^"]+)"').Groups[1].Value
   if (-not $cat) { throw 'Missing CatQuest source version for preview.' }
-  $manifest = @{ version = $version; addon = $addon; catQuestVersion = $cat }
+  $wayfarerCore = [regex]::Match([IO.File]::ReadAllText((Join-Path $fixture 'src\WayfarerSource.lua')), 'AUDITED_CORE_VERSION\s*=\s*"([^"]+)"').Groups[1].Value
+  $wayfarerPacks = @([regex]::Matches([IO.File]::ReadAllText((Join-Path $fixture 'src\WayfarerAudio.lua')),
+    '\["Wayfarer_Voices_(?:Alliance|Horde|Shared)"\]\s*=\s*\{version="([^"]+)"') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
+  if (-not $wayfarerCore -or -not $wayfarerPacks.Count) { throw 'Missing Wayfarer compatibility versions for preview.' }
+  $manifest = @{ version = $previewVersion; releaseVersion = $releaseVersion; addon = $addon; catQuestVersion = $cat
+    wayfarer = @{ core = $wayfarerCore; packs = $wayfarerPacks } }
   [IO.File]::WriteAllText((Join-Path $output 'preview.json'), ($manifest | ConvertTo-Json), $utf8)
   & $node (Join-Path $repo 'tools\build-site.mjs') --preview
   if ($LASTEXITCODE -ne 0) { throw 'Preview site build failed.' }

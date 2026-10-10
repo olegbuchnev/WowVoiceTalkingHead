@@ -8,31 +8,200 @@ local legacySourceVersions = {
     ["1.0.3-forever.1"] = "1.0.1",
 }
 
+local voiceNames = {wowvoice="WowVoice", catquest="CatQuest", wayfarer="Wayfarer"}
+local unavailableVoiceHints = {
+    wowvoice = "Для воспроизведения установите и включите WowVoiceSounds.",
+    catquest = "Для воспроизведения установите и включите CatQuest_Voices.",
+    wayfarer = "Для воспроизведения установите и включите Wayfarer и хотя бы один модуль из списка.",
+}
+local function hidePriorityTooltip(row)
+    if GameTooltip and GameTooltip:IsOwned(row) then GameTooltip:Hide() end
+end
 local function refreshVoicePreference()
-    if not panel.SharedVoiceButtons then return end
-    local source, reason = WowVoiceAudioSources.Status()
-    local primary = WowVoiceAudioSources.Loaded("WowVoiceSounds")
-    local selectable = source ~= nil and primary
-    local selectedSource = WV:GetSharedQuestVoice()
-    panel.SharedVoiceCaption:SetAlpha(selectable and 1 or 0.45)
-    for id, button in pairs(panel.SharedVoiceButtons) do
-        button:SetChecked(selectedSource == id)
-        button:SetEnabled(selectable)
-        button:SetAlpha(selectable and 1 or 0.45)
-        local selected = selectedSource == id
-        button.Border:SetVertexColor(selected and 1 or 0.6, selected and 0.82 or 0.6, selected and 0.25 or 0.6)
+    if not panel.VoicePriorityRows then return end
+    if panel.CancelVoicePriorityDrag then panel.CancelVoicePriorityDrag() end
+    for index, id in ipairs(WV:GetVoicePriority()) do
+        local row = panel.VoicePriorityRows[index]
+        hidePriorityTooltip(row)
+        row.sourceID = id
+        row.available = WowVoiceAudioSources.Available(id)
+        row.unavailableMessage = not row.available and unavailableVoiceHints[id] or nil
+        local missing = id == "wayfarer" and WowVoiceWayfarerSource.MissingPacks() or {}
+        row.missingMessage = #missing > 0 and table.concat(missing, "\n") or nil
+        if row.missingMessage then row.Warning:Show() else row.Warning:Hide() end
+        row.Label:ClearAllPoints()
+        row.Label:SetPoint("CENTER", row, "CENTER", 0, 0)
+        row.Label:SetWidth(row.missingMessage and 122 or 150)
+        L.SetOptionsText(row.Label, index .. ". " .. voiceNames[id])
+        row.Label:SetAlpha(row.available and 1 or 0.45)
     end
-    panel.SharedVoiceTooltip.message = selectable
-        and "Выбранная озвучка используется при получении и сдаче заданий, а также в журнале и списке заданий. Если запись есть только у одного источника, используется она."
-        or source and "Используется CatQuest Voices. Для выбора между озвучками установите и включите WowVoice Sounds."
-        or primary and ("Для выбора установите и включите CatQuest Voices. Сейчас используется WowVoice.\n"
-            .. tostring(reason or ""))
-        or "Нет доступной озвучки. Подключите WowVoice Sounds или CatQuest Voices."
+    panel.SharedVoiceTooltip.message = "Перетаскивайте карточки, чтобы изменить приоритет слева направо. "
+        .. "Если записи нет, используется следующая библиотека."
+end
+
+local function priorityCard(parent)
+    local card = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    card:SetSize(172, 30)
+    card:SetBackdrop({bgFile="Interface\\ChatFrame\\ChatFrameBackground",
+        edgeFile="Interface\\ChatFrame\\ChatFrameBackground", edgeSize=1})
+    card:SetBackdropColor(0.08, 0.08, 0.08, 0.8)
+    card:SetBackdropBorderColor(0.4, 0.4, 0.4, 0.8)
+    card.Label = card:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    card.Label:SetPoint("CENTER", card, "CENTER", 0, 0)
+    card.Label:SetSize(150, 26)
+    card.Label:SetJustifyH("CENTER")
+    card.Label:SetJustifyV("MIDDLE")
+    card.Label:SetWordWrap(false)
+    card.Warning = card:CreateTexture(nil, "OVERLAY")
+    card.Warning:SetTexture("Interface\\DialogFrame\\UI-Dialog-Icon-AlertNew")
+    card.Warning:SetSize(18, 18)
+    card.Warning:SetPoint("RIGHT", card, "RIGHT", -5, 0)
+    card.Warning:Hide()
+    return card
+end
+
+local function attachVoicePriorityDrag(content)
+    local rows, dragging = panel.VoicePriorityRows
+    local moveCursorSet
+    local function setMoveCursor()
+        if SetCursor then
+            -- Same built-in move cursor used by OPie's settings drag handle.
+            moveCursorSet = SetCursor("Interface/CURSOR/UI-Cursor-Move.crosshair") ~= false
+        end
+    end
+    local function resetMoveCursor()
+        if not moveCursorSet then return end
+        moveCursorSet = nil
+        if SetCursor then SetCursor(nil) end
+    end
+    local ghost = priorityCard(content)
+    ghost:SetFrameLevel(content:GetFrameLevel() + 20)
+    ghost:EnableMouse(false)
+    ghost:SetBackdropBorderColor(1, 0.82, 0.25, 1)
+    ghost:Hide()
+    panel.VoicePriorityGhost = ghost
+    local function cursorTarget()
+        if not GetCursorPosition then return end
+        local x, y = GetCursorPosition()
+        for index, row in ipairs(rows) do
+            local cx, cy = row:GetCenter()
+            local scale = row:GetEffectiveScale()
+            -- Include half the gap so dropping between adjacent cards is predictable.
+            if cx and cy and math.abs(x / scale - cx) <= 90
+                and math.abs(y / scale - cy) <= row:GetHeight() / 2 + 8 then return index end
+        end
+    end
+    local function finish(cancel)
+        if not dragging then
+            if cancel then resetMoveCursor() end
+            return
+        end
+        resetMoveCursor()
+        local state, target = dragging, not cancel and cursorTarget()
+        dragging = nil
+        ghost:SetScript("OnUpdate", nil)
+        ghost:Hide()
+        for _, row in ipairs(rows) do
+            row:SetAlpha(1)
+            row:SetBackdropBorderColor(0.4, 0.4, 0.4, 0.8)
+        end
+        if target and target ~= state.index then
+            local order = WV:GetVoicePriority()
+            if table.concat(order, ",") == state.order then
+                order[state.index], order[target] = order[target], order[state.index]
+                WV:SetVoicePriority(order)
+            end
+        end
+        -- Releasing over a card does not trigger another OnEnter. Restore its
+        -- hover cursor after any options refresh caused by changing the order.
+        if not cancel then
+            for _, row in ipairs(rows) do
+                if row:IsVisible() and row:IsMouseOver() then
+                    setMoveCursor()
+                    row:SetBackdropBorderColor(1, 0.82, 0.25, 1)
+                    break
+                end
+            end
+        end
+    end
+    panel.CancelVoicePriorityDrag = function() finish(true) end
+    local function update()
+        if not dragging then return end
+        if IsMouseButtonDown and not IsMouseButtonDown("LeftButton") then finish(false); return end
+        local x, y = GetCursorPosition()
+        local cx, cy = content:GetCenter()
+        if not cx or not cy then finish(true); return end
+        local scale = content:GetEffectiveScale()
+        ghost:ClearAllPoints()
+        ghost:SetPoint("CENTER", content, "CENTER", x / scale - cx - dragging.offsetX,
+            y / scale - cy - dragging.offsetY)
+        local target = cursorTarget()
+        for index, row in ipairs(rows) do
+            if index == target then row:SetBackdropBorderColor(1, 0.82, 0.25, 1)
+            else row:SetBackdropBorderColor(0.4, 0.4, 0.4, 0.8) end
+        end
+    end
+    for index, row in ipairs(rows) do
+        row:EnableMouse(true)
+        row:RegisterForDrag("LeftButton")
+        local function start()
+            -- MouseDown grabs immediately; a later native drag event must not
+            -- restart the gesture or capture an offset after the cursor moved.
+            if dragging then return end
+            hidePriorityTooltip(row)
+            if not GetCursorPosition then return end
+            local x, y = GetCursorPosition()
+            local cx, cy = row:GetCenter()
+            if not cx or not cy then return end
+            local scale = row:GetEffectiveScale()
+            dragging = {index=index, order=table.concat(WV:GetVoicePriority(), ","),
+                offsetX=x / scale - cx, offsetY=y / scale - cy}
+            setMoveCursor()
+            L.SetOptionsText(ghost.Label, row.Label:GetText())
+            ghost.Label:SetAlpha(row.available and 1 or 0.45)
+            ghost.Label:SetWidth(row.Label:GetWidth())
+            ghost.Label:ClearAllPoints()
+            ghost.Label:SetPoint("CENTER", ghost, "CENTER", 0, 0)
+            if row.missingMessage then ghost.Warning:Show() else ghost.Warning:Hide() end
+            row:SetAlpha(0.3)
+            ghost:Show()
+            ghost:SetScript("OnUpdate", update)
+            update()
+        end
+        row:SetScript("OnMouseDown", function(_, button) if button == "LeftButton" then start() end end)
+        row:SetScript("OnDragStart", start)
+        row:SetScript("OnDragStop", function() finish(false) end)
+        row:SetScript("OnMouseUp", function(_, button) if button == "LeftButton" then finish(false) end end)
+        row:SetScript("OnHide", function(self) hidePriorityTooltip(self); finish(true) end)
+        row:SetScript("OnEnter", function(self)
+            setMoveCursor()
+            if dragging then return end
+            self:SetBackdropBorderColor(1, 0.82, 0.25, 1)
+            if self.unavailableMessage or self.missingMessage then
+                GameTooltip:SetOwner(self, "ANCHOR_TOP")
+                GameTooltip:AddLine(voiceNames[self.sourceID] .. (self.available and ": недоступные модули" or ": библиотека недоступна"), 1, 0.82, 0.25)
+                local message = self.unavailableMessage or self.missingMessage
+                if self.unavailableMessage and self.missingMessage then message = message .. "\n" .. self.missingMessage end
+                GameTooltip:AddLine(message, 1, 1, 1, true)
+                GameTooltip:Show()
+                L.OptionsTooltip(GameTooltip)
+            end
+        end)
+        row:SetScript("OnLeave", function(self)
+            hidePriorityTooltip(self)
+            if not dragging then
+                resetMoveCursor()
+                self:SetBackdropBorderColor(0.4, 0.4, 0.4, 0.8)
+            end
+        end)
+    end
 end
 
 local function refreshVersions()
     refreshVoicePreference()
     local source, reason = WowVoiceAudioSources.Status()
+    -- Measure the full caption, not the ellipsized text inside its previous width.
+    panel.AudioSourceCaption:SetWidth(0)
     L.SetOptionsText(panel.AudioSourceCaption, "Озвучка CatQuest:")
     panel.AudioSourceCaption:SetWidth(math.ceil(panel.AudioSourceCaption:GetStringWidth()) + 2)
     local metadata = (C_AddOns and C_AddOns.GetAddOnMetadata) or GetAddOnMetadata
@@ -58,6 +227,28 @@ local function refreshVersions()
             .. "\nГоворящая голова и очередь могут завершаться позже звука."
             .. "\nОбновление TalkingHead Ru после проверки библиотеки вернёт точные таймеры.") or nil
     if incompatible or updated then warning:Show() else warning:Hide() end
+    local wayfarerWarning = panel.WayfarerSourceWarning
+    if GameTooltip and GameTooltip:IsOwned(wayfarerWarning) then GameTooltip:Hide() end
+    local changes = WowVoiceWayfarerSource and WowVoiceWayfarerSource.VersionChanges() or {}
+    local details, updateAddon, audioChanged = {}, false, false
+    for _, change in ipairs(changes) do
+        details[#details + 1] = change.addon .. ": установлена " .. (change.installed or "версия не указана")
+            .. "; проверена " .. (change.audited or "нет данных") .. "."
+        if change.outdated then
+            details[#details + 1] = "Обновите " .. change.addon .. " до версии " .. change.audited .. "."
+        else updateAddon = true end
+        if change.addon ~= "Wayfarer" then audioChanged = true end
+    end
+    if audioChanged then
+        details[#details + 1] = "Для непроверенных записей используются длительности из индекса библиотеки."
+            .. " Говорящая голова и очередь могут завершаться позже звука."
+    end
+    if updateAddon then
+        details[#details + 1] = "Обновление TalkingHead Ru после проверки библиотеки обновит данные совместимости."
+    end
+    wayfarerWarning.title = updateAddon and "Непроверенная версия Wayfarer" or "Устаревшая версия Wayfarer"
+    wayfarerWarning.message = #changes > 0 and table.concat(details, "\n") or nil
+    if #changes > 0 then wayfarerWarning:Show() else wayfarerWarning:Hide() end
     local width = 0
     for addon, text in pairs(panel.VersionLabels) do
         local version
@@ -67,6 +258,10 @@ local function refreshVersions()
             elseif updated then text:SetTextColor(1, 0.82, 0.25)
             else text:SetTextColor(0.7, 0.7, 0.7) end
         else
+            if addon == "Wayfarer" then
+                if #changes > 0 then text:SetTextColor(1, 0.82, 0.25)
+                else text:SetTextColor(0.7, 0.7, 0.7) end
+            end
             local installed = field(addon, "Version")
             version = installed
             if addon == "WowVoiceSounds" then
@@ -224,7 +419,8 @@ local function createPanel()
     for index, item in ipairs({
         { "TalkingHeadRu", "Аддон" },
         { "WowVoiceSounds", "Озвучка WowVoice" },
-        { "AudioSource", "Доп. озвучка" },
+        { "AudioSource", "Озвучка CatQuest" },
+        { "Wayfarer", "Озвучка Wayfarer" },
     }) do
         local text = label("", "GameFontHighlightSmall", 0, 0, 124, 12)
         text:ClearAllPoints()
@@ -237,9 +433,11 @@ local function createPanel()
         caption:SetJustifyH("RIGHT")
         caption:SetTextColor(0.7, 0.7, 0.7)
         panel.VersionLabels[item[1]] = text
-        if item[1] == "AudioSource" then
+        if item[1] == "AudioSource" or item[1] == "Wayfarer" then
             caption:SetWordWrap(false)
-            panel.AudioSourceCaption = caption
+            caption:SetWidth(0)
+            caption:SetWidth(math.ceil(caption:GetStringWidth()) + 2)
+            if item[1] == "AudioSource" then panel.AudioSourceCaption = caption end
             local warning = CreateFrame("Frame", nil, content)
             warning:SetPoint("TOPLEFT", caption, "TOPLEFT", -2, 2)
             warning:SetPoint("BOTTOMRIGHT", text, "BOTTOMRIGHT", 2, -2)
@@ -257,7 +455,8 @@ local function createPanel()
             end
             warning:SetScript("OnLeave", hideTooltip)
             warning:SetScript("OnHide", hideTooltip)
-            panel.AudioSourceWarning = warning
+            if item[1] == "AudioSource" then panel.AudioSourceWarning = warning
+            else panel.WayfarerSourceWarning = warning end
         end
     end
     refreshVersions()
@@ -651,38 +850,14 @@ local function createPanel()
     -- while the settings panel is hidden can leave the title truncated.
     voiceHeading:SetWordWrap(false)
     voiceHeading:SetSize(0, 0)
-    panel.SharedVoiceCaption = label("Если доступны обе озвучки", "GameFontHighlight", 20, -698 - lowerOffset, 540, 22)
-    panel.SharedVoiceButtons = {}
-    for index, item in ipairs({ { "wowvoice", "WowVoice" }, { "catquest", "CatQuest" } }) do
-        local choice = CreateFrame("CheckButton", nil, content)
-        choice:SetSize(160, 26)
-        choice:SetPoint("TOPLEFT", content, "TOPLEFT", 20 + (index - 1) * 180, -726 - lowerOffset)
-        -- Like Details/Plater's circular switches: scale a smooth client mask,
-        -- rather than enlarging the old 16px radio texture sheet.
-        local function circle(size, layer, r, g, b, alpha)
-            local texture = choice:CreateTexture(nil, layer)
-            texture:SetPoint("CENTER", choice, "LEFT", 12, 0)
-            texture:SetSize(size, size)
-            texture:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask")
-            texture:SetVertexColor(r, g, b, alpha or 1)
-            return texture
-        end
-        choice.Border = circle(18, "BACKGROUND", 0.6, 0.6, 0.6)
-        circle(14, "BORDER", 0.06, 0.06, 0.06)
-        choice:SetCheckedTexture(circle(8, "ARTWORK", 1, 0.82, 0.25))
-        choice:SetHighlightTexture(circle(20, "HIGHLIGHT", 1, 0.82, 0.25, 0.22), "ADD")
-        choice.Label = choice:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-        choice.Label:SetPoint("LEFT", choice, "LEFT", 32, 0)
-        choice.Label:SetSize(128, 24)
-        choice.Label:SetJustifyH("LEFT")
-        choice.Label:SetJustifyV("MIDDLE")
-        choice.Label:SetText(item[2])
-        choice:SetScript("OnClick", function()
-            WV:SetSharedQuestVoice(item[1])
-            refreshVoicePreference()
-        end)
-        panel.SharedVoiceButtons[item[1]] = choice
+    panel.SharedVoiceCaption = label("Приоритет слева направо: нет записи — используется следующая озвучка.\nПеретащите карточки, чтобы изменить порядок.", "GameFontHighlight", 20, -688 - lowerOffset, 540, 38)
+    panel.VoicePriorityRows = {}
+    for index = 1, 3 do
+        local row = priorityCard(content)
+        row:SetPoint("TOPLEFT", content, "TOPLEFT", 20 + (index - 1) * 180, -726 - lowerOffset)
+        panel.VoicePriorityRows[index] = row
     end
+    attachVoicePriorityDrag(content)
     -- Only this explicit help icon owns the tooltip, even with disabled choices.
     local hint = CreateFrame("Button", nil, content)
     hint:SetPoint("LEFT", voiceHeading, "RIGHT", 6, 0)
@@ -725,6 +900,7 @@ local function createPanel()
         status()
     end)
     panel:SetScript("OnHide", function()
+        panel.CancelVoicePriorityDrag()
         panel.draggingScale = nil
         WV:EndHeadScalePreview(true)
         discardPosition()

@@ -82,13 +82,23 @@ assert((head.Body:GetFont() ~= L.cyrillicFont) == english)
 Q:Clear()
 
 -- The source still supplies Russian text and the same sound file on an English client.
-TalkingHeadRuDB.sharedQuestVoice = 'catquest'
+assert(WV:SetSharedQuestVoice('catquest'))
 assert(WV:ReplayQuest(179))
 assert(plays[#plays].file:find('CatQuest_Voices', 1, true))
 assert(head.Body:GetText():find('[\208-\211][\128-\191]'))
 assert(head.Body:GetFont() == L.cyrillicFont)
 Q:Clear()
 
+-- Unlock instructions follow the Russian settings UI on every client.
+local previewPlays = #plays
+WV:SetWindowsUnlocked(true)
+assert(WV:IsWindowsUnlocked() and head:IsShown())
+assert(head.Body:GetText():find('Это тест говорящей головы.', 1, true) == 1,
+    'unlock instructions must stay Russian on English clients')
+assert(head.Body:GetText():find('Кнопка центрирования', 1, true))
+assert(head.Body:GetFont() == L.cyrillicFont and head.TextMeasure:GetFont() == L.cyrillicFont)
+assert(#plays == previewPlays, 'unlock preview must remain silent')
+WV:SetWindowsUnlocked(false)
 -- Font changes preserve layout settings, tolerate missing client faces and do
 -- not change shared font objects. A recycled region recovers its Latin face.
 local region = head:CreateFontString(nil, 'ARTWORK', 'QuestTitleFont')

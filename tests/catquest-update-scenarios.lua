@@ -55,7 +55,7 @@ sex = 2
 print('PASS: real 0.5.0 new quest variants and replaced audio use freshly measured durations and imported texts')
 version = '0.6.0'; WV:RefreshAudioSources()
 assert(snapshot == '0.5.0' and S.Status().updated and S.Status().version == '0.6.0')
-assert(WV:GetSharedQuestVoice() == 'catquest' and panel.SharedVoiceButtons.catquest:IsEnabled())
+assert(WV:GetSharedQuestVoice() == 'catquest' and panel.VoicePriorityRows[1].sourceID == 'catquest' and panel.VoicePriorityRows[1].available)
 -- Changed durations must use the live index, independently for each section.
 local original = quests[179]
 quests[179] = {d=original.d + 1, g=original.g, v=original.v, c=original.c, t=original.t}
@@ -117,8 +117,8 @@ for _, playerSex in ipairs({2,3}) do
     local resolved = S.Resolve(newID, 'a')
     assert(resolved and resolved.duration == 10.25 and not resolved.verified)
     assert(resolved.path:find(playerSex == 3 and '_f.ogg' or '_m.ogg', 1, true))
-    assert(S.Text(newID,'a','catquest') == (playerSex == 3 and 'New female text.' or 'New male text.'))
-    assert(WV:ReplayQuest(newID) and frames.TalkingHeadRu.Body:GetText() == S.Text(newID,'a','catquest'))
+    assert(S.Text(newID,'a') == nil, 'new transcripts require a database import')
+    assert(WV:ReplayQuest(newID))
     WV:Silence()
 end
 sex = 2
@@ -126,17 +126,18 @@ assert(S.Resolve(newID,'c').path:find('99998_t.ogg',1,true))
 assert(S.QuestIDs()[newID] and WowVoiceComparison.QuestIDs()[newID])
 assert(WowVoiceComparison.Known(newID,'catquest') and not WowVoiceComparison.Known(newID,'wowvoice'))
 assert(WowVoiceComparison.Play(newID,'catquest') and plays[#plays].file == S.Resolve(newID,'a').path)
-assert(frames.TalkingHeadRu.Body:GetText() == 'New male text.')
+assert(frames.TalkingHeadRu.Body:GetText() ~= 'New male text.', 'preview must use the independent text database')
 WV:Silence()
 record.c = {m={{0,' Changed wording. '},{3,'Second sentence.'}},f={{0,'New female wording.'}}}
-assert(S.Text(99108,'a','catquest') == 'Changed wording. Second sentence.')
-assert(WV:ReplayQuest(99108) and frames.TalkingHeadRu.Body:GetText() == 'Changed wording. Second sentence.')
+local importedText = S.Text(99108,'a')
+assert(importedText and importedText ~= 'Changed wording. Second sentence.')
+assert(WV:ReplayQuest(99108) and frames.TalkingHeadRu.Body:GetText() == importedText)
 WV:Silence()
 record.c = nil
-assert(S.Text(99108,'a','catquest') == nil and S.Text(99108,'a') ~= nil,
-    'unverified CatQuest must not reuse stale subtitles; Classic keeps its text fallback')
+assert(S.Text(99108,'a','catquest') == importedText,
+    'audio metadata changes cannot remove imported quest text')
 record.c = {m={{0,false}}}
-assert(S.Text(99108,'a','catquest') == nil and S.Resolve(99108,'a'), 'invalid optional subtitles cannot mute audio')
+assert(S.Text(99108,'a','catquest') == importedText and S.Resolve(99108,'a'), 'invalid optional subtitles cannot mute audio')
 record.c = cues
 -- Real old-pack counterexample to using only a 0.1s rounding allowance:
 -- Voices 0.2.0 quest 132 declares 21s but its OGG is 21.180792s long.
@@ -153,7 +154,7 @@ quests[132] = old132
 local savedAudio, savedTexts = WowVoiceCatQuestAudio, WowVoiceQuestTexts
 WowVoiceCatQuestAudio, WowVoiceQuestTexts = nil, nil
 assert(S.Status() and S.Status().updated and S.Resolve(newID,'a'))
-assert(S.Text(newID,'a','catquest') == 'New male text.' and WowVoiceComparison.QuestIDs()[newID])
+assert(S.Text(newID,'a') == nil and WowVoiceComparison.QuestIDs()[newID])
 WowVoiceCatQuestAudio, WowVoiceQuestTexts = savedAudio, savedTexts
 for _, futureVersion in ipairs({'0.6.0', '1.0.0', ''}) do
     version = futureVersion

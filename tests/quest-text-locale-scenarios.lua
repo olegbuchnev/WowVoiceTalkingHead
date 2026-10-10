@@ -2,12 +2,13 @@ local WV, Q, S = WowVoice, WowVoice.questQueue, WowVoiceAudioSources
 local english = WowVoiceLocale.isEnglish
 assert(WowVoiceLocale.isRussian == (GetLocale() == 'ruRU'))
 local texts = WowVoiceQuestTexts.entries
-local description, completion = texts['179a'], texts['179c']
+local description, completion, progress = texts['179a'], texts['179c'], texts['179p']
 local unitSex = UnitSex
 local playerSex = 2
 function UnitSex() return playerSex end
 texts['179a'] = { male = 'Русское описание для героя.', female = 'Русское описание для героини.' }
 texts['179c'] = { common = 'Русское завершение.' }
+texts['179p'] = { common = 'Русский текст выполнения.' }
 local head = frames.TalkingHeadRu
 local gameText = english and 'Current game dialogue.' or 'Настоящий текст задания из игры.'
 local function start(section)
@@ -19,8 +20,10 @@ local function start(section)
     assert(item.context.text == gameText, 'display choice must never overwrite captured game text')
     return item
 end
-for _, source in ipairs({'wowvoice', 'catquest'}) do
-    assert(WV:SetSharedQuestVoice(source))
+for _, order in ipairs({{'wowvoice','catquest','wayfarer'}, {'wowvoice','wayfarer','catquest'},
+    {'catquest','wowvoice','wayfarer'}, {'catquest','wayfarer','wowvoice'},
+    {'wayfarer','wowvoice','catquest'}, {'wayfarer','catquest','wowvoice'}}) do
+    assert(WV:SetVoicePriority(order))
     for _, sex in ipairs({2, 3}) do
         playerSex = sex
         for _, section in ipairs({'a', 'c', 'p'}) do
@@ -29,6 +32,11 @@ for _, source in ipairs({'wowvoice', 'catquest'}) do
             assert(head.Body:GetText() == (expected or gameText), 'locale priority must apply to either audio source and each stage')
         end
     end
+end
+for _, source in ipairs({'wowvoice','catquest','wayfarer'}) do
+    assert(S.DisplayText({questId=179,section='a',audioSourceID=source,text=gameText})
+        == (english and texts['179a'].female or gameText))
+    assert(S.DisplayText({questId=179,section='a',audioSourceID=source,text=''}) == texts['179a'].female)
 end
 
 -- Save the original English/Russian game capture, not substituted subtitles.
@@ -78,5 +86,5 @@ assert(WV:ReplayQuest(179))
 assert(head.Body:GetText() == (english and texts['179a'].common or gameText))
 assert(questCache()[179].description == 'Old capture')
 Q:Clear()
-texts['179a'], texts['179c'], UnitSex = description, completion, unitSex
-print('PASS: ' .. GetLocale() .. ' quest text priority, both audio sources, stages/sex variants, reload, missing translations, unavailable audio and current journal text')
+texts['179a'], texts['179c'], texts['179p'], UnitSex = description, completion, progress, unitSex
+print('PASS: ' .. GetLocale() .. ' independent quest texts, six audio orders, all preview sources, stages/sex variants, reload, missing translations, unavailable audio and current journal text')

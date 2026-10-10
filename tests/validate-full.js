@@ -3,6 +3,10 @@ const {lua,lauxlib,lualib,to_luastring,to_jsstring}=require('fengari');
 const root=process.argv[2];
 const scenarios = ['catquest-speakers-scenarios.lua','audio-sources-scenarios.lua','questie-tracker-scenarios.lua','catquest-scenarios.lua','work-scenarios.lua','startup-work-scenarios.lua','scenarios.lua','journal-scenarios.lua','tracker-scenarios.lua','tracker-progress-scenarios.lua','quest-reminder-preview-scenarios.lua','unavailable-audio-scenarios.lua','background-audio-scenarios.lua','retail-head-scenarios.lua','forever-audio-scenarios.lua','gossip-quest-speaker-scenarios.lua','head-transition-scenarios.lua','head-visibility-scenarios.lua','accept-autoplay-scenarios.lua','turnin-autoplay-scenarios.lua','portrait-position-scenarios.lua'];
 scenarios.push('disabled-sounds-scenarios.lua');
+scenarios.push('wayfarer-scenarios.lua');
+scenarios.push('wayfarer-version-scenarios.lua');
+scenarios.push('wayfarer-modules-scenarios.lua');
+scenarios.push('voice-priority-scenarios.lua');
 scenarios.push('silent-playback-scenarios.lua');
 scenarios.push('music-stop-scenarios.lua');
 scenarios.push('release-commands-scenarios.lua', 'dev-commands-scenarios.lua');
@@ -24,6 +28,7 @@ for (const entry of scenarios) {
         if(s!==lua.LUA_OK) throw Error(to_jsstring(lua.lua_tostring(L,-1)));
     }
     for (const file of ['mock.lua','journal-mock.lua','portrait-mock.lua']) run(path.join(__dirname,file));
+    if (scenario === 'wayfarer-modules-scenarios.lua') run(path.join(__dirname, 'local-debug-mock.lua'));
     if (entry.locale) {
         const status = lauxlib.luaL_dostring(L, to_luastring(`function GetLocale() return '${entry.locale}' end`));
         if (status !== lua.LUA_OK) throw Error(to_jsstring(lua.lua_tostring(L,-1)));

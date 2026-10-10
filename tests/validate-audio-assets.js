@@ -4,7 +4,7 @@ const root = path.resolve(__dirname, '..');
 for (const name of fs.readdirSync(path.join(root, 'src')).filter(name => name.endsWith('.toc'))) {
   const toc = fs.readFileSync(path.join(root, 'src', name), 'utf8');
   assert(!/^##\s*(?:Dependencies|RequiredDeps):/mi.test(toc), `${name} must load without audio packs`);
-  assert.match(toc, /^## OptionalDeps: WowVoice, WowVoiceSounds, CatQuest_Voices\s*$/m,
+  assert.match(toc, /^## OptionalDeps: WowVoice, WowVoiceSounds, CatQuest_Voices, Wayfarer, Wayfarer_Voices, Wayfarer_Voices_v4, Wayfarer_Voices_Alliance, Wayfarer_Voices_Horde, Wayfarer_Voices_Shared, Wayfarer_Voices_Narrator\s*$/m,
     'Upstream takeover and sound libraries may only set optional loading order');
   assert.deepStrictEqual(toc.split(/\r?\n/).filter(line => line.endsWith('.lua')).slice(0, 2), ['LegacyAddonBlocker.lua', 'WowVoiceIntegration.lua'],
     'Detach upstream before replacing its globals');

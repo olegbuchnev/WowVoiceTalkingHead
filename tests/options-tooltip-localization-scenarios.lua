@@ -4,6 +4,7 @@ local metadata = C_AddOns.GetAddOnMetadata
 local version = '0.6.0'
 C_AddOns.GetAddOnMetadata = function(addon, field)
     if addon == 'CatQuest_Voices' and field == 'Version' then return version end
+    if addon == 'Wayfarer' and field == 'Version' then return '0.8.0' end
     return metadata and metadata(addon, field)
 end
 
@@ -19,9 +20,9 @@ function tooltip:HookScript(event, fn)
     assert(not self.hooks[event], 'Tooltip restoration hook must only be installed once')
     self.hooks[event] = fn
 end
-function tooltip:SetOwner(owner)
+function tooltip:SetOwner(owner, anchor)
     self:Hide()
-    self.owner, self.lines = owner, {}
+    self.owner, self.lines, self.anchor = owner, {}, anchor
 end
 function tooltip:IsOwned(owner) return self.owner == owner end
 function tooltip:AddLine(text) self.lines[#self.lines + 1] = text end
@@ -65,8 +66,13 @@ local function checkHidden(owner)
 end
 
 WV:OpenOptions()
+WV:RefreshAudioSourceOptions()
 local options = frames.WowVoiceOptionsPanel
 local warning = options.AudioSourceWarning
+assert(options.WayfarerSourceWarning:IsShown())
+checkShown(options.WayfarerSourceWarning)
+assert(tooltip.lines[2]:find('Wayfarer: установлена 0.8.0; проверена 0.7.0.',1,true))
+checkHidden(options.WayfarerSourceWarning)
 for _, installed in ipairs({'0.6.0', '0.2.2'}) do
     version = installed
     WV:RefreshAudioSourceOptions()
@@ -84,7 +90,41 @@ checkHidden(warning)
 CatQuestVoicePack.schemaVersion = schema
 WV:RefreshAudioSourceOptions()
 checkShown(options.SharedVoiceTooltip)
+assert(not tooltip.lines[2]:find('→',1,true), 'avoid unsupported arrow glyphs')
+assert(not tooltip.lines[2]:find('Недоступны:',1,true), 'availability belongs on individual cards')
+assert(#tooltip.lines[2] < 300, 'keep the general hint short')
 checkHidden(options.SharedVoiceTooltip)
+
+local oldLoaded = C_AddOns.IsAddOnLoaded
+C_AddOns.IsAddOnLoaded = function() return false end
+WV:RefreshAudioSourceOptions()
+for _, row in ipairs(options.VoicePriorityRows) do
+    assert(not row.available and row.unavailableMessage)
+    checkShown(row)
+    assert(tooltip.anchor == 'ANCHOR_TOP', 'show unavailable hints above the card')
+    assert(tooltip.lines[1]:find('библиотека недоступна',1,true))
+    assert(tooltip.lines[2]:find('установите и включите',1,true))
+    checkHidden(row)
+    checkShown(row)
+    row.scripts.OnDragStart(row)
+    assert(not tooltip.visible, 'starting a drag must hide the unavailable hint')
+    options.CancelVoicePriorityDrag()
+    checkShown(row)
+    row.scripts.OnHide(row)
+    assert(not tooltip.visible, 'hiding a card must hide its tooltip')
+end
+local row = options.VoicePriorityRows[1]
+checkShown(row)
+C_AddOns.IsAddOnLoaded = oldLoaded
+WV:RefreshAudioSourceOptions()
+assert(not tooltip.visible, 'availability refresh must remove stale hints')
+for _, card in ipairs(options.VoicePriorityRows) do
+    if card.available then
+        card.scripts.OnEnter(card)
+        assert(not tooltip.visible and not card.unavailableMessage)
+        card.scripts.OnLeave(card)
+    end
+end
 
 tooltip:SetOwner(UIParent)
 tooltip:AddLine('Unrelated English tooltip')

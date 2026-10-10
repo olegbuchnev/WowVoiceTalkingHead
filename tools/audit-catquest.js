@@ -59,7 +59,17 @@ function audit(catDirectory, voicesDirectory) {
   for (const [label, db] of [['texts', texts], ['audio', audio]]) {
     check(db.sourceVersion === sourceVersion, `${label} source version differs`);
   }
-  compare('Text sections', transcripts, texts.entries);
+  // The standalone database also includes Wayfarer-only sections. CatQuest
+  // wins each available variant; another source may fill an absent variant.
+  for (const [key, entry] of Object.entries(transcripts)) {
+    for (const [variant, text] of Object.entries(entry)) {
+      const actual = texts.entries[key];
+      if (variant === 'common') {
+        check((actual?.common || actual?.male) === text && (actual?.common || actual?.female) === text, `Text sections: ${key}/common`);
+      } else check((actual?.common || actual?.[variant]) === text, `Text sections: ${key}/${variant}`);
+    }
+  }
+  counts['Text sections'] = Object.keys(transcripts).length;
   const actualAudio = {};
   for (const [key, entry] of Object.entries(audio.entries)) {
     actualAudio[key] = { indexDuration: entry.indexDuration, gender: entry.gender, voice: entry.voice,

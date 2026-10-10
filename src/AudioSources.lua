@@ -73,8 +73,14 @@ local function external()
         prefix = "Interface\\AddOns\\CatQuest_Voices\\Sounds\\q\\" }
 end
 
-function Sources.Status()
+function Sources.Status(sourceID)
+    if sourceID == "wayfarer" then return WowVoiceWayfarerSource and WowVoiceWayfarerSource.Status() end
     return external()
+end
+
+function Sources.Available(sourceID)
+    if sourceID == "wowvoice" then return Sources.Loaded("WowVoiceSounds") end
+    return (sourceID == "catquest" or sourceID == "wayfarer") and Sources.Status(sourceID) ~= nil
 end
 
 local function positiveNumber(value)
@@ -94,7 +100,8 @@ local function variantFor(gender)
     return type(UnitSex) == "function" and UnitSex("player") == 3 and "f" or "m"
 end
 
-function Sources.Resolve(id, section)
+function Sources.Resolve(id, section, sourceID)
+    if sourceID == "wayfarer" then return WowVoiceWayfarerSource and WowVoiceWayfarerSource.Resolve(id, section) end
     if type(id) ~= "number" or id <= 0 or id % 1 ~= 0
         or (section ~= "a" and section ~= "p" and section ~= "c") then return nil end
     local source = Sources.Status()
@@ -128,28 +135,9 @@ end
 
 -- Transcripts ship with the addon itself, so every package has the same fallback.
 -- Independent of installed audio sources; includes Classic overlaps as well.
-function Sources.Text(id, section, sourceID)
+function Sources.Text(id, section)
     if type(id) ~= "number" or id <= 0 or id % 1 ~= 0
-        or (section ~= "a" and section ~= "c") then return nil end
-    if sourceID == "catquest" then
-        local source = Sources.Status()
-        if not source then return nil end
-        local live = liveRecord(source, id, section)
-        local variant = live and variantFor(live.g)
-        local cues = variant and type(live.c) == "table" and live.c[variant]
-        if type(cues) == "table" and #cues > 0 then
-            local parts = {}
-            for _, cue in ipairs(cues) do
-                if type(cue) ~= "table" or type(cue[2]) ~= "string" then return nil end
-                local text = cue[2]:match("^%s*(.-)%s*$")
-                if text ~= "" then parts[#parts + 1] = text end
-            end
-            return #parts > 0 and table.concat(parts, " ") or nil
-        end
-        -- Never attach stale snapshot subtitles to an unverified recording.
-        local recording = Sources.Resolve(id, section)
-        if not recording or not recording.verified then return nil end
-    end
+        or (section ~= "a" and section ~= "p" and section ~= "c") then return nil end
     local database = _G.WowVoiceQuestTexts
     if type(database) ~= "table" or database.schemaVersion ~= 1
         or type(database.entries) ~= "table" then return nil end
@@ -162,7 +150,8 @@ function Sources.Text(id, section, sourceID)
 end
 
 -- Choose only at display time: keep captured game text intact in queue/session
--- data so changing locale or audio source can choose again on the next replay.
+-- data so changing locale can choose again on the next replay. Audio order and
+-- selected recordings never select a different transcript database.
 function Sources.DisplayText(context)
     if not L.isRussian then
         local russian = Sources.Text(context.questId, context.section)
@@ -170,7 +159,7 @@ function Sources.DisplayText(context)
     end
     local text = context.text
     if type(text) == "string" and text:find("%S") then return text end
-    return Sources.Text(context.questId, context.section, context.audioSourceID)
+    return Sources.Text(context.questId, context.section)
 end
 
 function Sources.QuestIDs()
@@ -188,6 +177,9 @@ function Sources.QuestIDs()
             if type(id) == "number" and id > 0 and id % 1 == 0 then ids[id] = true end
         end
         if not source.updated then add(source.entries) end
+    end
+    if WowVoiceWayfarerSource then
+        for id in pairs(WowVoiceWayfarerSource.QuestIDs(false)) do ids[id] = true end
     end
     return ids
 end

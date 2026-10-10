@@ -3,6 +3,7 @@ local WV, S, Q = WowVoice, WowVoiceAudioSources, WowVoice.questQueue
 local run = SlashCmdList.WOWVOICECATQUESTUPDATELAB
 local original, metadata, resolve, snapshot = CatQuestVoicePack.quests[179], S.Metadata, S.Resolve, WowVoiceCatQuestAudio
 local preference = TalkingHeadRuDB.sharedQuestVoice
+local importedText = S.Text(179,'a')
 run('report')
 assert(has('REPORT build=20261002-3 mode=reset oneshot=false trace=false lines=0'))
 assert(has('Журнал пуст:'), 'report must explain an empty session instead of silently doing nothing')
@@ -11,7 +12,7 @@ assert(S.Status().updated and S.Status().version == '0.6.0')
 assert(S.Resolve(98430,'a').duration == 42.15 and CatQuestVoicePack.quests[179] == original)
 run('changed')
 assert(S.Resolve(179,'a').path:find('6_m.ogg',1,true) and not S.Resolve(179,'a').verified)
-assert(S.Text(179,'a','catquest'):find('[ТЕСТ ОБНОВЛЕНИЯ]',1,true))
+assert(S.Text(179,'a') == importedText, 'simulated audio updates cannot replace imported texts')
 assert(S.Resolve(99998,'a').path:find('5.ogg',1,true) and WowVoiceComparison.Known(99998,'catquest'))
 TalkingHeadRuDB.autoPlay, TalkingHeadRuDB.autoPlayAccept, TalkingHeadRuDB.queueAutoPlay = true, true, true
 run('queue')

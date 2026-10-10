@@ -125,3 +125,69 @@ CatQuestDB = nil
 WV:UpdateCatQuestIntegration()
 assert(book.visible and gossip.visible and other.visible)
 print('PASS: CatQuest quest/gossip/read buttons, locale-independent identity, book exclusion, prior visibility, late journal/login and restoration')
+
+-- Tracker icons have a private click handler and are created during layout.
+CatQuestDB = {autoDetail=true, autoComplete=true}
+local function trackerIcon(block, atlas, questID)
+    local button = readButton(block, function() end)
+    button.questId = questID
+    button.texture = {GetAtlas=function() return atlas end}
+    return button
+end
+local function trackerModule()
+    local tracker = {active={}}
+    function tracker:LayoutBlock(block)
+        self.active[block] = true
+        if not block.testCatIcon then block.testCatIcon = trackerIcon(block, 'voicechat-icon-speaker', block.id) end
+        block.testCatIcon.questId = block.id
+        block.testCatIcon:Show()
+    end
+    function tracker:OnFreeBlock(block)
+        self.active[block] = nil
+        block.testCatIcon:Hide()
+    end
+    function tracker:EnumerateActiveBlocks(callback)
+        for block in pairs(self.active) do callback(block) end
+    end
+    return tracker
+end
+QuestObjectiveTracker = trackerModule()
+local block = surface(); block.id=179
+QuestObjectiveTracker:LayoutBlock(block)
+local unrelated = trackerIcon(block, 'other-atlas', block.id)
+local noQuest = trackerIcon(block, 'voicechat-icon-speaker', nil)
+command('on')
+assert(not block.testCatIcon.visible and unrelated.visible and noQuest.visible)
+block.testCatIcon:Show()
+assert(not block.testCatIcon.visible, 'native Show cannot restore the tracker icon')
+local created = surface(); created.id=180
+QuestObjectiveTracker:LayoutBlock(created)
+assert(not created.testCatIcon.visible, 'hide newly created icons after layout')
+QuestObjectiveTracker:OnFreeBlock(created)
+command('off')
+assert(block.testCatIcon.visible and not created.testCatIcon.visible, 'never restore a freed block')
+command('on')
+created.id=181
+QuestObjectiveTracker:LayoutBlock(created)
+assert(not created.testCatIcon.visible, 'reused pooled blocks remain suppressed')
+command('off')
+assert(created.testCatIcon.visible, 'restore the current quest after reusing a block')
+command('on')
+CampaignQuestObjectiveTracker = trackerModule()
+local campaign = surface(); campaign.id=182
+CampaignQuestObjectiveTracker:LayoutBlock(campaign)
+frame.scripts.OnEvent(frame, 'ADDON_LOADED', 'Blizzard_ObjectiveTracker')
+deferred()
+assert(not campaign.testCatIcon.visible, 'late campaign tracker is covered')
+-- Simulate an upstream layout hook installed after TalkingHead Ru's hook.
+local after = surface(); after.id=183
+hooksecurefunc(CampaignQuestObjectiveTracker, 'LayoutBlock', function(_, b)
+    if b == after and not b.extraIcon then b.extraIcon=trackerIcon(b, 'voicechat-icon-speaker', b.id) end
+end)
+CampaignQuestObjectiveTracker:LayoutBlock(after)
+deferred()
+assert(not after.extraIcon.visible, 'deferred scan covers the reverse hook order')
+event('PLAYER_LOGOUT')
+assert(block.testCatIcon.visible and created.testCatIcon.visible and campaign.testCatIcon.visible and after.extraIcon.visible)
+assert(book.visible and unrelated.visible and noQuest.visible)
+print('PASS: CatQuest normal/campaign tracker icons, new and recycled blocks, late hooks, unrelated buttons and restoration')

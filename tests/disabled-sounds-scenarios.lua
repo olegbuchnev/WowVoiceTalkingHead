@@ -70,10 +70,12 @@ assert(WowVoiceComparison.Resolve(179, 'catquest'))
 
 command('options')
 local panel = frames.WowVoiceOptionsPanel
-local choices = panel.SharedVoiceButtons
-assert(choices.catquest:GetChecked() and not choices.wowvoice:GetChecked())
-assert(not choices.catquest:IsEnabled() and not choices.wowvoice:IsEnabled())
-assert(panel.SharedVoiceTooltip.message:find('WowVoice Sounds', 1, true))
+local function voiceRow(id)
+    for _, row in ipairs(panel.VoicePriorityRows) do if row.sourceID == id then return row end end
+end
+assert(panel.VoicePriorityRows[1].sourceID == 'wowvoice')
+assert(voiceRow('catquest').available and not voiceRow('wowvoice').available)
+assert(voiceRow('wowvoice').unavailableMessage:find('WowVoiceSounds', 1, true))
 
 local before = #plays
 assert(not WV:ReplayQuest(classicOnly) and #plays == before and not frames.TalkingHeadRu:IsShown())
@@ -138,7 +140,7 @@ assert(not journalButtons[179]:IsShown() and not trackerButtons[179]:IsShown())
 before = #plays
 assert(not WV:ReplayQuest(179) and #plays == before and not frames.TalkingHeadRu:IsShown())
 Q:Clear()
-assert(panel.SharedVoiceTooltip.message:find('Нет доступной озвучки', 1, true))
+assert(voiceRow('catquest').unavailableMessage:find('CatQuest_Voices', 1, true))
 
 -- Modern loading/error/existence checks must reject stale primary metadata.
 loaded.CatQuest_Voices, loaded.WowVoiceSounds = true, true
@@ -155,7 +157,7 @@ C_AddOns.DoesAddOnExist = nil
 
 WV:RefreshAudioSources()
 assert(TalkingHeadRuDB.sharedQuestVoice == 'wowvoice' and WV:GetSharedQuestVoice() == 'wowvoice')
-assert(choices.wowvoice:IsEnabled() and choices.wowvoice:GetChecked())
+assert(voiceRow('wowvoice').available and panel.VoicePriorityRows[1].sourceID == 'wowvoice')
 assert(WV:SoundPath(179, 'a'):find('WowVoiceSounds', 1, true))
 assert(WV:HasQuestAudio(classicOnly) and journalButtons[classicOnly]:IsShown() and trackerButtons[classicOnly]:IsShown())
 print('PASS: disabled/missing/failed primary pack, CatQuest-only playback, queue, journal/tracker, options, music and source restoration')

@@ -22,5 +22,6 @@ for (const locale of ['enUS', 'enGB', 'ruRU']) {
   run('tests/options-tooltip-localization-scenarios.lua');
   run('tests/quest-text-locale-scenarios.lua');
   run('tests/reminder-localization-scenarios.lua');
+  run('tests/startup-links-scenarios.lua');
   lua.lua_close(state);
 }

@@ -12,10 +12,10 @@ local function catQuestSnapshot()
     return type(data) == "table" and data.schemaVersion == 1 and type(data.entries) == "table" and data.entries or {}
 end
 function Comparison.SourceAvailable(source)
-    if source == "wowvoice" then return Sources.Loaded("WowVoiceSounds") end
-    return source == "catquest" and Comparison.HasCatQuest()
+    return Sources.Available(source)
 end
 function Comparison.Known(id, source)
+    if source == "wayfarer" then return WowVoiceWayfarerSource and WowVoiceWayfarerSource.Known(id) end
     if source == "wowvoice" then return WowVoiceDur and WowVoiceDur[id .. "a"] ~= nil end
     if source == "catquest" then
         local status = Sources.Status()
@@ -32,18 +32,21 @@ end
 function Comparison.Resolve(id, source)
     if revision ~= WV.audioRevision then failed, revision = {}, WV.audioRevision end
     if type(id) ~= "number" or id <= 0 or id % 1 ~= 0 then return end
-    local path, seconds, text, verified
+    local path, seconds, text, verified, packName
     if source == "wowvoice" then
         if not Sources.Loaded("WowVoiceSounds") or not (WowVoiceDur and WowVoiceDur[id .. "a"]) then return end
         local version, sourceID
         path, seconds, version, sourceID, verified = WV:ClassicSoundPath(id, "a")
-    elseif source == "catquest" then
-        local recording = Sources.Resolve(id, "a")
-        if recording then path, seconds, verified = recording.path, recording.duration, recording.verified end
-        text = Sources.Text(id, "a", "catquest")
+    elseif source == "catquest" or source == "wayfarer" then
+        local recording = Sources.Resolve(id, "a", source)
+        if recording then
+            path, seconds, verified = recording.path, recording.duration, recording.verified
+            packName = recording.packName
+        end
     end
     if not path or type(seconds) ~= "number" or seconds <= 0 or failed[path] then return end
-    return { path = path, duration = seconds, text = text, sourceID = source, verified = verified }
+    text = Sources.Text(id, "a")
+    return { path = path, duration = seconds, text = text, sourceID = source, verified = verified, packName = packName }
 end
 function Comparison.QuestIDs()
     local candidates, result = {}, {}
@@ -62,6 +65,9 @@ function Comparison.QuestIDs()
     end
     for id in pairs(candidates) do
         if Comparison.Known(id, "wowvoice") or Comparison.Known(id, "catquest") then result[id] = true end
+    end
+    if WowVoiceWayfarerSource then
+        for id in pairs(WowVoiceWayfarerSource.QuestIDs(true, true)) do result[id] = true end
     end
     return result
 end

@@ -35,6 +35,8 @@ for key in pairs(WowVoiceCatQuestAudio.entries) do
     local id = tonumber(key:match('^(%d+)a$'))
     if id then known[id] = true end
 end
+local wayfarerCount = 0
+for id in pairs(WowVoiceWayfarerSource.QuestIDs(true, true)) do known[id] = true; wayfarerCount = wayfarerCount + 1 end
 local sorted = {}
 for id in pairs(known) do sorted[#sorted+1] = id end
 table.sort(sorted)
@@ -43,7 +45,7 @@ local wowvoiceCount, catquestCount = 0, 0
 for key in pairs(WowVoiceDur) do if key:match('^%d+a$') then wowvoiceCount = wowvoiceCount + 1 end end
 for key in pairs(WowVoiceCatQuestAudio.entries) do if key:match('^%d+a$') then catquestCount = catquestCount + 1 end end
 assert(panel.CatalogSummary:GetText() == string.format(
-    'WowVoice: %d    CatQuest: %d    Всего без повторов: %d', wowvoiceCount, catquestCount, #sorted))
+    'WowVoice: %d    CatQuest: %d    Wayfarer: %d    Всего без повторов: %d', wowvoiceCount, catquestCount, wayfarerCount, #sorted))
 local function search(prefix)
     input:SetText(prefix)
     input:SetFocus()
@@ -59,7 +61,7 @@ local function search(prefix)
     return #expected
 end
 assert(search('1') > 8)
-assert(popup.columns == 8 and not popup.Footer)
+assert(popup.columns == 6 and not popup.Footer)
 assert(popup:GetWidth() == panel:GetWidth() - 40)
 assert(popup:GetHeight() + 116 <= panel.Scroll:GetHeight(), 'Popup escapes viewport')
 assert(popup:GetHeight() + 136 == panel:GetHeight(), 'List must fill the remaining page height')
@@ -127,7 +129,7 @@ assert(restored, 'Scrolling back must restore the selected play button highlight
 panel:SetSize(900, 400)
 search('94')
 panel.scripts.OnSizeChanged(panel)
-assert(popup.columns == 12 and popup:GetHeight() + 116 <= panel:GetHeight())
+assert(popup.columns == 9 and popup:GetHeight() + 116 <= panel:GetHeight())
 panel:SetSize(584, 640)
 search(tostring(sorted[#sorted]))
 assert(popup.Rows[1].questID == sorted[#sorted], 'Supplemental upper boundary missing')
@@ -136,7 +138,7 @@ assert(popup:GetHeight() + 136 == panel:GetHeight(), 'Empty results must retain 
 assert(search('') == #sorted, 'Empty input must show the full catalogue')
 assert(WowVoiceDur['247c'] and not WowVoiceDur['247a'], '247 must exercise completion-only audio')
 for _, id in ipairs(popup.matches) do
-    assert(id ~= 247 and (WowVoiceDur[id .. 'a'] or WowVoiceCatQuestAudio.entries[id .. 'a']),
+    assert(id ~= 247 and (WowVoiceDur[id .. 'a'] or WowVoiceCatQuestAudio.entries[id .. 'a'] or WowVoiceComparison.Known(id, 'wayfarer')),
         'Every listed quest must have a known introduction')
 end
 search('247')
@@ -205,4 +207,4 @@ end
 WowVoice:Silence()
 PlayMusic, StopMusic = originalPlayMusic, originalStopMusic
 cvars.Sound_EnableSoundWhenGameIsInBG = backgroundAudio
-print('PASS: full-page persistent quest grid, full catalogue/prefixes, 8-12 columns, virtualized scrolling, selection preserves results/scroll and playback/focus lifecycle')
+print('PASS: full-page three-source quest grid, full catalogue/prefixes, responsive columns, virtualized scrolling, selection preserves results/scroll and playback/focus lifecycle')

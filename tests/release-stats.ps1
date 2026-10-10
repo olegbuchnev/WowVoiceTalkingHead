@@ -41,6 +41,7 @@ try {
         }
     }
     $statsFixture = @{ Mode = 'embedded'; Requests = 0; GoatMode = 'ok'; GoatRequests = 0 }
+    function Start-Sleep { param($Seconds) } # Retry timing is not relevant to fixtures.
     function Invoke-RestMethod {
         param($Uri, $Headers, $TimeoutSec)
         if ($Uri -like 'https://tove2889.goatcounter.com/*') {
@@ -58,6 +59,9 @@ try {
             return [pscustomobject]@{hits=@([pscustomobject]@{event=$true; path='curseforge-open'; count=17}); more=$false}
         }
         $statsFixture.Requests++
+        if ($statsFixture.Mode -eq 'offline' -or ($statsFixture.Mode -eq 'transient' -and $statsFixture.Requests -lt 3)) {
+            throw [Net.WebException]::new('Unable to connect; stats-fixture-token')
+        }
         if ($Headers.ContainsKey('Authorization') -and $Headers.Authorization -ne 'Bearer stats-fixture-token') {
             throw 'Unexpected authentication header.'
         }
@@ -228,9 +232,30 @@ try {
             throw 'Credentials must never be written to reports.'
         }
     }
-    # Run failure in a child process because the command correctly exits with 1.
+    $statsFixture.Mode = 'transient'; $statsFixture.Requests = 0
+    & (Join-Path $fixture 'tools/release-stats.ps1') -NoOpen | Out-Null
+    if ($statsFixture.Requests -ne 3) { throw 'Temporary connection errors must retry, with a fixed attempt limit.' }
+    $statsFixture.Mode = 'offline'; $statsFixture.Requests = 0; $statsFixture.GoatRequests = 0
+    $beforeOffline = (Get-FileHash (Join-Path $fixture 'artifacts/stats/downloads.json')).Hash
+    & (Join-Path $fixture 'tools/release-stats.ps1') -NoOpen | Out-Null
+    $offlineHtml = Get-Content (Join-Path $fixture 'artifacts/stats/index.html') -Raw -Encoding UTF8
+    if ($statsFixture.Requests -ne 3 -or $statsFixture.GoatRequests -ne 1 -or
+        $offlineHtml -notmatch 'Показаны сохранённые скачивания от' -or $offlineHtml -notmatch 'Всего ZIP<strong>42</strong>' -or
+        $offlineHtml -notmatch 'Переходы на CurseForge с сайта</h2><strong>17</strong>' -or
+        (Get-FileHash (Join-Path $fixture 'artifacts/stats/downloads.json')).Hash -ne $beforeOffline -or
+        $offlineHtml -match 'stats-fixture-token') { throw 'Offline GitHub must retain its dated cache while GoatCounter refreshes.' }
+    foreach ($name in @('downloads.json', 'downloads.csv')) {
+        Remove-Item -LiteralPath (Join-Path $fixture "artifacts/stats/$name")
+    }
+    & (Join-Path $fixture 'tools/release-stats.ps1') -NoOpen | Out-Null
+    $noCacheHtml = Get-Content (Join-Path $fixture 'artifacts/stats/index.html') -Raw -Encoding UTF8
+    if ($noCacheHtml -notmatch 'Всего ZIP<strong>—</strong>' -or $noCacheHtml -notmatch 'Сохранённых данных нет' -or
+        (Test-Path (Join-Path $fixture 'artifacts/stats/downloads.json'))) { throw 'Missing GitHub cache must show unavailable, not zero.' }
+    $statsFixture.Mode = 'embedded'
+    & (Join-Path $fixture 'tools/release-stats.ps1') -NoOpen | Out-Null
+    # Rate limits also retain per-source caches and produce a usable report.
     $reportBefore = @{}
-    foreach ($name in @('index.html','downloads.csv','downloads.json')) {
+    foreach ($name in @('downloads.csv','downloads.json')) {
         $reportBefore[$name] = (Get-FileHash -LiteralPath (Join-Path $fixture "artifacts/stats/$name")).Hash
     }
     $runner = Join-Path $fixture 'rate-limit.ps1'
@@ -253,19 +278,20 @@ exit $LASTEXITCODE
         '-NoProfile','-ExecutionPolicy','Bypass','-File',('"' + $runner + '"'),
         ('"' + (Join-Path $fixture 'tools/release-stats.ps1') + '"')
     ) -RedirectStandardOutput $failureLog -RedirectStandardError $failureError
-    $failureText = Get-Content -LiteralPath $failureError -Raw
-    if ($child.ExitCode -ne 1 -or $failureText -notmatch 'GitHub API request limit reached' -or
+    $failureText = Get-Content -LiteralPath $failureLog -Raw
+    if ($child.ExitCode -ne 0 -or $failureText -notmatch 'GitHub API request limit reached' -or
         $failureText -notmatch 'Retry after' -or $failureText -match 'stats-fixture-token') {
         throw ('Rate limits must explain retry time, keep credentials private and preserve the previous report. Exit=' +
             $child.ExitCode + '. ' + $failureText.Replace('stats-fixture-token', '[redacted]'))
     }
     foreach ($name in $reportBefore.Keys) {
         if ((Get-FileHash -LiteralPath (Join-Path $fixture "artifacts/stats/$name")).Hash -ne $reportBefore[$name]) {
-            throw 'Failed requests must preserve every previous report file.'
+            throw 'Failed requests must preserve the last successful source CSV and JSON.'
         }
     }
     Write-Host 'PASS: addon-only releases and historical full archives, original CSV/JSON columns, adjusted counts, single request, complete pagination, authentication, stale-login fallback and useful rate-limit errors preserving the report; no network calls.'
     Write-Host 'PASS: CurseForge event filter, token isolation, check deductions, separate counts, missing setup, cached failures and empty events; no network calls.'
+    Write-Host 'PASS: bounded GitHub retries, offline and rate-limited GitHub with independent GoatCounter refresh, dated caches and no false zero.'
 } finally {
     $env:GITHUB_TOKEN = $savedGitHubToken
     $env:GH_TOKEN = $savedGhToken

@@ -33,7 +33,7 @@ local translations = {
     ["озвучка выключена. Включить: /thead on"] = "Playback is disabled. Enable it with /thead on.",
     ["для описания этого квеста нет записи в установленном аудиопаке"] = "No description recording for this quest in the installed voice packs.",
     ["не удалось воспроизвести описание квеста %d"] = "Could not play the description of quest %d.",
-    ["Озвучка: WowVoice — https://boosty.to/wowvoice; Cathey — https://boosty.to/cathey"] = "Voices: WowVoice — https://boosty.to/wowvoice; Cathey — https://boosty.to/cathey",
+    ["Озвучка: %s"] = "Voices: %s",
     ["Спасибо, что поддерживаешь WowVoice! |cffffd100Ctrl+C|r скопирует ссылку — вставь её в браузер:"] = "Thank you for supporting WowVoice! Press |cffffd100Ctrl+C|r to copy the link, then paste it into your browser:",
     ["Закрыть"] = "Close",
 }
