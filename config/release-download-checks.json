@@ -2,6 +2,12 @@
   "schemaVersion": 1,
   "checks": [
     {
+      "assetId": 628875725,
+      "release": "v1.3.0-forever",
+      "asset": "TalkingHeadRu-1.3.0-forever.zip",
+      "count": 1
+    },
+    {
       "assetId": 625538701,
       "release": "v1.2.6-forever",
       "asset": "TalkingHeadRu-1.2.6-forever.zip",
