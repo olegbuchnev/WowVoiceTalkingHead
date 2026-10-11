@@ -4,29 +4,9 @@
 
 ## Установка — 3 шага
 
-> **Аддон переименован в TalkingHead Ru для публикации на CurseForge.**
->
-> **⚠ Обновляетесь со старой версии?**
->
-> Перед установкой новой версии **полностью закройте игру**. Рекомендуется
-> вручную удалить старую папку аддона и его сохранения. Все пути ниже указаны
-> от папки `_classic_beta_`:
->
-> - `Interface/AddOns/WowVoiceTalkingHead/` — старая папка аддона.
-> - `WTF/Account/<аккаунт>/SavedVariables/WowVoiceTalkingHead.lua` — старые настройки.
-> - `WTF/Account/<аккаунт>/<сервер>/<персонаж>/SavedVariables/WowVoiceTalkingHead.lua` — старая очередь персонажа.
->
-> Если рядом есть файлы `WowVoiceTalkingHead.lua.bak`, удалите и их.
-> Вместо `<аккаунт>`, `<сервер>` и `<персонаж>` откройте соответствующие папки;
-> повторите очистку для аккаунтов и персонажей, на которых использовали старый аддон.
->
-> **Прежние настройки и очередь не переносятся.** Положение, масштаб панелей
-> и остальные параметры потребуется настроить заново один раз.
-> Сохранения новой версии `TalkingHeadRu.lua` удалять не нужно.
-
 1. **Закройте игру и установите TalkingHead Ru.** Скопируйте папку
    `TalkingHeadRu` из нового архива в `_classic_beta_/Interface/AddOns/`
-   с заменой файлов. При переходе со старой версии сначала выполните очистку по инструкции выше.
+   с заменой файлов.
 2. **Установите одну или несколько библиотек для Forever:**
    [WowVoice](https://www.curseforge.com/wow/addons/wowvoice-classic/files/all?page=1&pageSize=20&gameVersionTypeId=88568&showAlphaFiles=hide)
    или [CatQuest](https://www.curseforge.com/wow/addons/catquest/files/all?page=1&pageSize=20&gameVersionTypeId=88568&showAlphaFiles=hide)

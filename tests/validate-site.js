@@ -121,7 +121,9 @@ const { createHash } = require('crypto');
         }
         assert(!html.includes(`href="${urls.full}"`));
         assert(html.includes(`href="${urls.addon}"`));
-        assert(html.includes('class="installation-notice"'), 'Migration notice stays visible on both pages');
+        if (name === 'index.html') {
+          assert(html.includes('class="installation-notice"'), 'Explicit warning blocks retain notice styling');
+        }
         const script = fs.readFileSync(path.join(fixture, 'site/site.js'));
         const scriptURL = `site.${createHash('sha256').update(script).digest('hex')}.js`;
         assert(html.includes(`<script src="${scriptURL}" defer></script>`));
@@ -177,7 +179,7 @@ const { createHash } = require('crypto');
     assert(previewHtml.includes(`href="downloads/${preview.addon}"`));
     assert(previewHtml.includes(`src="${changedURL}"`) && previewHtml.includes(`src="${headURL}"`));
     assert.deepEqual(fs.readFileSync(path.join(previewRoot,changedURL)), Buffer.from([3]));
-    console.log('PASS: one addon download, exact size and release date, three matching voice sections with Forever links and visible migration notice');
+    console.log('PASS: one addon download, exact size and release date, three matching voice sections with Forever links and explicit warning styling');
     console.log('PASS: unpublished or unverifiable downloads rejected; offline preview needs only the addon ZIP, no bundled audio');
     console.log('PASS: click-only analytics enabled on the published site, excluded from preview and local copies');
     console.log('PASS: Markdown/HTML/guide screenshots use hashed filenames; replacing image bytes changes its URL in published and preview builds');
