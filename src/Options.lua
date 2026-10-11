@@ -66,7 +66,10 @@ local function attachVoicePriorityDrag(content)
     local function setMoveCursor()
         if SetCursor then
             -- Same built-in move cursor used by OPie's settings drag handle.
-            moveCursorSet = SetCursor("Interface/CURSOR/UI-Cursor-Move.crosshair") ~= false
+            -- Track our request, not SetCursor's return value: cleanup must
+            -- still run when the client returns false after this call.
+            moveCursorSet = true
+            SetCursor("Interface/CURSOR/UI-Cursor-Move.crosshair")
         end
     end
     local function resetMoveCursor()
@@ -93,7 +96,13 @@ local function attachVoicePriorityDrag(content)
     end
     local function finish(cancel)
         if not dragging then
-            if cancel then resetMoveCursor() end
+            if cancel then
+                resetMoveCursor()
+                for _, row in ipairs(rows) do
+                    hidePriorityTooltip(row)
+                    row:SetBackdropBorderColor(0.4, 0.4, 0.4, 0.8)
+                end
+            end
             return
         end
         resetMoveCursor()
@@ -125,6 +134,9 @@ local function attachVoicePriorityDrag(content)
         end
     end
     panel.CancelVoicePriorityDrag = function() finish(true) end
+    -- The catalogue hides this viewport while the outer settings panel stays
+    -- open. Cancel at that boundary even if card mouse events arrive late.
+    panel.Scroll:HookScript("OnHide", panel.CancelVoicePriorityDrag)
     local function update()
         if not dragging then return end
         if IsMouseButtonDown and not IsMouseButtonDown("LeftButton") then finish(false); return end
@@ -147,7 +159,7 @@ local function attachVoicePriorityDrag(content)
         local function start()
             -- MouseDown grabs immediately; a later native drag event must not
             -- restart the gesture or capture an offset after the cursor moved.
-            if dragging then return end
+            if dragging or not row:IsVisible() then return end
             hidePriorityTooltip(row)
             if not GetCursorPosition then return end
             local x, y = GetCursorPosition()
@@ -174,6 +186,7 @@ local function attachVoicePriorityDrag(content)
         row:SetScript("OnMouseUp", function(_, button) if button == "LeftButton" then finish(false) end end)
         row:SetScript("OnHide", function(self) hidePriorityTooltip(self); finish(true) end)
         row:SetScript("OnEnter", function(self)
+            if not self:IsVisible() then return end
             setMoveCursor()
             if dragging then return end
             self:SetBackdropBorderColor(1, 0.82, 0.25, 1)

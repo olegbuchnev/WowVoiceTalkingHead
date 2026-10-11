@@ -31,7 +31,22 @@ Alliance/Horde/Shared 3.1.0, модель v4, формат индекса 1.
 персонажа. В текущем WowVoice полных текстов нет. Карточки озвучки и прослушивание
 в каталоге не меняют источник текста. Импорт CatQuest также пересобирает тексты
 из соседних пакетов Wayfarer. После обновления пакетов Wayfarer нужно повторить
-импорт текстов наряду с генерацией точных длительностей.
+импорт текстов наряду с генерацией точных длительностей и импортом NPC:
+
+```shell
+node tools/generate-wayfarer-metadata.js <AddOns-directory>
+node tools/import-quest-texts.js <AddOns-directory>
+node tools/import-wayfarer-speakers.js <AddOns-directory>
+node tools/import-wayfarer-speakers.js <AddOns-directory> --check
+```
+
+Импорт NPC читает `qg`, `npc` и `q[id].a/p/c.s` без запуска Lua и без OGG.
+Он обновляет снимок `docs/internal/wayfarer-speakers-source.json` и общую
+`src/Speakers.lua`. Wayfarer стоит после CatQuest, перед Pins и старыми базами;
+принимающий определяется отдельно от выдающего, неоднозначные связи защищены.
+На 11.10.2026 Wayfarer добавляет 88 обликов и 138 записей сдачи; облики,
+пересекающиеся с CatQuest, совпадают. Источник каждой выбранной записи виден
+в `docs/internal/speakers-manifest.json`. Полный порядок описан в DEVELOPMENT.
 
 `Sources.Text(id, section)` читает общую базу независимо от загруженных библиотек
 и выбранной озвучки. При отображении на ruRU приоритет имеет текст, полученный

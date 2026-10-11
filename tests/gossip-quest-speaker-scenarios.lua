@@ -14,10 +14,10 @@ UnitGUID = function(unit)
     return originalGUID(unit)
 end
 npcGUID, npcName, npcDisplay = 'Creature-0-1-0-1-999-0000000001', 'Unrelated target', 7777
-assert(WowVoiceForeverSpeakers[2842].npcID==3413)
+assert(WowVoiceSpeakers.givers[2842].npcID==3413)
 event('QUEST_DETAIL')
 local head = frames.TalkingHeadRu
-assert(head.visible and head.Name.text=='Совик' and head.Model.creatureID==3413)
+assert(head.visible and head.Name.text=='Совик' and head.Model.displayID==WowVoiceSpeakers.npcs[3413].displayID)
 assert(not head.Icon.visible and head.Title.text==title)
 assert(plays[#plays].file=='Interface\\AddOns\\WowVoiceSounds\\2842a.ogg')
 assert(not questCache()[2842], 'Viewing a quest must not persist an inferred giver')
@@ -26,7 +26,7 @@ local captured = questCache()[2842]
 assert(captured.description==description and captured.npcID==nil)
 WV:Silence()
 assert(WV:ReplayQuest(2842))
-assert(head.Name.text=='Совик' and head.Model.creatureID==3413)
+assert(head.Name.text=='Совик' and head.Model.displayID==WowVoiceSpeakers.npcs[3413].displayID)
 assert(questCache()[2842]==captured and captured.npcID==nil)
 WV:Silence()
 
@@ -34,21 +34,21 @@ WV:Silence()
 questCache()[2842] = nil
 portraitEvent('QUEST_ACCEPTED',2842)
 assert(WV:ReplayQuest(2842))
-assert(head.Name.text=='Совик' and head.Model.creatureID==3413)
+assert(head.Name.text=='Совик' and head.Model.displayID==WowVoiceSpeakers.npcs[3413].displayID)
 WV:Silence()
 
--- Only descriptions may infer the giver. Never use Sovik as the receiver.
+-- Completion/progress infer their own receiver. Never use Sovik as the receiver.
 for _, section in ipairs({'p','c'}) do
     local context = WV:CaptureQuestSpeaker(2842,section,title,description)
-    assert(not context.speaker.npcID and not context.speaker.name)
+    assert(context.speaker.npcID == WowVoiceSpeakers.finishers[2842].npcID and context.speaker.npcID ~= 3413)
 end
 
 -- Explicit exclusions, missing metadata and item/object starters stay neutral
 -- or preserve their real identity even if the Classic metadata names an NPC.
-local metadata = WowVoiceForeverSpeakers[2842]
-WowVoiceForeverSpeakers[2842] = false
+local metadata = WowVoiceSpeakers.givers[2842]
+WowVoiceSpeakers.givers[2842] = false
 assert(not WV:CaptureQuestSpeaker(2842,'a',title,description).speaker.npcID)
-WowVoiceForeverSpeakers[2842] = metadata
+WowVoiceSpeakers.givers[2842] = metadata
 assert(not WV:CaptureQuestSpeaker(999999,'a',title,description).speaker.npcID)
 C_Container = {
     GetContainerNumSlots=function() return 1 end,

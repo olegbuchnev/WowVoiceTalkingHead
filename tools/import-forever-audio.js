@@ -5,9 +5,10 @@ const path = require('path');
 const crypto = require('crypto');
 const lua = require('luaparse');
 
-function dataTable(file) {
+function dataTable(file, tableName) {
   const ast = lua.parse(fs.readFileSync(file, 'latin1'), { encodingMode: 'pseudo-latin1' });
   const assignment = ast.body.filter(node => node.type === 'AssignmentStatement'
+    && (!tableName || (node.variables[0]?.identifier?.name || node.variables[0]?.name) === tableName)
     && node.init[0]?.type === 'TableConstructorExpression').at(-1);
   if (!assignment) throw new Error(`Missing data table: ${file}`);
   function decode(node) {

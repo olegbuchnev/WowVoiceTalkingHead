@@ -7,7 +7,8 @@ function model:GetModelFileID() return self.id end
 for id, key in pairs(WV.CameraModelProfiles) do
     model.id=id
     local profile, actual, fileID=WV:GetPortraitCameraProfile(model)
-    assert(fileID==id and actual==key, 'every generated model mapping must resolve to a profile')
+    local expectedKey = WV.PortraitCameraOverrides[id] and 'model:' .. id or key
+    assert(fileID==id and actual==expectedKey, 'every generated model mapping must resolve to its family or model override')
     assert(profile.distance>=1.1 and profile.distance<=1.5)
     assert(type(profile.y)=='number' and type(profile.z)=='number')
     count=count+1; families[key]=true
@@ -35,7 +36,7 @@ end
 for _, id in ipairs({118355,878772,1838560,1890765,1892543,5548261,2123291}) do
     model.id=id
     local profile,key=WV:GetPortraitCameraProfile(model)
-    assert(key=='dwarf' and profile.z==.025, 'female dwarf correction must not affect male dwarves')
+    assert(key=='dwarf' and profile.z==.005, 'male dwarf variants share the slightly lowered framing')
 end
 for _, id in ipairs({121087,949470,1838580}) do
     model.id=id
@@ -118,7 +119,7 @@ head.Model.modelFileID=7478494
 head.Model:CompleteLoad(1234)
 assert(head.Model.cameraProfile=='model:7478494' and head.Model.modelPosition[3]==.015,
     'male Skyborne correction must not replace the female framing')
-for _, id in ipairs({118135,118355,950080,878772,124118,4066013,4074868,119376,1838570,124224,119369,122560,122414,1018060,116921,1100258,1839709,117170,121087,949470,1838580,121287,121961,986648,1839008,122055,121608,997378,1838582,121768,959310,1838584,124225,125358,99999999}) do
+for _, id in ipairs({124495,124456,124496,1622490,118135,118355,950080,878772,124118,4066013,4074868,119376,1838570,124224,119369,122560,122414,1018060,116921,1100258,1839709,117170,121087,949470,1838580,121287,121961,986648,1839008,122055,121608,997378,1838582,121768,959310,1838584,124225,125358,99999999}) do
     head.Model.modelFileID=id
     head.Model:CompleteLoad(1234)
     local profile,key=WV:GetPortraitCameraProfile(head.Model)

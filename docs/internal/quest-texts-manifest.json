@@ -6,7 +6,7 @@
     "wayfarer"
   ],
   "versions": {
-    "catquest": "0.5.0",
+    "catquest": "0.6.0",
     "Wayfarer_Voices_Alliance": "3.1.0",
     "Wayfarer_Voices_Horde": "3.1.0",
     "Wayfarer_Voices_Shared": "3.1.0"
@@ -28,7 +28,7 @@
         "p": 0,
         "c": 2790
       },
-      "variants": 7642
+      "variants": 7701
     },
     "wayfarer": {
       "quests": 3586,
@@ -47,7 +47,7 @@
       "p": 19,
       "c": 3730
     },
-    "variants": 9406
+    "variants": 9465
   },
   "selectedSections": {
     "wowvoice": 0,
@@ -93,7 +93,8 @@
       "female": "catquest"
     },
     "8c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "9a": {
       "common": "catquest"
@@ -206,7 +207,8 @@
       "female": "catquest"
     },
     "25c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "26a": {
       "male": "catquest",
@@ -477,7 +479,8 @@
       "common": "catquest"
     },
     "70c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "71a": {
       "common": "catquest"
@@ -649,7 +652,8 @@
       "common": "catquest"
     },
     "99c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "100a": {
       "common": "catquest"
@@ -1071,7 +1075,8 @@
       "common": "catquest"
     },
     "166c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "167a": {
       "common": "catquest"
@@ -1374,8 +1379,7 @@
       "common": "catquest"
     },
     "214c": {
-      "male": "catquest",
-      "female": "catquest"
+      "common": "catquest"
     },
     "215a": {
       "male": "catquest",
@@ -1565,7 +1569,8 @@
       "female": "catquest"
     },
     "245c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "246a": {
       "common": "catquest"
@@ -1615,7 +1620,8 @@
       "common": "catquest"
     },
     "253c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "255a": {
       "male": "catquest",
@@ -2107,7 +2113,8 @@
       "common": "catquest"
     },
     "337c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "338a": {
       "common": "catquest"
@@ -2486,8 +2493,7 @@
       "female": "catquest"
     },
     "397c": {
-      "male": "catquest",
-      "female": "catquest"
+      "common": "catquest"
     },
     "398a": {
       "common": "catquest"
@@ -2545,7 +2551,8 @@
       "female": "catquest"
     },
     "409c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "411a": {
       "common": "catquest"
@@ -2800,8 +2807,7 @@
       "common": "catquest"
     },
     "451c": {
-      "male": "catquest",
-      "female": "catquest"
+      "common": "catquest"
     },
     "452a": {
       "common": "catquest"
@@ -2813,7 +2819,8 @@
       "common": "catquest"
     },
     "453c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "454a": {
       "common": "catquest"
@@ -2859,7 +2866,8 @@
       "female": "catquest"
     },
     "460a": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "460c": {
       "common": "catquest"
@@ -2908,7 +2916,8 @@
       "common": "catquest"
     },
     "468c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "469a": {
       "male": "catquest",
@@ -2928,7 +2937,8 @@
       "common": "catquest"
     },
     "471c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "472a": {
       "male": "catquest",
@@ -3302,7 +3312,8 @@
       "common": "catquest"
     },
     "530c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "531a": {
       "common": "catquest"
@@ -4619,7 +4630,8 @@
       "common": "catquest"
     },
     "745c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "746a": {
       "common": "catquest"
@@ -4759,7 +4771,8 @@
       "common": "catquest"
     },
     "766c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "767a": {
       "common": "catquest"
@@ -4974,7 +4987,8 @@
       "common": "catquest"
     },
     "812c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "813a": {
       "common": "catquest"
@@ -5037,7 +5051,8 @@
       "common": "catquest"
     },
     "824c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "825a": {
       "common": "catquest"
@@ -5075,7 +5090,8 @@
       "common": "catquest"
     },
     "830c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "831a": {
       "common": "catquest"
@@ -5162,13 +5178,15 @@
       "common": "catquest"
     },
     "844c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "845a": {
       "common": "catquest"
     },
     "845c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "846a": {
       "common": "catquest"
@@ -5266,7 +5284,8 @@
       "female": "catquest"
     },
     "862c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "863a": {
       "common": "catquest"
@@ -5317,7 +5336,8 @@
       "common": "catquest"
     },
     "870c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "871a": {
       "common": "catquest"
@@ -5500,7 +5520,8 @@
       "female": "catquest"
     },
     "899c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "900a": {
       "common": "catquest"
@@ -5524,7 +5545,8 @@
       "common": "catquest"
     },
     "903c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "905a": {
       "common": "catquest"
@@ -5544,7 +5566,8 @@
       "common": "catquest"
     },
     "907c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "913a": {
       "male": "catquest",
@@ -6015,7 +6038,8 @@
       "common": "catquest"
     },
     "995c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "997a": {
       "male": "catquest",
@@ -6235,7 +6259,8 @@
       "common": "catquest"
     },
     "1034c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "1035a": {
       "male": "catquest",
@@ -6266,8 +6291,7 @@
       "common": "catquest"
     },
     "1039c": {
-      "male": "catquest",
-      "female": "catquest"
+      "common": "catquest"
     },
     "1040a": {
       "common": "catquest"
@@ -6460,7 +6484,8 @@
       "common": "catquest"
     },
     "1069c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "1070a": {
       "common": "catquest"
@@ -6524,8 +6549,7 @@
       "common": "catquest"
     },
     "1080a": {
-      "male": "catquest",
-      "female": "catquest"
+      "common": "catquest"
     },
     "1080c": {
       "common": "catquest"
@@ -8208,7 +8232,8 @@
       "common": "catquest"
     },
     "1489a": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "1489c": {
       "common": "catquest"
@@ -8224,7 +8249,8 @@
       "common": "catquest"
     },
     "1491c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "1492a": {
       "male": "catquest",
@@ -8595,7 +8621,8 @@
       "common": "catquest"
     },
     "1647c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "1648a": {
       "common": "catquest"
@@ -9053,7 +9080,8 @@
       "common": "catquest"
     },
     "1803c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "1804a": {
       "male": "catquest",
@@ -10653,7 +10681,8 @@
       "common": "catquest"
     },
     "2924c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "2925a": {
       "common": "catquest"
@@ -11189,7 +11218,8 @@
       "common": "catquest"
     },
     "3090c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "3091a": {
       "common": "catquest"
@@ -11309,7 +11339,8 @@
       "common": "catquest"
     },
     "3105c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "3105p": {
       "common": "wayfarer"
@@ -11352,7 +11383,8 @@
       "common": "catquest"
     },
     "3112c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "3113a": {
       "common": "catquest"
@@ -11389,7 +11421,8 @@
       "common": "catquest"
     },
     "3118c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "3119a": {
       "common": "catquest"
@@ -11583,13 +11616,15 @@
       "common": "catquest"
     },
     "3369c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "3370a": {
       "common": "catquest"
     },
     "3370c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "3371a": {
       "common": "wayfarer"
@@ -12479,7 +12514,8 @@
       "common": "catquest"
     },
     "3922c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "3923a": {
       "common": "catquest"
@@ -12492,7 +12528,8 @@
       "common": "catquest"
     },
     "3924c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "3941a": {
       "common": "wayfarer"
@@ -14937,7 +14974,8 @@
       "female": "catquest"
     },
     "5625c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "5626a": {
       "male": "catquest",
@@ -15227,7 +15265,8 @@
       "common": "catquest"
     },
     "5723c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "5724a": {
       "common": "catquest"
@@ -15262,7 +15301,8 @@
       "female": "catquest"
     },
     "5728c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "5729a": {
       "common": "catquest"
@@ -15489,7 +15529,8 @@
       "common": "catquest"
     },
     "5922a": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "5922c": {
       "common": "catquest"
@@ -15846,7 +15887,8 @@
       "female": "catquest"
     },
     "6086c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "6087a": {
       "common": "catquest"
@@ -16665,7 +16707,8 @@
       "female": "catquest"
     },
     "6628c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "6629a": {
       "common": "catquest"
@@ -20835,7 +20878,8 @@
       "female": "catquest"
     },
     "92482c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "92483a": {
       "male": "catquest",
@@ -20850,7 +20894,8 @@
       "female": "catquest"
     },
     "92484c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "92485a": {
       "male": "catquest",
@@ -21077,7 +21122,8 @@
       "common": "catquest"
     },
     "92701c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "92703a": {
       "male": "catquest",
@@ -21216,8 +21262,7 @@
       "common": "catquest"
     },
     "92850c": {
-      "male": "catquest",
-      "female": "catquest"
+      "common": "catquest"
     },
     "92860a": {
       "common": "catquest"
@@ -21402,7 +21447,8 @@
       "female": "catquest"
     },
     "93739c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "93740a": {
       "common": "catquest"
@@ -22360,7 +22406,8 @@
       "female": "catquest"
     },
     "94864c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "94896a": {
       "male": "catquest",
@@ -22728,14 +22775,16 @@
       "common": "catquest"
     },
     "96046c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "96047a": {
       "male": "catquest",
       "female": "catquest"
     },
     "96047c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "96050a": {
       "male": "catquest",
@@ -23224,7 +23273,8 @@
       "common": "catquest"
     },
     "97253c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "97257a": {
       "common": "catquest"
@@ -23236,7 +23286,8 @@
       "common": "catquest"
     },
     "97263c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "97275a": {
       "common": "catquest"
@@ -23249,7 +23300,8 @@
       "common": "catquest"
     },
     "97277c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "97279a": {
       "common": "catquest"
@@ -23579,7 +23631,8 @@
       "common": "catquest"
     },
     "97935c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "97936a": {
       "common": "catquest"
@@ -23619,7 +23672,8 @@
       "female": "catquest"
     },
     "97942c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "97943a": {
       "male": "catquest",
@@ -23633,7 +23687,8 @@
       "common": "catquest"
     },
     "97944c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "97946a": {
       "male": "catquest",
@@ -23859,7 +23914,8 @@
       "female": "catquest"
     },
     "98024c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "98025a": {
       "common": "catquest"
@@ -24089,7 +24145,8 @@
       "common": "catquest"
     },
     "98326c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "98340a": {
       "male": "catquest",
@@ -24511,7 +24568,8 @@
       "female": "catquest"
     },
     "99144c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "99152a": {
       "common": "catquest"
@@ -24565,7 +24623,8 @@
       "common": "catquest"
     },
     "99260a": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "99260c": {
       "male": "catquest",

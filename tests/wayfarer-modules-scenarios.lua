@@ -43,6 +43,8 @@ for mask = 0, 7 do
     assert(warning.Warning.visible == (missingCount > 0))
     assert(warning.available == (mask > 0))
     if missingCount > 0 then
+        catalogue.Back.scripts.OnClick()
+        assert(warning:IsVisible(), 'Hover targets must be on the visible options page')
         warning.scripts.OnEnter(warning)
         assert(GameTooltip.visible and GameTooltip:IsOwned(warning))
         for _, name in ipairs(names) do
@@ -51,6 +53,7 @@ for mask = 0, 7 do
         warning.scripts.OnLeave(warning)
         assert(not GameTooltip.visible)
     end
+    WV:OpenVoiceComparison('990')
     for index, name in ipairs(names) do
         local id = 99000 + index
         assert(W.QuestIDs(true,true)[id] and C.Known(id,'wayfarer'))

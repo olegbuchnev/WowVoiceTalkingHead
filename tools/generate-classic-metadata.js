@@ -39,7 +39,8 @@ function measure(file, directory) {
 function collect(source, root = defaultRoot) {
   const provenance = readSourceVersion(source, ['WowVoiceSounds_Vanilla.toc', 'WowVoiceSounds.toc']);
   const names = indexedFiles(root);
-  const actual = fs.readdirSync(source).filter(name => /\.ogg$/i.test(name)).sort();
+  // Official packs may include their own stop sound; playback uses our service asset.
+  const actual = fs.readdirSync(source).filter(name => /\.ogg$/i.test(name) && name.toLowerCase() !== 'silence.ogg').sort();
   const expectedSet = new Set(names), actualSet = new Set(actual);
   const missing = names.filter(name => !actualSet.has(name));
   const extra = actual.filter(name => !expectedSet.has(name));

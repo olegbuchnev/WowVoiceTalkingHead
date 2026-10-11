@@ -9,7 +9,7 @@ try {
   fs.writeFileSync(path.join(dir,name+'.toc'),'## Version: 3.1.0\n');
   const index='Wayfarer.RegisterPack({name="'+name+'",format=1,version="3.1.0",model="v4",q={[5]={a={m=1,f=2,v="Голос",s=7}},[6]={c={d=3}}}})';
   fs.writeFileSync(path.join(dir,'Index.lua'),index);
-  const sample=fs.readFileSync(path.join(__dirname,'../soundpack/179a.ogg'));
+  const sample=fs.readFileSync(path.join(__dirname,'../src/Media/silence.ogg'));
   for(const file of ['5-a-m.ogg','5-a-f.ogg','6-c.ogg']) fs.writeFileSync(path.join(dir,'q',file),sample);
   assert.equal(readPack(Buffer.from(index)).q[5].a.v,'Голос');
   const result=generate(path.join(root,'input'),output);

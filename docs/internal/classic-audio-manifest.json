@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "source": "WowVoiceSounds",
-  "version": "1.0.1",
-  "sourceToc": "WowVoiceSounds_Vanilla.toc",
+  "version": "0.1.0",
+  "sourceToc": "WowVoiceSounds.toc",
   "selection": "All a/p/c sections in the shipped Classic quest index; audio files are not modified",
   "measurement": "Vorbis final granule / sample rate, rounded to 6 decimal places; no playback padding",
   "quests": 4205,

@@ -31,6 +31,7 @@ function CreateFrame(kind,name,...)
             maxLoading=math.max(maxLoading,loading)
             assert(loading<=2, 'too many pending background model loads')
         end
+        f.SetDisplayInfo = f.SetCreature
     end
     return f
 end
@@ -49,7 +50,7 @@ WV:Silence(); slots=0
 pump(4)
 assert(slots==100, '25 quests must share exactly one 100-slot inventory scan')
 assert(requests>0 and maxLoading<=2 and work.maxSliceMS<=1.01)
-assert(work.metrics['portrait-scan'].steps>4000, 'reverse index must be prepared incrementally')
+assert(work.metrics['portrait-scan'].steps<500, 'unified database must avoid rebuilding a reverse quest index at login')
 for i=1,50 do portraitEvent('QUEST_LOG_UPDATE') end
 pump(1)
 assert(slots==200, 'event burst must cause one fresh inventory pass')

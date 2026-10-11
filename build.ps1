@@ -1,22 +1,21 @@
 [CmdletBinding()]
 param(
-  [ValidateSet('Validate', 'Test', 'DeployAddon', 'Package', 'PackageAddon')]
+  [ValidateSet('Validate', 'Test', 'DeployAddon', 'PackageAddon', 'CheckSources')]
   [string]$Task = 'Validate',
   [ValidateSet('ForeverBeta')]
   [string]$Target = 'ForeverBeta',
   [string]$ConfigPath,
   [switch]$LocalDebug, # Backward-compatible no-op: the voice catalogue now ships to everyone.
-  [switch]$QueueLab # Development-only simulated quest queue, never packaged.
+  [switch]$QueueLab, # Development-only simulated quest queue, never packaged.
+  [switch]$SkipSourceCheck # Offline/repeated builds; explicit CheckSources always checks.
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $RepoRoot = [IO.Path]::GetFullPath($PSScriptRoot)
 $AddonSource = Join-Path $RepoRoot 'src'
-$SoundSource = Join-Path $RepoRoot 'soundpack'
 $LegacyDebugFiles = @('CatQuestComparison.lua', 'LocalDebug.lua')
 $ArtifactsRoot = Join-Path $RepoRoot 'artifacts'
-$SoundTocs = @('WowVoiceSounds.toc', 'WowVoiceSounds_Mainline.toc')
 $QueueLabModules = @('State.lua', 'Runtime.lua', 'Window.lua', 'Commands.lua')
 $QueueLabExplicit = $PSBoundParameters.ContainsKey('QueueLab')
 if ($QueueLab -and $Task -ne 'DeployAddon') {
@@ -85,24 +84,14 @@ function Get-AddonVersion {
 }
 
 function Test-AddonLayout {
-  param([switch]$AddonOnly)
-  $classicFiles = @{}
-  $classicQuests = @{}
-  foreach ($match in [regex]::Matches([IO.File]::ReadAllText((Join-Path $AddonSource 'Durations.lua')), '\["([0-9]+[apc])"\]')) {
-    $name = $match.Groups[1].Value + '.ogg'
-    $classicFiles[$name] = $true
-    $classicQuests[($match.Groups[1].Value -replace '[apc]$', '')] = $true
-    $audio = Join-Path $SoundSource $name
-    if (-not $AddonOnly -and (-not (Test-Path -LiteralPath $audio -PathType Leaf) -or (Get-Item -LiteralPath $audio).Length -eq 0)) {
-      throw "Missing Classic audio: $name. Run tools/import-classic-audio.js with the extracted WowVoiceSounds directory."
-    }
+  if (-not ([IO.File]::ReadAllText((Join-Path $AddonSource 'Durations.lua')) -match '\["[0-9]+[apc]"\]')) {
+    throw 'Empty Classic audio index.'
   }
-  if ($classicFiles.Count -eq 0) { throw 'Empty Classic audio index.' }
   $runtimeSilence = Join-Path $AddonSource 'Media\silence.ogg'
   if (-not (Test-Path -LiteralPath $runtimeSilence -PathType Leaf) -or (Get-Item -LiteralPath $runtimeSilence).Length -eq 0) {
     throw 'Missing service audio: TalkingHeadRu/Media/silence.ogg'
   }
-  $sources = if ($AddonOnly) { @($AddonSource) } else { @($AddonSource, $SoundSource) }
+  $sources = @($AddonSource)
   foreach ($source in $sources) {
     if (-not (Test-Path -LiteralPath $source -PathType Container)) { throw "Missing source: $source" }
     Assert-NoReparseTree $source
@@ -112,9 +101,8 @@ function Test-AddonLayout {
         throw "Non-runtime file in package source: $($file.FullName)"
       }
       if ($file.Extension -eq '.ogg') {
-        $isClassic = (Test-PathEquals $file.DirectoryName $SoundSource) -and $classicFiles.ContainsKey($file.Name)
         $isServiceAudio = Test-PathEquals $file.FullName $runtimeSilence
-        if (-not $isClassic -and -not $isServiceAudio) { throw "Unexpected audio in package source: $($file.FullName)" }
+        if (-not $isServiceAudio) { throw "Unexpected audio in package source: $($file.FullName)" }
       }
     }
   }
@@ -134,22 +122,7 @@ function Test-AddonLayout {
       }
     }
   }
-  if ($AddonOnly) {
-    Write-Host "Validated TalkingHead Ru $(Get-AddonVersion) runtime for addon-only update."
-    return
-  }
-  $soundFiles = @(Get-ChildItem -LiteralPath $SoundSource -Force)
-  if ($soundFiles.Count -ne ($classicFiles.Count + 2)) { throw 'soundpack must contain indexed Classic audio and two Forever TOCs only.' }
-  foreach ($name in $SoundTocs) {
-    $toc = Join-Path $SoundSource $name
-    if (-not (Test-Path -LiteralPath $toc -PathType Leaf)) { throw "Missing sound TOC: $name" }
-    $lines = @(Get-Content -LiteralPath $toc -Encoding UTF8)
-    if (-not ($lines -match '^## Interface: 16001\s*$')) { throw "Wrong sound Interface: $name" }
-    if (@($lines | Where-Object { $_.Trim() -and -not $_.Trim().StartsWith('#') }).Count) {
-      throw "Sound TOC must contain metadata only: $name"
-    }
-  }
-  Write-Host "Validated TalkingHead Ru $(Get-AddonVersion) and $($classicFiles.Count) Classic recordings."
+  Write-Host "Validated TalkingHead Ru $(Get-AddonVersion) runtime; voice libraries are external."
 }
 
 function Resolve-AddOnsDirectory {
@@ -270,7 +243,6 @@ function Invoke-Deploy {
 }
 
 function Invoke-Package {
-  param([switch]$AddonOnly)
   Assert-DirectChildPath $ArtifactsRoot $RepoRoot 'artifacts'
   Assert-NoReparseTree $ArtifactsRoot
   New-Item -ItemType Directory -Path $ArtifactsRoot -Force | Out-Null
@@ -284,12 +256,7 @@ function Invoke-Package {
   try {
     Copy-Item -LiteralPath $AddonSource -Destination (Join-Path $stage 'TalkingHeadRu') -Recurse
     $packagePaths = @((Join-Path $stage 'TalkingHeadRu'))
-    if (-not $AddonOnly) {
-      Copy-Item -LiteralPath $SoundSource -Destination (Join-Path $stage 'WowVoiceSounds') -Recurse
-      $packagePaths += (Join-Path $stage 'WowVoiceSounds')
-    }
-    $suffix = if ($AddonOnly) { '' } else { '-full' }
-    $zipName = 'TalkingHeadRu-' + (Get-AddonVersion) + $suffix + '.zip'
+    $zipName = 'TalkingHeadRu-' + (Get-AddonVersion) + '.zip'
     $pendingZip = Join-Path $stage $zipName
     $zip = Join-Path $release $zipName
     Compress-Archive -LiteralPath $packagePaths -DestinationPath $pendingZip
@@ -302,8 +269,7 @@ function Invoke-Package {
     foreach ($directory in @($ArtifactsRoot, $release)) {
       foreach ($old in Get-ChildItem -LiteralPath $directory -Filter '*.zip' -File) {
         $oldKind = if ($old.Name -like 'TalkingHeadRu-*-full.zip') { 'full' } elseif ($old.Name -like 'TalkingHeadRu-*.zip' -or $old.Name -like '*-addon-only.zip') { 'addon' } elseif ($old.Name -like '*-lite.zip') { 'lite' } else { 'full' }
-        $kind = if ($AddonOnly) { 'addon' } else { 'full' }
-        $sameKind = $oldKind -eq $kind
+        $sameKind = $oldKind -eq 'addon'
         if ($sameKind -and -not (Test-PathEquals $old.FullName $zip)) {
           Remove-Item -LiteralPath $old.FullName
         }
@@ -375,15 +341,26 @@ function Invoke-Tests {
     if ($LASTEXITCODE -ne 0) { throw 'Lua validation/tests failed.' }
     & (Join-Path $RepoRoot 'tests\pipeline.ps1')
     & (Join-Path $RepoRoot 'tests\release-stats.ps1')
+    & (Join-Path $RepoRoot 'tests\forever-pins-update.ps1')
   }
   finally { Pop-Location; $env:Path = $previousPath }
 }
 
-Test-AddonLayout -AddonOnly:($Task -in @('PackageAddon', 'DeployAddon'))
+if ($Task -eq 'CheckSources' -or (-not $SkipSourceCheck -and $Task -in @('Validate', 'DeployAddon', 'PackageAddon'))) {
+  try {
+    . (Join-Path $RepoRoot 'tools\check-forever-pins.ps1')
+    $sourceCheck = Invoke-ForeverPinsCheck
+    if ($Task -eq 'CheckSources' -and $sourceCheck.status -eq 'unavailable') { throw 'Source update check failed.' }
+  } catch {
+    if ($Task -eq 'CheckSources') { throw }
+    Write-Warning "Source update check unavailable: $($_.Exception.Message)"
+  }
+}
+if ($Task -eq 'CheckSources') { return }
+Test-AddonLayout
 switch ($Task) {
   'Validate' { }
   'Test' { Invoke-Tests }
   'DeployAddon' { Invoke-Deploy }
-  'Package' { Invoke-Package }
-  'PackageAddon' { Invoke-Package -AddonOnly }
+  'PackageAddon' { Invoke-Package }
 }

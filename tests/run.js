@@ -22,6 +22,8 @@ for (const runner of [
   'validate-site.js',
   'validate-audio-assets.js',
   'validate-forever-speakers.js',
+  'validate-speakers.js',
+  'validate-wayfarer-speakers.js',
   'validate-catquest-speakers.js',
   'validate-wowvoice-integration.js',
   'validate-legacy-blocker.js',

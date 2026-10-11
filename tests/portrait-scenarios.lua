@@ -53,7 +53,7 @@ assert(not questCache()[179] and questCache()[861]==saved861)
 WV:Silence()
 playerGUID='Player-1-OTHER'
 WV:ReplayQuest(861)
-assert(head.Name.text=='Скорн Белое Облако' and head.Model.creatureID==3052)
+assert(head.Name.text=='Скорн Белое Облако' and head.Model.displayID==WowVoiceSpeakers.npcs[3052].displayID)
 assert(head.Model.displayID~=saved861.displayID and not questCache()[861])
 playerGUID='Player-1-ABC'
 WV:ReplayQuest(861)
@@ -84,7 +84,7 @@ WV:Silence(); questID=179
 local oldGUID=UnitGUID
 UnitGUID=function(unit) if unit=='npc' or unit=='questnpc' then return nil end return oldGUID(unit) end
 event('QUEST_DETAIL'); portraitEvent('QUEST_ACCEPTED',179)
-assert(questCache()[179].npcID==nil and not head.Icon.visible and head.Model.creatureID==658)
+assert(questCache()[179].npcID==nil and not head.Icon.visible and head.Model.displayID==WowVoiceSpeakers.npcs[658].displayID)
 assert(head.Name.text=='Стен Крепкорук', 'Missing live NPC uses indexed giver, never the unrelated target')
 UnitGUID=oldGUID
 -- No external audio: capture still works, but no unvoiced head is shown.

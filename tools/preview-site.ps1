@@ -31,7 +31,7 @@ try {
     $text = [regex]::Replace($text, '(?m)^## Version:[^\r\n]*', "## Version: $previewVersion")
     [IO.File]::WriteAllText($toc.FullName, $text, $utf8)
   }
-  & (Join-Path $fixture 'build.ps1') -Task PackageAddon
+  & (Join-Path $fixture 'build.ps1') -Task PackageAddon -SkipSourceCheck
   New-Item -ItemType Directory -Path $downloads -Force | Out-Null
   $addon = "TalkingHeadRu-$previewVersion.zip"
   Copy-Item -LiteralPath (Join-Path $fixture "artifacts\WoWVoice\$addon") -Destination (Join-Path $downloads $addon) -Force

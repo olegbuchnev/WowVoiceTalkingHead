@@ -1,8 +1,0 @@
-## Interface: 16001
-## Title: WowVoice Sounds
-## IconTexture: Interface\AddOns\TalkingHeadRu\Media\VoiceChat-Active.tga
-## Notes: Русский Classic-аудиопак для WowVoice Forever. Файлы: <quest_id><секция>.ogg (a/p/c).
-## Author: wowvoice
-## Version: 1.0.3-forever.1
-## X-Source-Version: 1.0.1
-## X-Source-TOC: WowVoiceSounds_Vanilla.toc

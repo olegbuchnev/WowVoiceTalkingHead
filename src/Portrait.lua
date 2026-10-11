@@ -190,41 +190,14 @@ local function questStarterItem(questId)
     debugLog("item quest=" .. questId .. ": совпадение в сумках не найдено")
 end
 
-local indexedSource, indexedSpeakers
-local function addIndexedSpeaker(index, title, entry)
-    if not positive(entry.q) then return end
-    local previous = index[entry.q]
-    local npcID = positive(entry.i) and entry.i or nil
-    if previous == nil then
-        index[entry.q] = { questId = entry.q, title = title,
-            npcID = npcID, name = npcID and entry.n or nil }
-    elseif previous and previous.npcID ~= npcID then index[entry.q] = false end
+local function speakerDatabase()
+    local database = _G.WowVoiceSpeakers
+    return type(database) == "table" and database.schemaVersion == 1 and database or nil
 end
-local function prepareSpeakerIndex()
-    local source = _G.WowVoiceIndex
-    if type(source) ~= "table" or source == indexedSource then return end
-    local index = {}
-    for title, entries in pairs(source) do
-        for _, entry in ipairs(entries) do
-            addIndexedSpeaker(index, title, entry)
-            coroutine.yield()
-        end
-    end
-    if source == _G.WowVoiceIndex then indexedSource, indexedSpeakers = source, index end
-end
-local function indexedSpeaker(questId)
-    local source = _G.WowVoiceIndex
-    if type(source) ~= "table" then return end
-    if source == indexedSource then return indexedSpeakers[questId] or nil end
-    -- A click before preparation completes still resolves immediately. Look up
-    -- only this ID without allocating the full reverse index on the click path.
-    local found = {}
-    for title, entries in pairs(source) do
-        for _, entry in ipairs(entries) do
-            if entry.q == questId then addIndexedSpeaker(found, title, entry) end
-        end
-    end
-    return found[questId] or nil
+local function npcMetadata(speaker)
+    if not speaker or speaker.itemID or speaker.objectID or not positive(speaker.npcID) then return end
+    local database = speakerDatabase()
+    return database and database.npcs[speaker.npcID]
 end
 
 local function knownDisplay(quests, npcID)
@@ -233,42 +206,41 @@ local function knownDisplay(quests, npcID)
     for _, speaker in pairs(quests) do
         if speaker.npcID == npcID and not speaker.itemID and positive(speaker.displayID) then
             -- Some NPCs have multiple appearances. Reuse only an unambiguous one.
-            if displayID and displayID ~= speaker.displayID then return end
+            if displayID and displayID ~= speaker.displayID then return false end
             displayID = speaker.displayID
         end
     end
     return displayID
 end
 
-local function recoverQuestNPC(questId, record, quests, snapshot)
+local function speakerDisplay(speaker)
+    if not speaker or speaker.itemID or speaker.objectID then return end
+    if positive(speaker.displayID) then return speaker.displayID end
+    local captured = knownDisplay(characterQuests(), speaker.npcID)
+    if captured == false then return end -- conflicting live appearances: ask the client by NPC ID
+    if positive(captured) then return captured end
+    local npc = npcMetadata(speaker)
+    return npc and positive(npc.displayID) and npc.displayID or nil
+end
+
+local function recoverQuestNPC(questId, record, quests, snapshot, section)
     if record and (positive(record.displayID) or positive(record.npcID)
         or positive(record.itemID) or positive(record.objectID)) then return record end
-    local forever = _G.WowVoiceForeverSpeakers
-    local indexed
-    if type(forever) == "table" then indexed = forever[questId] end
-    -- Explicit non-NPC or multiple starters must not fall back to a possibly
-    -- different/partial Classic giver. Captured identity and exact items win.
-    if indexed == false then return record end
-    indexed = indexed or indexedSpeaker(questId)
-    local database = _G.WowVoiceCatQuestSpeakers
-    local catID = database and database.schemaVersion == 1 and database.givers[questId]
-    local npc = catID and database.npcs[catID]
-    local cat = positive(catID) and { npcID = catID,
-        name = npc and type(npc[4]) == "string" and npc[4] or nil,
-        displayID = npc and npc[3] } or nil
-    if not (indexed and positive(indexed.npcID)) then indexed = cat end
+    local database = speakerDatabase()
+    local role = (section == "p" or section == "c") and "finishers" or "givers"
+    local indexed = database and database[role][questId]
     if not (indexed and positive(indexed.npcID)) then return record end
     local recovered = {}
     if record then for key, value in pairs(record) do recovered[key] = value end end
     recovered.questId = questId
     recovered.npcID, recovered.name = indexed.npcID, indexed.name
-    recovered.title = recovered.title or indexed.title
-    if snapshot then recovered.displayID = snapshot.displays[indexed.npcID] or nil
+    if snapshot then recovered.displayID = snapshot.displays[indexed.npcID]
     else recovered.displayID = knownDisplay(quests, indexed.npcID) end
-    if indexed == cat then
-        recovered.name = recovered.name or cat.name
-        recovered.displayID = recovered.displayID or (positive(cat.displayID) and cat.displayID or nil)
+    local npc = database.npcs[indexed.npcID]
+    if recovered.displayID == nil and npc and positive(npc.displayID) then
+        recovered.displayID = npc.displayID
     end
+    if recovered.displayID == false then recovered.displayID = nil end
     -- Inferred identity stays transient, so updated metadata can correct it.
     debugLog("recovered quest=" .. questId .. " npc=" .. indexed.npcID)
     return recovered
@@ -297,7 +269,8 @@ local warmModels, warmList, warmRevision = {}, {}, 0
 local queuePortraitSpeakers, queuePortraitSignature = {}, ""
 local function portraitKey(speaker)
     if not speaker or speaker.itemID or speaker.objectID then return end
-    if positive(speaker.displayID) then return "Display" .. speaker.displayID end
+    local display = speakerDisplay(speaker)
+    if display then return "Display" .. display end
     if positive(speaker.npcID) then return "NPC" .. speaker.npcID end
 end
 local function cachedPortraitDisplay(speaker)
@@ -307,7 +280,8 @@ end
 
 function WV:GetQuestQueuePortraitDisplay(speaker)
     if not speaker then return end
-    if positive(speaker.displayID) then return speaker.displayID end
+    local display = speakerDisplay(speaker)
+    if display then return display end
     local cached = cachedPortraitDisplay(speaker)
     if positive(cached) then return cached end
     -- The visible head may already have resolved an uncached NPC itself.
@@ -383,7 +357,6 @@ local function warmPortraits()
 end
 local function scanQuestPortraits()
     local log = C_QuestLog or {}
-    prepareSpeakerIndex()
     local revision = warmRevision
     local snapshot = { items = {}, displays = {} }
     local quests = characterQuests() or {}
@@ -442,7 +415,7 @@ local function scanQuestPortraits()
     for key, speaker in pairs(wanted) do
         local job = warmModels[key]
         if not job then
-            job = { key = key, npcID = speaker.npcID, requestedDisplay = speaker.displayID }
+            job = { key = key, npcID = speaker.npcID, requestedDisplay = speakerDisplay(speaker) }
             warmModels[key] = job
         end
         job.wanted = true
@@ -550,8 +523,8 @@ function WV:CaptureQuestSpeaker(questId, section, title, text)
     -- Gossip-triggered quest details can arrive without npc/questnpc. Resolve
     -- the description's giver just as journal replay does. Keep pending as the
     -- original capture: inferred metadata must not become a permanent identity.
-    -- Progress/completion belong to the receiver, so never infer their giver.
-    local speaker = section == "a" and recoverQuestNPC(questId, record, characterQuests()) or record
+    -- Progress/completion resolve only their own receiver, never the giver.
+    local speaker = recoverQuestNPC(questId, record, characterQuests(), nil, section)
     return { questId = questId, section = section, title = title, text = text, speaker = speaker }
 end
 
@@ -561,6 +534,11 @@ function WV:GetReplaySpeaker(questId)
     local title = record and record.title
     if not title and C_QuestLog and C_QuestLog.GetTitleForQuestID then
         title = C_QuestLog.GetTitleForQuestID(questId)
+    end
+    if not title then
+        local database = speakerDatabase()
+        local giver = database and database.givers[questId]
+        title = giver and giver.title or nil
     end
     local text = record and record.description
     if C_QuestLog and C_QuestLog.GetLogIndexForQuestID
@@ -851,7 +829,7 @@ local function tryTalkingModel()
     if now < (active.modelNextTry or 0) or now > (active.modelDeadline or 0) then return end
     active.modelNextTry = now + 1
     disablePortraitBlend(model)
-    local display = speaker.displayID or cachedPortraitDisplay(speaker)
+    local display = speakerDisplay(speaker) or cachedPortraitDisplay(speaker)
     if positive(display) then
         local ok, loaded = pcall(model.SetDisplayInfo, model, display)
         if (not ok or loaded == false) and positive(speaker.npcID) then
@@ -1243,7 +1221,8 @@ function WV:StartTalkingHead(context, endsAt, duration, startedAt, preview)
     head:SetAlpha(1)
     setHeadOpacity(1)
     local speaker = context.speaker
-    local name = speaker and speaker.name or L["Описание задания"]
+    local npc = npcMetadata(speaker)
+    local name = speaker and speaker.name or (npc and npc.name) or L["Описание задания"]
     -- Some imported NPC names have enclosing brackets. Keep the source intact
     -- and remove only that outer wrapper from the displayed heading.
     L.SetContentText(head.Name, name:match("^%[([^%[%]]+)%]$") or name)

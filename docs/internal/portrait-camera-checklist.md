@@ -1,10 +1,9 @@
 # Portrait Camera Validation Checklist
 
 Internal development checklist. This file is not included in the release ZIP or
-deployed to the game: the build copies only `src/`, the sound-pack TOCs and
-`USER_README.md`.
+deployed to the game: the build copies only the runtime from `src/`.
 
-Last updated: 2026-10-01.
+Last updated: 2026-10-11.
 
 ## Confirmed in game
 
@@ -76,12 +75,27 @@ the same profile.
   for this model.
   Models `119376`, `1838570` and `124224` retain `goblin_male` unchanged.
 
-## Awaiting in-game confirmation
+- [x] Human Orphan — NPC `14305`, quest `1479`, model `124495` confirmed by
+  live diagnostics. User confirmed final framing: distance `1.5`, vertical
+  offset `0.04`, lateral offset `0.02`. Face clipping is resolved and the
+  model is centered after the rightward adjustment. This correction applies
+  to every NPC using model `124495`; other child models keep the family profile.
 
-- [ ] Human — child. Raised on Shawn feedback: profile `human_child`,
-  vertical offset `-0.025` → `0.08`, distance `1.15`, lateral `0`.
-  Covers human boy/girl models and their variants; inspect both upright and
-  downward talking poses. Adult human profiles remain separate.
+- [x] Human child — Shawn / Шоун (NPC `8965`, quest `3741`, «Ожерелье Хилари»).
+  User confirmed the current framing on 2026-10-11, after the quest `1479`
+  correction. Shawn's live model file ID was not reported. This confirmation
+  applies to the tested NPC, not every variant of the `human_child` profile.
+
+- [x] Dwarf — male. User confirmed the final height on 2026-10-11 after the
+  Prospector Ryedol and Balir Frosthammer screenshots:
+  profile `dwarf`, vertical offset `0.025` → `0.015` → `0.005`, distance `1.2`, lateral `0`.
+  The second small step follows Balir Frosthammer feedback: the top of the head
+  was still slightly clipped at `0.015`.
+  Applies to the shared male profile, including standard, HD, SDR, Dark Iron,
+  Earthen and rifleman variants. The live model file ID was not reported;
+  other variants remain individually unverified.
+
+## Awaiting in-game confirmation
 
 - [ ] Human — female. Raised on Priestess Josetta feedback: profile `human_female`,
   vertical offset `-0.025` → `0.025`, distance `1.15`, lateral `0`.

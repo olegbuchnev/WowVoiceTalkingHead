@@ -1,4 +1,4 @@
-Set-StrictMode -Version Latest
+﻿Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $project = Split-Path -Parent $PSScriptRoot
 $tempRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\', '/')
@@ -34,17 +34,7 @@ try {
   foreach ($name in @('src', 'dev', 'build.ps1')) {
     Copy-Item -LiteralPath (Join-Path $project $name) -Destination $fixture -Recurse
   }
-  # Exercise repeated packaging with a small, real-audio fixture. The full
-  # production library and its disjoint quest sets are checked by the JS suite.
-  foreach ($name in @('soundpack')) {
-    $dest = Join-Path $fixture $name
-    New-Item -ItemType Directory -Path $dest | Out-Null
-    foreach ($file in Get-ChildItem -LiteralPath (Join-Path $project $name) -File) {
-      if ($file.Extension -ne '.ogg') { Copy-Item -LiteralPath $file.FullName -Destination $dest }
-    }
-  }
-  Copy-Item -LiteralPath (Join-Path $project 'soundpack\179a.ogg') -Destination (Join-Path $fixture 'soundpack')
-  'WowVoiceDur = { ["179a"] = 12.5 }' | Set-Content -LiteralPath (Join-Path $fixture 'src\Durations.lua')
+  # No local voice libraries are present; deployed libraries are independent fixtures.
   $build = Join-Path $fixture 'build.ps1'
   $addons = Join-Path $fixture 'game\_classic_beta_\Interface\AddOns'
   $voice = Join-Path $addons 'TalkingHeadRu'
@@ -60,7 +50,7 @@ try {
   'old legacy TOC' | Set-Content -LiteralPath (Join-Path $legacy 'WowVoiceTalkingHead.toc')
   'stale' | Set-Content -LiteralPath (Join-Path $voice 'obsolete.lua')
   'workspace' | Set-Content -LiteralPath (Join-Path $voice '.idea\workspace.xml')
-  Copy-Item -LiteralPath (Join-Path $fixture 'soundpack\179a.ogg') -Destination $sounds
+  Copy-Item -LiteralPath (Join-Path $project 'src\Media\silence.ogg') -Destination (Join-Path $sounds '179a.ogg')
   'extra user audio' | Set-Content -LiteralPath (Join-Path $sounds 'custom.ogg')
   'old supplemental audio' | Set-Content -LiteralPath (Join-Path $catSounds 'keep.ogg')
   'old TOC' | Set-Content -LiteralPath (Join-Path $sounds 'WowVoiceSounds.toc')
@@ -70,7 +60,7 @@ try {
   $config = Join-Path $fixture 'targets.psd1'
   "@{ ForeverBeta = '$($addons.Replace("'", "''"))' }" | Set-Content -LiteralPath $config
 
-  & $build -Task DeployAddon -Target ForeverBeta -ConfigPath $config
+  & $build -SkipSourceCheck -Task DeployAddon -Target ForeverBeta -ConfigPath $config
   $sourcePrefix = (Join-Path $fixture 'src') + '\'
   foreach ($file in Get-ChildItem -LiteralPath (Join-Path $fixture 'src') -File -Recurse) {
     $relative = $file.FullName.Substring($sourcePrefix.Length)
@@ -95,7 +85,7 @@ try {
   Write-Host 'PASS: single-folder addon deploy, pre-write backups, Classic/extra audio/other addons/IDE state preserved.'
 
   foreach ($taskName in @('DeployAddon')) {
-    & $build -Task $taskName -LocalDebug -ConfigPath $config
+    & $build -SkipSourceCheck -Task $taskName -LocalDebug -ConfigPath $config
     foreach ($module in @('Comparison.lua', 'VoiceComparison.lua')) {
       Assert-True ((Get-FileHash -LiteralPath (Join-Path $voice $module)).Hash -eq
         (Get-FileHash -LiteralPath (Join-Path $fixture ('src\' + $module))).Hash) 'Public comparison module was not deployed.'
@@ -112,61 +102,51 @@ try {
   $retail = Join-Path $fixture 'game\_retail_\Interface\AddOns'
   New-Item -ItemType Directory -Path $retail -Force | Out-Null
   "@{ ForeverBeta = '$($retail.Replace("'", "''"))' }" | Set-Content -LiteralPath $config
-  Assert-Fails { & $build -Task Deploy -ConfigPath $config } 'Removed Deploy task was accepted.'
-  Assert-Fails { & $build -Task DeployAddon -ConfigPath $config } 'Addon-only deploy accepted Retail path.'
-  Assert-Fails { & $build -Task DeployAddon -Target Retail -ConfigPath $config } 'Retail target accepted.'
+  Assert-Fails { & $build -SkipSourceCheck -Task Deploy -ConfigPath $config } 'Removed Deploy task was accepted.'
+  Assert-Fails { & $build -SkipSourceCheck -Task DeployAddon -ConfigPath $config } 'Addon-only deploy accepted Retail path.'
+  Assert-Fails { & $build -SkipSourceCheck -Task DeployAddon -Target Retail -ConfigPath $config } 'Retail target accepted.'
   Assert-True (@(Get-ChildItem -LiteralPath $retail -Force).Count -eq 0) 'Rejected deployment wrote files.'
   $tocPath = Join-Path $fixture 'src\TalkingHeadRu.toc'
   $original = [IO.File]::ReadAllText($tocPath)
   [IO.File]::AppendAllText($tocPath, "`n..\outside.lua`n")
-  Assert-Fails { & $build -Task Validate } 'Escaping TOC path accepted.'
+  Assert-Fails { & $build -SkipSourceCheck -Task Validate } 'Escaping TOC path accepted.'
   [IO.File]::WriteAllText($tocPath, $original)
-  $accidentalOgg = Join-Path $fixture 'soundpack\999999p.ogg'
-  'not allowed' | Set-Content -LiteralPath $accidentalOgg
-  Assert-Fails { & $build -Task Package } 'Unindexed OGG was allowed in release sources.'
-  Remove-Item -LiteralPath $accidentalOgg
+  Assert-Fails { & $build -SkipSourceCheck -Task Package } 'Removed bundled package task was accepted.'
   $accidentalRuntimeOgg = Join-Path $fixture 'src\Media\voice.ogg'
   'not allowed' | Set-Content -LiteralPath $accidentalRuntimeOgg
-  try { Assert-Fails { & $build -Task PackageAddon } 'A voice recording was allowed alongside service audio.' }
+  try { Assert-Fails { & $build -SkipSourceCheck -Task PackageAddon } 'A voice recording was allowed alongside service audio.' }
   finally { Remove-Item -LiteralPath $accidentalRuntimeOgg }
   $serviceAudio = Join-Path $fixture 'src\Media\silence.ogg'
   $heldServiceAudio = Join-Path $fixture 'temporarily-held-silence.ogg'
   Move-Item -LiteralPath $serviceAudio -Destination $heldServiceAudio
   try {
-    Assert-Fails { & $build -Task PackageAddon } 'Addon-only archive without service audio was allowed.'
-    Assert-Fails { & $build -Task Package } 'Full archive without service audio was allowed.'
+    Assert-Fails { & $build -SkipSourceCheck -Task PackageAddon } 'Addon-only archive without service audio was allowed.'
   } finally { Move-Item -LiteralPath $heldServiceAudio -Destination $serviceAudio }
-  foreach ($audio in @((Join-Path $fixture 'soundpack\179a.ogg'))) {
-    $saved = Join-Path $fixture 'temporarily-held-audio.ogg'
-    Move-Item -LiteralPath $audio -Destination $saved
-    try { Assert-Fails { & $build -Task Package } 'Missing indexed audio was allowed in a complete release.' }
-    finally { Move-Item -LiteralPath $saved -Destination $audio }
-  }
-  Write-Host 'PASS: wrong client/target, escaping TOC paths, unindexed and missing audio are rejected.'
-  & $build -Task Package
+  Write-Host 'PASS: wrong client/target, escaping TOC paths and unexpected/missing runtime audio are rejected.'
+  & $build -SkipSourceCheck -Task PackageAddon
   $artifacts = Join-Path $fixture 'artifacts'
   $release = Join-Path $artifacts 'WoWVoice'
   $firstZip = @(Get-ChildItem -LiteralPath $release -Filter '*.zip' -File)[0].FullName
-  Assert-True ((Split-Path -Leaf $firstZip) -like 'TalkingHeadRu-*-full.zip') 'Full package is missing the new project name.'
+  Assert-True ((Split-Path -Leaf $firstZip) -like 'TalkingHeadRu-*.zip') 'Package is missing the project name.'
   $firstHash = (Get-FileHash -LiteralPath $firstZip).Hash
   # If an existing release cannot be replaced, it must not be truncated/deleted.
   $lock = [IO.File]::Open($firstZip, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::None)
-  try { Assert-Fails { & $build -Task Package } 'Replacing a locked release should fail.' }
+  try { Assert-Fails { & $build -SkipSourceCheck -Task PackageAddon } 'Replacing a locked release should fail.' }
   finally { $lock.Dispose() }
   Assert-True ((Get-FileHash -LiteralPath $firstZip).Hash -eq $firstHash) 'Failed package damaged the previous release.'
   Assert-True (@(Get-ChildItem -LiteralPath $artifacts -Directory).Count -eq 1) 'Failed package left staging files.'
   # Give the output folder a known creation time to detect delete/recreate.
   [IO.Directory]::SetCreationTimeUtc($release, [datetime]::UtcNow.AddDays(-2))
   $folderCreated = [IO.Directory]::GetCreationTimeUtc($release)
-  'old artifact' | Set-Content -LiteralPath (Join-Path $artifacts 'old.zip')
-  'old release' | Set-Content -LiteralPath (Join-Path $release 'old.zip')
-  & $build -Task Package
+  'old artifact' | Set-Content -LiteralPath (Join-Path $artifacts 'TalkingHeadRu-old-addon-only.zip')
+  'old release' | Set-Content -LiteralPath (Join-Path $release 'TalkingHeadRu-old-addon-only.zip')
+  & $build -SkipSourceCheck -Task PackageAddon
   Assert-True ([IO.Directory]::GetCreationTimeUtc($release) -eq $folderCreated) 'Package recreated the shared folder.'
-  Assert-True (-not (Test-Path -LiteralPath (Join-Path $artifacts 'old.zip'))) 'Package did not clear old artifacts.'
-  Assert-True (-not (Test-Path -LiteralPath (Join-Path $release 'old.zip'))) 'Package did not clear old releases.'
+  Assert-True (-not (Test-Path -LiteralPath (Join-Path $artifacts 'TalkingHeadRu-old-addon-only.zip'))) 'Package did not clear old artifacts.'
+  Assert-True (-not (Test-Path -LiteralPath (Join-Path $release 'TalkingHeadRu-old-addon-only.zip'))) 'Package did not clear old releases.'
   # A new version gets a new filename inside the same shared folder.
   [IO.File]::WriteAllText($tocPath, ($original -replace '(?m)^(## Version: [^\r\n]+)', '$1-test'))
-  & $build -Task Package
+  & $build -SkipSourceCheck -Task PackageAddon
   Assert-True (-not (Test-Path -LiteralPath $firstZip)) 'Previous version survived a successful package.'
   Assert-True ([IO.Directory]::GetCreationTimeUtc($release) -eq $folderCreated) 'Version change recreated the shared folder.'
   $archives = @(Get-ChildItem -LiteralPath $release -Filter '*.zip' -File)
@@ -175,9 +155,6 @@ try {
   foreach ($file in Get-ChildItem -LiteralPath (Join-Path $fixture 'src') -File -Recurse) {
     $relative = $file.FullName.Substring($sourcePrefix.Length).Replace('\', '/')
     $expected['TalkingHeadRu/' + $relative] = $file.FullName
-  }
-  foreach ($file in Get-ChildItem -LiteralPath (Join-Path $fixture 'soundpack') -File) {
-    $expected['WowVoiceSounds/' + $file.Name] = $file.FullName
   }
   Add-Type -AssemblyName System.IO.Compression.FileSystem
   $archive = [IO.Compression.ZipFile]::OpenRead($archives[0].FullName)
@@ -198,105 +175,91 @@ try {
   finally { $sha.Dispose(); $archive.Dispose() }
   Assert-True (@(Get-ChildItem -LiteralPath $artifacts -Force).Count -eq 1) 'Expected only the shared folder in artifacts.'
   Assert-True (@(Get-ChildItem -LiteralPath $release -Force).Count -eq 1) 'Expected only the latest ZIP in the shared folder.'
-  Write-Host 'PASS: ZIP contains only TalkingHeadRu and Classic audio; runtime hashes match.'
+  Write-Host 'PASS: ZIP contains only TalkingHeadRu; runtime hashes match.'
   Write-Host 'PASS: stable shared folder, version replacement, legacy ZIP cleanup and failed-build preservation.'
 
-  $fullZip = $archives[0].FullName
+  # Historical full archives remain untouched, but new ones cannot be generated.
+  $fullZip = Join-Path $release 'TalkingHeadRu-historical-full.zip'
+  'historical archive' | Set-Content -LiteralPath $fullZip
   $fullHash = (Get-FileHash -LiteralPath $fullZip).Hash
-  # Exercise an update build with the Classic sound source directory absent.
-  foreach ($name in @('soundpack')) {
-    $from = [IO.Path]::GetFullPath((Join-Path $fixture $name))
-    $held = [IO.Path]::GetFullPath((Join-Path $fixture ($name + '-held')))
-    Assert-True ((Split-Path -Parent $from) -eq $fixture -and (Split-Path -Parent $held) -eq $fixture) 'Unsafe fixture rename.'
-    Rename-Item -LiteralPath $from -NewName ($name + '-held')
+  # Deploy code with no audio sources; installed audio and its TOCs must not be written.
+  "@{ ForeverBeta = '$($addons.Replace("'", "''"))' }" | Set-Content -LiteralPath $config
+  $audioBefore = @{}
+  foreach ($file in Get-ChildItem -LiteralPath $sounds, $catSounds -File -Recurse) {
+    $audioBefore[$file.FullName] = @((Get-FileHash -LiteralPath $file.FullName).Hash, $file.LastWriteTimeUtc.Ticks)
   }
-  try {
-    # Deploy code with no audio sources; installed audio and its TOCs must not be written.
-    "@{ ForeverBeta = '$($addons.Replace("'", "''"))' }" | Set-Content -LiteralPath $config
-    $audioBefore = @{}
-    foreach ($file in Get-ChildItem -LiteralPath $sounds, $catSounds -File -Recurse) {
-      $audioBefore[$file.FullName] = @((Get-FileHash -LiteralPath $file.FullName).Hash, $file.LastWriteTimeUtc.Ticks)
-    }
-    'before addon-only deploy' | Set-Content -LiteralPath $oldCore
-    'stale' | Set-Content -LiteralPath (Join-Path $voice 'obsolete.lua')
-    $previousBackups = @(Get-ChildItem -LiteralPath (Join-Path $fixture 'backups') -Directory).FullName
-    & $build -Task DeployAddon -Target ForeverBeta -ConfigPath $config
-    foreach ($file in Get-ChildItem -LiteralPath (Join-Path $fixture 'src') -File -Recurse) {
-      $relative = $file.FullName.Substring($sourcePrefix.Length)
-      Assert-True ((Get-FileHash -LiteralPath $file.FullName).Hash -eq
-        (Get-FileHash -LiteralPath (Join-Path $voice $relative)).Hash) "Addon-only deployment mismatch: $relative"
-    }
-    Assert-True (-not (Test-Path -LiteralPath (Join-Path $voice 'obsolete.lua'))) 'Addon-only deploy kept stale code.'
-    Assert-True (-not (Test-Path -LiteralPath (Join-Path $voice 'LocalDebug.lua'))) 'Normal deploy kept local debug code.'
-    Assert-True (Test-Path -LiteralPath (Join-Path $voice 'Comparison.lua')) 'Normal deploy missed comparison code.'
-    Assert-True (-not (Test-Path -LiteralPath (Join-Path $voice 'CatQuestComparison.lua'))) 'Normal deploy kept comparison metadata.'
-    Assert-True (Test-Path -LiteralPath (Join-Path $voice '.idea\workspace.xml')) 'Addon-only deploy removed IDE state.'
-    $audioAfter = @(Get-ChildItem -LiteralPath $sounds, $catSounds -File -Recurse)
-    Assert-True ($audioAfter.Count -eq $audioBefore.Count) 'Addon-only deploy changed audio file count.'
-    foreach ($file in $audioAfter) {
-      Assert-True ($audioBefore.ContainsKey($file.FullName)) 'Addon-only deploy created an audio file.'
-      $before = $audioBefore[$file.FullName]
-      Assert-True ((Get-FileHash -LiteralPath $file.FullName).Hash -eq $before[0] -and
-        $file.LastWriteTimeUtc.Ticks -eq $before[1]) "Addon-only deploy wrote audio: $($file.Name)"
-    }
-    $addonBackups = @(Get-ChildItem -LiteralPath (Join-Path $fixture 'backups') -Directory |
-      Where-Object { $_.FullName -notin $previousBackups })
-    Assert-True ($addonBackups.Count -eq 1) 'Expected one addon-only backup.'
-    $addonBackup = $addonBackups[0].FullName
-    Assert-True ((Get-Content -LiteralPath (Join-Path $addonBackup 'TalkingHeadRu\Core.lua') -Raw).Trim() -eq
-      'before addon-only deploy') 'Addon-only backup lost old code.'
-    Assert-True (@(Get-ChildItem -LiteralPath $addonBackup -Force).Count -eq 2 -and
-      (Test-Path -LiteralPath (Join-Path $addonBackup 'destination.txt'))) 'Addon-only backup contains unexpected files.'
-    Write-Host 'PASS: addon-only deploy without audio sources, runtime sync, backup, IDE state and untouched audio contents/timestamps.'
+  'before addon-only deploy' | Set-Content -LiteralPath $oldCore
+  'stale' | Set-Content -LiteralPath (Join-Path $voice 'obsolete.lua')
+  $previousBackups = @(Get-ChildItem -LiteralPath (Join-Path $fixture 'backups') -Directory).FullName
+  & $build -SkipSourceCheck -Task DeployAddon -Target ForeverBeta -ConfigPath $config
+  foreach ($file in Get-ChildItem -LiteralPath (Join-Path $fixture 'src') -File -Recurse) {
+    $relative = $file.FullName.Substring($sourcePrefix.Length)
+    Assert-True ((Get-FileHash -LiteralPath $file.FullName).Hash -eq
+      (Get-FileHash -LiteralPath (Join-Path $voice $relative)).Hash) "Addon-only deployment mismatch: $relative"
+  }
+  Assert-True (-not (Test-Path -LiteralPath (Join-Path $voice 'obsolete.lua'))) 'Addon-only deploy kept stale code.'
+  Assert-True (-not (Test-Path -LiteralPath (Join-Path $voice 'LocalDebug.lua'))) 'Normal deploy kept local debug code.'
+  Assert-True (Test-Path -LiteralPath (Join-Path $voice 'Comparison.lua')) 'Normal deploy missed comparison code.'
+  Assert-True (-not (Test-Path -LiteralPath (Join-Path $voice 'CatQuestComparison.lua'))) 'Normal deploy kept comparison metadata.'
+  Assert-True (Test-Path -LiteralPath (Join-Path $voice '.idea\workspace.xml')) 'Addon-only deploy removed IDE state.'
+  $audioAfter = @(Get-ChildItem -LiteralPath $sounds, $catSounds -File -Recurse)
+  Assert-True ($audioAfter.Count -eq $audioBefore.Count) 'Addon-only deploy changed audio file count.'
+  foreach ($file in $audioAfter) {
+    Assert-True ($audioBefore.ContainsKey($file.FullName)) 'Addon-only deploy created an audio file.'
+    $before = $audioBefore[$file.FullName]
+    Assert-True ((Get-FileHash -LiteralPath $file.FullName).Hash -eq $before[0] -and
+      $file.LastWriteTimeUtc.Ticks -eq $before[1]) "Addon-only deploy wrote audio: $($file.Name)"
+  }
+  $addonBackups = @(Get-ChildItem -LiteralPath (Join-Path $fixture 'backups') -Directory |
+    Where-Object { $_.FullName -notin $previousBackups })
+  Assert-True ($addonBackups.Count -eq 1) 'Expected one addon-only backup.'
+  $addonBackup = $addonBackups[0].FullName
+  Assert-True ((Get-Content -LiteralPath (Join-Path $addonBackup 'TalkingHeadRu\Core.lua') -Raw).Trim() -eq
+    'before addon-only deploy') 'Addon-only backup lost old code.'
+  Assert-True (@(Get-ChildItem -LiteralPath $addonBackup -Force).Count -eq 2 -and
+    (Test-Path -LiteralPath (Join-Path $addonBackup 'destination.txt'))) 'Addon-only backup contains unexpected files.'
+  Write-Host 'PASS: addon-only deploy without audio sources, runtime sync, backup, IDE state and untouched audio contents/timestamps.'
 
-    $oldSuffixZip = Join-Path $release 'TalkingHeadRu-previous-addon-only.zip'
-    'obsolete suffix' | Set-Content -LiteralPath $oldSuffixZip
-    & $build -Task PackageAddon
-    Assert-True (-not (Test-Path -LiteralPath $oldSuffixZip)) 'Old addon-only archive survived packaging.'
-    $updateZip = @(Get-ChildItem -LiteralPath $release -Filter 'TalkingHeadRu-*.zip' -File | Where-Object { $_.Name -notlike '*-full.zip' })[0].FullName
-    $packageVersion = [regex]::Match([IO.File]::ReadAllText($tocPath), '(?m)^## Version:\s*(\S+)').Groups[1].Value
-    Assert-True ((Split-Path -Leaf $updateZip) -eq "TalkingHeadRu-$packageVersion.zip") 'PackageAddon filename must contain only project name and version.'
-    Assert-True ((Get-FileHash -LiteralPath $fullZip).Hash -eq $fullHash) 'Addon update changed full release.'
-    $archive = [IO.Compression.ZipFile]::OpenRead($updateZip)
-    Assert-NoDeveloperCommands $archive
-    $sha = [Security.Cryptography.SHA256]::Create()
-    try {
-      $entries = @($archive.Entries | Where-Object { $_.Name })
-      $runtimeFiles = @(Get-ChildItem -LiteralPath (Join-Path $fixture 'src') -File -Recurse)
-      Assert-True ($entries.Count -eq $runtimeFiles.Count) 'Addon update has unexpected entries.'
-      foreach ($entry in $entries) {
-        $name = $entry.FullName.Replace('\', '/')
-        Assert-True ($name.StartsWith('TalkingHeadRu/') -and
-          ($name -notmatch '\.ogg$' -or $name -eq 'TalkingHeadRu/Media/silence.ogg')) 'Voice recordings or unrelated folder in addon update.'
-        $stream = $entry.Open()
-        try { $hash = [BitConverter]::ToString($sha.ComputeHash($stream)).Replace('-', '') }
-        finally { $stream.Dispose() }
-        Assert-True ($hash -eq (Get-FileHash -LiteralPath $expected[$name]).Hash) "Update content mismatch: $name"
-      }
-    } finally { $sha.Dispose(); $archive.Dispose() }
-    $updateHash = (Get-FileHash -LiteralPath $updateZip).Hash
-    $lock = [IO.File]::Open($updateZip, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::None)
-    try { Assert-Fails { & $build -Task PackageAddon } 'Locked addon update was replaced.' }
-    finally { $lock.Dispose() }
-    Assert-True ((Get-FileHash -LiteralPath $updateZip).Hash -eq $updateHash) 'Failed update damaged previous ZIP.'
-    [IO.File]::AppendAllText($tocPath, "`n..\outside.lua`n")
-    try { Assert-Fails { & $build -Task PackageAddon } 'Update accepted escaping TOC entry.' }
-    finally { [IO.File]::WriteAllText($tocPath, $original) }
-    & $build -Task PackageAddon
-    Assert-True (-not (Test-Path -LiteralPath $updateZip)) 'Old addon-only version was not removed.'
-    $updateZip = @(Get-ChildItem -LiteralPath $release -Filter 'TalkingHeadRu-*.zip' -File | Where-Object { $_.Name -notlike '*-full.zip' })[0].FullName
-    $updateHash = (Get-FileHash -LiteralPath $updateZip).Hash
-  }
-  finally {
-    foreach ($name in @('soundpack')) {
-      Rename-Item -LiteralPath (Join-Path $fixture ($name + '-held')) -NewName $name
+  $oldSuffixZip = Join-Path $release 'TalkingHeadRu-previous-addon-only.zip'
+  'obsolete suffix' | Set-Content -LiteralPath $oldSuffixZip
+  & $build -SkipSourceCheck -Task PackageAddon
+  Assert-True (-not (Test-Path -LiteralPath $oldSuffixZip)) 'Old addon-only archive survived packaging.'
+  $updateZip = @(Get-ChildItem -LiteralPath $release -Filter 'TalkingHeadRu-*.zip' -File | Where-Object { $_.Name -notlike '*-full.zip' })[0].FullName
+  $packageVersion = [regex]::Match([IO.File]::ReadAllText($tocPath), '(?m)^## Version:\s*(\S+)').Groups[1].Value
+  Assert-True ((Split-Path -Leaf $updateZip) -eq "TalkingHeadRu-$packageVersion.zip") 'PackageAddon filename must contain only project name and version.'
+  Assert-True ((Get-FileHash -LiteralPath $fullZip).Hash -eq $fullHash) 'Addon update changed full release.'
+  $archive = [IO.Compression.ZipFile]::OpenRead($updateZip)
+  Assert-NoDeveloperCommands $archive
+  $sha = [Security.Cryptography.SHA256]::Create()
+  try {
+    $entries = @($archive.Entries | Where-Object { $_.Name })
+    $runtimeFiles = @(Get-ChildItem -LiteralPath (Join-Path $fixture 'src') -File -Recurse)
+    Assert-True ($entries.Count -eq $runtimeFiles.Count) 'Addon update has unexpected entries.'
+    foreach ($entry in $entries) {
+      $name = $entry.FullName.Replace('\', '/')
+      Assert-True ($name.StartsWith('TalkingHeadRu/') -and
+        ($name -notmatch '\.ogg$' -or $name -eq 'TalkingHeadRu/Media/silence.ogg')) 'Voice recordings or unrelated folder in addon update.'
+      $stream = $entry.Open()
+      try { $hash = [BitConverter]::ToString($sha.ComputeHash($stream)).Replace('-', '') }
+      finally { $stream.Dispose() }
+      Assert-True ($hash -eq (Get-FileHash -LiteralPath $expected[$name]).Hash) "Update content mismatch: $name"
     }
-  }
-  & $build -Task Package
-  Assert-True ((Get-FileHash -LiteralPath $updateZip).Hash -eq $updateHash) 'Full package changed addon-only update.'
-  Assert-True (@(Get-ChildItem -LiteralPath $release -Filter '*.zip' -File).Count -eq 2) 'Expected one full release and one update.'
+  } finally { $sha.Dispose(); $archive.Dispose() }
+  $updateHash = (Get-FileHash -LiteralPath $updateZip).Hash
+  $lock = [IO.File]::Open($updateZip, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::None)
+  try { Assert-Fails { & $build -SkipSourceCheck -Task PackageAddon } 'Locked addon update was replaced.' }
+  finally { $lock.Dispose() }
+  Assert-True ((Get-FileHash -LiteralPath $updateZip).Hash -eq $updateHash) 'Failed update damaged previous ZIP.'
+  [IO.File]::AppendAllText($tocPath, "`n..\outside.lua`n")
+  try { Assert-Fails { & $build -SkipSourceCheck -Task PackageAddon } 'Update accepted escaping TOC entry.' }
+  finally { [IO.File]::WriteAllText($tocPath, $original) }
+  & $build -SkipSourceCheck -Task PackageAddon
+  Assert-True (-not (Test-Path -LiteralPath $updateZip)) 'Old addon-only version was not removed.'
+  $updateZip = @(Get-ChildItem -LiteralPath $release -Filter 'TalkingHeadRu-*.zip' -File | Where-Object { $_.Name -notlike '*-full.zip' })[0].FullName
+  $updateHash = (Get-FileHash -LiteralPath $updateZip).Hash
+  Assert-True (@(Get-ChildItem -LiteralPath $release -Filter '*.zip' -File).Count -eq 2) 'Expected one historical archive and one current addon release.'
   Assert-True ([IO.Directory]::GetCreationTimeUtc($release) -eq $folderCreated) 'Addon packaging recreated shared folder.'
-  Write-Host 'PASS: addon-only build without audio sources, runtime hashes, no root README, validation, failed-build preservation and independent archive replacement.'
+  Write-Host 'PASS: addon-only build without audio sources, runtime hashes, no root README, validation, failed-build preservation and historical archive preservation.'
   # Exercise environment-based deployment only inside the temporary fixture.
   $previousAddonsEnvironment = $env:WOWVOICE_FOREVER_BETA_ADDONS
   $previousQueueLabEnvironment = $env:WOWVOICE_QUEUE_LAB
@@ -306,48 +269,48 @@ try {
   try {
     $env:WOWVOICE_QUEUE_LAB = $null
     $env:WOWVOICE_FOREVER_BETA_ADDONS = $null
-    Assert-Fails { & $build -Task DeployAddon } 'Deployment accepted missing environment configuration.'
+    Assert-Fails { & $build -SkipSourceCheck -Task DeployAddon } 'Deployment accepted missing environment configuration.'
     $env:WOWVOICE_FOREVER_BETA_ADDONS = $retail
-    Assert-Fails { & $build -Task DeployAddon } 'Environment deployment accepted Retail path.'
+    Assert-Fails { & $build -SkipSourceCheck -Task DeployAddon } 'Environment deployment accepted Retail path.'
     $env:WOWVOICE_FOREVER_BETA_ADDONS = $addons
-    & $build -Task DeployAddon
+    & $build -SkipSourceCheck -Task DeployAddon
     Assert-True ((Get-FileHash -LiteralPath $oldCore).Hash -eq
       (Get-FileHash -LiteralPath (Join-Path $fixture 'src\Core.lua')).Hash) 'Inherited environment deployment failed.'
 
     $environmentLine = '$env:WOWVOICE_FOREVER_BETA_ADDONS = ' + "'" + $addons.Replace("'", "''") + "'"
     $environmentLine | Set-Content -LiteralPath $fixtureEnvironment -Encoding UTF8
     $env:WOWVOICE_FOREVER_BETA_ADDONS = $retail
-    & $build -Task DeployAddon -LocalDebug
+    & $build -SkipSourceCheck -Task DeployAddon -LocalDebug
     Assert-True ($env:WOWVOICE_FOREVER_BETA_ADDONS -eq $addons) 'Local file did not override inherited environment.'
     Assert-True (Test-Path -LiteralPath (Join-Path $voice 'VoiceComparison.lua')) 'Environment deployment missed public voice catalogue.'
 
     # Local opt-in survives ordinary and repeated deployments without a flag.
     '$env:WOWVOICE_QUEUE_LAB = ''1''' | Add-Content -LiteralPath $fixtureEnvironment -Encoding UTF8
     foreach ($iteration in 1..2) {
-      & $build -Task DeployAddon
+      & $build -SkipSourceCheck -Task DeployAddon
       foreach ($toc in Get-ChildItem -LiteralPath $voice -Filter '*.toc') {
         $entries = @(Get-Content -LiteralPath $toc.FullName | Where-Object { $_ -like 'QueueLab\*' })
         Assert-True (($entries -join ',') -eq 'QueueLab\State.lua,QueueLab\Runtime.lua,QueueLab\Window.lua,QueueLab\Commands.lua') 'Local QueueLab default missing or duplicated.'
       }
       Assert-True (Test-Path -LiteralPath (Join-Path $voice 'QueueLab\Window.lua')) 'Local QueueLab default missed harness files.'
     }
-    & $build -Task PackageAddon
+    & $build -SkipSourceCheck -Task PackageAddon
     $archive = [IO.Compression.ZipFile]::OpenRead($updateZip)
     Assert-NoDeveloperCommands $archive
     try {
       Assert-True (@($archive.Entries | Where-Object { $_.FullName -match 'QueueLab|queue-lab' }).Count -eq 0) 'Local QueueLab default leaked into a release archive.'
     } finally { $archive.Dispose() }
-    & $build -Task DeployAddon -QueueLab:$false
+    & $build -SkipSourceCheck -Task DeployAddon -QueueLab:$false
     Assert-True (-not (Test-Path -LiteralPath (Join-Path $voice 'QueueLab'))) 'Explicit QueueLab opt-out did not override local default.'
-    & $build -Task DeployAddon -ConfigPath $config
+    & $build -SkipSourceCheck -Task DeployAddon -ConfigPath $config
     Assert-True (-not (Test-Path -LiteralPath (Join-Path $voice 'QueueLab'))) 'Explicit configuration used the inherited QueueLab preference.'
 
     # Non-deploy tasks and explicit PSD1 configuration must not execute this file.
     "throw 'Local environment must not be loaded here.'" | Set-Content -LiteralPath $fixtureEnvironment
-    & $build -Task Validate
-    & $build -Task PackageAddon
+    & $build -SkipSourceCheck -Task Validate
+    & $build -SkipSourceCheck -Task PackageAddon
     "@{ ForeverBeta = '$($addons.Replace("'", "''"))' }" | Set-Content -LiteralPath $config
-    & $build -Task DeployAddon -ConfigPath $config
+    & $build -SkipSourceCheck -Task DeployAddon -ConfigPath $config
     Assert-True (@(Get-ChildItem -LiteralPath $retail -Force).Count -eq 0) 'Environment tests wrote to rejected destination.'
   } finally {
     $env:WOWVOICE_FOREVER_BETA_ADDONS = $previousAddonsEnvironment
@@ -357,7 +320,7 @@ try {
 
   # QueueLab is a Git-managed dev module, injected only into explicitly opted-in deployments.
   foreach ($iteration in 1..2) {
-    & $build -Task DeployAddon -QueueLab -ConfigPath $config
+    & $build -SkipSourceCheck -Task DeployAddon -QueueLab -ConfigPath $config
     foreach ($module in @('State.lua', 'Runtime.lua', 'Window.lua', 'Commands.lua')) {
       Assert-True ((Get-FileHash -LiteralPath (Join-Path $voice ('QueueLab\' + $module))).Hash -eq
         (Get-FileHash -LiteralPath (Join-Path $fixture ('dev\queue-lab\' + $module))).Hash) 'QueueLab module mismatch.'
@@ -368,9 +331,8 @@ try {
       Assert-True (-not ([IO.File]::ReadAllText((Join-Path $fixture ('src\' + $toc.Name))).Contains('QueueLab'))) 'QueueLab changed a source TOC.'
     }
   }
-  Assert-Fails { & $build -Task PackageAddon -QueueLab } 'Addon packaging accepted QueueLab.'
-  Assert-Fails { & $build -Task Package -QueueLab } 'Full packaging accepted QueueLab.'
-  & $build -Task PackageAddon
+  Assert-Fails { & $build -SkipSourceCheck -Task PackageAddon -QueueLab } 'Addon packaging accepted QueueLab.'
+  & $build -SkipSourceCheck -Task PackageAddon
   $archive = [IO.Compression.ZipFile]::OpenRead($updateZip)
   Assert-NoDeveloperCommands $archive
   try {
@@ -381,14 +343,14 @@ try {
       finally { $reader.Dispose() }
     }
   } finally { $archive.Dispose() }
-  & $build -Task DeployAddon -ConfigPath $config
+  & $build -SkipSourceCheck -Task DeployAddon -ConfigPath $config
   Assert-True (-not (Test-Path -LiteralPath (Join-Path $voice 'QueueLab'))) 'Plain deployment left QueueLab files installed.'
   foreach ($toc in Get-ChildItem -LiteralPath $voice -Filter '*.toc') {
     Assert-True (-not ([IO.File]::ReadAllText($toc.FullName).Contains('QueueLab'))) 'Plain deploy kept QueueLab loader.'
   }
   $contaminatedSource = Join-Path $fixture 'src\QueueLab'
   New-Item -ItemType Directory -Path $contaminatedSource | Out-Null
-  try { Assert-Fails { & $build -Task PackageAddon } 'Package validation accepted a dev directory in src.' }
+  try { Assert-Fails { & $build -SkipSourceCheck -Task PackageAddon } 'Package validation accepted a dev directory in src.' }
   finally { [IO.Directory]::Delete($contaminatedSource) }
   Write-Host 'PASS: QueueLab opt-in, repeated deploy, source TOC isolation, release exclusion and clean removal.'
 }

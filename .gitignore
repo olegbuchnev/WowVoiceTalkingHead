@@ -3,8 +3,6 @@
 /artifacts/
 /backups/
 /node_modules/
-/soundpack/*.ogg
-/catvoices/*.ogg
 /config/deploy.targets.local.psd1
 /config/build.env.local.ps1
 /config/goatcounter-token.local.txt

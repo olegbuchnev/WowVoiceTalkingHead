@@ -16,7 +16,8 @@ local profiles = {
     human_child = { distance = 1.15, y = 0, z = 0.08 },
     -- Lift male humans and shift slightly right within the portrait.
     human_male = { distance = 1.15, y = 0.02, z = 0 },
-    dwarf = { distance = 1.2, y = 0, z = 0.025 },
+    -- Slightly lower male dwarves to leave room above hats during speech.
+    dwarf = { distance = 1.2, y = 0, z = 0.005 },
     -- Lower adult female dwarves to leave room above their hair while talking.
     dwarf_female = { distance = 1.2, y = 0, z = 0 },
     -- Lower gnomes to leave room above the head during the talking animation.
@@ -88,6 +89,10 @@ WV.PortraitCameraProfiles = profiles
 -- Add narrowly scoped corrections here when a particular model needs them.
 -- Keys are model file IDs, never NPC IDs or creature display IDs.
 WV.PortraitCameraOverrides = {
+    -- Human Orphan, NPC 14305 / quest 1479: live model ID 124495.
+    -- Distance 1.5 stops face clipping in game. A -0.025 height leaves only
+    -- the crown visible; keep height 0.04 and shift slightly right for speech.
+    [124495] = { distance = 1.5, y = 0.02, z = 0.04 },
     -- Forever model absent from the generated listfile mapping. Identity is
     -- recorded in the locally installed CatQuest/RaceModels.lua (Skyborne).
     [7478487] = profiles.skyborne_male,

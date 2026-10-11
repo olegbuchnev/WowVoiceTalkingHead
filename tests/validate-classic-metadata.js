@@ -1,27 +1,24 @@
 const assert = require('assert/strict');
 const fs = require('fs'), path = require('path'), os = require('os');
 const { generate, check } = require('../tools/generate-classic-metadata');
-const { importClassic } = require('../tools/import-classic-audio');
 const { dataTable } = require('../tools/import-forever-audio');
 const project = path.resolve(__dirname, '..');
 const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'wowvoice-classic-metadata-'));
 try {
   const root = path.join(fixture, 'repo'), source = path.join(fixture, 'external');
   fs.mkdirSync(path.join(root, 'src/Media'), { recursive: true });
-  fs.mkdirSync(path.join(root, 'soundpack'), { recursive: true });
   fs.mkdirSync(source);
   const silence = fs.readFileSync(path.join(project, 'src/Media/silence.ogg'));
   fs.writeFileSync(path.join(root, 'src/Media/silence.ogg'), silence);
   // No upstream player, index or duration table is present in the external pack.
   fs.writeFileSync(path.join(source, 'WowVoiceSounds.toc'), '## Version: 0.1.0\n');
   fs.writeFileSync(path.join(source, 'WowVoiceSounds_Vanilla.toc'), '## Version: 1.0.1\n');
-  for (const toc of ['WowVoiceSounds.toc', 'WowVoiceSounds_Mainline.toc']) {
-    fs.writeFileSync(path.join(root, 'soundpack', toc), '## Version: adapted\n');
-  }
   const index = path.join(root, 'src/Index.lua');
   fs.writeFileSync(index, 'WowVoiceIndex = { ["Quest"]={{q=1,a=50,p=20},{q=2,c=30},{q=1,a=50}} }');
   const files = ['1a.ogg', '1p.ogg', '2c.ogg'];
   for (const name of files) fs.writeFileSync(path.join(source, name), silence);
+  // The official pack's stop sound is independent of our own service sound.
+  fs.writeFileSync(path.join(source, 'silence.ogg'), 'upstream service asset, not a quest recording');
   const sourceBefore = fs.readdirSync(source).map(name => [name, fs.readFileSync(path.join(source, name))]);
   const output = path.join(root, 'src/Durations.lua');
   // Deliberately stale timer keys must not select which files are measured.
@@ -34,8 +31,7 @@ try {
   assert.deepEqual(manifest.files.map(entry => entry.file), files);
   assert.deepEqual(dataTable(output), { '1a': 0.1, '1p': 0.1, '2c': 0.1, silence: 0.1 });
   assert.deepEqual(check(source, root), manifest);
-  assert.equal(importClassic(source, root), 3);
-  assert.deepEqual(check(path.join(root, 'soundpack'), root), manifest, 'Adapted TOC retains source provenance');
+  assert(!fs.existsSync(path.join(root, 'soundpack')), 'Metadata generation must not copy recordings');
   const saved = fs.readFileSync(output);
   const manifestFile = path.join(root, 'docs/internal/classic-audio-manifest.json');
   const savedManifest = fs.readFileSync(manifestFile);
@@ -68,8 +64,6 @@ try {
   const recording = path.join(source, '1a.ogg');
   fs.writeFileSync(recording, changed);
   assert.throws(() => check(source, root), /measurement\/hash mismatch: 1a.ogg/);
-  assert.throws(() => importClassic(source, root), /measurement\/hash mismatch/);
-  assert.deepEqual(fs.readFileSync(path.join(root, 'soundpack/1a.ogg')), silence, 'Failed import changed audio');
   assert.deepEqual(fs.readFileSync(output), saved, 'Read-only check rewrote metadata');
   generate(source, root);
   assert.notEqual(check(source, root).files[0].sha256, manifest.files[0].sha256);

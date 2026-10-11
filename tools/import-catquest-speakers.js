@@ -56,7 +56,10 @@ if (require.main === module) {
   if (!directory) throw Error('Usage: node tools/import-catquest-speakers.js <CatQuest directory>');
   const version = fs.readFileSync(path.join(directory, 'CatQuest.toc'), 'utf8').match(/^##\s*Version:\s*(\S+)/m)?.[1];
   if (!version) throw Error('Missing CatQuest version');
-  const result = render(fs.readFileSync(path.join(directory, 'NpcData.lua')), version);
-  fs.writeFileSync(path.join(__dirname, '../src/CatQuestSpeakers.lua'), result);
-  console.log(`Imported complete CatQuest NPC database (${Buffer.byteLength(result)} bytes)`);
+  const bytes = fs.readFileSync(path.join(directory, 'NpcData.lua'));
+  render(bytes, version); // Validate all IDs before replacing the input snapshot.
+  const result = {schemaVersion:1, sourceVersion:version,
+    sha256:crypto.createHash('sha256').update(bytes).digest('hex'), tables:parse(bytes)};
+  fs.writeFileSync(path.join(__dirname, '../docs/internal/catquest-speakers-source.json'), JSON.stringify(result,null,2)+'\n');
+  console.log(JSON.stringify(require('./generate-speakers').generate().counts));
 }

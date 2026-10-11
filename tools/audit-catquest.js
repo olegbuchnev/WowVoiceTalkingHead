@@ -16,7 +16,10 @@ function audit(catDirectory, voicesDirectory) {
     counts[label] = Object.keys(expected).length;
   }
   const npcSource = parse(fs.readFileSync(path.join(catDirectory, 'NpcData.lua')));
-  const npc = read('src/CatQuestSpeakers.lua');
+  const snapshot = JSON.parse(fs.readFileSync(path.join(root,'docs/internal/catquest-speakers-source.json'),'utf8'));
+  const npc = {sourceVersion:snapshot.sourceVersion, npcs:snapshot.tables.NpcData,
+    givers:snapshot.tables.QuestGiver, finishers:snapshot.tables.QuestFinisher};
+  require('./generate-speakers').generate(true);
   check(npc.sourceVersion === version(catDirectory, 'CatQuest.toc'), 'NPC source version differs');
   compare('NPC records', npcSource.NpcData, npc.npcs);
   compare('Quest givers', npcSource.QuestGiver, npc.givers);

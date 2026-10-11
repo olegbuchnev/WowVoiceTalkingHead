@@ -68,7 +68,7 @@ advance(now+0.5)
 local nextStart=now
 assert(WV:ReplayQuest(861))
 opacity(h,1)
-advance(nextStart+0.8); assert(h.visible and h.Model.creatureID==3052)
+advance(nextStart+0.8); assert(h.visible and h.Model.displayID==WowVoiceSpeakers.npcs[3052].displayID)
 advance(nextStart+1.6); near(h.Close.alpha,1)
 WV:FinishTalkingHead()
 WV:ToggleHeadPreview()
@@ -80,7 +80,9 @@ h.scripts.OnClick(h,'RightButton'); assert(not h.visible)
 -- A delayed model appears fully opaque and cannot revive a finished panel.
 -- Missing models fade their document icon instead.
 local setCreature=h.Model.SetCreature
+local setDisplay=h.Model.SetDisplayInfo
 h.Model.SetCreature=function() end
+h.Model.SetDisplayInfo=function() end
 local saved=TalkingHeadRuDB.questSpeakers
 TalkingHeadRuDB.questSpeakers={}
 h,t=start()
@@ -95,6 +97,7 @@ advance(now+0.5); opacity(h,0.5)
 WV:Silence(); assert(not h.visible)
 h.Model:CompleteLoad(10658); assert(not h.visible)
 h.Model.SetCreature=setCreature
+h.Model.SetDisplayInfo=setDisplay
 TalkingHeadRuDB.questSpeakers=saved
 print('PASS: instant appearance, no mid-playback fades, synchronized model/UI fade, immediate close, replacement, preview and late model safety')
 

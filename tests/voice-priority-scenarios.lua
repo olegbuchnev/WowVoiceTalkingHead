@@ -55,7 +55,8 @@ local options = frames.WowVoiceOptionsPanel
 local ghost = options.VoicePriorityGhost
 local oldCursor, oldMouse = GetCursorPosition, IsMouseButtonDown
 local oldSetCursor, cursorTexture, cursorChanges = SetCursor, nil, 0
-SetCursor = function(texture) cursorTexture = texture; cursorChanges = cursorChanges + 1; return true end
+-- A false return must not discard the obligation to clean up our cursor.
+SetCursor = function(texture) cursorTexture = texture; cursorChanges = cursorChanges + 1; return false end
 local moveCursor = 'Interface/CURSOR/UI-Cursor-Move.crosshair'
 local cursorX, cursorY, mouseDown = 0, 0, false
 GetCursorPosition = function() return cursorX, cursorY end
@@ -177,6 +178,17 @@ assert(order() == unchanged and not ghost:IsShown(), 'External refresh cancels s
 start(3); point(1); mouseDown = false; ghost.scripts.OnUpdate()
 assert(order() == 'wayfarer,wowvoice,catquest', 'Release outside the source must still finish the drag')
 assert(cursorTexture == moveCursor, 'missing mouse-up recovery over a card must preserve its hover cursor')
+rows[1].scripts.OnEnter(rows[1]); assert(cursorTexture == moveCursor)
+local beforePageChange = order()
+start(1); point(3)
+options.Scroll:Hide()
+assert(cursorTexture == nil and not ghost:IsShown(), 'Hiding the settings page must cancel its drag and cursor')
+mouseDown = false
+rows[1].scripts.OnDragStop(rows[1])
+assert(order() == beforePageChange and cursorTexture == nil, 'Late release after a page switch must not reorder or restore the cursor')
+rows[1].scripts.OnEnter(rows[1])
+assert(cursorTexture == nil, 'Hidden cards cannot set a hover cursor')
+options.Scroll:Show()
 rows[1].scripts.OnEnter(rows[1]); assert(cursorTexture == moveCursor)
 options:Hide(); assert(cursorTexture == nil, 'closing settings without a drag must restore the cursor')
 SetCursor = oldSetCursor

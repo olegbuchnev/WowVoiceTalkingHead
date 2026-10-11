@@ -13,6 +13,7 @@ scenarios.push('release-commands-scenarios.lua', 'dev-commands-scenarios.lua');
 scenarios.push('catquest-update-lab-scenarios.lua');
 scenarios.push('wowvoice-version-label-scenarios.lua');
 scenarios.push('secret-speaker-scenarios.lua');
+scenarios.push('unified-speakers-scenarios.lua');
 for (const locale of ['enUS', 'enGB']) {
     scenarios.push({file:'catquest-scenarios.lua',locale});
 }
@@ -21,6 +22,7 @@ for (const mode of ['old-login','old-late','current','newer','double-digit','unk
 }
 for (const entry of scenarios) {
     const scenario = typeof entry === 'string' ? entry : entry.file;
+    if (process.argv[3] && !scenario.includes(process.argv[3])) continue;
     const L=lauxlib.luaL_newstate(); lualib.luaL_openlibs(L);
     function run(file) {
         let s=lauxlib.luaL_loadbuffer(L,to_luastring(fs.readFileSync(file,'utf8')),null,to_luastring('@'+file));

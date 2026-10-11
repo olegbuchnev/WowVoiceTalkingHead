@@ -31,7 +31,7 @@ try {
     } } }, // JSON-only completion without a description.
     99999: { d: 20, t: { d: 5 } }, // Do not broaden fallback to JSON-only descriptions.
   }));
-  const sample = fs.readFileSync(path.join(__dirname, '../soundpack/179a.ogg'));
+  const sample = fs.readFileSync(path.join(__dirname, '../src/Media/silence.ogg'));
   for (const file of ['179.ogg', '179_t.ogg', '490.ogg', '99080_t_m.ogg', '99080_t_f.ogg']) {
     fs.writeFileSync(path.join(source, 'Sounds/q', file), sample);
   }

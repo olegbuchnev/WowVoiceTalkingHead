@@ -101,21 +101,20 @@ its two gaps, keeping Clear all and Next at the edges in both supported language
 
 ```text
 src/                             Runtime files copied to AddOns/TalkingHeadRu
-soundpack/                       Complete Classic audio and two Forever TOCs
 tests/                           Lua tests with WoW API mocks and pipeline checks
 config/build.env.local.ps1      Local environment variables (gitignored)
 build.ps1 / build.cmd             Validate, test, deploy and package pipeline
 USER_README.md                   Russian user guide for the repository and website
-artifacts/WoWVoice/              Latest full and addon-only ZIPs; stable cloud sync folder (gitignored)
+artifacts/WoWVoice/              Latest addon ZIP; stable cloud sync folder (gitignored)
 backups/                         Backups created before deployment (gitignored)
 ```
 
 Edit `src/`, then run DeployAddon. The installed `AddOns\TalkingHeadRu` directory is a
-deployment destination, not the project's source directory. OGG files are local
-build inputs (gitignored) and are included in the complete release archive.
+deployment destination, not the project's source directory. All voice recordings
+are read directly from installed external libraries. The only project OGG is
+`src/Media/silence.ogg`, the 100 ms service asset used to stop playback.
 Generate Classic metadata with `tools/generate-classic-metadata.js <WowVoiceSounds directory>`.
-Populate audio for full releases with `tools/import-classic-audio.js <WowVoiceSounds directory>`;
-this first checks the entire pack against the generated metadata and refuses stale measurements.
+The old Classic audio copier and bundled release task have been removed.
 `tools/import-forever-audio.js <CatQuest_Voices directory>` reads external streams
 to generate compatibility metadata, transcripts and hashes only; it never copies audio.
 It rebuilds transcripts from all sibling libraries, including Wayfarer. To refresh
@@ -138,6 +137,8 @@ index supplies availability and section mapping (`a`, `p`, `c`), independently
 of previous timer values. All indexed recordings must exist; unexpected OGGs,
 invalid index values and incomplete/unsupported OGG streams abort generation
 before either output is replaced. Updating coverage requires reviewing the index first.
+An optional upstream `silence.ogg` is excluded from quest coverage; our service
+sound is measured separately from `src/Media/silence.ogg`.
 
 The manifest records the source TOC/version, quest and section counts, and each
 file's size, measured duration and SHA-256. Measurements use the final Vorbis
@@ -148,9 +149,11 @@ reproducible. Hashes and development metadata stay outside release archives.
 
 `--check` is read-only and returns a failing exit code for changed coverage,
 version, file bytes or generated durations, including a replacement that keeps
-the same duration and TOC version. `build.cmd -Task Test` runs this check on
-`soundpack/` automatically; full-release audio import checks it before copying.
-`DeployAddon`/`PackageAddon` ship the generated Lua without requiring local audio.
+the same duration and TOC version. Run it against installed `WowVoiceSounds`
+when auditing or updating that library. `build.cmd -Task Test` verifies saved
+manifest/index/timer consistency and exercises importers with temporary service-audio
+fixtures; it requires no installed or copied voice library.
+All build tasks use only runtime source and generated metadata.
 Checksums are an offline audit: the game does not read or hash installed OGGs.
 Unknown future WowVoice formats still require a separate adaptation; no runtime
 version-based muting or guessed metadata fallback is introduced.
@@ -162,6 +165,10 @@ even with the default 0.05-second tail are now corrected. This measures containe
 duration, not the end of audible speech. Seven samples, including the shortest,
 longest and largest correction, were independently checked with ffprobe.
 Playback tail, automatic Master/Music selection and background behavior are unchanged.
+
+On 2026-10-11 the source provenance was refreshed from installed Forever
+WowVoiceSounds 0.1.0 (`WowVoiceSounds.toc`). All 10,891 recording hashes and
+durations match the earlier Classic measurements; only the source label changed.
 
 ## Commands
 
@@ -209,13 +216,11 @@ It includes the entire runtime addon, including textures and audio indexes,
 and can be built without a local `soundpack/` directory.
 Runtime layout and TOC checks still run. The version is not changed.
 
-The legacy `Package` task remains available for the old bundled format and creates
-`TalkingHeadRu-<version>-full.zip`. The shared folder retains at most one archive
-of each kind. Building either kind replaces only that kind, preserving the other
-archive and the short link. Current releases use PackageAddon.
+The legacy `Package` task has been removed. `PackageAddon` replaces the previous
+addon release while leaving historical full archives and the shared folder in place.
 
 For pCloud, configure Sync once between the local `artifacts/WoWVoice` folder and
-a cloud folder named `WoWVoice`, then share the cloud folder's link. Each Package
+a cloud folder named `WoWVoice`, then share the cloud folder's link. Each PackageAddon
 build updates the local archive; pCloud handles uploading it. Synchronization
 and public sharing are configured separately in pCloud, not by the build script.
 
@@ -272,17 +277,18 @@ Publish those changes only after the user approves the preview. Keep its wording
 factual and avoid promotional slogans.
 
 Source repository: [olegbuchnev/WowVoiceTalkingHead](https://github.com/olegbuchnev/WowVoiceTalkingHead).
-Commit source changes and use `git push origin main` to publish them. Pushing
-source does not build or upload release archives. Publish the full and addon-only
-ZIPs as GitHub Release assets after the requested package builds; keep the pCloud
-copies as well. Do not attach local backups, deployment settings or extracted
-audio sources to the repository. Audio belongs in the full release ZIP.
+After local tests and library audits pass, commit the release and push its
+`v<version>-forever` tag. The release workflow builds and publishes the addon ZIP
+and its SHA-256 checksum. Wait for publication before updating README download
+links and pushing main, which publishes the website. Keep the local PackageAddon
+ZIP in the pCloud folder as well. Do not publish local backups, deployment settings
+or external voice files.
 
-The player-facing README links directly to the full and addon-only ZIP assets
+The player-facing README links directly to the addon ZIP asset
 using `/releases/download/<tag>/<filename>`, so clicking starts the download.
 For every release, update all corresponding download links in README.md (both
 the opening links and the installation/update instructions) to the published
-assets. Verify both URLs before pushing the approved README. Keep the previous
+asset. Verify the download before pushing the approved README. Keep the previous
 working links until the replacement assets are published; do not change the
 addon version merely to refresh these links.
 
@@ -797,6 +803,15 @@ styling; that integration does not change the talking head's Retail appearance.
 
 ## Portrait camera profiles
 
+The classic human boy model `124495` has a separate camera (`distance=1.5`,
+`y=0.02`, `z=0.04`). The user confirmed this model on the Human Orphan (NPC `14305`,
+quest `1479`) and that distance 1.5 eliminates face clipping. The initial
+height -0.025 placed the face below the frame; the revised height is 0.04.
+A slight rightward shift of 0.02 addresses the next screenshot. The user
+confirmed the final framing in game, and also confirmed Shawn (NPC `8965`,
+quest `3741`); Shawn's live model file ID was not reported. Other child models
+retain their existing profile.
+
 Camera framing is selected from the loaded model's `GetModelFileID()`, so it
 also works for journal replays without a nearby NPC. `CameraProfiles.lua`
 contains initial, uncalibrated model-family settings, including non-playable
@@ -846,49 +861,100 @@ gossip option (for example, quest 2842 from Sovik). Captured NPCs, exact starter
 items and game objects keep priority. Inferred identities remain transient, and
 this fallback never substitutes the giver for a progress/completion speaker.
 
-Journal replay also supports quests accepted before WowVoice was installed.
-Captured per-character speaker data takes priority. When it is missing or has
-no identity, the addon checks bags for an exact quest-starter item match, then
-looks up the giver by quest ID in `WowVoiceIndex`. The bundled index contains
-giver IDs for 3,686 of 4,205 quests; this is metadata coverage, not a guarantee
-that every model is available in the Forever client.
+`src/Speakers.lua` is the only runtime speaker database. It has `givers` and
+`finishers` keyed by quest ID, and `npcs` keyed by NPC ID. `false` mappings block
+ambiguous or confirmed non-NPC identities; an absent mapping is unknown.
+All three TOCs load it. `Index.lua` still serves quest/audio recognition, but
+Portrait.lua no longer builds or searches a reverse Classic index.
 
-Recovery never matches by title or substitutes the turn-in NPC. Conflicting
-giver records are ignored. An unambiguous display ID already captured for the
-same NPC on another quest of this character can be reused; otherwise the panel
-loads the creature by NPC ID. Inferred NPC records remain transient. Recovered
-item metadata is saved so its icon survives consumption and reloads. Captured
-items and game objects are never replaced with an inferred NPC.
+Live/captured identity and appearance win on every client locale. An exact
+starter item found in bags also wins over static giver metadata. Otherwise,
+descriptions and journal replays use `givers`; progress/completion use only
+`finishers`. A missing receiver never inherits the giver. Recovery never matches
+by title, and inferred NPCs/models are not written into character observations.
+Recovered items are saved so their icon survives consumption and reloads.
 
-Unavailable metadata or models leave the document icon visible while audio
-continues. No external addon or database download is required.
+A captured NPC ID without an appearance is enriched for display by exact ID:
+first an unambiguous appearance observed on another quest of this character,
+then the unified NPC's default display ID. Conflicting observed appearances
+suppress the default and use creature loading. The original live record stays
+intact so a late model capture can update it and refresh the head. Queue portraits
+and background warmup use the same appearance selection. If no model is known,
+the client loads by NPC ID; unavailable models leave the document icon and audio.
 
-`ForeverSpeakers.lua` bundles 3,765 confirmed single-NPC quest starters, including
-455 of the original 703 supplemental voiced quests (the 0.2.0 snapshot). It also marks 316 confirmed object or
-multiple-starter quests so they cannot accidentally inherit a Classic NPC guess.
-Captured identities and exact quest-starting items take priority. Missing records
-still fall back to the Classic index. No internet connection or other addon is
-needed in-game. Model availability in the client is separate from NPC identity.
+`tools/generate-speakers.js` merges sources offline, with the explicit policy,
+per-role provenance, protected exclusions and conflicts in
+`docs/internal/speakers-manifest.json`. Priority is based on expected maintenance
+frequency, not cross-project version numbers or the age of one particular import:
 
-The factual IDs come from [Wowhead Forever](https://www.wowhead.com/forever/),
-using the [public snapshot maintained by Forever Quest Pins](https://github.com/TylerAkins/forever-quest-markers/tree/2d354aa828af29cb2e997b7367f7bb59b75f10e2/data/forever-quests).
-The snapshot catalog contains 5,058 quests: 697 parsed pages lack starter data,
-279 unusable detail records are excluded, and quest 7507 has no detail file.
-This is a coverage snapshot, not a claim that every Forever quest has a portrait.
-Russian NPC names are reused by exact NPC ID from the original Classic index;
-otherwise the source's English name is retained until a live giver is captured.
-Only starter facts are imported, not the external addon's code, map or quest text.
+- Givers: **CatQuest > Wayfarer > current Quest Pins > historical Forever snapshot > Classic**.
+- Finishers: **CatQuest > Wayfarer > Classic**; the Pins inputs contain only starters.
+- Appearances: **CatQuest > Wayfarer**, joined by exact NPC ID.
+- Names: prefer Russian; within the same language preference,
+  **CatQuest > Wayfarer > Classic > historical Forever**.
 
-To import a newer extracted snapshot (JSON only):
+Explicit item/object/multiple-starter facts and conflicting Classic giver IDs
+are applied before that priority order. They block guessing a single NPC even
+from a newer source. Missing data is unknown and allows the next source.
+These decisions are listed under `protectedExclusions` in the report.
+Captured game observations retain runtime priority over the resulting database.
+
+Inputs:
+
+- Detailed [Wowhead Forever snapshot from Quest Pins](https://github.com/TylerAkins/forever-quest-markers/tree/2d354aa828af29cb2e997b7367f7bb59b75f10e2/data/forever-quests),
+  retained in `forever-speakers-manifest.json`, supplies historical giver identities
+  and explicit item/object/multiple-starter exclusions.
+- [Current Quest Pins database](https://github.com/TylerAkins/forever-quest-markers/tree/ce1da1b14290645eb67a9f9bf373c2088713efe3/Database)
+  fills gaps after CatQuest and Wayfarer. The October 11, 2026 export uses
+  All The Things (`f5d90835055a8a21671d5406fc219ba17efba321`), with 3906 quests,
+  3627 single-NPC and 33 multiple-NPC starter mappings. It adds 289 single-NPC
+  mappings absent from the detailed snapshot. The old upstream JSON corpus was
+  removed October 5. Current Pins can infer a giver from an enclosing NPC and
+  omits non-NPC starter types, so explicit exclusions remain protected.
+  There are 15 differing single-NPC IDs and 23 single-NPC suggestions against
+  old explicit exclusions; all stay visible in the merge conflict report.
+- CatQuest 0.6.0 supplies preferred giver/receiver mappings and NPC appearances;
+  Classic supplies remaining receivers and the last fallback for givers.
+- Wayfarer Alliance/Horde/Shared 3.1.0 supplies `qg`, `npc.n/d` and each quest
+  stage's `s` field. Accept speakers and `qg` define givers; progress/completion
+  speakers define receivers. Conflicting identities are kept ambiguous, missing
+  speakers/narration are not filled from the opposite role. Models and names use
+  v4 before other models, then pack name for stable ordering; Russian names win.
+  `docs/internal/wayfarer-speakers-source.json` records per-pack versions, hashes
+  and internal conflicts. It provides 88 additional models and 138 additional
+  receiver mappings. Cross-source model conflicts appear in `appearanceConflicts`.
+
+Input versions and hashes are tracked. Only factual metadata is imported;
+external addon code is never executed or required in-game. Source snapshots and
+reports stay outside `src/`. The generated database currently contains 2539 NPCs,
+4672 giver entries (including exclusions), 4205 finisher entries and 2223 models.
 
 ```shell
-node tools/import-forever-speakers.js <data/forever-quests-directory> <commit-SHA>
+node tools/generate-speakers.js
+node tools/generate-speakers.js --check
+node tools/import-catquest-speakers.js <CatQuest-directory>
+node tools/import-forever-pins-speakers.js <Quest-Pins-Database-directory> <commit-SHA>
+node tools/import-wayfarer-speakers.js <AddOns-directory>
+node tools/import-wayfarer-speakers.js <AddOns-directory> --check
 ```
 
-`docs/internal/forever-speakers-manifest.json` records the commit, per-record
-SHA-256, excluded records and exact starter IDs. It is excluded from the release.
-Running the importer without arguments regenerates the Lua index offline from
-this manifest. Imports never infer a giver from the quest title or turn-in NPC.
+All NPC importers regenerate the unified database. After a Wayfarer pack update,
+run audio metadata generation, quest text import and NPC import; the last one is
+independent of OGG files. The historical
+`import-forever-speakers.js [<data/forever-quests-directory> <commit-SHA>]`
+remains available for detailed JSON snapshots; without arguments it rebuilds
+from the saved manifest. No runtime priority depends on installed voice packs.
+
+`build.cmd -Task CheckSources` checks GitHub's latest commit touching
+`Database/ForeverQuests.lua` against the imported Pins commit. Validate, deployment
+and packaging also run this advisory check automatically; `-SkipSourceCheck`
+skips it for repeated/offline builds. The explicit task fails if the check is
+unavailable; ordinary builds warn and continue. A changed commit prints its URL
+and import command but never rewrites source metadata. Each invocation records
+`current`, `changed` or `unavailable` and its UTC timestamp in
+`artifacts/review/forever-pins-update.json`. The request times out after 10 seconds.
+Before releases, review changed data and import it, then run Test; retry an
+unavailable check. `tests/forever-pins-update.ps1` exercises the checker offline.
 
 On login and quest-log changes, voiced journal quests have their portraits
 preloaded in the background. Requests are deduplicated by NPC or captured display
@@ -933,15 +999,13 @@ The destination must exist and end in
 
 ### Local debug panel
 
-`src/CatQuestSpeakers.lua` contains the complete CatQuest NPC database and quest
-giver/finisher maps, imported as data by `tools/import-catquest-speakers.js`.
-Its header records the upstream version and file SHA-256. Description portraits
-use giver metadata only when the existing indexes lack an NPC; live captures,
-item/object identities and explicit ambiguous-starter exclusions retain priority.
-Imported identities stay transient. All packages carry this database.
+`docs/internal/catquest-speakers-source.json` retains the complete CatQuest NPC
+database and giver/finisher maps, upstream version and file SHA-256. Importing it
+regenerates the unified `src/Speakers.lua`; source snapshots are not deployed.
 
 Run `node tools/audit-catquest.js <CatQuest directory> <CatQuest_Voices directory>`
-after imports. This read-only audit compares every NPC/giver/finisher record,
+after imports. This read-only audit verifies unified database reproducibility
+and compares every source NPC/giver/finisher record,
 all subtitle variants, complete compatibility metadata and external file
 hashes, including Classic overlaps. Any mismatch produces a nonzero exit code.
 `upstreamGaps` lists absent upstream quest data separately;
@@ -1024,7 +1088,7 @@ copy this field from the original TOC and preserve its filename in `X-Source-TOC
 Classic imports prefer `WowVoiceSounds_Vanilla.toc` over the generic TOC; the
 original Classic 1.15 archive has version 1.0.1 in that client-specific TOC and
 0.1.0 in the generic one. All 10,891 bundled Classic recordings match that archive
-byte-for-byte. Cathey's supplemental recordings come from CatQuest_Voices 0.5.0.
+byte-for-byte. Current CatQuest recordings are read directly from external CatQuest_Voices 0.6.0.
 
 Older published packs without source metadata are recognized by their exact
 adaptation versions (WowVoiceSounds 1.0.3-forever.1).
@@ -1058,16 +1122,13 @@ Tests, development tools, IDE settings, backups and internal manifests are exclu
 Maintain the installation and usage instructions in [USER_README.md](../USER_README.md)
 in Russian; the repository README presents the addon to players. This document contains development details.
 
-The Classic library includes 10,891 recordings. External CatQuest Voices 0.5.0
-adds 769 quests (742 descriptions, 576 turn-ins, 1,811 files with gender variants).
+The Classic library includes 10,891 recordings. External CatQuest Voices 0.6.0
+adds 769 quests relative to Classic (742 descriptions and 576 turn-ins).
 The runtime index includes the complete CatQuest library: 3,077 quests,
-3,017 descriptions, 2,850 turn-ins and 7,715 files. Saved `sharedQuestVoice`
-selects WowVoice (default) or CatQuest for overlapping recordings. Routing is
-per section: a recording available from only one source uses that source.
-Unavailable/incompatible CatQuest resets the saved preference to WowVoice.
-Restoring the library enables selection again without automatically selecting CatQuest.
-The options radio buttons are disabled with an explanatory tooltip in this case.
-Changing preference invalidates availability caches without interrupting playback.
+3,017 descriptions, 2,850 turn-ins and 7,774 files. Saved `voicePriority` orders
+WowVoice, CatQuest and Wayfarer. Routing uses the first available recording for
+each section; unavailable libraries do not erase the saved order. Changing the
+order invalidates availability caches without interrupting playback.
 Catalogue A/B buttons use explicit sources independently of this preference.
 CatQuest audio is read directly from CatQuest_Voices/Sounds/q; the legacy CatVoices
 pack and ForeverAudio.lua are no longer used.
@@ -1095,11 +1156,12 @@ hidden while our addon is enabled, including late login creation and subsequent
 Show calls. Identification uses CatQuest's click handlers, independent of labels
 and client language. `ItemTextFrame` book buttons and unrelated buttons remain
 available. The prior visibility is restored with `/thead off` or at logout.
-CatQuest 0.5.0 retains autoDetail/autoComplete and the existing quest-window
+CatQuest 0.6.0 retains autoDetail/autoComplete and the existing quest-window
 and journal click handlers; autoProgress is no longer used by its player.
-The separate Story modules remain commented out in CatQuest's 0.5.0 TOC.
-Its new QuestTracker.lua uses private icon click handlers; these additional
-upstream tracker icons are not covered by our quest-window/journal suppression.
+The separate Story modules are absent from CatQuest's 0.6.0 TOC.
+Its QuestTracker.lua uses private icon click handlers. Our separate tracker
+integration suppresses its icons on normal and campaign blocks, including
+newly created and recycled blocks, and restores them when our addon is disabled.
 
 This uses CatQuest's initialized settings table without private namespace access
 or upstream file edits. WowVoice has optional TOC dependencies on the two audio
@@ -1142,7 +1204,7 @@ CatQuest. The Classic WowVoice source keeps the bundled index and durations.
 If an official WowVoice release for Forever becomes available, adapting it is
 a separate future task. Neither condition is unfinished work in the current scope.
 
-The importer generates src/CatQuestAudio.lua for the audited external 0.5.0
+The importer generates src/CatQuestAudio.lua for the audited external 0.6.0
 release, including per-file durations and JSON-only recovery. The installed
 CatQuestVoicePack.quests owns availability, sex variants and subtitles; snapshot
 entries are optional measurements, not an allowlist. New and changed records work
@@ -1173,7 +1235,7 @@ missing or unusable live index stays unavailable. Runtime checks never change th
 parses the external Lua as data and runs the actual resolver for both sexes. It
 checks eligible OGG streams and timer bounds without importing metadata or running
 foreign addon code; the report is saved in artifacts/review/catquest-compatibility.json.
-Use `--version 0.6.0 --output artifacts/review/catquest-simulated-future.json`
+Use `--version 0.7.0 --output artifacts/review/catquest-simulated-future.json`
 to simulate a future version without editing TOCs. `--snapshot <directory>` loads
 previous generated metadata and checks real migrations. The audit covers the union
 of live and snapshot entries, records exact/estimated counts and maximum timer delay.
@@ -1188,7 +1250,7 @@ Lua index wins within that source; `index.json` fills missing sections and gende
 variants, including text without playable audio. Wayfarer contributes a/p/c stages.
 Inputs are parsed as data, never executed. Invalid or blank cues reject the whole
 variant rather than producing partial text. All three TOCs load this standalone
-database in full and addon-only packages, including Classic overlaps.
+database in the addon package, including Classic overlaps.
 
 The fixed merge order is **WowVoice > CatQuest > Wayfarer**, separately for each
 quest stage and player gender. A higher-priority common transcript wins over
@@ -1208,12 +1270,12 @@ falling back to game text. With no game text, the merged database is used for
 every audio source. Display substitutions do not overwrite queue/session data.
 Bundled text alone never makes an unavailable recording playable.
 
-CatQuest 0.5.0 plus Wayfarer 3.1.0 produce 3,806 main descriptions, 19 progress
-texts and 3,730 turn-ins (9,406 stored text variants, 3,981 distinct quest IDs
+CatQuest 0.6.0 plus Wayfarer 3.1.0 produce 3,806 main descriptions, 19 progress
+texts and 3,730 turn-ins (9,465 stored text variants, 3,981 distinct quest IDs
 across all stages). CatQuest supplies 3,017 descriptions; Wayfarer adds 789.
 The voice catalogue still counts audio descriptions independently of text coverage.
 
-## Two release packages and website metadata
+## Release package and website metadata
 
 The options version tooltip recommends updating older CatQuest Voices to the
 version in `CatQuestAudio.lua`; newer packs retain the recommendation to update
@@ -1228,15 +1290,15 @@ versions, changed/new records, invalid metadata, missing audio and measured upda
 it does not deploy or alter third-party files. The lab uses existing OGGs through
 explicit test-only routing, keeps queue entries transient, and restores index,
 metadata, resolver and original preference on reset/reload/logout. It is excluded
-from both release packages. See [in-game instructions](../dev/catquest-update-lab/README.md).
+from the release package. See [in-game instructions](../dev/catquest-update-lab/README.md).
 
-Package contains TalkingHeadRu and WowVoiceSounds.
-PackageAddon contains only TalkingHeadRu.
-Both include the same text, NPC and compatibility data.
-PackageLite was removed because it would now duplicate Package. Neither build
-needs a local catvoices directory; existing legacy audio is not deleted automatically.
+PackageAddon contains only TalkingHeadRu, including text, NPC and compatibility data.
+Package and PackageLite have been removed. The obsolete local `catvoices/` and
+`soundpack/` copies are no longer used. Voice-library OGG copies in local backups
+and artifacts have also been removed. Build and deployment still leave installed
+voice libraries untouched.
 
-Pages shows two download cards with actual GitHub asset sizes, versions and dates.
+Pages shows the addon download with actual GitHub asset size, version and date.
 A separate CurseForge link explains optional CatQuest Voices installation; the
 supported version is read from CatQuestAudio.lua at the downloadable addon tag.
 Historical lite archives remain identifiable in download statistics. No release

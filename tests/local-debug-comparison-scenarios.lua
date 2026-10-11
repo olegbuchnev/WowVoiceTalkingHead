@@ -9,9 +9,9 @@ C_AddOns.GetAddOnMetadata = function(name, field)
     if name == 'CatQuest_Voices' and field == 'Version' then return version end
 end
 CatQuestVoicePack = {quests={
-    [179]={d=30.7,v='dwarf-male'},
-    [6]={d=23.3,g=1,v='human-male'},
-    [98246]={d=28.9,v='dwarf-male'},
+    [179]={d=33.7,v='dwarf-male'},
+    [6]={d=22.2,g=1,v='human-male'},
+    [98246]={d=27.2,v='dwarf-male'},
 }}
 for id, entry in pairs(CatQuestVoicePack.quests) do
     local texts = WowVoiceQuestTexts.entries[id .. 'a']
@@ -60,14 +60,14 @@ assert(row.PlayButtons.catquest.SelectedMark.texture == 'Interface\\AddOns\\Talk
 local started, sound = now, plays[#plays].handle
 tick(started + 30)
 assert(stops[#stops] ~= sound, 'CatQuest must not use the shorter Classic timer')
-tick(started + 30.738 + TalkingHeadRuDB.tail + .01)
+tick(started + 33.68 + TalkingHeadRuDB.tail + .01)
 assert(stops[#stops] == sound, 'CatQuest must stop using its own duration')
 WV:Silence()
 for _, sex in ipairs({2,3}) do
     UnitSex = function() return sex end
     local recording = C.Resolve(6, 'catquest')
     assert(recording.path:find(sex == 3 and '6_f.ogg' or '6_m.ogg', 1, true))
-    assert(recording.duration == (sex == 3 and 23.324292 or 23.25375))
+    assert(recording.verified and recording.duration == 22.16)
 end
 UnitSex = sexAPI
 -- Failed CatQuest playback cannot hide a working Classic recording.
@@ -174,7 +174,7 @@ assert(row.PlayButtons.wowvoice:IsShown() and not row.PlayButtons.catquest:IsSho
     'Absent CatQuest recording must leave the right side empty')
 loaded.CatVoices = false
 loaded.CatQuest_Voices = true
-version = '0.6.0'
+version = '0.7.0'
 row = tile(179)
 assert(row.PlayButtons.catquest:IsEnabled(), 'An updated pack keeps compatible comparison recordings')
 version = auditedVersion
@@ -210,4 +210,29 @@ assert(panel.SourceLegend.wayfarer.Caption:GetText() == 'Wayfarer — недос
 Wayfarer = nil
 C_AddOns.IsAddOnLoaded, C_AddOns.GetAddOnMetadata, UnitSex = loadedAPI, metadataAPI, sexAPI
 WV:RefreshAudioSources()
+-- Switching subpages keeps the outer options frame visible. Do not rely on
+-- the card receiving OnLeave/OnHide before the catalogue takes its place.
+local options = panel.Options
+local oldSetCursor, cursor = SetCursor, nil
+local cursorResult
+SetCursor = function(texture) cursor = texture; return cursorResult end
+for _, result in ipairs({true, false, 'nil'}) do
+    cursorResult = result
+    if result == 'nil' then cursorResult = nil end
+    panel.Back.scripts.OnClick()
+    local card = options.VoicePriorityRows[1]
+    assert(card.backdropBorderColor[1] == 0.4, 'Returning from the catalogue must not retain a stale hover border')
+    card.scripts.OnEnter(card)
+    assert(cursor == 'Interface/CURSOR/UI-Cursor-Move.crosshair')
+    options.VoiceComparisonButton.scripts.OnClick()
+    assert(options:IsVisible() and panel:IsVisible() and not options.Scroll:IsVisible())
+    assert(cursor == nil, 'Opening the catalogue must reset our cursor regardless of the SetCursor return value')
+    card.scripts.OnEnter(card)
+    assert(cursor == nil, 'A late hover event from a hidden card must not reclaim the cursor')
+end
+panel.Back.scripts.OnClick()
+cursor = 'another UI cursor'
+options.VoiceComparisonButton.scripts.OnClick()
+assert(cursor == 'another UI cursor', 'Page cleanup must not reset a cursor it never acquired')
+SetCursor = oldSetCursor
 print('PASS: A/B playback, offline catalogues/counts, source-colored unavailable marks, inline legend, restored libraries and isolated failures')

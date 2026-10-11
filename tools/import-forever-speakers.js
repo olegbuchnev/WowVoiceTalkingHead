@@ -118,7 +118,7 @@ function main() {
   const manifest=args.length?importSnapshot(path.resolve(args[0]),args[1]):JSON.parse(fs.readFileSync(manifestPath,'utf8'));
   const result=render(manifest);
   if(args.length) fs.writeFileSync(manifestPath,JSON.stringify(manifest,null,2)+'\n');
-  fs.writeFileSync(path.join(root,'src/ForeverSpeakers.lua'),result.lua);
+  require('./generate-speakers').generate();
   console.log(JSON.stringify({catalog:manifest.catalogCount,missing:manifest.missing.length,rejected:manifest.rejected.length,...result.counts}));
 }
 module.exports={questRecord,render,importSnapshot};

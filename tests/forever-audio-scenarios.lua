@@ -132,7 +132,7 @@ questCache()[97250] = nil
 npcGUID = 'Creature-0-1-0-1-999-0000000099'
 assert(WV:ReplayQuest(97250))
 local head = frames.TalkingHeadRu
-assert(head.Name.text == 'Рубака Логмар' and head.Model.creatureID == 5911)
+assert(head.Name.text == 'Рубака Логмар' and head.Model.displayID == WowVoiceSpeakers.npcs[5911].displayID)
 assert(not head.Icon.visible and not questCache()[97250])
 assert(plays[#plays].file == WV:SoundPath(97250, 'a'))
 WV:Silence()
@@ -151,11 +151,11 @@ assert(not WV:GetReplaySpeaker(999999).speaker)
 print('PASS: pre-update Forever quest recovers Logmar, preserves captured identity and leaves unknown quests neutral')
 
 -- All bundled identities resolve by ID; confirmed multiple/non-NPC starters
--- suppress Classic guesses, while an absent supplemental entry keeps fallback.
+-- and absent unified entries never fall through to another runtime database.
 local savedQuests = TalkingHeadRuDB.questSpeakers
 TalkingHeadRuDB.questSpeakers = {}
 local recovered, blocked = 0, 0
-for id, starter in pairs(WowVoiceForeverSpeakers) do
+for id, starter in pairs(WowVoiceSpeakers.givers) do
     local speaker = WV:GetReplaySpeaker(id).speaker
     if starter then
         assert(speaker and speaker.npcID == starter.npcID and speaker.name == starter.name)
@@ -166,14 +166,14 @@ for id, starter in pairs(WowVoiceForeverSpeakers) do
     end
 end
 assert(recovered > 3000 and blocked > 0)
-local starter = WowVoiceForeverSpeakers[179]
-WowVoiceForeverSpeakers[179] = false
+local starter = WowVoiceSpeakers.givers[179]
+WowVoiceSpeakers.givers[179] = false
 assert(not WV:GetReplaySpeaker(179).speaker)
 questCache()[179] = {npcID=658, name='Captured giver', displayID=1234}
 assert(WV:GetReplaySpeaker(179).speaker.displayID == 1234)
 questCache()[179] = nil
-WowVoiceForeverSpeakers[179] = nil
-assert(WV:GetReplaySpeaker(179).speaker.npcID == 658)
-WowVoiceForeverSpeakers[179] = starter
+WowVoiceSpeakers.givers[179] = nil
+assert(not WV:GetReplaySpeaker(179).speaker, 'Runtime must not fall back to the Classic index')
+WowVoiceSpeakers.givers[179] = starter
 TalkingHeadRuDB.questSpeakers = savedQuests
-print('PASS: entire Forever starter index, explicit exclusions, captured priority and Classic fallback')
+print('PASS: entire unified starter database, explicit exclusions, captured priority and no runtime source fallback')
