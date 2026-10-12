@@ -925,7 +925,7 @@ Inputs:
 - Detailed [Wowhead Forever snapshot from Quest Pins](https://github.com/TylerAkins/forever-quest-markers/tree/2d354aa828af29cb2e997b7367f7bb59b75f10e2/data/forever-quests),
   retained in `forever-speakers-manifest.json`, supplies historical giver identities
   and explicit item/object/multiple-starter exclusions.
-- [Current Quest Pins database](https://github.com/TylerAkins/forever-quest-markers/tree/ce1da1b14290645eb67a9f9bf373c2088713efe3/Database)
+- [Quest Pins database imported October 11](https://github.com/TylerAkins/forever-quest-markers/tree/ce1da1b14290645eb67a9f9bf373c2088713efe3/Database)
   fills gaps after CatQuest and Wayfarer. The October 11, 2026 export uses
   All The Things (`f5d90835055a8a21671d5406fc219ba17efba321`), with 3906 quests,
   3627 single-NPC and 33 multiple-NPC starter mappings. It adds 289 single-NPC
@@ -936,7 +936,7 @@ Inputs:
   old explicit exclusions; all stay visible in the merge conflict report.
 - CatQuest 0.6.4 supplies preferred giver/receiver mappings and NPC appearances;
   Classic supplies remaining receivers and the last fallback for givers.
-- Wayfarer Alliance/Horde/Shared 3.1.0 supplies `qg`, `npc.n/d` and each quest
+- Wayfarer Alliance/Horde/Shared 3.2.0 supplies `qg`, `npc.n/d` and each quest
   stage's `s` field. Accept speakers and `qg` define givers; progress/completion
   speakers define receivers. Conflicting identities are kept ambiguous, missing
   speakers/narration are not filled from the opposite role. Models and names use
@@ -947,8 +947,11 @@ Inputs:
 
 Input versions and hashes are tracked. Only factual metadata is imported;
 external addon code is never executed or required in-game. Source snapshots and
-reports stay outside `src/`. The generated database currently contains 2539 NPCs,
-4672 giver entries (including exclusions), 4205 finisher entries and 2223 models.
+reports stay outside `src/`. The generated database currently contains 2545 NPCs,
+4681 giver entries (including exclusions), 4288 finisher entries and 2302 models.
+Pins was refreshed to `f26f006c94efce787d0f09a32462595ddac2fced` on October 12;
+see the [Wayfarer 3.2.0 migration](internal/wayfarer-3.2.0-integration.md) for
+the current combined import and validation results.
 
 ```shell
 node tools/generate-speakers.js
@@ -1168,15 +1171,24 @@ CatQuest and CatQuest_Voices are by [Cathey](https://t.me/catheyco) (daniilcathe
 
 ## Optional CatQuest coexistence
 
-Core.lua temporarily suppresses CatQuest's `autoDetail`, `autoProgress`
-and `autoComplete` while WowVoice is enabled. The `readAfterAccept` path also
-checks `autoDetail`, so it cannot enqueue a duplicate reading. CatQuest retains
-books, location lore, NPC greetings/gossip, manual reading, UI and history.
-Its read buttons on `QuestFrame`, `GossipFrame` and both journal layouts are
-hidden while our addon is enabled, including late login creation and subsequent
-Show calls. Identification uses CatQuest's click handlers, independent of labels
-and client language. `ItemTextFrame` book buttons and unrelated buttons remain
-available. The prior visibility is restored with `/thead off` or at logout.
+`LibraryIntegration.lua` temporarily suppresses upstream autoplay (quests, books,
+greetings/gossip), CatQuest lore indicators and Codex/story popups while TalkingHead Ru
+is enabled. Quest playback buttons are hidden separately, including late creation.
+Manual book/lore playback remains available. CatQuest `loreAuto` and `loreMark`, and
+Wayfarer `zoneMode`, become user-owned after an explicit edit in upstream settings.
+`TalkingHeadRuDB.libraryPreferences` stores this exemption per setting, not a duplicate
+of its value. The upstream database remains the authority, including edits made while
+TalkingHead Ru is disabled. On first takeover, existing enabled lore cannot be
+distinguished from a library default and is temporarily suppressed.
+
+`Settings.SetValue` hooks observe explicit edits, including a choice equal to the
+suppressed value. Only still-owned settings are restored on `/thead off` and
+`PLAYER_LOGOUT`, before saved-variable serialization. Hooks are scoped to the
+current database and inactive after release. CatQuest-prefixed chat messages and
+Wayfarer `Util.Print` are temporarily muted; unrelated chat is unchanged.
+The Wayfarer `Zones.Play` guard permits explicit manual playback and user-owned
+zone-lore preferences; otherwise it blocks early/delayed automatic narration.
+
 CatQuest 0.6.0 retains autoDetail/autoComplete and the existing quest-window
 and journal click handlers; autoProgress is no longer used by its player.
 The separate Story modules are absent from CatQuest's 0.6.0 TOC.
@@ -1193,16 +1205,10 @@ Its QuestTracker.lua uses private icon click handlers. Our separate tracker
 integration suppresses its icons on normal and campaign blocks, including
 newly created and recycled blocks, and restores them when our addon is disabled.
 
-This uses CatQuest's initialized settings table without private namespace access
-or upstream file edits. WowVoice has optional TOC dependencies on the two audio
-packs; the original CatQuest_Voices itself requires CatQuest. A late
-CatQuest ADDON_LOADED event defers synchronization until its handler finishes;
-PLAYER_LOGIN also synchronizes. `/thead off` and PLAYER_LOGOUT restore the original
-flags before serialization; `/thead on` captures and suppresses them again. Manual
-changes away from the temporary false value are preserved on restoration.
-CatQuest settings remain editable: manually re-enabling its quest autoplay can
-allow simultaneous playback until the next takeover/reload. Manual reading is
-independent and is not stopped when WowVoice starts. `/thead diag` reports takeover.
+Integration uses initialized settings and public hooks without modifying library
+files. Late ADDON_LOADED callbacks and PLAYER_LOGIN synchronize the takeover;
+`/thead diag` reports quest autoplay suppression. Tests cover release, database
+replacement, repeated activation, user edits and reloads.
 
 AudioSources.lua resolves supplemental recordings independently of either player's UI.
 Only a loaded, supported CatQuest_Voices can supply supplemental recordings.
@@ -1300,8 +1306,8 @@ falling back to game text. With no game text, the merged database is used for
 every audio source. Display substitutions do not overwrite queue/session data.
 Bundled text alone never makes an unavailable recording playable.
 
-CatQuest Voices 0.6.1 plus Wayfarer 3.1.0 produce 3,819 main descriptions, 19 progress
-texts and 3,742 turn-ins (9,497 stored text variants, 3,994 distinct quest IDs
+CatQuest Voices 0.6.1 plus Wayfarer 3.2.0 produce 4,024 main descriptions, 19 progress
+texts and 4,026 turn-ins (10,118 stored text variants, 4,270 distinct quest IDs
 across all stages). Missing CatQuest cues may be recovered from
 `docs/internal/catquest-text-history.json`, keyed by filename and audio SHA-256.
 Current cues win; history is used only for a still-indexed recording whose bytes

@@ -7,9 +7,10 @@
   ],
   "versions": {
     "catquest": "0.6.1",
-    "Wayfarer_Voices_Alliance": "3.1.0",
-    "Wayfarer_Voices_Horde": "3.1.0",
-    "Wayfarer_Voices_Shared": "3.1.0"
+    "Wayfarer_Voices_Alliance": "3.2.0",
+    "Wayfarer_Voices_Horde": "3.2.0",
+    "Wayfarer_Voices_Narrator": "3.2.0",
+    "Wayfarer_Voices_Shared": "3.2.0"
   },
   "sources": {
     "wowvoice": {
@@ -31,28 +32,28 @@
       "variants": 7733
     },
     "wayfarer": {
-      "quests": 3586,
+      "quests": 4058,
       "sections": {
-        "a": 3358,
+        "a": 3790,
         "p": 19,
-        "c": 3380
+        "c": 3905
       },
-      "variants": 7295
+      "variants": 8496
     }
   },
   "merged": {
-    "quests": 3994,
+    "quests": 4270,
     "sections": {
-      "a": 3819,
+      "a": 4024,
       "p": 19,
-      "c": 3742
+      "c": 4026
     },
-    "variants": 9497
+    "variants": 10118
   },
   "selectedSections": {
     "wowvoice": 0,
     "catquest": 5832,
-    "wayfarer": 1748
+    "wayfarer": 2237
   },
   "retainedCatQuestTexts": [
     {
@@ -20005,6 +20006,14 @@
     "170c": {
       "common": "catquest"
     },
+    "171a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "171c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
     "172a": {
       "common": "catquest"
     },
@@ -21966,6 +21975,10 @@
     "490a": {
       "common": "catquest"
     },
+    "490c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
     "491a": {
       "common": "catquest"
     },
@@ -22378,6 +22391,10 @@
     "557c": {
       "common": "catquest"
     },
+    "558a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
     "559a": {
       "male": "catquest",
       "female": "catquest"
@@ -22724,6 +22741,12 @@
       "male": "catquest",
       "female": "catquest"
     },
+    "614a": {
+      "common": "wayfarer"
+    },
+    "615a": {
+      "common": "wayfarer"
+    },
     "615c": {
       "common": "wayfarer"
     },
@@ -22746,6 +22769,9 @@
     "618c": {
       "male": "catquest",
       "female": "catquest"
+    },
+    "620a": {
+      "common": "wayfarer"
     },
     "621a": {
       "common": "catquest"
@@ -24474,6 +24500,15 @@
     "908a": {
       "common": "catquest"
     },
+    "909a": {
+      "common": "wayfarer"
+    },
+    "910a": {
+      "common": "wayfarer"
+    },
+    "911a": {
+      "common": "wayfarer"
+    },
     "913a": {
       "male": "catquest",
       "female": "catquest"
@@ -24488,6 +24523,9 @@
     "914c": {
       "male": "catquest",
       "female": "catquest"
+    },
+    "915a": {
+      "common": "wayfarer"
     },
     "916a": {
       "common": "catquest"
@@ -24546,6 +24584,10 @@
     },
     "924c": {
       "common": "catquest"
+    },
+    "925a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
     },
     "927a": {
       "common": "catquest"
@@ -26443,6 +26485,9 @@
     "1302c": {
       "common": "catquest"
     },
+    "1318a": {
+      "common": "wayfarer"
+    },
     "1319a": {
       "common": "catquest"
     },
@@ -27014,6 +27059,13 @@
       "male": "catquest",
       "female": "catquest"
     },
+    "1468a": {
+      "common": "wayfarer"
+    },
+    "1468c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
     "1469a": {
       "common": "catquest"
     },
@@ -27079,6 +27131,9 @@
     },
     "1478c": {
       "common": "catquest"
+    },
+    "1479a": {
+      "common": "wayfarer"
     },
     "1480a": {
       "common": "catquest"
@@ -27411,6 +27466,13 @@
     "1536c": {
       "common": "catquest"
     },
+    "1558a": {
+      "common": "wayfarer"
+    },
+    "1558c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
     "1560a": {
       "common": "catquest"
     },
@@ -27587,6 +27649,18 @@
     "1656c": {
       "common": "catquest"
     },
+    "1657a": {
+      "common": "wayfarer"
+    },
+    "1657c": {
+      "common": "wayfarer"
+    },
+    "1658a": {
+      "common": "wayfarer"
+    },
+    "1658c": {
+      "common": "wayfarer"
+    },
     "1661a": {
       "male": "catquest",
       "female": "catquest"
@@ -27670,6 +27744,13 @@
     },
     "1686c": {
       "common": "catquest"
+    },
+    "1687a": {
+      "common": "wayfarer"
+    },
+    "1687c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
     },
     "1688a": {
       "common": "catquest"
@@ -27968,6 +28049,9 @@
     },
     "1799c": {
       "common": "catquest"
+    },
+    "1800a": {
+      "common": "wayfarer"
     },
     "1801a": {
       "common": "catquest"
@@ -28907,6 +28991,12 @@
       "male": "catquest",
       "female": "catquest"
     },
+    "2521a": {
+      "common": "wayfarer"
+    },
+    "2521c": {
+      "common": "wayfarer"
+    },
     "2541a": {
       "common": "catquest"
     },
@@ -29268,6 +29358,9 @@
     },
     "2782c": {
       "common": "catquest"
+    },
+    "2783a": {
+      "common": "wayfarer"
     },
     "2783c": {
       "common": "wayfarer"
@@ -30552,6 +30645,10 @@
     "3374a": {
       "common": "wayfarer"
     },
+    "3374c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
     "3375a": {
       "male": "catquest",
       "female": "catquest"
@@ -30594,6 +30691,10 @@
     },
     "3380c": {
       "common": "wayfarer"
+    },
+    "3381a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
     },
     "3382a": {
       "common": "wayfarer"
@@ -30729,6 +30830,13 @@
     "3481c": {
       "common": "catquest"
     },
+    "3501a": {
+      "common": "wayfarer"
+    },
+    "3501c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
     "3504a": {
       "common": "wayfarer"
     },
@@ -30762,7 +30870,23 @@
     "3509a": {
       "common": "wayfarer"
     },
+    "3509c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "3510a": {
+      "common": "wayfarer"
+    },
+    "3510c": {
+      "common": "wayfarer"
+    },
+    "3511a": {
+      "common": "wayfarer"
+    },
     "3511c": {
+      "common": "wayfarer"
+    },
+    "3512a": {
       "common": "wayfarer"
     },
     "3512c": {
@@ -31509,6 +31633,28 @@
       "male": "catquest",
       "female": "catquest"
     },
+    "4022a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "4022c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "4023a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "4023c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "4024a": {
+      "common": "wayfarer"
+    },
+    "4024c": {
+      "common": "wayfarer"
+    },
     "4061a": {
       "common": "wayfarer"
     },
@@ -31746,6 +31892,14 @@
     "4186c": {
       "common": "wayfarer"
     },
+    "4201a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "4201c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
     "4223a": {
       "common": "wayfarer"
     },
@@ -31770,7 +31924,22 @@
     "4243a": {
       "common": "wayfarer"
     },
+    "4243c": {
+      "common": "wayfarer"
+    },
+    "4244a": {
+      "common": "wayfarer"
+    },
+    "4244c": {
+      "common": "wayfarer"
+    },
+    "4245a": {
+      "common": "wayfarer"
+    },
     "4245c": {
+      "common": "wayfarer"
+    },
+    "4261a": {
       "common": "wayfarer"
     },
     "4261c": {
@@ -32038,9 +32207,17 @@
       "male": "catquest",
       "female": "catquest"
     },
+    "4487c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
     "4488a": {
       "male": "catquest",
       "female": "catquest"
+    },
+    "4488c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
     },
     "4489a": {
       "male": "catquest",
@@ -32208,6 +32385,10 @@
     },
     "4606c": {
       "common": "wayfarer"
+    },
+    "4621a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
     },
     "4641a": {
       "male": "catquest",
@@ -32539,6 +32720,9 @@
     "4821c": {
       "common": "catquest"
     },
+    "4822a": {
+      "common": "wayfarer"
+    },
     "4841a": {
       "common": "catquest"
     },
@@ -32587,6 +32771,13 @@
     },
     "4866c": {
       "common": "wayfarer"
+    },
+    "4867a": {
+      "common": "wayfarer"
+    },
+    "4867c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
     },
     "4881a": {
       "common": "catquest"
@@ -33071,6 +33262,16 @@
     "5125c": {
       "common": "wayfarer"
     },
+    "5126a": {
+      "common": "wayfarer"
+    },
+    "5127a": {
+      "common": "wayfarer"
+    },
+    "5127c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
     "5128a": {
       "common": "wayfarer"
     },
@@ -33086,6 +33287,9 @@
     "5142a": {
       "male": "wayfarer",
       "female": "wayfarer"
+    },
+    "5142c": {
+      "common": "wayfarer"
     },
     "5143a": {
       "common": "wayfarer"
@@ -33123,11 +33327,22 @@
     "5148c": {
       "common": "wayfarer"
     },
+    "5149a": {
+      "common": "wayfarer"
+    },
+    "5149c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
     "5151a": {
       "common": "catquest"
     },
     "5151c": {
       "common": "catquest"
+    },
+    "5152a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
     },
     "5152c": {
       "common": "wayfarer"
@@ -33174,10 +33389,32 @@
     "5159c": {
       "common": "wayfarer"
     },
+    "5160a": {
+      "common": "wayfarer"
+    },
+    "5160c": {
+      "common": "wayfarer"
+    },
+    "5161a": {
+      "common": "wayfarer"
+    },
+    "5161c": {
+      "common": "wayfarer"
+    },
+    "5162a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "5162c": {
+      "common": "wayfarer"
+    },
     "5163a": {
       "common": "wayfarer"
     },
     "5163c": {
+      "common": "wayfarer"
+    },
+    "5164a": {
       "common": "wayfarer"
     },
     "5164c": {
@@ -33192,7 +33429,14 @@
     "5166a": {
       "common": "wayfarer"
     },
+    "5166c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
     "5167a": {
+      "common": "wayfarer"
+    },
+    "5167c": {
       "common": "wayfarer"
     },
     "5168a": {
@@ -33375,6 +33619,9 @@
     "5238c": {
       "common": "wayfarer"
     },
+    "5241a": {
+      "common": "wayfarer"
+    },
     "5241c": {
       "common": "wayfarer"
     },
@@ -33399,6 +33646,27 @@
     "5245a": {
       "common": "wayfarer"
     },
+    "5245c": {
+      "common": "wayfarer"
+    },
+    "5246a": {
+      "common": "wayfarer"
+    },
+    "5246c": {
+      "common": "wayfarer"
+    },
+    "5247a": {
+      "common": "wayfarer"
+    },
+    "5247c": {
+      "common": "wayfarer"
+    },
+    "5248a": {
+      "common": "wayfarer"
+    },
+    "5248c": {
+      "common": "wayfarer"
+    },
     "5249a": {
       "common": "wayfarer"
     },
@@ -33416,6 +33684,10 @@
     },
     "5251c": {
       "common": "wayfarer"
+    },
+    "5252a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
     },
     "5252c": {
       "common": "wayfarer"
@@ -33662,6 +33934,14 @@
     "5501c": {
       "common": "catquest"
     },
+    "5502a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "5502c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
     "5503c": {
       "common": "wayfarer"
     },
@@ -33844,6 +34124,9 @@
       "female": "catquest"
     },
     "5601a": {
+      "common": "wayfarer"
+    },
+    "5601c": {
       "common": "wayfarer"
     },
     "5621a": {
@@ -34158,6 +34441,9 @@
       "female": "catquest"
     },
     "5721a": {
+      "common": "wayfarer"
+    },
+    "5721c": {
       "common": "wayfarer"
     },
     "5722a": {
@@ -34516,6 +34802,10 @@
     "5941c": {
       "common": "wayfarer"
     },
+    "5942a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
     "5942c": {
       "common": "wayfarer"
     },
@@ -34620,6 +34910,16 @@
       "common": "wayfarer"
     },
     "6030c": {
+      "common": "wayfarer"
+    },
+    "6031a": {
+      "common": "wayfarer"
+    },
+    "6031c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "6032a": {
       "common": "wayfarer"
     },
     "6041a": {
@@ -34961,6 +35261,12 @@
       "common": "catquest"
     },
     "6144a": {
+      "common": "wayfarer"
+    },
+    "6144c": {
+      "common": "wayfarer"
+    },
+    "6145a": {
       "common": "wayfarer"
     },
     "6145c": {
@@ -35347,6 +35653,15 @@
     "6501a": {
       "common": "wayfarer"
     },
+    "6501c": {
+      "common": "wayfarer"
+    },
+    "6502a": {
+      "common": "wayfarer"
+    },
+    "6502c": {
+      "common": "wayfarer"
+    },
     "6503a": {
       "common": "catquest"
     },
@@ -35473,12 +35788,46 @@
     "6570a": {
       "common": "wayfarer"
     },
+    "6570c": {
+      "common": "wayfarer"
+    },
     "6571a": {
       "common": "catquest"
     },
     "6571c": {
       "male": "catquest",
       "female": "catquest"
+    },
+    "6582a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "6582c": {
+      "common": "wayfarer"
+    },
+    "6583a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "6583c": {
+      "common": "wayfarer"
+    },
+    "6584a": {
+      "common": "wayfarer"
+    },
+    "6584c": {
+      "common": "wayfarer"
+    },
+    "6585a": {
+      "common": "wayfarer"
+    },
+    "6585c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "6601a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
     },
     "6601c": {
       "common": "wayfarer"
@@ -35672,6 +36021,51 @@
     "6762c": {
       "common": "wayfarer"
     },
+    "6804a": {
+      "common": "wayfarer"
+    },
+    "6804c": {
+      "common": "wayfarer"
+    },
+    "6805a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "6805c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "6821a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "6821c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "6822a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "6822c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "6823a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "6823c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "6824a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "6824c": {
+      "common": "wayfarer"
+    },
     "6844a": {
       "common": "wayfarer"
     },
@@ -35713,6 +36107,12 @@
       "male": "catquest",
       "female": "catquest"
     },
+    "6963a": {
+      "common": "wayfarer"
+    },
+    "6963c": {
+      "common": "wayfarer"
+    },
     "6964a": {
       "common": "catquest"
     },
@@ -35731,6 +36131,12 @@
     "6983c": {
       "common": "catquest"
     },
+    "6984a": {
+      "common": "wayfarer"
+    },
+    "6984c": {
+      "common": "wayfarer"
+    },
     "7003a": {
       "common": "catquest"
     },
@@ -35743,6 +36149,19 @@
     },
     "7021c": {
       "common": "catquest"
+    },
+    "7022a": {
+      "common": "wayfarer"
+    },
+    "7022c": {
+      "common": "wayfarer"
+    },
+    "7023a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "7023c": {
+      "common": "wayfarer"
     },
     "7024a": {
       "male": "catquest",
@@ -35780,6 +36199,12 @@
       "male": "catquest",
       "female": "catquest"
     },
+    "7042a": {
+      "common": "wayfarer"
+    },
+    "7042c": {
+      "common": "wayfarer"
+    },
     "7043a": {
       "common": "catquest"
     },
@@ -35792,17 +36217,55 @@
     "7044c": {
       "common": "catquest"
     },
+    "7045a": {
+      "common": "wayfarer"
+    },
+    "7045c": {
+      "common": "wayfarer"
+    },
     "7046a": {
       "common": "catquest"
     },
     "7046c": {
       "common": "catquest"
     },
+    "7061a": {
+      "common": "wayfarer"
+    },
+    "7061c": {
+      "common": "wayfarer"
+    },
     "7062a": {
       "common": "catquest"
     },
     "7062c": {
       "common": "catquest"
+    },
+    "7063a": {
+      "common": "wayfarer"
+    },
+    "7063c": {
+      "common": "wayfarer"
+    },
+    "7064a": {
+      "common": "wayfarer"
+    },
+    "7064c": {
+      "common": "wayfarer"
+    },
+    "7065a": {
+      "common": "wayfarer"
+    },
+    "7065c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "7066a": {
+      "common": "wayfarer"
+    },
+    "7066c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
     },
     "7067a": {
       "male": "catquest",
@@ -35823,10 +36286,185 @@
     "7070c": {
       "common": "catquest"
     },
+    "7081a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "7081c": {
+      "common": "wayfarer"
+    },
+    "7082a": {
+      "common": "wayfarer"
+    },
+    "7082c": {
+      "common": "wayfarer"
+    },
+    "7101a": {
+      "common": "wayfarer"
+    },
+    "7101c": {
+      "common": "wayfarer"
+    },
+    "7102a": {
+      "common": "wayfarer"
+    },
+    "7102c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "7121a": {
+      "common": "wayfarer"
+    },
+    "7121c": {
+      "common": "wayfarer"
+    },
+    "7122a": {
+      "common": "wayfarer"
+    },
+    "7122c": {
+      "common": "wayfarer"
+    },
+    "7123a": {
+      "common": "wayfarer"
+    },
+    "7123c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "7124a": {
+      "common": "wayfarer"
+    },
+    "7124c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "7141a": {
+      "common": "wayfarer"
+    },
+    "7141c": {
+      "common": "wayfarer"
+    },
+    "7142a": {
+      "common": "wayfarer"
+    },
+    "7142c": {
+      "common": "wayfarer"
+    },
+    "7161a": {
+      "common": "wayfarer"
+    },
+    "7161c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "7162a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "7162c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "7163c": {
+      "common": "wayfarer"
+    },
+    "7164c": {
+      "common": "wayfarer"
+    },
+    "7165c": {
+      "common": "wayfarer"
+    },
+    "7166c": {
+      "common": "wayfarer"
+    },
+    "7167c": {
+      "common": "wayfarer"
+    },
+    "7168c": {
+      "common": "wayfarer"
+    },
+    "7169c": {
+      "common": "wayfarer"
+    },
+    "7170c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "7171c": {
+      "common": "wayfarer"
+    },
+    "7172c": {
+      "common": "wayfarer"
+    },
+    "7181a": {
+      "common": "wayfarer"
+    },
     "7201a": {
       "common": "wayfarer"
     },
     "7201c": {
+      "common": "wayfarer"
+    },
+    "7202a": {
+      "common": "wayfarer"
+    },
+    "7221a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "7222a": {
+      "common": "wayfarer"
+    },
+    "7223a": {
+      "common": "wayfarer"
+    },
+    "7223c": {
+      "common": "wayfarer"
+    },
+    "7224a": {
+      "common": "wayfarer"
+    },
+    "7224c": {
+      "common": "wayfarer"
+    },
+    "7241a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "7241c": {
+      "common": "wayfarer"
+    },
+    "7261a": {
+      "common": "wayfarer"
+    },
+    "7261c": {
+      "common": "wayfarer"
+    },
+    "7281a": {
+      "common": "wayfarer"
+    },
+    "7281c": {
+      "common": "wayfarer"
+    },
+    "7282a": {
+      "common": "wayfarer"
+    },
+    "7282c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "7301a": {
+      "common": "wayfarer"
+    },
+    "7301c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "7302a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "7302c": {
       "common": "wayfarer"
     },
     "7321a": {
@@ -35834,6 +36472,12 @@
     },
     "7321c": {
       "common": "catquest"
+    },
+    "7367a": {
+      "common": "wayfarer"
+    },
+    "7368a": {
+      "common": "wayfarer"
     },
     "7383a": {
       "common": "catquest"
@@ -35852,6 +36496,9 @@
       "female": "wayfarer"
     },
     "7461c": {
+      "common": "wayfarer"
+    },
+    "7462a": {
       "common": "wayfarer"
     },
     "7462c": {
@@ -35873,6 +36520,9 @@
       "common": "wayfarer"
     },
     "7482c": {
+      "common": "wayfarer"
+    },
+    "7486a": {
       "common": "wayfarer"
     },
     "7486c": {
@@ -36044,6 +36694,15 @@
     "7601c": {
       "common": "catquest"
     },
+    "7602a": {
+      "common": "wayfarer"
+    },
+    "7602c": {
+      "common": "wayfarer"
+    },
+    "7603a": {
+      "common": "wayfarer"
+    },
     "7603c": {
       "common": "wayfarer"
     },
@@ -36067,6 +36726,19 @@
     },
     "7623a": {
       "common": "wayfarer"
+    },
+    "7623c": {
+      "common": "wayfarer"
+    },
+    "7624a": {
+      "common": "wayfarer"
+    },
+    "7624c": {
+      "common": "wayfarer"
+    },
+    "7625a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
     },
     "7625c": {
       "common": "wayfarer"
@@ -36103,6 +36775,31 @@
     },
     "7631a": {
       "common": "wayfarer"
+    },
+    "7631c": {
+      "common": "wayfarer"
+    },
+    "7632a": {
+      "common": "wayfarer"
+    },
+    "7632c": {
+      "common": "wayfarer"
+    },
+    "7634a": {
+      "common": "wayfarer"
+    },
+    "7634c": {
+      "common": "wayfarer"
+    },
+    "7635a": {
+      "common": "wayfarer"
+    },
+    "7635c": {
+      "common": "wayfarer"
+    },
+    "7636a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
     },
     "7637a": {
       "common": "wayfarer"
@@ -36144,6 +36841,12 @@
     "7643a": {
       "common": "wayfarer"
     },
+    "7643c": {
+      "common": "wayfarer"
+    },
+    "7644a": {
+      "common": "wayfarer"
+    },
     "7644c": {
       "common": "wayfarer"
     },
@@ -36160,6 +36863,9 @@
       "common": "wayfarer"
     },
     "7647a": {
+      "common": "wayfarer"
+    },
+    "7647c": {
       "common": "wayfarer"
     },
     "7648a": {
@@ -36216,12 +36922,29 @@
     "7667c": {
       "common": "wayfarer"
     },
+    "7668a": {
+      "common": "wayfarer"
+    },
+    "7670a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "7670c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
     "7701a": {
       "common": "catquest"
     },
     "7701c": {
       "male": "catquest",
       "female": "catquest"
+    },
+    "7703a": {
+      "common": "wayfarer"
+    },
+    "7703c": {
+      "common": "wayfarer"
     },
     "7704a": {
       "common": "catquest"
@@ -36628,6 +37351,10 @@
       "male": "catquest",
       "female": "catquest"
     },
+    "7873a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
     "7874a": {
       "male": "catquest",
       "female": "catquest"
@@ -36643,6 +37370,12 @@
     "7875c": {
       "male": "catquest",
       "female": "catquest"
+    },
+    "7876a": {
+      "common": "wayfarer"
+    },
+    "7876c": {
+      "common": "wayfarer"
     },
     "7877a": {
       "common": "wayfarer"
@@ -36809,6 +37542,13 @@
     "8077c": {
       "common": "wayfarer"
     },
+    "8080a": {
+      "common": "wayfarer"
+    },
+    "8080c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
     "8101c": {
       "common": "wayfarer"
     },
@@ -36819,6 +37559,9 @@
       "common": "wayfarer"
     },
     "8104c": {
+      "common": "wayfarer"
+    },
+    "8105a": {
       "common": "wayfarer"
     },
     "8106c": {
@@ -36845,6 +37588,17 @@
     "8113c": {
       "common": "wayfarer"
     },
+    "8114a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8114c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8115a": {
+      "common": "wayfarer"
+    },
     "8116c": {
       "common": "wayfarer"
     },
@@ -36855,6 +37609,19 @@
       "common": "wayfarer"
     },
     "8119c": {
+      "common": "wayfarer"
+    },
+    "8120a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8121a": {
+      "common": "wayfarer"
+    },
+    "8122a": {
+      "common": "wayfarer"
+    },
+    "8123a": {
       "common": "wayfarer"
     },
     "8141c": {
@@ -36881,7 +37648,30 @@
     "8148c": {
       "common": "wayfarer"
     },
+    "8149a": {
+      "common": "wayfarer"
+    },
+    "8149c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8150a": {
+      "common": "wayfarer"
+    },
+    "8150c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
     "8151a": {
+      "common": "wayfarer"
+    },
+    "8151c": {
+      "common": "wayfarer"
+    },
+    "8153a": {
+      "common": "wayfarer"
+    },
+    "8153c": {
       "common": "wayfarer"
     },
     "8154a": {
@@ -36986,6 +37776,21 @@
     "8227c": {
       "common": "wayfarer"
     },
+    "8231a": {
+      "common": "wayfarer"
+    },
+    "8231c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8232a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8232c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
     "8233a": {
       "common": "wayfarer"
     },
@@ -37023,6 +37828,9 @@
     "8250a": {
       "common": "wayfarer"
     },
+    "8250c": {
+      "common": "wayfarer"
+    },
     "8251a": {
       "common": "wayfarer"
     },
@@ -37044,6 +37852,24 @@
     "8254a": {
       "common": "wayfarer"
     },
+    "8254c": {
+      "common": "wayfarer"
+    },
+    "8255a": {
+      "common": "wayfarer"
+    },
+    "8255c": {
+      "common": "wayfarer"
+    },
+    "8256a": {
+      "common": "wayfarer"
+    },
+    "8256c": {
+      "common": "wayfarer"
+    },
+    "8257a": {
+      "common": "wayfarer"
+    },
     "8257c": {
       "common": "wayfarer"
     },
@@ -37052,6 +37878,38 @@
     },
     "8258c": {
       "common": "wayfarer"
+    },
+    "8260c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8261c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8262c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8263c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8264c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8265c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8266c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8268c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
     },
     "8273c": {
       "common": "wayfarer"
@@ -37144,9 +38002,29 @@
       "male": "catquest",
       "female": "catquest"
     },
+    "8291a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8294a": {
+      "common": "wayfarer"
+    },
+    "8294c": {
+      "common": "wayfarer"
+    },
     "8295a": {
       "male": "catquest",
       "female": "catquest"
+    },
+    "8297a": {
+      "common": "wayfarer"
+    },
+    "8297c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8299a": {
+      "common": "wayfarer"
     },
     "8301a": {
       "common": "wayfarer"
@@ -37157,10 +38035,16 @@
     "8303a": {
       "common": "wayfarer"
     },
+    "8303c": {
+      "common": "wayfarer"
+    },
     "8304a": {
       "common": "wayfarer"
     },
     "8304c": {
+      "common": "wayfarer"
+    },
+    "8305a": {
       "common": "wayfarer"
     },
     "8305c": {
@@ -37253,6 +38137,12 @@
     "8321c": {
       "common": "wayfarer"
     },
+    "8322a": {
+      "common": "wayfarer"
+    },
+    "8322c": {
+      "common": "wayfarer"
+    },
     "8323a": {
       "common": "wayfarer"
     },
@@ -37341,8 +38231,19 @@
       "male": "catquest",
       "female": "catquest"
     },
+    "8369a": {
+      "common": "wayfarer"
+    },
+    "8369c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
     "8370a": {
       "common": "catquest"
+    },
+    "8370c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
     },
     "8371a": {
       "male": "wayfarer",
@@ -37354,8 +38255,20 @@
     "8372a": {
       "common": "catquest"
     },
+    "8372c": {
+      "common": "wayfarer"
+    },
+    "8373a": {
+      "common": "wayfarer"
+    },
+    "8373c": {
+      "common": "wayfarer"
+    },
     "8374a": {
       "common": "catquest"
+    },
+    "8374c": {
+      "common": "wayfarer"
     },
     "8375a": {
       "common": "wayfarer"
@@ -37387,14 +38300,39 @@
     "8393a": {
       "common": "catquest"
     },
+    "8393c": {
+      "common": "wayfarer"
+    },
     "8394a": {
       "common": "catquest"
+    },
+    "8394c": {
+      "common": "wayfarer"
+    },
+    "8395a": {
+      "common": "wayfarer"
+    },
+    "8395c": {
+      "common": "wayfarer"
+    },
+    "8396a": {
+      "common": "wayfarer"
+    },
+    "8396c": {
+      "common": "wayfarer"
     },
     "8399a": {
       "common": "catquest"
     },
+    "8399c": {
+      "common": "wayfarer"
+    },
     "8400a": {
       "common": "catquest"
+    },
+    "8400c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
     },
     "8401a": {
       "common": "catquest"
@@ -37402,6 +38340,25 @@
     "8401c": {
       "male": "catquest",
       "female": "catquest"
+    },
+    "8402a": {
+      "common": "wayfarer"
+    },
+    "8402c": {
+      "common": "wayfarer"
+    },
+    "8403a": {
+      "common": "wayfarer"
+    },
+    "8403c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8409a": {
+      "common": "wayfarer"
+    },
+    "8409c": {
+      "common": "wayfarer"
     },
     "8410a": {
       "common": "catquest"
@@ -37460,6 +38417,30 @@
     "8419a": {
       "common": "wayfarer"
     },
+    "8419c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8420a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8420c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8421a": {
+      "common": "wayfarer"
+    },
+    "8421c": {
+      "common": "wayfarer"
+    },
+    "8422a": {
+      "common": "wayfarer"
+    },
+    "8422c": {
+      "common": "wayfarer"
+    },
     "8423a": {
       "common": "wayfarer"
     },
@@ -37499,11 +38480,45 @@
       "male": "catquest",
       "female": "catquest"
     },
+    "8429a": {
+      "common": "wayfarer"
+    },
+    "8429c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8430a": {
+      "common": "wayfarer"
+    },
+    "8430c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
     "8436a": {
       "common": "catquest"
     },
+    "8436c": {
+      "common": "wayfarer"
+    },
     "8437a": {
       "common": "catquest"
+    },
+    "8437c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8438a": {
+      "common": "wayfarer"
+    },
+    "8438c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8439a": {
+      "common": "wayfarer"
+    },
+    "8439c": {
+      "common": "wayfarer"
     },
     "8460a": {
       "male": "catquest",
@@ -37513,14 +38528,60 @@
       "male": "catquest",
       "female": "catquest"
     },
+    "8461a": {
+      "common": "wayfarer"
+    },
+    "8461c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8462a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8462c": {
+      "common": "wayfarer"
+    },
+    "8464a": {
+      "common": "wayfarer"
+    },
+    "8464c": {
+      "common": "wayfarer"
+    },
+    "8465a": {
+      "common": "wayfarer"
+    },
+    "8465c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
     "8470a": {
       "common": "wayfarer"
+    },
+    "8470c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
     },
     "8471a": {
       "common": "wayfarer"
     },
+    "8471c": {
+      "common": "wayfarer"
+    },
+    "8481a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8484a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
     "8484c": {
       "common": "wayfarer"
+    },
+    "8485a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
     },
     "8485c": {
       "common": "wayfarer"
@@ -37603,6 +38664,9 @@
       "female": "catquest"
     },
     "8519a": {
+      "common": "wayfarer"
+    },
+    "8519c": {
       "common": "wayfarer"
     },
     "8520a": {
@@ -37812,6 +38876,9 @@
     "8598c": {
       "common": "wayfarer"
     },
+    "8599a": {
+      "common": "wayfarer"
+    },
     "8599c": {
       "common": "wayfarer"
     },
@@ -37881,10 +38948,130 @@
       "male": "catquest",
       "female": "catquest"
     },
+    "8619c": {
+      "common": "wayfarer"
+    },
     "8620a": {
       "common": "wayfarer"
     },
     "8620c": {
+      "common": "wayfarer"
+    },
+    "8635c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8636c": {
+      "common": "wayfarer"
+    },
+    "8642c": {
+      "common": "wayfarer"
+    },
+    "8643c": {
+      "common": "wayfarer"
+    },
+    "8644c": {
+      "common": "wayfarer"
+    },
+    "8645c": {
+      "common": "wayfarer"
+    },
+    "8646c": {
+      "common": "wayfarer"
+    },
+    "8647c": {
+      "common": "wayfarer"
+    },
+    "8648c": {
+      "common": "wayfarer"
+    },
+    "8649c": {
+      "common": "wayfarer"
+    },
+    "8650c": {
+      "common": "wayfarer"
+    },
+    "8651c": {
+      "common": "wayfarer"
+    },
+    "8652c": {
+      "common": "wayfarer"
+    },
+    "8653c": {
+      "common": "wayfarer"
+    },
+    "8654c": {
+      "common": "wayfarer"
+    },
+    "8670c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8671c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8672c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8673c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8674c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8675c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8676c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8677c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8678c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8679c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8680c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8681c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8682c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8683c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8684c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8685c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8686c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8688c": {
       "common": "wayfarer"
     },
     "8689a": {
@@ -38031,6 +39218,51 @@
     "8712c": {
       "common": "wayfarer"
     },
+    "8713c": {
+      "common": "wayfarer"
+    },
+    "8714c": {
+      "common": "wayfarer"
+    },
+    "8715c": {
+      "common": "wayfarer"
+    },
+    "8716c": {
+      "common": "wayfarer"
+    },
+    "8717c": {
+      "common": "wayfarer"
+    },
+    "8718c": {
+      "common": "wayfarer"
+    },
+    "8719c": {
+      "common": "wayfarer"
+    },
+    "8720c": {
+      "common": "wayfarer"
+    },
+    "8721c": {
+      "common": "wayfarer"
+    },
+    "8722c": {
+      "common": "wayfarer"
+    },
+    "8723c": {
+      "common": "wayfarer"
+    },
+    "8724c": {
+      "common": "wayfarer"
+    },
+    "8725c": {
+      "common": "wayfarer"
+    },
+    "8726c": {
+      "common": "wayfarer"
+    },
+    "8727c": {
+      "common": "wayfarer"
+    },
     "8728a": {
       "common": "wayfarer"
     },
@@ -38040,7 +39272,104 @@
     "8729a": {
       "common": "wayfarer"
     },
+    "8729c": {
+      "common": "wayfarer"
+    },
+    "8733a": {
+      "common": "wayfarer"
+    },
+    "8733c": {
+      "common": "wayfarer"
+    },
+    "8734a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8734c": {
+      "common": "wayfarer"
+    },
+    "8735a": {
+      "common": "wayfarer"
+    },
+    "8735c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8736a": {
+      "common": "wayfarer"
+    },
+    "8736c": {
+      "common": "wayfarer"
+    },
+    "8741a": {
+      "common": "wayfarer"
+    },
+    "8741c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
     "8743c": {
+      "common": "wayfarer"
+    },
+    "8744c": {
+      "common": "wayfarer"
+    },
+    "8746a": {
+      "common": "wayfarer"
+    },
+    "8746c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8748c": {
+      "common": "wayfarer"
+    },
+    "8749c": {
+      "common": "wayfarer"
+    },
+    "8751c": {
+      "common": "wayfarer"
+    },
+    "8753c": {
+      "common": "wayfarer"
+    },
+    "8754c": {
+      "common": "wayfarer"
+    },
+    "8755c": {
+      "common": "wayfarer"
+    },
+    "8756c": {
+      "common": "wayfarer"
+    },
+    "8758c": {
+      "common": "wayfarer"
+    },
+    "8761c": {
+      "common": "wayfarer"
+    },
+    "8762a": {
+      "common": "wayfarer"
+    },
+    "8762c": {
+      "common": "wayfarer"
+    },
+    "8763a": {
+      "common": "wayfarer"
+    },
+    "8763c": {
+      "common": "wayfarer"
+    },
+    "8767c": {
+      "common": "wayfarer"
+    },
+    "8768c": {
+      "common": "wayfarer"
+    },
+    "8769c": {
+      "common": "wayfarer"
+    },
+    "8788c": {
       "common": "wayfarer"
     },
     "8791a": {
@@ -38085,17 +39414,35 @@
       "male": "catquest",
       "female": "catquest"
     },
+    "8796c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
     "8797a": {
       "male": "catquest",
       "female": "catquest"
     },
+    "8797c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
     "8798c": {
+      "common": "wayfarer"
+    },
+    "8799a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8799c": {
       "common": "wayfarer"
     },
     "8800a": {
       "common": "wayfarer"
     },
     "8800c": {
+      "common": "wayfarer"
+    },
+    "8803c": {
       "common": "wayfarer"
     },
     "8827a": {
@@ -38142,11 +39489,23 @@
     "8861c": {
       "common": "catquest"
     },
+    "8862c": {
+      "common": "wayfarer"
+    },
+    "8866c": {
+      "common": "wayfarer"
+    },
     "8867a": {
       "common": "catquest"
     },
     "8867c": {
       "common": "catquest"
+    },
+    "8868a": {
+      "common": "wayfarer"
+    },
+    "8868c": {
+      "common": "wayfarer"
     },
     "8870a": {
       "common": "catquest"
@@ -38188,6 +39547,12 @@
       "male": "catquest",
       "female": "catquest"
     },
+    "8883a": {
+      "common": "wayfarer"
+    },
+    "8883c": {
+      "common": "wayfarer"
+    },
     "8897a": {
       "common": "catquest"
     },
@@ -38199,6 +39564,12 @@
     },
     "8898c": {
       "common": "catquest"
+    },
+    "8899a": {
+      "common": "wayfarer"
+    },
+    "8899c": {
+      "common": "wayfarer"
     },
     "8900a": {
       "common": "catquest"
@@ -38638,6 +40009,36 @@
     "8978c": {
       "common": "wayfarer"
     },
+    "8979a": {
+      "common": "wayfarer"
+    },
+    "8979c": {
+      "common": "wayfarer"
+    },
+    "8980a": {
+      "common": "wayfarer"
+    },
+    "8980c": {
+      "common": "wayfarer"
+    },
+    "8982a": {
+      "common": "wayfarer"
+    },
+    "8982c": {
+      "common": "wayfarer"
+    },
+    "8983a": {
+      "common": "wayfarer"
+    },
+    "8983c": {
+      "common": "wayfarer"
+    },
+    "8984a": {
+      "common": "wayfarer"
+    },
+    "8984c": {
+      "common": "wayfarer"
+    },
     "8985a": {
       "common": "wayfarer"
     },
@@ -38694,6 +40095,14 @@
     },
     "8995a": {
       "common": "wayfarer"
+    },
+    "8995c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
+    "8996a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
     },
     "8996c": {
       "common": "wayfarer"
@@ -38860,6 +40269,39 @@
     "9023c": {
       "common": "wayfarer"
     },
+    "9024a": {
+      "common": "wayfarer"
+    },
+    "9024c": {
+      "common": "wayfarer"
+    },
+    "9025a": {
+      "common": "wayfarer"
+    },
+    "9025c": {
+      "common": "wayfarer"
+    },
+    "9026a": {
+      "common": "wayfarer"
+    },
+    "9026c": {
+      "common": "wayfarer"
+    },
+    "9027a": {
+      "common": "wayfarer"
+    },
+    "9027c": {
+      "common": "wayfarer"
+    },
+    "9028a": {
+      "common": "wayfarer"
+    },
+    "9028c": {
+      "common": "wayfarer"
+    },
+    "9029c": {
+      "common": "wayfarer"
+    },
     "9032a": {
       "common": "wayfarer"
     },
@@ -38898,6 +40340,12 @@
     },
     "9065a": {
       "common": "catquest"
+    },
+    "9085a": {
+      "common": "wayfarer"
+    },
+    "9085c": {
+      "common": "wayfarer"
     },
     "9121a": {
       "common": "wayfarer"
@@ -38952,6 +40400,18 @@
       "common": "wayfarer"
     },
     "9141c": {
+      "common": "wayfarer"
+    },
+    "9153a": {
+      "common": "wayfarer"
+    },
+    "9153c": {
+      "common": "wayfarer"
+    },
+    "9154a": {
+      "common": "wayfarer"
+    },
+    "9154c": {
       "common": "wayfarer"
     },
     "9229a": {
@@ -39104,11 +40564,59 @@
     "9265c": {
       "common": "catquest"
     },
+    "9292a": {
+      "common": "wayfarer"
+    },
+    "9292c": {
+      "common": "wayfarer"
+    },
+    "9295a": {
+      "common": "wayfarer"
+    },
+    "9295c": {
+      "common": "wayfarer"
+    },
+    "9299a": {
+      "common": "wayfarer"
+    },
+    "9299c": {
+      "common": "wayfarer"
+    },
+    "9300a": {
+      "common": "wayfarer"
+    },
+    "9300c": {
+      "common": "wayfarer"
+    },
+    "9301a": {
+      "common": "wayfarer"
+    },
+    "9301c": {
+      "common": "wayfarer"
+    },
+    "9302a": {
+      "common": "wayfarer"
+    },
+    "9302c": {
+      "common": "wayfarer"
+    },
+    "9304a": {
+      "common": "wayfarer"
+    },
+    "9304c": {
+      "common": "wayfarer"
+    },
     "9310a": {
       "common": "catquest"
     },
     "9310c": {
       "common": "catquest"
+    },
+    "9319a": {
+      "common": "wayfarer"
+    },
+    "9319c": {
+      "common": "wayfarer"
     },
     "9322a": {
       "common": "catquest"
@@ -39124,6 +40632,48 @@
       "male": "catquest",
       "female": "catquest"
     },
+    "9324a": {
+      "common": "wayfarer"
+    },
+    "9324c": {
+      "common": "wayfarer"
+    },
+    "9325a": {
+      "common": "wayfarer"
+    },
+    "9325c": {
+      "common": "wayfarer"
+    },
+    "9326a": {
+      "common": "wayfarer"
+    },
+    "9326c": {
+      "common": "wayfarer"
+    },
+    "9330a": {
+      "common": "wayfarer"
+    },
+    "9330c": {
+      "common": "wayfarer"
+    },
+    "9331a": {
+      "common": "wayfarer"
+    },
+    "9331c": {
+      "common": "wayfarer"
+    },
+    "9332a": {
+      "common": "wayfarer"
+    },
+    "9332c": {
+      "common": "wayfarer"
+    },
+    "9339a": {
+      "common": "wayfarer"
+    },
+    "9339c": {
+      "common": "wayfarer"
+    },
     "9362a": {
       "common": "wayfarer"
     },
@@ -39135,6 +40685,13 @@
     },
     "9364c": {
       "common": "wayfarer"
+    },
+    "9365a": {
+      "common": "wayfarer"
+    },
+    "9365c": {
+      "male": "wayfarer",
+      "female": "wayfarer"
     },
     "9367a": {
       "common": "catquest"
@@ -39186,6 +40743,10 @@
     "9422c": {
       "common": "catquest"
     },
+    "9556a": {
+      "male": "wayfarer",
+      "female": "wayfarer"
+    },
     "9664a": {
       "common": "wayfarer"
     },
@@ -39208,6 +40769,9 @@
       "male": "catquest",
       "female": "catquest"
     },
+    "65601c": {
+      "common": "wayfarer"
+    },
     "65602a": {
       "common": "catquest"
     },
@@ -39218,8 +40782,14 @@
     "65604a": {
       "common": "catquest"
     },
+    "65604c": {
+      "common": "wayfarer"
+    },
     "65610a": {
       "common": "catquest"
+    },
+    "65610c": {
+      "common": "wayfarer"
     },
     "76156a": {
       "male": "catquest",
@@ -39280,6 +40850,12 @@
       "male": "catquest",
       "female": "catquest"
     },
+    "78127c": {
+      "common": "wayfarer"
+    },
+    "78148c": {
+      "common": "wayfarer"
+    },
     "78261a": {
       "common": "catquest"
     },
@@ -39291,6 +40867,9 @@
     },
     "78270c": {
       "common": "catquest"
+    },
+    "78307c": {
+      "common": "wayfarer"
     },
     "78916a": {
       "common": "catquest"
@@ -39323,6 +40902,21 @@
     "79090c": {
       "common": "catquest"
     },
+    "79091c": {
+      "common": "wayfarer"
+    },
+    "79092c": {
+      "common": "wayfarer"
+    },
+    "79095c": {
+      "common": "wayfarer"
+    },
+    "79097c": {
+      "common": "wayfarer"
+    },
+    "79098c": {
+      "common": "wayfarer"
+    },
     "79192a": {
       "common": "catquest"
     },
@@ -39338,11 +40932,17 @@
     "79363a": {
       "common": "catquest"
     },
+    "79483c": {
+      "common": "wayfarer"
+    },
     "79731a": {
       "common": "catquest"
     },
     "79731c": {
       "common": "catquest"
+    },
+    "79950c": {
+      "common": "wayfarer"
     },
     "79974a": {
       "common": "catquest"

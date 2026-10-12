@@ -71,6 +71,32 @@ exposing an updated catalogue; see [MODEL-CACHE.md](MODEL-CACHE.md).
 
 ## Public launch verification
 
+### Wayfarer 3.2.0 data update (2026-10-12)
+
+The public catalogue contains 3,808 description comparisons and 9,863 recordings,
+using Wayfarer core 1.0.0 and quest modules 3.2.0. Application images are unchanged.
+4,010 new recording versions were streamed directly from installed libraries into
+hash-specific paths; unchanged IDs retain their previous deployed paths. Existing
+audio and votes remain available. All audio hashes were verified before switching.
+
+The model cache gained 69 ready portraits and 478 dependencies. The full offline
+pass completed: 1,339 / 1,340 portraits, with only the previously documented camera
+fallback for quest 97290 (display 146706). All 12,655 model dependency hashes match.
+
+The consistent backup of SQLite, pending inbox, previous catalogue and model
+manifest/reports is `/srv/talkinghead/backups/20261012-wayfarer-3.2.0` (root-only).
+All 131 pre-update votes from 12 participants were verified unchanged; SQLite
+integrity passed, pending and quarantine were empty. Both containers are healthy.
+The public catalogue, an audio hash from each Wayfarer pack, two-variant playback
+and a ready portrait were checked in Firefox without external asset requests or
+test ballots. Memory after restart was approximately 234 MiB combined.
+
+Staging: `/srv/talkinghead/import/wayfarer-3.2.0-20261012/`. To roll back, stop web/API,
+restore the previous three catalogue JSON files and model manifest/reports from
+this backup, then restart with Compose. Keep the live votes volume and all audio;
+do not overwrite votes collected since the backup. This is a one-time deployment
+backup, not an automated backup schedule.
+
 ### CatQuest Voices 0.6.1 data update (2026-10-12)
 
 The public catalogue now uses Voices 0.6.1: 3,576 comparisons and 9,207 recordings.

@@ -13,7 +13,7 @@ local panel = frames.WowVoiceOptionsPanel
 assert(WV:SetSharedQuestVoice('catquest'))
 local snapshot = WowVoiceCatQuestAudio.sourceVersion
 assert(snapshot == '0.6.1' and not S.Status().updated and not panel.AudioSourceWarning:IsShown())
-assert(WowVoiceQuestTexts.sourceVersion == snapshot and WowVoiceSpeakers.schemaVersion == 1)
+assert(TalkingHeadRuQuestTexts.sourceVersion == snapshot and WowVoiceSpeakers.schemaVersion == 1)
 -- Real 0.6.0 replacements: independently measured recordings and live metadata.
 -- These live fields come from the external index, independently of the snapshot.
 local previousFive, previousTwentySeven = quests[5], quests[27]
@@ -111,7 +111,7 @@ assert(not S.Resolve(16, 'c'), 'new releases cannot inherit JSON-only files abse
 -- This fixture is independent of our snapshots: new ID, new text, new voice,
 -- new gender layout. It can be tested before any real upstream release.
 local newID = 99998
-assert(not WowVoiceCatQuestAudio.entries[newID .. 'a'] and not WowVoiceQuestTexts.entries[newID .. 'a'])
+assert(not WowVoiceCatQuestAudio.entries[newID .. 'a'] and not TalkingHeadRuQuestTexts.entries[newID .. 'a'])
 quests[newID] = {d=10,g=1,v='future-voice',c={m={{0,'New male text.'}},f={{0,'New female text.'}}},
     t={d=3,c={x={{0,'New turn-in.'}}}}}
 for _, playerSex in ipairs({2,3}) do
@@ -153,11 +153,11 @@ tick(oldPackStarted + 21.25 + TalkingHeadRuDB.tail + 0.01)
 assert(stops[#stops] == oldPackHandle)
 quests[132] = old132
 -- Runtime CatQuest remains usable even when our optional snapshots are absent.
-local savedAudio, savedTexts = WowVoiceCatQuestAudio, WowVoiceQuestTexts
-WowVoiceCatQuestAudio, WowVoiceQuestTexts = nil, nil
+local savedAudio, savedTexts = WowVoiceCatQuestAudio, TalkingHeadRuQuestTexts
+WowVoiceCatQuestAudio, TalkingHeadRuQuestTexts = nil, nil
 assert(S.Status() and S.Status().updated and S.Resolve(newID,'a'))
 assert(S.Text(newID,'a') == nil and WowVoiceComparison.QuestIDs()[newID])
-WowVoiceCatQuestAudio, WowVoiceQuestTexts = savedAudio, savedTexts
+WowVoiceCatQuestAudio, TalkingHeadRuQuestTexts = savedAudio, savedTexts
 for _, futureVersion in ipairs({'0.7.0', '1.0.0', ''}) do
     version = futureVersion
     WV:RefreshAudioSources()

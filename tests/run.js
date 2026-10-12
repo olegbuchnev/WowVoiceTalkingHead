@@ -17,6 +17,7 @@ for (const runner of [
   'validate-quest-texts.js',
   'validate-wayfarer-metadata.js',
   'validate-wayfarer-integration.js',
+  'validate-library-integration.js',
   'validate-classic-metadata.js',
   'validate-audio-recording-history.js',
   'validate-localization.js',

@@ -45,6 +45,8 @@ function generate(source, root = path.resolve(__dirname, '..')) {
     const pack = readPack(index);
     if (pack.name !== name || pack.format !== 1 || !version || pack.version !== version
         || (pack.ext && pack.ext !== 'ogg') || !pack.q) throw Error(`Unsupported pack: ${name}`);
+    // Lore-only packs (such as Narrator) have no quest audio to audit or version.
+    if (!Object.keys(pack.q).length) continue;
     const entries = {}, files = {};
     let descriptions = 0;
     for (const [id, quest] of Object.entries(pack.q)) {

@@ -1,12 +1,38 @@
 -- Take over automatic quest events and journal/tracker play buttons.
--- Preserve gossip/lore/books, registered packs and saved preferences on release.
+-- Restore upstream behavior when TalkingHead Ru is disabled or logging out.
 local WV = WowVoice
+local zoneGuard
+local function suppressAutomaticZoneLore(active)
+    local zones = type(_G.Wayfarer) == "table" and Wayfarer.Zones
+    if zoneGuard and (not active or zoneGuard.zones ~= zones) then
+        if zoneGuard.zones.Play == zoneGuard.wrapper then zoneGuard.zones.Play = zoneGuard.original end
+        zoneGuard = nil
+    end
+    if not active or type(zones) ~= "table" or type(zones.Play) ~= "function" then return end
+    if zoneGuard and zoneGuard.wrapper == zones.Play then return end
+    local original = zones.Play
+    local function guarded(self, sound, key, force, ...)
+        -- Login, zone changes and delayed checks pass no force flag. Manual
+        -- /wf zone and map/minimap controls pass true and remain available.
+        if not force and not WV:IsLibraryPreferenceCustomized("WAYFARER_", "zoneMode") then return false end
+        return original(self, sound, key, force, ...)
+    end
+    zoneGuard = {zones=zones, original=original, wrapper=guarded}
+    zones.Play = guarded
+end
 local function silentPrint() end
-local function suppressNotifications()
+local printGuard
+local function suppressNotifications(active)
     local util = type(_G.Wayfarer) == "table" and Wayfarer.Util
+    if printGuard and (not active or printGuard.util ~= util) then
+        if printGuard.util.Print == silentPrint then printGuard.util.Print = printGuard.original end
+        printGuard = nil
+    end
+    if not active then return end
     if type(util) ~= "table" or type(util.Print) ~= "function" or util.Print == silentPrint then return end
     -- Wayfarer's notification/debug helpers all route through Util.Print.
     -- Do not intercept global print or mutate the external addon files/settings.
+    printGuard = {util=util, original=util.Print}
     util.Print = silentPrint
     -- Optional dependencies can emit messages while registering their packs,
     -- before our files run. Remove those already printed by Wayfarer as well.
@@ -21,9 +47,11 @@ local function suppressNotifications()
     end
 end
 -- OptionalDeps loads Wayfarer first. Silence notifications before PLAYER_LOGIN
--- and before our saved settings initialize. This follows addon loading, not
--- the user's quest-playback toggle. /reload without TalkingHeadRu restores it.
-suppressNotifications()
+-- and before our saved settings initialize; an explicitly disabled player opts out.
+local initiallyActive = not TalkingHeadRuDB or TalkingHeadRuDB.enabled ~= false
+suppressNotifications(initiallyActive)
+-- Install before PLAYER_ENTERING_WORLD and its delayed narration callback.
+suppressAutomaticZoneLore(initiallyActive)
 local buttonOverride, buttonsActive
 local buttonHooks = {}
 local function refreshButtons(log)
@@ -60,9 +88,15 @@ local function updateButtons(active)
 end
 local override
 local events = {"QUEST_DETAIL", "QUEST_PROGRESS", "QUEST_COMPLETE"}
+local preferences = {playAccept=false, playProgress=false, playComplete=false,
+    playBooks=false, gossipMode="never", zoneMode="never"}
 function WV:UpdateWayfarerIntegration(release)
-    suppressNotifications()
-    updateButtons(not release and TalkingHeadRuDB and TalkingHeadRuDB.enabled == true)
+    local enabled = not release and TalkingHeadRuDB and TalkingHeadRuDB.enabled == true
+    suppressNotifications(enabled)
+    suppressAutomaticZoneLore(enabled)
+    local db = type(_G.Wayfarer) == "table" and Wayfarer.db
+    self:UpdateLibraryPreferences("WAYFARER_", db, preferences, enabled, nil, {zoneMode=true})
+    updateButtons(enabled)
     local core = type(_G.Wayfarer) == "table" and Wayfarer.Core
     local active = not release and TalkingHeadRuDB and TalkingHeadRuDB.enabled
         and core and core.IsEventRegistered and core.UnregisterEvent and core.RegisterEvent

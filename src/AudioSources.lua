@@ -138,7 +138,7 @@ end
 function Sources.Text(id, section)
     if type(id) ~= "number" or id <= 0 or id % 1 ~= 0
         or (section ~= "a" and section ~= "p" and section ~= "c") then return nil end
-    local database = _G.WowVoiceQuestTexts
+    local database = _G.TalkingHeadRuQuestTexts
     if type(database) ~= "table" or database.schemaVersion ~= 1
         or type(database.entries) ~= "table" then return nil end
     local texts = database.entries[id .. section]

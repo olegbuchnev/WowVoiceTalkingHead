@@ -3,7 +3,7 @@ local W = {}
 WowVoiceWayfarerSource = W
 -- Core API release audited for this adapter; pack releases/timings are generated
 -- separately in WayfarerAudio.lua. Updating one does not certify the other.
-local AUDITED_CORE_VERSION = "0.7.0"
+local AUDITED_CORE_VERSION = "1.0.0"
 local requiredPacks = {"Wayfarer_Voices_Alliance", "Wayfarer_Voices_Horde", "Wayfarer_Voices_Shared"}
 local function positive(value)
     return type(value) == "number" and value > 0 and value < math.huge

@@ -14,7 +14,7 @@ CatQuestVoicePack = {quests={
     [98246]={d=27.2,v='dwarf-male'},
 }}
 for id, entry in pairs(CatQuestVoicePack.quests) do
-    local texts = WowVoiceQuestTexts.entries[id .. 'a']
+    local texts = TalkingHeadRuQuestTexts.entries[id .. 'a']
     entry.c = entry.g and {m={{0,texts.male}},f={{0,texts.female}}} or {x={{0,texts.common}}}
 end
 local function tile(id)

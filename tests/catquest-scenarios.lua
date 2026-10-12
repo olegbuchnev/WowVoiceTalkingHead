@@ -7,19 +7,23 @@ assert(CatQuestDB == nil, 'do not create another addon database')
 local history, quests = {}, {}
 CatQuestDB = {autoDetail=true, autoProgress=false, autoComplete=true,
     readAfterAccept=true, autoBooks=true, lore=true, head=true, subtitles=true,
+    loreAuto=true, loreMark='toast', codexToasts=true, storyCard=true,
     autoGreeting=true, autoGossip=false, history=history, quests=quests}
 event('PLAYER_LOGIN')
 assert(WV:IsCatQuestAutoplaySuppressed())
 assert(not CatQuestDB.autoDetail and not CatQuestDB.autoProgress and not CatQuestDB.autoComplete)
 assert(not (CatQuestDB.readAfterAccept and CatQuestDB.autoDetail), 'acceptance cannot enqueue a second reading')
-assert(CatQuestDB.autoBooks and CatQuestDB.lore and CatQuestDB.head and CatQuestDB.subtitles)
-assert(CatQuestDB.autoGreeting and not CatQuestDB.autoGossip)
+assert(not CatQuestDB.autoBooks and CatQuestDB.lore and CatQuestDB.head and CatQuestDB.subtitles)
+assert(not CatQuestDB.autoGreeting and not CatQuestDB.autoGossip)
+assert(not CatQuestDB.loreAuto and CatQuestDB.loreMark == 'hidden' and not CatQuestDB.codexToasts and not CatQuestDB.storyCard)
 assert(CatQuestDB.history == history and CatQuestDB.quests == quests)
 event('PLAYER_LOGIN') -- repeated synchronization must not replace the snapshot
 command('diag')
 assert(has('приостановлен'))
 command('off')
 assert(CatQuestDB.autoDetail and not CatQuestDB.autoProgress and CatQuestDB.autoComplete)
+assert(CatQuestDB.autoBooks and CatQuestDB.autoGreeting and CatQuestDB.loreAuto and CatQuestDB.loreMark == 'toast')
+assert(CatQuestDB.codexToasts and CatQuestDB.storyCard)
 assert(not WV:IsCatQuestAutoplaySuppressed())
 command('on')
 assert(not CatQuestDB.autoDetail and not CatQuestDB.autoComplete)

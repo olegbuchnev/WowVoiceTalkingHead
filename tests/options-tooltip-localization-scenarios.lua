@@ -4,7 +4,7 @@ local metadata = C_AddOns.GetAddOnMetadata
 local version = '0.7.0'
 C_AddOns.GetAddOnMetadata = function(addon, field)
     if addon == 'CatQuest_Voices' and field == 'Version' then return version end
-    if addon == 'Wayfarer' and field == 'Version' then return '0.8.0' end
+    if addon == 'Wayfarer' and field == 'Version' then return '1.1.0' end
     return metadata and metadata(addon, field)
 end
 
@@ -71,7 +71,7 @@ local options = frames.WowVoiceOptionsPanel
 local warning = options.AudioSourceWarning
 assert(options.WayfarerSourceWarning:IsShown())
 checkShown(options.WayfarerSourceWarning)
-assert(tooltip.lines[2]:find('Wayfarer: установлена 0.8.0; проверена 0.7.0.',1,true))
+assert(tooltip.lines[2]:find('Wayfarer: установлена 1.1.0; проверена 1.0.0.',1,true))
 checkHidden(options.WayfarerSourceWarning)
 for _, installed in ipairs({'0.7.0', '0.2.2'}) do
     version = installed

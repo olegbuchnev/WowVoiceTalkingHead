@@ -1,7 +1,7 @@
 local WV, Q, S = WowVoice, WowVoice.questQueue, WowVoiceAudioSources
 local english = WowVoiceLocale.isEnglish
 assert(WowVoiceLocale.isRussian == (GetLocale() == 'ruRU'))
-local texts = WowVoiceQuestTexts.entries
+local texts = TalkingHeadRuQuestTexts.entries
 local description, completion, progress = texts['179a'], texts['179c'], texts['179p']
 local unitSex = UnitSex
 local playerSex = 2

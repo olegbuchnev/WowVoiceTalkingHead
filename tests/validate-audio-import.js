@@ -56,7 +56,7 @@ try {
   const metadata = fs.readFileSync(textFile, 'utf8');
   assert(!fs.readFileSync(path.join(root, 'src/CatQuestAudio.lua'), 'utf8').includes('text = {'));
   function transcript(key, variant) {
-    const code = metadata + `\nreturn WowVoiceQuestTexts.entries["${key}"].${variant}`;
+    const code = metadata + `\nreturn TalkingHeadRuQuestTexts.entries["${key}"].${variant}`;
     const status = lauxlib.luaL_dostring(L, to_luastring(code));
     assert.equal(status, lua.LUA_OK, to_jsstring(lua.lua_tostring(L, -1)));
     const text = to_jsstring(lua.lua_tostring(L, -1));

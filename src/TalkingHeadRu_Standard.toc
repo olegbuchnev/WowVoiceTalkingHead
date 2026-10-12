@@ -21,6 +21,7 @@ WayfarerSource.lua
 AudioSources.lua
 Speakers.lua
 Core.lua
+LibraryIntegration.lua
 WayfarerIntegration.lua
 Work.lua
 CameraModels.lua

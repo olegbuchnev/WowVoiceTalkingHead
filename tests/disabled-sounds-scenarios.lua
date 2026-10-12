@@ -52,7 +52,7 @@ CatQuestDB = {autoDetail=true, autoProgress=true, autoComplete=true, autoBooks=t
 messages = {}
 event('PLAYER_LOGIN')
 assert(not has('Не загружена основная база'), 'CatQuest alone is a valid audio installation')
-assert(WV:IsCatQuestAutoplaySuppressed() and CatQuestDB.autoBooks and CatQuestDB.lore)
+assert(WV:IsCatQuestAutoplaySuppressed() and not CatQuestDB.autoBooks and CatQuestDB.lore)
 assert(WV:GetSharedQuestVoice() == 'catquest' and TalkingHeadRuDB.sharedQuestVoice == 'wowvoice')
 assert(not WV:SetSharedQuestVoice('wowvoice'), 'a disabled pack cannot be selected')
 assert(WV:HasQuestAudio(179) and not WV:HasQuestAudio(classicOnly))

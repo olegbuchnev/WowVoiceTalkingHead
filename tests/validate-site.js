@@ -98,6 +98,7 @@ const { createHash } = require('crypto');
           + (name === 'Очередь озвучки' ? '\n<p class="feature-image"><img src="docs/images/queue.png" width="320" alt="Queue"></p>\n' : '')).join('\n');
     fs.writeFileSync(path.join(fixture,'docs/images/head.png'),Buffer.from([1]));
     fs.writeFileSync(path.join(fixture,'docs/images/queue.png'),Buffer.from([2]));
+    fs.writeFileSync(path.join(fixture,'docs/images/vote-rescue-murloc.png'),Buffer.from([4]));
     const imageURL = (name, bytes) => `images/${name}.${createHash('sha256').update(Buffer.from(bytes)).digest('hex')}.png`;
     const headURL = imageURL('head', [1]), queueURL = imageURL('queue', [2]);
     fs.appendFileSync(path.join(fixture,'USER_README.md'), '\n\n![Head](docs/images/head.png)\n\n<img src=\'docs/images/queue.png\' alt="Queue">\n');
@@ -134,7 +135,7 @@ const { createHash } = require('crypto');
       }
       const html=fs.readFileSync(path.join(fixture,'artifacts/site/index.html'),'utf8');
       assert(html.indexOf('class="voice-feature"') < html.indexOf('class="screenshots"'));
-      assert.equal((html.match(/<img /g)||[]).length,2,'Gallery and queue images must appear once each');
+      assert.equal((html.match(/<img /g)||[]).length,3,'Gallery, queue and voting invitation images must appear once each');
       assert(html.includes(`src="${headURL}"`), 'Markdown screenshots must use content-addressed filenames');
       assert(html.includes(`src="${queueURL}" width="320"`), 'Inline HTML screenshots must use the same hashed assets');
       assert(!html.includes('src="docs/images/'), 'Inline README image paths must work on Pages');

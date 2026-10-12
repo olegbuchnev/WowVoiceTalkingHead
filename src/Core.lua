@@ -57,11 +57,13 @@ end
 -- Never mix the epochs of these APIs in a playback deadline.
 WV.PlaybackTime = GetTimePreciseSec or GetTime
 
--- CatQuest shares its player between quests, books and location lore. Temporarily
--- disable automatic quest reading and hide quest read buttons; leave its player
--- and saved preferences intact. No dependency on its private namespace is required.
+-- Keep upstream libraries available, but silence automatic playback and popups.
 local catQuestOverride
-local catQuestAutoKeys = {"autoDetail", "autoProgress", "autoComplete"}
+local catQuestPreferences = {autoDetail=false, autoProgress=false, autoComplete=false,
+    autoBooks=false, autoGreeting=false, autoGossip=false, loreAuto=false,
+    loreMark="hidden", codexToasts=false, storyCard=false}
+-- Lore preferences remain under user control after an explicit settings edit.
+local catQuestCustomizable = {loreAuto=true, loreMark=true}
 local catQuestButtonsActive, catQuestRefreshPending
 local catQuestButtonVisibility, catQuestButtonHooks, catQuestParentHooks = {}, {}, {}
 local catQuestTrackerHooks, catQuestTrackerButtons = {}, {}
@@ -158,27 +160,13 @@ function WV:UpdateCatQuestIntegration(release)
     local db = _G.CatQuestDB
     local active = not release and TalkingHeadRuDB and TalkingHeadRuDB.enabled
         and type(db) == "table"
-    if catQuestOverride and (not active or catQuestOverride.db ~= db) then
-        for key, value in pairs(catQuestOverride.values) do
-            -- Preserve edits made through CatQuest's own settings while active.
-            if catQuestOverride.db[key] == false then
-                catQuestOverride.db[key] = value
-            end
-        end
-        catQuestOverride = nil
-    end
+    if self.UpdateCatQuestNotifications then self:UpdateCatQuestNotifications(not release and TalkingHeadRuDB and TalkingHeadRuDB.enabled == true) end
     updateCatQuestButtons(active == true)
-    if not active or catQuestOverride then return end
-    local values = {}
-    for _, key in ipairs(catQuestAutoKeys) do
-        if type(db[key]) == "boolean" then
-            values[key] = db[key]
-            db[key] = false
-        end
-    end
-    -- An ADDON_LOADED listener may run before CatQuest initializes its table.
-    -- Do not claim the override until its settings actually exist.
-    if next(values) then catQuestOverride = {db=db, values=values} end
+    local core = _G.CatQuestCore
+    self:UpdateLibraryPreferences("CATQUEST_", db, catQuestPreferences, active, function()
+        if type(core) == "table" and type(core.LoreRelayout) == "function" then core.LoreRelayout() end
+    end, catQuestCustomizable)
+    catQuestOverride = active and (type(db.autoDetail) == "boolean" or type(db.autoComplete) == "boolean") or nil
 end
 
 function WV:IsCatQuestAutoplaySuppressed()

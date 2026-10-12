@@ -12,9 +12,18 @@ try {
   const sample=fs.readFileSync(path.join(__dirname,'../src/Media/silence.ogg'));
   for(const file of ['5-a-m.ogg','5-a-f.ogg','6-c.ogg']) fs.writeFileSync(path.join(dir,'q',file),sample);
   assert.equal(readPack(Buffer.from(index)).q[5].a.v,'Голос');
+  const narrator='Wayfarer_Voices_Narrator', narratorDir=path.join(root,'input',narrator);
+  fs.mkdirSync(narratorDir,{recursive:true});
+  fs.writeFileSync(path.join(narratorDir,narrator+'.toc'),'## Version: 3.2.0\n');
+  fs.writeFileSync(path.join(narratorDir,'Index.lua'),
+    `Wayfarer.RegisterPack({name="${narrator}",format=1,version="3.2.0",q={},z={[1]={d=3}}})`);
   const result=generate(path.join(root,'input'),output);
   assert.equal(result.mainDescriptions,1);
   assert.equal(result.packs[name].files,3);
+  assert.equal(result.packs[narrator],undefined,'Lore-only packs must not create empty quest snapshots');
+  const history=JSON.parse(fs.readFileSync(path.join(output,'docs/internal/audio-recording-history.json')));
+  assert.ok(history.packs[name], 'Quest audio history must still be written with Narrator installed');
+  assert.equal(history.packs[narrator],undefined);
   const manifest=JSON.parse(fs.readFileSync(path.join(output,'docs/internal/wayfarer-audio-manifest.json')));
   assert.equal(manifest.packs[name].files['q/5-a-f.ogg'].duration,duration(sample));
   assert.equal(manifest.packs[name].files['q/5-a-f.ogg'].indexDuration,2);

@@ -2,7 +2,7 @@ event('ADDON_LOADED')
 local S, W, C = WowVoiceAudioSources, WowVoiceWayfarerSource, WowVoiceComparison
 local count = 0
 for _ in pairs(W.QuestIDs(true, true)) do count = count + 1 end
-assert(count == 3358 and not W.Status() and not W.Resolve(5, 'a'))
+assert(count == 3790 and not W.Status() and not W.Resolve(5, 'a'))
 assert(C.Known(5, 'wayfarer') and not C.SourceAvailable('wayfarer'))
 local name = 'Wayfarer_Voices_Alliance'
 local pack = {name=name, format=1, version='3.1.0', model='v4', q={
