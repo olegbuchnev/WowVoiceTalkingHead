@@ -71,6 +71,74 @@ exposing an updated catalogue; see [MODEL-CACHE.md](MODEL-CACHE.md).
 
 ## Public launch verification
 
+Portrait diagnostics: [log fields, SSH lookup and baseline](DIAGNOSTICS.md).
+
+### Portrait diagnostics (2026-10-12)
+
+Web image `talkinghead-vote-web:portrait-diagnostics-20261012`, bundle
+`index-VpMBIij7.js`, adds the hidden first-body `portrait-debug` element and
+per-mount client reports, request IDs, asynchronous model reads with timing,
+container asset logs and host HTTPS logs. The host has the tracing helper at
+`/srv/talkinghead/trace-portrait.py`, the log format in
+`/etc/nginx/conf.d/talkinghead-assets.conf` and rotation in
+`/etc/logrotate.d/talkinghead-assets`.
+
+Live load `p-117cbe549713` (quest 977, model 119369) was traced end-to-end:
+44 ms read, 0.576 s container response, 26.278 s edge response, 34.142 s browser
+transfer, 38.947 s total portrait readiness. Different layers finish at different
+times because of buffering and network transit. Camera setup took 460 ms.
+No errors or production ballots; voting endpoints were intercepted. All 43 unit
+tests, delayed portrait/telemetry browser checks, mandatory audio-preload image
+tests, gzip/request-ID checks, Nginx validation and logrotate dry run passed.
+The Java service and vote data were unchanged.
+
+Rollback image: `talkinghead-vote-web:before-portrait-diagnostics-20261012`.
+Previous host virtual-host configuration:
+`/srv/talkinghead/nginx-before-portrait-diagnostics-20261012.conf`.
+
+### Portrait subsets without geometry reduction (2026-10-12)
+
+Current web image: `talkinghead-vote-web:portrait-packs-20261012`, bundle
+`index-DUiARL_U.js`. Versioned `/modelviewer/portrait-v1/classicplus/` URLs serve
+313 verified derived M2 files from `model_cache/portrait-packs-v1/`. Fifteen M2
+files with external skeletons or emitters use the original cache. Source assets,
+textures, geometry quality, full bodies, cameras and lighting are preserved.
+Preparation and future updates: [PORTRAIT-PACKS.md](PORTRAIT-PACKS.md).
+
+Validation: 46 unit tests, delayed-portrait and audio-preload browser tests,
+production Nginx compression check, actual-viewer parsing comparisons for all
+313 derived files, and identical rest/Talk/rest bone and material values across
+47 representative main models. The original camera exception for quest 97290
+remains unchanged. Added the missing cached Talk variation `7479346.anim`
+(136,096 bytes), encountered by the broader animation verification.
+
+Public trace `p-212d9a769d8f` for Umi: M2 818,826 gzip bytes / 3,548,540 decoded
+bytes, 234 ms browser download, 2,519 ms total readiness; no failed requests or
+browser errors. The earlier same-model trace was 11,353,298 gzip bytes and
+38,947 ms total. These are separate observations, not a guaranteed latency ratio.
+The public check did not submit votes. Java and the vote database were untouched.
+
+Rollback: retag `talkinghead-vote-web:before-portrait-packs-20261012` as `:local`
+and recreate only `web`. Original asset URLs and source cache remain available.
+
+### Audio preloading (2026-10-12)
+
+Web image `talkinghead-vote-web:audio-preload-20261012` preloads every recording
+in the current and next comparison, starting on the welcome screen. At series
+completion it prepares the next series' first comparison. Completed downloads
+are reused as browser blob URLs; old entries are cancelled/released. An early
+click before download completion uses normal streaming without waiting for the
+entire file. Background preload failures remain silent.
+
+The image build now requires audio cache unit tests and a real Firefox playback
+regression test. The same browser scenario passed against the deployed bundle
+`index-BqfIzdd3.js`. A separate public smoke check preloaded six real recordings
+before Start and played the current variants without extra audio requests.
+All voting endpoints were intercepted; no test ballots reached the database.
+All 41 unit tests and slow portrait browser tests also passed. Only web was
+recreated; the API and persistent data were unchanged. Rollback image:
+`talkinghead-vote-web:before-audio-preload-20261012`.
+
 ### Slow portrait downloads (2026-10-12)
 
 Web image `talkinghead-vote-web:portrait-loading-20261012` fixes permanent scroll

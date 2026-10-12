@@ -76,7 +76,7 @@ import {createPortrait,isPortraitLoaded,framePortrait,setTalking} from '/src/mod
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 window.prepare=async npc=>{
   const element=document.querySelector('#portrait');
-  const viewer=await createPortrait(element,npc);
+  const viewer=await createPortrait(element,npc,{originalAssets:true});
   const wait=async()=>{while(!isPortraitLoaded(viewer)) await delay(50);};
   await wait();await framePortrait(viewer);setTalking(viewer,true);
   await delay(700);await wait();setTalking(viewer,false);await delay(200);await wait();

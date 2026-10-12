@@ -1,0 +1,14 @@
+/var/log/nginx/talkinghead-assets.jsonl {
+    daily
+    maxsize 10M
+    rotate 3
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0640 www-data adm
+    sharedscripts
+    postrotate
+        if [ -f /run/nginx.pid ]; then kill -USR1 "$(cat /run/nginx.pid)"; fi
+    endscript
+}

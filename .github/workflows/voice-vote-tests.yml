@@ -30,6 +30,9 @@ jobs:
         working-directory: web/voice-vote
         run: |
           node --test tests/portrait-readiness.test.mjs
+          node --test tests/audio-preload.test.mjs
+          node --test tests/diagnostics.test.mjs
           npm run test:portraits
+          npm run test:audio
       - name: Build site and verify binary model compression
         run: docker build -t talkinghead-vote-web:test -f web/voice-vote/Dockerfile .

@@ -16,6 +16,9 @@
 !web/voice-vote/docker/**
 !web/voice-vote/tests/
 !web/voice-vote/tests/nginx-compression.mjs
+!web/voice-vote/tests/audio-preload.test.mjs
+!web/voice-vote/tests/audio-preload-browser.mjs
+!web/voice-vote/tests/portrait-pack.test.mjs
 !web/voice-vote/*.mjs
 !web/voice-vote/native-camera-samples.json
 **/*.ogg

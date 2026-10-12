@@ -38,6 +38,8 @@ try {
   }
   assert(plain,'Nginx did not start');
   assert.equal(plain.status,200);assert.equal(plain.headers['content-encoding'],undefined);
+  assert.match(plain.headers['x-request-id'],/^[a-f0-9]{32}$/);
+  assert.match(plain.headers['server-timing'],/request;desc="[a-f0-9]{32}"/);
   assert.deepEqual(plain.bytes,model);
   const packed=await read('gzip');assert.equal(packed.status,200);
   assert.equal(packed.headers['content-encoding'],'gzip','Binary models must be compressed');

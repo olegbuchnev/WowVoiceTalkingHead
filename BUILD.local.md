@@ -170,7 +170,12 @@ GitHub учитывает также повторные и проверочны�
 
 ```shell
 npm.cmd --prefix web/voice-vote run test:portraits
+npm.cmd --prefix web/voice-vote run test:audio
 ```
+
+Диагностика загрузки портретов на сайте: [журналы и поиск по ID](web/voice-vote/DIAGNOSTICS.md).
+Скрытый `#portrait-debug` сразу после `<body>` содержит `data-load-id` текущего
+портрета; по нему можно найти цепочку загрузки через SSH.
 
 Нужен Firefox Playwright: из `web/voice-vote` один раз выполните
 `npx.cmd playwright install firefox`. Тест ускоряет время в браузере и проверяет
@@ -901,6 +906,11 @@ node tools/generate-speakers.js --check
 `node web/voice-vote/prepare-model-cache.mjs`, затем ту же команду с `--verify`.
 Новые облики определяются по каталогу автоматически; готовые файлы используются
 повторно. Дополненный кэш переносится на хостинг до публикации новых заданий.
+После изменения моделей также выполните
+`npm.cmd --prefix web/voice-vote run test:portrait-packs`, затем
+`node web/voice-vote/install-portrait-packs.mjs`.
+Переносите каталог `portrait-packs-v1` вместе с исходным кэшем.
+Подробности: [упаковка моделей](web/voice-vote/PORTRAIT-PACKS.md).
 
 Админ-панель голосования: http://127.0.0.1:8081/admin/ — пароль хранится в
 `config/voice-vote-admin-password.local.txt` (исключён из Git). Настройка доступа,

@@ -15,13 +15,13 @@ export function loadViewer() {
   });
   return loading;
 }
-export async function createPortrait(container, npc) {
+export async function createPortrait(container, npc, {originalAssets=false}={}) {
   await loadViewer();
   const viewer = new window.ZamModelViewer({type:2, container:$(container), aspect:1,
     // Forever is named classicplus on Wowhead's asset CDN. Display IDs are
     // shared with Retail, but their appearance/equipment data is different.
     // Keep the tested rendering engine separate from the model data branch.
-    contentPath:`${location.origin}/modelviewer/classicplus/`, models:{id:npc.displayID,type:8}, hd:true});
+    contentPath:`${location.origin}/modelviewer/${originalAssets?'':'portrait-v1/'}classicplus/`, models:{id:npc.displayID,type:8}, hd:true});
   fitPortraitResolution(viewer, container);
   container.modelViewer = viewer;
   return viewer;

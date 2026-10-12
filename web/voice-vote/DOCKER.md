@@ -13,6 +13,16 @@ Set `VOICE_VOTE_MODEL_OFFLINE=true` after import to disable upstream cache misse
 
 ## Build and prepare data
 
+Every web image build must pass the audio preloading regression gate. The build
+stage runs unit tests and a real Firefox check: all variants load before playback
+on the welcome screen, for the current/next comparison and before the next series.
+Playback must reuse downloaded bytes without another audio request. A failure
+stops the image build. Tests use synthetic audio in memory and mocked voting APIs;
+they need no installed libraries or production access. Firefox and its system
+dependencies remain in the build stage and are not included in the runtime image.
+Docker may reuse a passed layer only when its source, tests and dependencies are
+unchanged. For a local check: `npm run test:audio --prefix web/voice-vote`.
+
 From the repository root, with the current external voice libraries installed:
 
 ```shell

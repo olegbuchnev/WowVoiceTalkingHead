@@ -1,12 +1,17 @@
 # syntax=docker/dockerfile:1
-FROM node:24-alpine AS build
+FROM node:24-bookworm-slim AS build
 WORKDIR /app/web/voice-vote
 COPY web/voice-vote/package*.json ./
 RUN npm ci
+RUN npx playwright install --with-deps firefox
 COPY web/voice-vote/src/ src/
 COPY web/voice-vote/public/ public/
 COPY web/voice-vote/index.html ./
 COPY web/voice-vote/docker/vite.config.mjs docker/vite.config.mjs
+COPY web/voice-vote/tests/audio-preload.test.mjs web/voice-vote/tests/audio-preload-browser.mjs tests/
+COPY web/voice-vote/tests/portrait-pack.test.mjs tests/
+COPY web/voice-vote/portrait-pack.mjs web/voice-vote/portrait-pack-store.mjs ./
+RUN node --test tests/audio-preload.test.mjs tests/portrait-pack.test.mjs && npm run test:audio
 RUN npm run build -- --config docker/vite.config.mjs
 
 FROM node:24-alpine AS runtime
@@ -17,6 +22,8 @@ RUN npm ci --ignore-scripts && npm cache clean --force
 COPY tools/import-forever-audio.js tools/import-forever-audio.js
 COPY src/CameraModels.lua src/CameraProfiles.lua src/
 COPY web/voice-vote/server.mjs web/voice-vote/portrait-camera.mjs web/voice-vote/viewer-lighting.mjs web/voice-vote/native-camera-samples.json web/voice-vote/portable-data.mjs web/voice-vote/serve.mjs web/voice-vote/
+COPY web/voice-vote/diagnostics.mjs web/voice-vote/diagnostics.mjs
+COPY web/voice-vote/portrait-pack-store.mjs web/voice-vote/portrait-pack-store.mjs
 COPY web/voice-vote/docker/nginx.conf web/voice-vote/docker/nginx.conf
 COPY --from=build /app/web/voice-vote/dist/ web/voice-vote/dist/
 RUN mkdir -p /cache && chown node:node /cache

@@ -6,7 +6,7 @@ export function watchPortraitReadiness({isReady,onReady,onError,timeout=120000,i
   const timer=setInterval(()=>{
     let ready;
     try {ready=isReady();}
-    catch {clearInterval(timer);onError();return;}
+    catch(error) {clearInterval(timer);onError(error);return;}
     if(ready) {clearInterval(timer);onReady();}
     else if(!warned && Date.now()>deadline) {warned=true;onError();}
   },interval);

@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import {cameraProfile, readPortraitCamera, calibratedCamera} from './portrait-camera.mjs';
 import {adaptViewerLighting} from './viewer-lighting.mjs';
+import {createDiagnosticsHandler} from './diagnostics.mjs';
+import {readPortraitPack} from './portrait-pack-store.mjs';
 
 const require = createRequire(import.meta.url);
 const { dataTable } = require('../../tools/import-forever-audio.js');
@@ -101,13 +103,26 @@ export async function readVerifiedAudio(file, sha256) {
 }
 
 const downloads = new Map();
-export async function modelAsset(urlPath) {
+export async function modelAsset(urlPath, timings) {
+  const portraitAsset=urlPath.startsWith('/modelviewer/portrait-v1/classicplus/');
+  if(portraitAsset)urlPath=urlPath.replace('/modelviewer/portrait-v1/','/modelviewer/');
   const viewerScript = urlPath === '/modelviewer/live/viewer/viewer.min.js';
   const viewerStyle = urlPath === '/modelviewer/viewer/viewer.css';
   const foreverAsset = /^\/modelviewer\/classicplus\/[a-zA-Z0-9_./-]+$/.test(urlPath);
   if ((!viewerScript && !viewerStyle && !foreverAsset) || urlPath.includes('..')) throw Error('Invalid model path');
-  const cache = path.join(process.env.VOICE_VOTE_MODEL_CACHE || path.join(repo, 'artifacts/voice-vote-model-cache'), urlPath.slice(1));
-  if (fs.existsSync(cache)) return fs.readFileSync(cache);
+  const cacheRoot=process.env.VOICE_VOTE_MODEL_CACHE || path.join(repo, 'artifacts/voice-vote-model-cache');
+  const cache = path.join(cacheRoot, urlPath.slice(1));
+  if(portraitAsset&&/^\/modelviewer\/classicplus\/m2\/\d+\.m2$/.test(urlPath)){
+    const started=performance.now(),packed=await readPortraitPack(cacheRoot,path.basename(urlPath));
+    if(timings)timings.portraitPack=!!packed;
+    if(packed){if(timings)timings.readMs=Number((performance.now()-started).toFixed(2));return packed;}
+  }
+  if (fs.existsSync(cache)) {
+    const started=performance.now();
+    const bytes=await fs.promises.readFile(cache);
+    if(timings) timings.readMs=Number((performance.now()-started).toFixed(2));
+    return bytes;
+  }
   if (process.env.VOICE_VOTE_MODEL_OFFLINE === 'true') throw Error(`Model asset missing from offline cache: ${urlPath}`);
   if (!downloads.has(urlPath)) downloads.set(urlPath, (async () => {
     const response = await fetch(`https://wow.zamimg.com${urlPath}`, { signal:AbortSignal.timeout(30000) });
@@ -124,13 +139,19 @@ export async function modelAsset(urlPath) {
 }
 
 export function localApi(options = {}) {
+  const diagnostics=createDiagnosticsHandler();
   let data,catalogueBody,catalogueETag;
   const catalogue=()=>data ||= options.loadData ? options.loadData() : buildCatalogue(undefined,options);
   return async (req, res, next) => {
     const url = new URL(req.url, 'http://localhost');
+    if(url.pathname==='/api/diagnostics/portrait') return diagnostics(req,res);
     if (url.pathname === '/api/votes' || url.pathname.startsWith('/api/votes/')) return next();
     if (!url.pathname.startsWith('/api/') && !url.pathname.startsWith('/modelviewer/')) return next();
     if (!['GET','HEAD'].includes(req.method)) { res.writeHead(405).end(); return; }
+    const started=performance.now(),timings={};
+    const requestID=/^[a-f0-9]{32}$/.test(req.headers['x-request-id'] || '') ? req.headers['x-request-id'] : crypto.randomBytes(16).toString('hex');
+    const measured=/^\/modelviewer\/.*\.(m2|skel)$/.test(url.pathname) || url.pathname.startsWith('/api/portrait-camera/');
+    if(measured) res.once('finish',()=>console.log(JSON.stringify({event:'asset_server',time:new Date().toISOString(),requestID,path:url.pathname,status:res.statusCode,...timings,totalMs:Number((performance.now()-started).toFixed(2))})));
     try {
       if (url.pathname === '/api/catalogue') {
         data = catalogue();
@@ -145,10 +166,10 @@ export function localApi(options = {}) {
         res.end(req.method==='HEAD' ? undefined : catalogueBody);
       } else if (/^\/api\/portrait-camera\/[1-9]\d{0,9}$/.test(url.pathname)) {
         const fileID = Number(url.pathname.split('/').at(-1));
-        const bytes = await modelAsset(`/modelviewer/classicplus/m2/${fileID}.m2`);
+        const bytes = await modelAsset(`/modelviewer/classicplus/m2/${fileID}.m2`,timings);
         const profile=cameraProfile(fileID);
         const result = {fileID, profile, camera:calibratedCamera(readPortraitCamera(bytes),profile,fileID)};
-        res.writeHead(200, {'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});
+        res.writeHead(200, {'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','Server-Timing':`read;dur=${timings.readMs || 0}`});
         res.end(JSON.stringify(result));
       } else if (url.pathname.startsWith('/api/audio/')) {
         data = catalogue();
@@ -166,11 +187,12 @@ export function localApi(options = {}) {
         if (req.method === 'HEAD') res.end();
         else res.end(bytes.subarray(range.start, range.end + 1));
       } else if (url.pathname.startsWith('/modelviewer/')) {
-        let bytes = await modelAsset(url.pathname);
+        let bytes = await modelAsset(url.pathname,timings);
         if(url.pathname==='/modelviewer/live/viewer/viewer.min.js') bytes=adaptViewerLighting(bytes);
         const ext = path.extname(url.pathname);
         const mime = {'.js':'text/javascript', '.css':'text/css', '.json':'application/json', '.png':'image/png', '.webp':'image/webp'}[ext] || 'application/octet-stream';
-        res.writeHead(200, {'Content-Type':mime,'Cache-Control':'public, max-age=86400'}).end(bytes);
+        timings.bytes=bytes.length;
+        res.writeHead(200, {'Content-Type':mime,'Cache-Control':'public, max-age=86400','Server-Timing':`read;dur=${timings.readMs || 0}`}).end(req.method==='HEAD' ? undefined : bytes);
       } else res.writeHead(404).end();
     } catch (error) {
       console.warn('Voice preview:', error.message);

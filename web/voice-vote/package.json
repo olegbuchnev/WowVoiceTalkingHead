@@ -6,9 +6,11 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5174 --strictPort",
     "build": "vite build",
-    "test": "npm run test:unit && npm run test:portraits",
+    "test": "npm run test:unit && npm run test:portraits && npm run test:audio",
+    "test:audio": "node tests/audio-preload-browser.mjs",
     "test:unit": "node --test tests/*.test.mjs",
     "test:portraits": "node tests/portrait-loading-browser.mjs",
+    "test:portrait-packs": "node tests/portrait-pack-cache.mjs && node tests/portrait-pack-render.mjs",
     "test:browser": "node tests/browser.mjs",
     "test:batches": "node tests/batches-browser.mjs",
     "test:full": "node tests/full-catalogue-browser.mjs",

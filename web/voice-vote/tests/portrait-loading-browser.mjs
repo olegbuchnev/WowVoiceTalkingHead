@@ -24,7 +24,7 @@ try {
   for(const delay of [41000,131000]) {
     const context=await browser.newContext();
     try {
-      const page=await context.newPage(),errors=[];
+      const page=await context.newPage(),errors=[],reports=[];
       page.on('pageerror',error=>errors.push(error.message));
       await page.clock.install();
       const model=Promise.withResolvers(),camera=Promise.withResolvers();
@@ -37,6 +37,7 @@ try {
         variants:[{id:'a',source:'WowVoice'},{id:'b',source:'CatQuest'}],
       }]}}));
       await page.route('**/api/votes/**',route=>route.fulfill({json:route.request().url().endsWith('/queue') ? [] : {total:0}}));
+      await page.route('**/api/diagnostics/portrait',route=>{reports.push(route.request().postDataJSON());return route.fulfill({status:204});});
       await page.goto(base);
       await page.locator('.welcome-start').click();
       await page.waitForSelector('.portrait-slot.current .model');
@@ -58,6 +59,18 @@ try {
       assert.equal(await page.locator('.batch-progress').textContent(),progress);
       assert.equal(await page.locator('.welcome').count(),0);
       assert.deepEqual(errors,[]);
+      await page.waitForFunction(()=>document.querySelector('.model')?.dataset.modelState==='ready');
+      for(let attempt=0;attempt<30 && !reports.some(r=>r.stage==='ready');attempt++) await page.waitForTimeout(50);
+      assert(reports.some(r=>r.stage==='ready' && r.questID===1050 && r.totalMs>=delay && r.assetsReadyMs>=delay));
+      const loadID=await portrait.locator('.model').getAttribute('data-load-id');
+      assert.match(loadID,/^p-[a-f0-9]{12}$/);
+      assert.equal(await page.locator('body > :first-child').getAttribute('id'),'portrait-debug');
+      assert.equal(await page.locator('#portrait-debug').getAttribute('data-load-id'),loadID);
+      assert.equal(await page.locator('#portrait-debug').getAttribute('data-state'),'ready');
+      assert.equal(await page.locator('#portrait-debug').isVisible(),false);
+      assert(reports.some(r=>r.loadID===loadID && r.stage==='started'));
+      assert(reports.some(r=>r.loadID===loadID && r.stage==='ready'));
+      assert.equal(reports.some(r=>r.stage==='timeout'),delay>120000);
       console.log(`PASS: portrait delayed ${delay/1000}s recovers through the real React UI after camera readiness, without reloading.`);
     } finally {await context.close();}
   }

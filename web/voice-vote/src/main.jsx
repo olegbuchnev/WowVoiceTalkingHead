@@ -11,6 +11,8 @@ import {createParticipationTracker} from './participation.js';
 import {createVoteDelivery} from './vote-delivery.js';
 import {createCatalogueClient,comparisonKey,questKey,refreshComparisons,withLocalRatings} from './catalogue-refresh.js';
 import {watchPortraitReadiness} from './portrait-readiness.js';
+import {createAudioPreloader} from './audio-preload.js';
+import {observePortrait} from './portrait-diagnostics.js';
 import './style.css';
 
 // A reload starts a fresh, silent sample. Browser scroll restoration must not
@@ -39,7 +41,7 @@ function PlaybackProgress({audio, duration, position, playing}) {
   return <div className="progress" aria-hidden="true"><div ref={fill}/></div>;
 }
 
-function Portrait({npc, playing}) {
+function Portrait({npc, questID, playing, current}) {
   const element = useRef(), viewer = useRef(), playback = useRef(playing);
   const [state, setState] = useState('loading');
   const [cameraRevision, setCameraRevision] = useState(0);
@@ -53,30 +55,44 @@ function Portrait({npc, playing}) {
   useEffect(() => {
     let cancelled = false, stopWatching=()=>{};
     if (!npc.displayID) {setState('unavailable');return;}
+    const diagnostics=observePortrait({questID,npc});
+    element.current.dataset.loadId=diagnostics.loadID;
     const controller=new AbortController();
     setState('loading');
     createPortrait(element.current, npc).then(instance => {
       if (cancelled) { instance.destroy(); return; }
       viewer.current = instance;
+      diagnostics.mark('viewerMs');
       // Wait for model data, not merely creation of the WebGL canvas.
       stopWatching=watchPortraitReadiness({
         isReady:()=>isPortraitLoaded(instance),
-        onError:()=>setState('error'),
+        onError:error=>{setState('error');diagnostics.report(error ? 'assets-error' : 'timeout');},
         onReady:()=>{
+          diagnostics.mark('assetsReadyMs');
           framePortrait(instance,controller.signal).then(()=>{
             if(cancelled) return;
+            diagnostics.mark('cameraMs');
             setTalking(instance, playback.current);
             // Let the renderer draw the configured camera/light/pose before
             // revealing the canvas. The scroll covers all intermediate views.
             requestAnimationFrame(()=>requestAnimationFrame(()=>{
-              if (!cancelled) setState('ready');
+              if (!cancelled) {setState('ready');diagnostics.mark('visibleMs');diagnostics.ready();}
             }));
-          }).catch(()=>{if(!cancelled) setState('error');});
+          }).catch(()=>{if(!cancelled) {setState('error');diagnostics.report('camera-error');}});
         },
       });
-    }).catch(() => { if (!cancelled) setState('error'); });
-    return () => { cancelled = true; controller.abort(); stopWatching(); viewer.current?.destroy(); viewer.current = null; };
+    }).catch(() => { if (!cancelled) {setState('error');diagnostics.report('viewer-error');} });
+    return () => { cancelled = true; controller.abort(); stopWatching(); diagnostics.stop(); viewer.current?.destroy(); viewer.current = null; };
   }, [npc.displayID, cameraRevision]);
+  useEffect(()=>{
+    if(!current) return;
+    const debug=document.getElementById('portrait-debug');
+    if(!debug) return;
+    debug.dataset.loadId=element.current?.dataset.loadId || '';
+    debug.dataset.questId=String(questID);
+    debug.dataset.displayId=String(npc.displayID || 0);
+    debug.dataset.state=state;
+  },[current,questID,npc.displayID,state,cameraRevision]);
   useEffect(() => { setTalking(viewer.current, playing); }, [playing]);
   return <div className="portrait"><div className="portrait-well"/><div className="model-clip"><div ref={element} className="model" data-model-state={state}/></div><div className="portrait-frame"/>
     {state !== 'ready' && <div className="portrait-placeholder" role="img" aria-label={state === 'loading' ? 'Загрузка портрета' : 'Портрет недоступен'} title={state === 'error' ? 'Модель недоступна' : undefined}><img src="/portrait-placeholder.png" alt=""/></div>}</div>;
@@ -181,6 +197,12 @@ function App() {
   const summary=sessionSummary(sessionVotes);
   const submitting=useRef(false), initialized=useRef(null);
   const audio = useRef(null), sequence = useRef(0), scroll = useRef(null);
+  const [audioPreloader]=useState(()=>createAudioPreloader());
+  useEffect(()=>{
+    const entries=finished ? (preparedBatch || []).slice(0,1) : comparisons.slice(batchIndex,batchIndex+2);
+    audioPreloader.retain(entries.flatMap(entry=>entry.variants));
+  },[audioPreloader,comparisons,batchIndex,finished,preparedBatch]);
+  useEffect(()=>()=>audioPreloader.dispose(),[audioPreloader]);
   const stop = () => { sequence.current++; if (audio.current) { audio.current.pause(); audio.current.removeAttribute('src'); audio.current.load(); } setPlaying(false); };
   useEffect(() => {
     const controller = new AbortController();
@@ -212,7 +234,7 @@ function App() {
     if (active?.id === variant.id && playing) { stop(); return; }
     stop(); const token = sequence.current;
     setError(''); setActive(variant); setPosition(0); setLength(variant.duration);
-    audio.current.src=variant.url;
+    audio.current.src=audioPreloader.source(variant);
     try { await audio.current.play(); if (sequence.current === token) {setPlaying(true); setHeard(old => [...new Set([...old,variant.id])]);participation.played(quest.questID,variant.id);} }
     catch (e) { if (sequence.current === token && e.name !== 'AbortError') setError('Не удалось воспроизвести запись. Проверьте, что библиотека установлена.'); }
   }
@@ -296,7 +318,7 @@ function App() {
       {finished && !choice && completion}
       {layoutQuest && <div className={`comparison-step${finished && !choice ? ' is-complete' : ''}`} inert={finished && !choice} aria-hidden={finished && !choice ? true : undefined}>
       <div className="intro"><h1 ref={finished && !choice ? null : comparisonTitle} tabIndex={-1}><span style={{visibility:finished && choice ? 'hidden' : undefined}} aria-hidden={finished && choice ? true : undefined}>Какой голос лучше подходит персонажу?</span>{finished && choice && <span className="completion-title">Готово!</span>}</h1><p className="batch-progress" style={{visibility:finished ? 'hidden' : undefined}} aria-hidden={finished ? true : undefined} role="status">Сравнение {batchIndex+1} из {comparisons.length}</p></div>
-      <section className="head-stage" aria-label="Говорящая голова"><div className="head-content" style={{visibility:choice ? 'hidden' : undefined}} aria-hidden={choice ? true : undefined}><div className="head-viewport"><div className="talking-head"><div className="head-background"/>{(finished ? (preparedBatch || []).slice(0,1) : comparisons.slice(batchIndex,batchIndex+2)).map((entry,i)=><div key={entry.key} className={`portrait-slot ${!finished && i===0 ? 'current' : 'upcoming'}`} data-quest-id={entry.quest.questID} aria-hidden={finished || i!==0 ? true : undefined}><Portrait npc={entry.quest.npc} playing={!finished && i===0 && playing}/></div>)}<div className="speech"><h2>{layoutQuest.npc.name}</h2><div className="quest-text" ref={scroll}><p>{layoutQuest.text}</p></div></div>
+      <section className="head-stage" aria-label="Говорящая голова"><div className="head-content" style={{visibility:choice ? 'hidden' : undefined}} aria-hidden={choice ? true : undefined}><div className="head-viewport"><div className="talking-head"><div className="head-background"/>{(finished ? (preparedBatch || []).slice(0,1) : comparisons.slice(batchIndex,batchIndex+2)).map((entry,i)=><div key={entry.key} className={`portrait-slot ${!finished && i===0 ? 'current' : 'upcoming'}`} data-quest-id={entry.quest.questID} aria-hidden={finished || i!==0 ? true : undefined}><Portrait npc={entry.quest.npc} questID={entry.quest.questID} current={!finished && i===0} playing={!finished && i===0 && playing}/></div>)}<div className="speech"><h2>{layoutQuest.npc.name}</h2><div className="quest-text" ref={scroll}><p>{layoutQuest.text}</p></div></div>
         <PlaybackProgress audio={audio} duration={length} position={position} playing={playing}/>
       </div></div>
         <div className="transport"><span className={playing ? 'signal playing' : 'signal'}><i/><i/><i/><i/></span><span>{active ? `Вариант ${letters[variants.findIndex(v=>v.id===active.id)]}` : 'Выберите запись ниже'}</span></div>
