@@ -1,0 +1,53 @@
+name: talkinghead-vote
+services:
+  web:
+    image: ${VOICE_VOTE_WEB_IMAGE:-talkinghead-vote-web:local}
+    build:
+      context: ../..
+      dockerfile: web/voice-vote/Dockerfile
+    restart: unless-stopped
+    environment:
+      VOICE_VOTE_MODEL_OFFLINE: ${VOICE_VOTE_MODEL_OFFLINE:-false}
+    ports:
+      - "127.0.0.1:${VOICE_VOTE_WEB_PORT:-8080}:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+    volumes:
+      - model_cache:/cache
+      - type: bind
+        source: ${VOICE_VOTE_CATALOGUE_DIR:?Set the directory containing the three exported JSON files}
+        target: /catalogue
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${VOICE_VOTE_LIBRARIES_DIR:?Set the external libraries directory}
+        target: /libraries
+        read_only: true
+        bind:
+          create_host_path: false
+  api:
+    image: ${VOICE_VOTE_IMAGE:-talkinghead-vote-server:local}
+    build:
+      context: ../../server/voice-vote
+    restart: unless-stopped
+    environment:
+      VOICE_VOTE_SECURE_COOKIE: ${VOICE_VOTE_SECURE_COOKIE:-true}
+    secrets:
+      - admin_password
+    volumes:
+      - votes:/data
+      - type: bind
+        source: ${VOICE_VOTE_CATALOGUE_DIR:?Set the catalogue directory}
+        target: /catalogue
+        read_only: true
+        bind:
+          create_host_path: false
+    stop_grace_period: 30s
+volumes:
+  votes:
+  model_cache:
+secrets:
+  admin_password:
+    file: ${VOICE_VOTE_ADMIN_PASSWORD_FILE:?Set the admin password file}

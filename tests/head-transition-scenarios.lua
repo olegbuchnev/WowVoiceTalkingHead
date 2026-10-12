@@ -18,7 +18,7 @@ local function opacity(h, expected, modelReady)
     near(h.alpha,1)
     near(h.Portrait.alpha or 1,1)
     for _, part in ipairs({'Background','PortraitBackground','PortraitOverlay',
-        'Icon','IconBorder','Name','TextScroll','Progress','Close'}) do
+        'Icon','Name','TextScroll','Progress','Close'}) do
         near(h[part].alpha,expected)
     end
     near(h.Model.modelAlpha,modelReady==false and 0 or expected)

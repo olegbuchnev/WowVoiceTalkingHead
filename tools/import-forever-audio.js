@@ -157,6 +157,9 @@ function importPack(source, root = path.resolve(__dirname, '..')) {
   fs.mkdirSync(path.join(root, 'docs', 'internal'), { recursive: true });
   fs.writeFileSync(path.join(root, 'docs', 'internal', 'forever-audio-manifest.json'),
     JSON.stringify(manifest, null, 2) + '\n');
+  require('./audio-recording-history').recordSnapshots([
+    { pack: 'CatQuest_Voices', version, files },
+  ], root);
   return manifest;
 }
 

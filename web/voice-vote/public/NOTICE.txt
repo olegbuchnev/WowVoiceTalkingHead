@@ -1,0 +1,37 @@
+talking-heads.png contains Blizzard Entertainment's World of Warcraft UI artwork.
+Source: https://github.com/Gethe/wow-ui-textures/blob/live/QUESTFRAME/TalkingHeads.PNG
+The same artwork is used by src/Media/TalkingHeads.tga in the addon.
+The artwork belongs to Blizzard Entertainment; it is not original TalkingHead Ru artwork.
+
+welcome-adventurers.png is unmodified Blizzard Entertainment character artwork
+from the official World of Warcraft Recruit A Friend page:
+https://worldofwarcraft.blizzard.com/en-us/game/recruit-a-friend
+Original asset (transparent PNG):
+https://blz-contentstack-images.akamaized.net/v3/assets/blt3452e3b114fab0cd/bltdc2f76ae58a5627e/5db72f7213b457491b4be503/1or3_card_MultipleFriends_desktop.png
+The artwork belongs to Blizzard Entertainment.
+
+portrait-placeholder.png is Blizzard's INV_Misc_Note_01 icon, also used by
+src/Portrait.lua while the game portrait loads (64x64 pixels).
+Source: https://github.com/Gethe/wow-ui-textures/blob/live/ICONS/INV_Misc_Note_01.PNG
+
+addon-icon.png is copied from docs/images/addon-icon.png in this repository:
+the TalkingHead Ru addon portrait, containing Blizzard's dwarf character artwork.
+
+addon-icon-cutout.png is a transparent derivative of addon-icon.png, edited with
+imagegen to remove the background and outer frame for the site header and favicon.
+
+NPC models/textures are sourced from wow.zamimg.com/modelviewer/classicplus/;
+ZamModelViewer is sourced from its live branch. The server caches these assets
+and the viewer stylesheet outside the application image and Git repository.
+Viewer notices: https://wow.zamimg.com/modelviewer/live/viewer/viewer.min.js.LICENSE.txt
+
+fonts/frizqt___cyr.ttf and fonts/morpheus_cyr.ttf were extracted from the
+locally installed World of Warcraft Forever client 1.60.1.70338 (ruRU),
+using CASCConsole v1.0.240. FileDataIDs: 615971 and 615976 respectively.
+These are original game font assets for this local prototype, not original
+TalkingHead Ru fonts. All font rights remain with their respective owners.
+
+fonts/source-sans-3-variable.ttf is Source Sans 3 from Google Fonts:
+https://github.com/google/fonts/tree/main/ofl/sourcesans3
+Distributed under the SIL Open Font License 1.1; see fonts/source-sans-3-OFL.txt
+for the copyright notices and complete license. The font is served locally.

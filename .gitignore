@@ -3,6 +3,16 @@
 /artifacts/
 /backups/
 /node_modules/
+/web/voice-vote/node_modules/
+/web/voice-vote/dist/
+/web/voice-vote/.env
+/data/voice-vote/
+/server/voice-vote/target/
+/server/voice-vote/.env
+/config/voice-vote-admin-password.local.txt
+/server/voice-vote/admin/node_modules/
+/server/voice-vote/admin/dist/
+/server/voice-vote/src/main/resources/static/admin/
 /config/deploy.targets.local.psd1
 /config/build.env.local.ps1
 /config/goatcounter-token.local.txt

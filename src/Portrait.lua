@@ -126,7 +126,6 @@ local function applyHeadAppearance()
     close:ResetAppearance()
     head.Name:SetTextColor(1, 0.82, 0.02, 1)
     head.Body:SetTextColor(1, 1, 1, 1)
-    head.IconBorder:SetColorTexture(0.65, 0.53, 0.25, 1)
     head.Progress.Fill:SetColorTexture(0.85, 0.68, 0.3, 1)
 end
 
@@ -818,7 +817,6 @@ local function finishTalkingModel(model)
     model:SetAlpha(1)
     syncModelOpacity()
     head.Icon:Hide()
-    head.IconBorder:Hide()
 end
 
 local function tryTalkingModel()
@@ -901,7 +899,6 @@ local function layoutHead()
     head.Icon:SetPoint("CENTER", head.Model, "CENTER")
     local iconSize = math.min(64, math.max(1, size - 8))
     head.Icon:SetSize(iconSize, iconSize)
-    head.IconBorder:SetSize(iconSize + 2, iconSize + 2)
     head.Progress:SetWidth(width - PANEL_LEFT - PANEL_RIGHT)
     head.Progress:SetValue(head.Progress:GetValue())
     head.TextContent:SetWidth(textWidth)
@@ -941,7 +938,6 @@ local function setHeadOpacity(alpha)
     head.PortraitBackground:SetAlpha(alpha)
     head.PortraitOverlay:SetAlpha(alpha)
     head.Icon:SetAlpha(alpha)
-    head.IconBorder:SetAlpha(alpha)
     head.Name:SetAlpha(alpha)
     head.TextScroll:SetAlpha(alpha)
     head.Progress:SetAlpha(alpha)
@@ -1045,14 +1041,11 @@ local function createHead()
     head.RetailBackground:SetAllPoints(head)
     head.PortraitBackground = retailTexture(head.Portrait, "BACKGROUND", 572, 314, 117, 117)
 
-    local border = head.Portrait:CreateTexture(nil, "BACKGROUND")
-    head.IconBorder = border
     local icon = head.Portrait:CreateTexture(nil, "ARTWORK")
     icon:SetSize(64, 64)
     icon:SetPoint("LEFT", head, "LEFT", 30, 0)
     icon:SetTexture(FALLBACK_ICON)
     head.Icon = icon
-    border:SetPoint("CENTER", icon, "CENTER")
 
     local model = CreateFrame("PlayerModel", nil, head.Portrait)
     model:SetSize(120, 124)
@@ -1189,7 +1182,6 @@ function WV:RefreshTalkingHeadModel()
     if model.SetModelAlpha then model:SetModelAlpha(0) end
     head.Icon:SetTexture(speaker and speaker.icon or FALLBACK_ICON)
     head.Icon:Show()
-    head.IconBorder:Show()
     active.modelNextTry, active.modelDeadline = 0, GetTime() + 20
     if active.preview then
         local loaded = model:SetUnit("player", false)
@@ -1204,7 +1196,6 @@ function WV:RefreshTalkingHeadModel()
             model:SetAlpha(1)
             syncModelOpacity()
             head.Icon:Hide()
-            head.IconBorder:Hide()
         end
     else
         tryTalkingModel()

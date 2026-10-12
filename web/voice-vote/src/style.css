@@ -1,0 +1,148 @@
+@import './game-fonts.css';
+@import './site-fonts.css';
+:root{--font-site:var(--font-ui);--site-small:16px;--site-normal:20px;--site-large:24px;font-size:var(--site-normal);font-family:var(--font-site);color:#dedbd5;background:#161617;font-synthesis:none;color-scheme:dark}
+*{box-sizing:border-box;-webkit-user-select:none;user-select:none}
+body{margin:0;min-width:360px;min-height:100vh;background:#161617}
+button,a{-webkit-tap-highlight-color:transparent}
+button{font:inherit;cursor:pointer}
+button:disabled{cursor:default}
+button:focus-visible,a:focus-visible{outline:2px solid #d5b16a;outline-offset:5px}
+button{color:inherit}
+header{min-height:104px;display:flex;align-items:center;justify-content:space-between;gap:24px;border-bottom:1px solid #ffffff12;max-width:1240px;margin:auto;padding:20px 42px}
+.brand{display:flex;gap:12px;align-items:center;text-decoration:none;color:#ede3ce;font-size:var(--site-large);letter-spacing:normal}
+.brand b{font-weight:400;color:#bba36d}
+.brand-icon{display:block;width:48px;height:48px;object-fit:contain}
+.brand-text{display:flex;flex-direction:column;gap:3px}
+.brand-tagline{font-size:var(--site-small);color:#a9a5a0}
+.curseforge-button{display:flex;align-items:center;justify-content:center;gap:8px;min-height:56px;padding:14px 18px;border:1px solid #f16436;border-radius:2px;background:#f16436;color:#111;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:17px;font-weight:600;text-decoration:none;line-height:24px;letter-spacing:normal;text-align:center;transition:background .15s}
+.curseforge-button:hover{background:#ff8054;border-color:#ff8054;color:#171717}
+.curseforge-button-label{transform:translateY(-1px)}
+.curseforge-button svg{display:block;flex:0 0 18px}
+main{position:relative;max-width:1024px;padding:32px 24px 30px;margin:auto}
+.welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;max-width:720px;min-height:min(640px,calc(100svh - 200px));margin:auto;padding:24px 16px 40px;text-align:center}
+.welcome-art{display:block;flex:none;width:240px;max-width:60vw;height:auto;margin:0 0 24px;pointer-events:none}
+.welcome h1{font-size:clamp(24px,3vw,32px);line-height:1.35}
+.welcome p{max-width:620px;margin:22px 0 0;font-size:20px;line-height:1.6;color:#bcb7af}
+.welcome-start{margin-top:32px;min-height:56px;padding:14px 24px;border:1px solid #d5b16a;border-radius:4px;background:#d5b16a;color:#191713;font-size:20px;line-height:1.3}
+.welcome-start:hover{background:#e5c585;border-color:#e5c585}
+/* Keep portrait dimensions while preloading, without exposing voting controls. */
+.comparison-view.is-preloading{position:absolute;inset:32px 24px auto;height:0;overflow:hidden;visibility:hidden;pointer-events:none}
+.intro{text-align:center}
+.intro h1{position:relative}
+.completion-title{position:absolute;inset:0}
+/* Retain responsive dimensions under replacement content so the chart stays
+   still. Only the options are replaced after a vote; an exhausted initial
+   catalogue uses the entire comparison area. */
+.comparison-stage{display:grid}
+.comparison-step,.batch-complete{grid-area:1 / 1;min-width:0}
+.comparison-step.is-complete,.options-content.is-complete{visibility:hidden;pointer-events:none}
+.options-stage{display:grid}
+.options-content,.options-stage>.batch-complete{grid-area:1 / 1;min-width:0}
+.options-stage>.batch-complete{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:16px}
+.options-stage>.batch-complete p,.options-stage>.batch-complete button{margin:0}
+.comparison-step .below{margin-bottom:0}
+.batch-progress{margin:16px 0 0;color:#bcb7af;font-size:18px;line-height:1.4;font-variant-numeric:tabular-nums}
+.batch-complete{align-self:center;text-align:center;padding:24px 16px}
+.batch-complete p{margin:20px 0 0;font-size:20px;line-height:1.5;color:#bcb7af}
+.continue-batch:disabled{opacity:.6}
+h1{font-family:var(--font-site);font-weight:400;font-size:28px;line-height:1.3;letter-spacing:normal;color:#f2eee8;margin:0}
+.head-stage{position:relative;margin-top:24px;padding:12px 23px 18px;background:#202020;border:1px solid #35332f;border-radius:9px}
+.head-viewport{overflow-x:auto;scrollbar-width:thin}
+/* Match the supplied game capture: its portrait/text are ~1.63 times larger
+   than the original web preview. Keep the underlying addon geometry intact.
+   CSS zoom lays out and rasterizes text at this size, unlike a transform. */
+.talking-head{--head-screen-scale:1.625;font-family:var(--font-ui);position:relative;height:155px;width:570px;margin:0 auto;zoom:var(--head-screen-scale)}
+.head-background{position:absolute;inset:0;background:url('/talking-heads.png') 0 0/1024px 1024px}
+.portrait{position:absolute;width:145px;height:145px;left:6px;top:6px}
+.portrait-slot{position:absolute;inset:0;pointer-events:none}
+/* Keep the reserve at the same measured size so its GPU resources, camera and
+   first frame are ready. display:none would prevent correct canvas sizing. */
+.portrait-slot.upcoming{visibility:hidden}
+.portrait-well{position:absolute;inset:15px;background:url('/talking-heads.png') -572px -314px/1024px 1024px}
+.portrait-frame{position:absolute;inset:0;background:url('/talking-heads.png') -572px 0/1024px 1024px;pointer-events:none;z-index:3}
+.model-clip{position:absolute;inset:15px;overflow:hidden}
+.model{width:115px;height:115px;position:absolute;inset:0;pointer-events:none}
+.model canvas{display:block}
+.model:not([data-model-state=ready]){opacity:0}
+/* Portrait.lua: 64px icon centered in the 115px model.
+   Opacity keeps the hidden viewer rendering and measuring at its normal size. */
+.portrait-placeholder{position:absolute;z-index:2;left:50%;top:50%;transform:translate(-50%,-50%);width:64px;height:64px;pointer-events:none}
+.portrait-placeholder img{display:block;width:64px;height:64px}
+/* Retail 12.1.0.69933 TalkingHeadUI.xml: Name RIGHT / Text BOTTOMRIGHT x=-42.
+   Keep the same right inset as src/Portrait.lua, even without a close button. */
+.speech{position:absolute;left:152px;right:42px;top:25px}
+/* Compensate for browser line-box metrics: match the game's visible title gap. */
+.talking-head h2{font-family:var(--font-quest-title);color:#ffd105;font-size:var(--quest-title);line-height:18px;margin:0 0 6px;font-weight:400;text-shadow:1px 1px #7d590d}
+.quest-text{height:91px;overflow:auto;scrollbar-width:none}
+.quest-text p{font-family:var(--font-ui);font-size:var(--quest-body);line-height:13px;margin:0;color:#fff;text-shadow:none;white-space:pre-wrap;overflow-wrap:anywhere}
+.transport{display:flex;align-items:center;gap:9px;color:#bcb7af;font-size:var(--site-small);margin:8px 0 12px}
+.signal{display:flex;gap:2px;height:12px;align-items:center}
+.signal i{display:block;width:2px;height:3px;background:#b8a16b}
+.signal.playing i{animation:wave .75s ease-in-out infinite alternate}
+.signal i:nth-child(2){animation-delay:-.4s}
+.signal i:nth-child(3){animation-delay:-.2s}
+.signal i:nth-child(4){animation-delay:-.6s}
+@keyframes wave{to{height:12px}
+}
+.progress{position:absolute;bottom:2px;left:15px;right:13px;height:2px}
+.progress>div{height:100%;background:#d9ad4d;transform:scaleX(0);transform-origin:left center}
+.variants{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:20px}
+.voice-card{border:1px solid #35332f;border-radius:8px;background:#202020;padding:17px 17px 0;transition:border-color .2s,background-color .2s}
+.voice-card.active{border-color:#786642;background:#2b2720}
+.voice-label{display:flex;justify-content:space-between;font-size:var(--site-small);letter-spacing:normal;color:#c7c1b8}
+.play-button{border:0;background:none;display:flex;align-items:center;gap:11px;width:100%;padding:20px 0;font-size:var(--site-normal);color:#e0dcc6}
+.play-disc{display:grid;place-items:center;width:35px;height:35px;border-radius:50%;border:1px solid #b4a77555;background:#b4a7750b}
+.play-disc svg{width:16px;height:16px;fill:#dfcf9e}
+.play-button:not(:disabled):hover .play-disc{background:#b4a77522}
+.vote-button{display:flex;align-items:center;justify-content:flex-start;gap:8px;width:100%;background:none;border:0;border-top:1px solid #bcb4a622;padding:13px 0;font-size:18px;color:#c7ad71}
+.vote-button:disabled{color:#9f9b94}
+.vote-button:not(:disabled):hover{color:#f2d692}
+.vote-button>svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transform:translateY(2px)}
+.below{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:center;margin:22px 0;color:#bcb7af;font-size:var(--site-small)}
+.choice-confirmation{position:absolute;inset:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;text-align:center;font-family:var(--font-site)}
+.choice-check{display:block;color:#d5b16a;font-size:28px;line-height:1;margin-bottom:16px}
+.choice-confirmation p{margin:0 0 8px;font-size:20px;color:#bcb7af}
+.choice-confirmation strong{font-size:36px;font-weight:600;color:var(--library-color,#f2eee8)}
+.next-sample{border:1px solid #786642;border-radius:4px;background:#2b2720;padding:12px 20px;min-height:48px;color:#e8d3a5;font-size:18px}
+.next-sample:hover{background:#373023}
+.next-sample span{margin-left:12px}
+.play-button:disabled{opacity:.5}
+.vote-stats{margin-top:28px;padding:24px;border:1px solid #35332f;border-radius:8px;background:#202020;font-family:var(--font-site)}
+.stats-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:22px}
+.stats-heading h2{margin:0;font:600 20px/1.4 var(--font-site);color:#e8e3da;text-shadow:none}
+.stats-heading>span,.vote-stats p{font-size:16px;color:#bcb7af}
+.vote-stats p{margin:18px 0 0;line-height:1.5}
+.stats-bars{display:grid;gap:16px}
+.stats-row{display:grid;grid-template-columns:100px minmax(0,1fr) 100px;align-items:center;gap:18px;font-size:16px;line-height:24px}
+/* Centre against the visible letters, accounting for the font's descent. */
+.stats-track{height:10px;background:#343230;border-radius:2px;overflow:hidden;transform:translateY(1px)}
+.stats-track>div{height:100%;background:var(--library-color)}
+/* Match the voice catalogue palette in src/VoiceComparison.lua (colors). */
+.library-0{--library-color:rgb(25% 70% 100%)}.library-1{--library-color:rgb(100% 55% 20%)}.library-2{--library-color:rgb(40% 85% 45%)}
+.library-name{color:var(--library-color);white-space:nowrap}
+.stats-name{color:var(--library-color);font-weight:600}
+.stats-value{text-align:right;font-variant-numeric:tabular-nums;color:#e8e3da}
+.stats-value>span{color:#bcb7af}
+.error{color:#e3ae88;border:1px solid #945e3d66;border-radius:5px;padding:14px;font-size:var(--site-normal)}
+.loading{text-align:center;margin:50px;color:#bba46b}
+@media(max-width:650px){header{height:auto;min-height:76px;padding:20px;flex-wrap:wrap;gap:16px}
+.welcome{min-height:0;padding:16px 16px 24px}
+.welcome-art{width:190px;margin-bottom:20px}
+.brand{font-size:var(--site-normal)}
+.curseforge-button{width:100%}
+main{padding-top:24px}
+h1{font-size:24px}
+.head-stage{padding:6px 10px 14px}
+.variants{grid-template-columns:1fr;gap:12px}
+.voice-card{padding:16px 18px 0}
+.voice-label{font-size:var(--site-small)}
+.play-button{gap:12px;padding:15px 0}
+.vote-button{font-size:18px;padding:11px 0}
+.below{font-size:var(--site-small)}
+.vote-stats{padding:18px}
+.stats-row{grid-template-columns:1fr auto;gap:8px}
+.stats-track{grid-column:1/-1;grid-row:2;transform:none}
+.stats-value{grid-column:2;grid-row:1}
+}
+@media(prefers-reduced-motion:reduce){.signal.playing i{animation:none;height:8px}
+}

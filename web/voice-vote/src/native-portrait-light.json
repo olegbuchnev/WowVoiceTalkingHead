@@ -1,0 +1,10 @@
+{
+  "source": "User capture: TalkingHeadRu.Model:GetLight(), Forever, Sten Stoutarm, 2026-10-12",
+  "enabled": true,
+  "omnidirectional": false,
+  "point": [0, 1, 0],
+  "ambientIntensity": 1,
+  "ambientColor": [0.69803923368454, 0.69803923368454, 0.69803923368454],
+  "diffuseIntensity": 1,
+  "diffuseColor": [0.80000001192093, 0.80000001192093, 0.63921570777893]
+}

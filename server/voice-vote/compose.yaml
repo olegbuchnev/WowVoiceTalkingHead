@@ -1,0 +1,27 @@
+name: talkinghead-vote
+services:
+  api:
+    image: ${VOICE_VOTE_IMAGE:-talkinghead-vote-server:local}
+    build:
+      context: .
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${VOICE_VOTE_HOST_PORT:-8081}:8081"
+    environment:
+      VOICE_VOTE_SECURE_COOKIE: ${VOICE_VOTE_SECURE_COOKIE:-true}
+    secrets:
+      - admin_password
+    volumes:
+      - votes:/data
+      - type: bind
+        source: ${VOICE_VOTE_CATALOGUE_DIR:?Set VOICE_VOTE_CATALOGUE_DIR to a directory containing catalogue.json}
+        target: /catalogue
+        read_only: true
+        bind:
+          create_host_path: false
+    stop_grace_period: 30s
+volumes:
+  votes:
+secrets:
+  admin_password:
+    file: ${VOICE_VOTE_ADMIN_PASSWORD_FILE:?Set VOICE_VOTE_ADMIN_PASSWORD_FILE to the admin password file}

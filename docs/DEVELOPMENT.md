@@ -155,6 +155,23 @@ manifest/index/timer consistency and exercises importers with temporary service-
 fixtures; it requires no installed or copied voice library.
 All build tasks use only runtime source and generated metadata.
 Checksums are an offline audit: the game does not read or hash installed OGGs.
+
+### Audio recording revision history
+
+All three audio importers maintain `docs/internal/audio-recording-history.json`.
+The baseline starts with the audited packs on 2026-10-12. File SHA-256 identifies
+each revision independently of pack releases, size and duration; unchanged files
+retain their identity across releases. Historical snapshots are append-only,
+with a three-distinct-revision window per file for future rating lookup. Same-version
+pack replacements are retained as ambiguous; unknown releases never inherit a rating.
+The archive contains metadata only and is excluded from the addon ZIP. No ratings
+or runtime ranking are implemented yet. OGG tags/re-encoding currently count as
+file changes; decoded-audio equivalence is not implemented.
+
+Run `node tools/audio-recording-history.js --check` to compare the history against
+current manifests without writing; omit `--check` to record audited manifests.
+The check and revision lifecycle fixtures run in `tests/run.js`.
+See [schema and maintenance rules](internal/audio-recording-history.md).
 Unknown future WowVoice formats still require a separate adaptation; no runtime
 version-based muting or guessed metadata fallback is introduced.
 

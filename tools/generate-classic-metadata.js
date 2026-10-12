@@ -79,6 +79,9 @@ function generate(source, root = defaultRoot) {
   fs.mkdirSync(path.dirname(output), { recursive: true });
   fs.writeFileSync(path.join(root, 'src/Durations.lua'), renderDurations(manifest));
   fs.writeFileSync(output, JSON.stringify(manifest, null, 2) + '\n');
+  require('./audio-recording-history').recordSnapshots([
+    { pack: 'WowVoiceSounds', version: manifest.version, files: manifest.files },
+  ], root);
   return manifest;
 }
 

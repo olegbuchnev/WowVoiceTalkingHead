@@ -1,0 +1,20 @@
+# Use with compose.yaml on a 2 GB host.
+services:
+  web:
+    mem_limit: 384m
+    environment:
+      NODE_OPTIONS: --max-old-space-size=256
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+  api:
+    mem_limit: 896m
+    environment:
+      JAVA_TOOL_OPTIONS: -Xms64m -Xmx384m -XX:MaxDirectMemorySize=64m
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'

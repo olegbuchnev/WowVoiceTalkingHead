@@ -51,6 +51,16 @@ try {
                 throw 'Invalid GoatCounter request.'
             }
             if ($statsFixture.GoatMode -eq 'error') { throw 'Request failed: goat-fixture-token' }
+            if ($statsFixture.GoatMode -eq 'transient-network' -and $statsFixture.GoatRequests -lt 3) {
+                throw [Net.WebException]::new('Connection failed: goat-fixture-token')
+            }
+            if ($statsFixture.GoatMode -match '^http-(\d+)$' -or
+                ($statsFixture.GoatMode -eq 'transient-server' -and $statsFixture.GoatRequests -lt 3)) {
+                $statusCode = if ($statsFixture.GoatMode -eq 'transient-server') { 503 } else { [int]$Matches[1] }
+                $exception = [Exception]::new('API failure: goat-fixture-token')
+                $exception | Add-Member -NotePropertyName Response -NotePropertyValue ([pscustomobject]@{StatusCode=$statusCode})
+                throw $exception
+            }
             if ($statsFixture.GoatMode -eq 'empty') { return [pscustomobject]@{hits=$null; more=$false} }
             if ($statsFixture.GoatMode -eq 'malformed') { return [pscustomobject]@{total=17} }
             if ($statsFixture.GoatMode -eq 'wrong-event') {
@@ -222,6 +232,39 @@ try {
     & (Join-Path $fixture 'tools/release-stats.ps1') -NoOpen | Out-Null
     $localToken = Get-Content -LiteralPath $clickPath -Raw -Encoding UTF8 | ConvertFrom-Json
     if ($localToken.status -ne 'ok' -or $localToken.clicks -ne 17) { throw 'Local token file and empty deduction list must work.' }
+    foreach ($mode in @('transient-network', 'transient-server')) {
+        $statsFixture.GoatMode = $mode; $statsFixture.GoatRequests = 0
+        & (Join-Path $fixture 'tools/release-stats.ps1') -NoOpen | Out-Null
+        $recovered = Get-Content -LiteralPath $clickPath -Raw -Encoding UTF8 | ConvertFrom-Json
+        if ($statsFixture.GoatRequests -ne 3 -or $recovered.status -ne 'ok' -or $recovered.clicks -ne 17) {
+            throw 'Temporary GoatCounter network and server failures must recover within three attempts.'
+        }
+    }
+    foreach ($statusCode in @(401, 403, 429, 503)) {
+        $statsFixture.GoatMode = "http-$statusCode"; $statsFixture.GoatRequests = 0
+        & (Join-Path $fixture 'tools/release-stats.ps1') -NoOpen | Out-Null
+        $failed = Get-Content -LiteralPath $clickPath -Raw -Encoding UTF8 | ConvertFrom-Json
+        $expectedAttempts = if ($statusCode -eq 503) { 3 } else { 1 }
+        if ($statsFixture.GoatRequests -ne $expectedAttempts -or $failed.status -ne 'stale' -or
+            $failed.clicks -ne 17 -or $failed.collectedAtUTC -ne $recovered.collectedAtUTC -or
+            $failed.message -notmatch "HTTP $statusCode") {
+            throw 'GoatCounter HTTP failures must explain the status, retry only server errors and retain the dated cache.'
+        }
+        foreach ($name in @('index.html','curseforge-clicks.csv','curseforge-clicks.json')) {
+            if ((Get-Content -LiteralPath (Join-Path $fixture "artifacts/stats/$name") -Raw -Encoding UTF8) -match 'goat-fixture-token') {
+                throw 'GoatCounter HTTP failures must not expose credentials.'
+            }
+        }
+    }
+    $statsFixture.GoatMode = 'ok'; $statsFixture.GoatRequests = 0
+    [IO.File]::WriteAllText($clickLedger, 'invalid JSON')
+    & (Join-Path $fixture 'tools/release-stats.ps1') -NoOpen | Out-Null
+    $invalidLedger = Get-Content -LiteralPath $clickPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    if ($statsFixture.GoatRequests -ne 0 -or $invalidLedger.status -ne 'stale' -or
+        $invalidLedger.message -notmatch 'config/curseforge-click-checks.json' -or $invalidLedger.clicks -ne 17) {
+        throw 'An invalid deduction file must be identified separately without discarding cached counts.'
+    }
+    [IO.File]::WriteAllText($clickLedger, '{"schemaVersion":1,"event":"curseforge-open","checks":[]}')
     foreach ($name in @('index.html','curseforge-clicks.csv','curseforge-clicks.json')) {
         if ((Get-Content -LiteralPath (Join-Path $fixture "artifacts/stats/$name") -Raw -Encoding UTF8) -match 'goat-fixture-token') {
             throw 'GoatCounter credentials must never appear in reports, including API failures.'
@@ -292,6 +335,7 @@ exit $LASTEXITCODE
     Write-Host 'PASS: addon-only releases and historical full archives, original CSV/JSON columns, adjusted counts, single request, complete pagination, authentication, stale-login fallback and useful rate-limit errors preserving the report; no network calls.'
     Write-Host 'PASS: CurseForge event filter, token isolation, check deductions, separate counts, missing setup, cached failures and empty events; no network calls.'
     Write-Host 'PASS: bounded GitHub retries, offline and rate-limited GitHub with independent GoatCounter refresh, dated caches and no false zero.'
+    Write-Host 'PASS: bounded GoatCounter network/server retries, HTTP and ledger diagnostics, dated cache preservation and credential isolation.'
 } finally {
     $env:GITHUB_TOKEN = $savedGitHubToken
     $env:GH_TOKEN = $savedGhToken

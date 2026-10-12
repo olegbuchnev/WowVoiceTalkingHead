@@ -18,6 +18,7 @@ for (const runner of [
   'validate-wayfarer-metadata.js',
   'validate-wayfarer-integration.js',
   'validate-classic-metadata.js',
+  'validate-audio-recording-history.js',
   'validate-localization.js',
   'validate-site.js',
   'validate-audio-assets.js',

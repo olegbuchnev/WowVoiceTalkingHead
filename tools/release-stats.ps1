@@ -113,6 +113,32 @@ function Count-Text($Value) {
     return ([long]$Value).ToString('N0', [Globalization.CultureInfo]::GetCultureInfo('ru-RU'))
 }
 
+function Get-GoatCounterFailure($Failure) {
+    $response = if ($Failure.Exception.PSObject.Properties['Response']) { $Failure.Exception.Response } else { $null }
+    $status = if ($response) { [int]$response.StatusCode } else { 0 }
+    # Use only a status code and fixed text; exception/server text may contain the token.
+    $message = switch ($status) {
+        401 { 'GoatCounter отклонил API-токен (HTTP 401). Проверьте настроенный токен.' }
+        403 { 'GoatCounter запретил чтение статистики (HTTP 403). Проверьте права API-токена.' }
+        429 { 'Достигнут лимит запросов GoatCounter (HTTP 429). Повторите обновление позже.' }
+        0 { 'Не удалось получить ответ GoatCounter. Проверьте соединение, VPN или прокси и повторите обновление.' }
+        default { "Ошибка API GoatCounter (HTTP $status). Повторите обновление позже." }
+    }
+    return [pscustomobject]@{ Status = $status; Message = $message }
+}
+
+function Invoke-GoatCounterRequest([string]$Uri, [hashtable]$RequestHeaders) {
+    for ($attempt = 1; $attempt -le 3; $attempt++) {
+        try { return Invoke-RestMethod -Uri $Uri -Headers $RequestHeaders -TimeoutSec 10 }
+        catch {
+            $failure = Get-GoatCounterFailure $_
+            if ($attempt -eq 3 -or ($failure.Status -ne 0 -and $failure.Status -lt 500)) { throw }
+            Write-Warning "GoatCounter request failed; retrying ($($attempt + 1)/3)."
+            Start-Sleep -Seconds $attempt
+        }
+    }
+}
+
 function Get-CurseForgeClicks {
     $result = [pscustomobject][ordered]@{
         event = 'curseforge-open'; status = 'unconfigured'
@@ -121,6 +147,8 @@ function Get-CurseForgeClicks {
         message = 'Не подключено: добавьте API-токен в config/goatcounter-token.local.txt.'
     }
     $goatToken = $null
+    $stage = 'ledger'
+    $failureMessage = 'Не удалось прочитать файл вычетов config/curseforge-click-checks.json. Проверьте его формат и значения.'
     try {
         $deductions = 0L
         $clickLedger = Join-Path $root 'config\curseforge-click-checks.json'
@@ -133,6 +161,8 @@ function Get-CurseForgeClicks {
                 $deductions = [long]($deductions + $n)
             }
         }
+        $stage = 'token'
+        $failureMessage = 'Не удалось прочитать config/goatcounter-token.local.txt. Проверьте доступ к файлу.'
         $goatToken = [Environment]::GetEnvironmentVariable('GOATCOUNTER_API_TOKEN')
         $tokenFile = Join-Path $root 'config\goatcounter-token.local.txt'
         if ([string]::IsNullOrWhiteSpace($goatToken) -and (Test-Path -LiteralPath $tokenFile)) {
@@ -144,10 +174,13 @@ function Get-CurseForgeClicks {
             $end = $now.AddHours(1).ToString("yyyy-MM-dd'T'HH':00:00Z'")
             $uri = 'https://tove2889.goatcounter.com/api/v0/stats/hits?path_by_name=true&include_paths=curseforge-open&limit=100' +
                 '&start=' + [Uri]::EscapeDataString($result.startUTC) + '&end=' + [Uri]::EscapeDataString($end)
-            $response = Invoke-RestMethod -Uri $uri -Headers @{
+            $stage = 'request'
+            $response = Invoke-GoatCounterRequest -Uri $uri -RequestHeaders @{
                 Authorization = 'Bearer ' + $goatToken.Trim()
                 'Content-Type' = 'application/json'; 'User-Agent' = 'TalkingHeadRu-local-stats'
-            } -TimeoutSec 30
+            }
+            $stage = 'response'
+            $failureMessage = 'GoatCounter вернул неполные или некорректные данные переходов. Повторите обновление позже.'
             if (-not $response.PSObject.Properties['hits'] -or $response.more) { throw 'Incomplete click response.' }
             $allHits = @($response.hits | Where-Object { $null -ne $_ })
             $hits = @($allHits | Where-Object { $_.event -eq $true -and $_.path -ceq $result.event })
@@ -164,7 +197,7 @@ function Get-CurseForgeClicks {
     } catch {
         # Never include server response bodies or exception text: they may echo credentials.
         $result.status = 'unavailable'
-        $result.message = 'Не удалось обновить переходы. Проверьте API-токен, право чтения статистики, соединение и файл вычетов.'
+        $result.message = if ($stage -eq 'request') { (Get-GoatCounterFailure $_).Message } else { $failureMessage }
     } finally { $goatToken = $null }
     if ($result.status -ne 'ok') {
         # Keep the last successful sample visibly dated instead of reporting a false zero.

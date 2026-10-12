@@ -1,0 +1,33 @@
+/* Native ruRU fonts at head scale 1, before the panel's screen-scale conversion.
+ * Definitions: Blizzard_Fonts_Shared/Shared/{Fonts,FontStyles}.xml (forever).
+ * The talking head inherits QuestTitleFont and QuestFont in src/Portrait.lua.
+ */
+@font-face {
+  font-family: 'WoW Friz';
+  src: url('/fonts/frizqt___cyr.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'WoW Morpheus';
+  src: url('/fonts/morpheus_cyr.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --font-ui: 'WoW Friz', 'Source Sans 3';
+  --font-quest-title: 'WoW Morpheus', 'WoW Friz', 'Source Sans 3';
+  --game-small: 10px; /* GameFontNormalSmall */
+  --game-normal: 12px; /* GameFontNormal */
+  --game-large: 16px; /* GameFontNormalLarge */
+  --quest-title: 18px; /* QuestTitleFont -> QuestFont_Shadow_Huge */
+  --quest-body: 13px; /* QuestFont -> SystemFont_Med2 */
+  font-family: var(--font-ui);
+  font-size: var(--game-normal);
+  font-weight: 400;
+  text-size-adjust: 100%;
+}

@@ -22,7 +22,7 @@ command('debug on')
 questID=179; event('QUEST_DETAIL')
 local h=frames.TalkingHeadRu
 assert(h.Name.text=='Свиток с рунами' and h.Icon.texture==134939)
-assert(h.Icon.visible and h.IconBorder.visible and h.Model.alpha==0)
+assert(h.Icon.visible and h.Model.alpha==0)
 assert(has('item=10621') and scans==5)
 portraitEvent('QUEST_ACCEPTED',179)
 local record=questCache()[179]
@@ -35,7 +35,7 @@ assert(WV:ReplayQuest(179))
 assert(scans==before and h.Name.text==record.name and h.Icon.texture==134939)
 -- An old asynchronous model notification must not cover the item icon.
 h.Model:CompleteLoad(4321)
-assert(h.Icon.visible and h.IconBorder.visible and h.Model.alpha==0)
+assert(h.Icon.visible and h.Model.alpha==0)
 WV:Silence(); restored('1','0.37')
 print('PASS: exact bag quest match, item metadata saved, replay after item disappears, stale model ignored, Dialog restored')
 
@@ -43,7 +43,7 @@ print('PASS: exact bag quest match, item metadata saved, replay after item disap
 npcGUID='Creature-0-1-0-1-999-0000000099'; npcName='Получатель'; npcDisplay=4321
 event('QUEST_COMPLETE')
 assert(h.Name.text==npcName and h.Model.displayID==4321)
-assert(not h.Icon.visible and not h.IconBorder.visible and questCache()[179]==record)
+assert(not h.Icon.visible and questCache()[179]==record)
 portraitEvent('QUEST_TURNED_IN',179)
 assert(not questCache()[179] and h.visible)
 WV:Silence(); restored('1','0.37')

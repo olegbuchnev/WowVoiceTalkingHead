@@ -1,0 +1,13 @@
+**
+!Dockerfile
+!pom.xml
+!mvnw
+!.mvn
+!.mvn/**
+!src
+!src/**
+!admin
+!admin/**
+admin/node_modules
+admin/dist
+src/main/resources/static/admin

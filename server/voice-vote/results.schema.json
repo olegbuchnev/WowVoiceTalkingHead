@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TalkingHead Ru voting results, version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "generatedAt", "catalogueSha256", "summary", "comparisons", "raceSex", "pairwise"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "generatedAt": {"type": "string", "format": "date-time"},
+    "catalogueSha256": {"$ref": "#/$defs/hash"},
+    "summary": {
+      "type": "object", "additionalProperties": false,
+      "required": ["votes", "currentVotes", "historicalVotes", "currentVotesWithoutDemographics", "votedComparisons", "catalogueComparisons"],
+      "properties": {
+        "votes": {"$ref": "#/$defs/count"}, "currentVotes": {"$ref": "#/$defs/count"},
+        "historicalVotes": {"$ref": "#/$defs/count"}, "currentVotesWithoutDemographics": {"$ref": "#/$defs/count"},
+        "votedComparisons": {"$ref": "#/$defs/count"}, "catalogueComparisons": {"$ref": "#/$defs/count"}
+      }
+    },
+    "comparisons": {"type": "array", "items": {"$ref": "#/$defs/comparison"}},
+    "raceSex": {"type": "array", "items": {"$ref": "#/$defs/group"}},
+    "pairwise": {"type": "array", "items": {"$ref": "#/$defs/pair"}}
+  },
+  "$defs": {
+    "count": {"type": "integer", "minimum": 0},
+    "hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "source": {"enum": ["WowVoice", "CatQuest", "Wayfarer"]},
+    "nullableText": {"type": ["string", "null"]},
+    "npc": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "displayID", "modelFileID", "race", "sex"],
+      "properties": {
+        "id": {"$ref": "#/$defs/count"}, "displayID": {"$ref": "#/$defs/count"}, "modelFileID": {"$ref": "#/$defs/count"},
+        "race": {"$ref": "#/$defs/nullableText"}, "sex": {"$ref": "#/$defs/nullableText"}
+      }
+    },
+    "recording": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "source", "pack", "sha256", "libraryVersions", "selectedVotes", "offeredVotes"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-f0-9]{24}$"}, "source": {"$ref": "#/$defs/source"},
+        "pack": {"type": "string"}, "sha256": {"$ref": "#/$defs/hash"},
+        "libraryVersions": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}},
+        "selectedVotes": {"$ref": "#/$defs/count"}, "offeredVotes": {"$ref": "#/$defs/count"}
+      }
+    },
+    "comparison": {
+      "type": "object", "additionalProperties": false,
+      "required": ["comparisonID", "questID", "stage", "npc", "current", "votes", "recordings"],
+      "properties": {
+        "comparisonID": {"$ref": "#/$defs/hash"}, "questID": {"type": "integer", "minimum": 1}, "stage": {"const": "a"},
+        "npc": {"$ref": "#/$defs/npc"}, "current": {"type": "boolean"}, "votes": {"$ref": "#/$defs/count"},
+        "recordings": {"type": "array", "minItems": 2, "maxItems": 3, "items": {"$ref": "#/$defs/recording"}}
+      }
+    },
+    "group": {
+      "type": "object", "additionalProperties": false,
+      "required": ["race", "sex", "source", "selectedVotes", "offeredVotes"],
+      "properties": {
+        "race": {"$ref": "#/$defs/nullableText"}, "sex": {"$ref": "#/$defs/nullableText"}, "source": {"$ref": "#/$defs/source"},
+        "selectedVotes": {"$ref": "#/$defs/count"}, "offeredVotes": {"$ref": "#/$defs/count"}
+      }
+    },
+    "pair": {
+      "type": "object", "additionalProperties": false,
+      "required": ["race", "sex", "source", "opponent", "wins", "losses"],
+      "properties": {
+        "race": {"$ref": "#/$defs/nullableText"}, "sex": {"$ref": "#/$defs/nullableText"},
+        "source": {"$ref": "#/$defs/source"}, "opponent": {"$ref": "#/$defs/source"},
+        "wins": {"$ref": "#/$defs/count"}, "losses": {"$ref": "#/$defs/count"}
+      }
+    }
+  }
+}

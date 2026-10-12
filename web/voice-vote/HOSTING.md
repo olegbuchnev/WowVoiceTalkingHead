@@ -1,0 +1,91 @@
+# Timeweb Cloud deployment
+
+The voting site and Java API share one Ubuntu server. Nginx on the host terminates
+HTTPS and proxies the entire site to `127.0.0.1:8080`. Java has no public port.
+
+## Current host
+
+- Server: `81.19.135.168`, Ubuntu 26.04, 1 vCPU, 2 GB RAM, 30 GB disk.
+- Site: https://talkingheadru.tw1.ru/ (free Timeweb technical domain).
+- Admin panel: https://talkingheadru.tw1.ru/admin/.
+- Application directory: `/srv/talkinghead`.
+- SSH key: `~/.ssh/talkinghead_timeweb_ed25519` on the administrator's computer.
+- Public firewall ports: SSH 22, HTTP 80 for ACME/redirect, HTTPS 443.
+- A 1 GB swap file provides emergency headroom; it is not a RAM replacement.
+
+## Runtime and secrets
+
+Use the image-only `compose.yaml` prepared by the deployment bundle together with
+[compose.production.yaml](compose.production.yaml). The override limits Java to
+896 MiB (384 MiB heap) and the web container to 384 MiB, and rotates container logs.
+
+```sh
+cd /srv/talkinghead
+docker compose -f compose.yaml -f compose.production.yaml up -d --no-build --wait
+docker compose -f compose.yaml -f compose.production.yaml ps
+docker stats --no-stream
+```
+
+The `.env` file contains paths and flags, not the admin password. The password
+is in `/srv/talkinghead/secrets/admin-password.txt`, owned by UID/GID 10001 with
+mode 0400; its parent directory is accessible only to root. Compose mounts the
+file read-only in the API container. The initial password comes from the ignored
+local file `config/voice-vote-admin-password.local.txt`. Never put it in Git,
+image archives, logs or frontend configuration.
+
+## Data
+
+- `catalogue/`: the three JSON exports, updated together.
+- `libraries/`: externally installed audio files, transferred directly from the
+  installed libraries according to `audio-manifest.json`, preserving relative
+  paths. Audio is not copied into the repository, image or release archives.
+- `talkinghead-vote_model_cache`: prepared models, read without upstream fetches
+  (`VOICE_VOTE_MODEL_OFFLINE=true`).
+- `talkinghead-vote_votes`: SQLite, WAL and the durable pending-vote inbox.
+
+The initial model snapshot has one documented camera failure: quest 97290,
+display 146706. Its portrait uses the scroll placeholder. All 1,270 other
+available portraits passed the offline browser audit. Quests without a display
+ID also use the placeholder. Keep this exception visible in cache audit reports.
+
+Do not run `docker compose down --volumes` on this deployment. Back up both
+SQLite and its pending inbox, following the [server backup instructions](../../server/voice-vote/DOCKER.md).
+Aggregate exports from the admin panel do not replace a database backup.
+
+## Initial host check
+
+On 2026-10-12, an isolated API container using the production image and memory
+limit accepted 100 simultaneous visitors' ballots. All 100 were committed and
+exported, with zero inbox failures. Submission p95 was 1.16 seconds during this
+artificial burst; API memory after the check was about 197 MiB. This measured
+the API on the host, not public Internet latency or 100 simultaneous model/audio
+downloads. The separate test container and its `talkinghead-vote_smoke` volume
+were removed after validation; the production votes volume was not used.
+
+## Updates
+
+Build images locally using [DOCKER.md](DOCKER.md), transfer and load them, then
+run the Compose command above. Do not build frontend/Java images on the small
+production server. Import and verify additional model dependencies before
+exposing an updated catalogue; see [MODEL-CACHE.md](MODEL-CACHE.md).
+
+## Public launch verification
+
+Deployment completed on 2026-10-12. Both containers are healthy,
+all 9,207 audio hashes and 12,177 model dependency hashes match the local snapshot,
+the catalogue contains 3,576 quests, and portrait rendering, two audio variants,
+admin login and JSON export work through the public HTTPS address. No test ballots were
+submitted to the production database. No external browser asset requests were
+needed. Container memory after the public browser check was about 373 MiB combined.
+
+HTTP redirects to HTTPS. Let's Encrypt issued the initial certificate, expiring
+on 2027-01-10; `certbot.timer` renews it automatically. A successful renewal
+reloads Nginx via `/etc/letsencrypt/renewal-hooks/deploy/reload-nginx`.
+The renewal dry run passed. The host configuration is
+`/etc/nginx/sites-available/talkinghead-vote`; the ACME webroot is
+`/var/www/letsencrypt`.
+
+The deployment helper `/srv/talkinghead/enable-https.sh` checks authoritative
+and public DNS before requesting a certificate. A hostname entry in the Timeweb
+panel is not sufficient until its DNS record is published. Routine certificate
+renewal uses Certbot's timer and does not require rerunning the deployment helper.
