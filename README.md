@@ -6,7 +6,7 @@
 На английском клиенте кнопки плеера отображаются на английском, настройки — на русском.
 Говорящая голова использует шрифты заданий Blizzard, включая их кириллические варианты.
 
-**[Скачать аддон](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.3.1-forever/TalkingHeadRu-1.3.1-forever.zip)** ·
+**[Скачать аддон](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.3.2-forever/TalkingHeadRu-1.3.2-forever.zip)** ·
 [Инструкция](USER_README.md) ·
 [Сообщить об ошибке](https://github.com/olegbuchnev/WowVoiceTalkingHead/issues)
 
@@ -102,7 +102,7 @@
 
 ## Установка
 
-1. **[Скачайте аддон](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.3.1-forever/TalkingHeadRu-1.3.1-forever.zip)**.
+1. **[Скачайте аддон](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.3.2-forever/TalkingHeadRu-1.3.2-forever.zip)**.
    Закройте игру и скопируйте папку `TalkingHeadRu` из архива
    в `_classic_beta_/Interface/AddOns/`.
 2. **Установите одну или несколько библиотек для Forever:**
