@@ -3,14 +3,15 @@
 In DevTools Elements, the first element immediately inside `<body>` is hidden:
 
 ```html
-<div id="portrait-debug" hidden data-load-id="p-a81f3c92d640"
-     data-quest-id="977" data-display-id="9780" data-state="ready"></div>
+<div id="portrait-debug" hidden aria-hidden="true">{"questID":977,"npcID":10377,"displayID":9780,"modelFileID":119369,"state":"ready","loadID":"p-a81f3c92d640"}</div>
 ```
 
-Copy `data-load-id`. It identifies one portrait mount, not a visitor. Preloading
+Double-click the single JSON text node in Elements to copy the complete diagnostic
+line, including quests without a load ID. Diagnostic values appear only in the
+JSON text, without duplicate data attributes. `loadID` identifies one portrait mount, not a visitor. Preloading
 the next portrait does not replace the current ID. On the series completion
 screen it retains the last displayed portrait. A quest without a model has an
-empty load ID and `data-state="unavailable"`; no viewer request is made.
+empty load ID and `state: "unavailable"`; no viewer request is made.
 
 ## Read over SSH
 

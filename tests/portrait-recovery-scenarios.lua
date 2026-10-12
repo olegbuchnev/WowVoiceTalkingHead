@@ -21,7 +21,7 @@ assert(h.Name.text == 'Скорн Белое Облако' and h.Model.creatureI
 assert(not questCache()[861])
 -- This wanted poster has a receiver but no NPC giver.
 replay(176)
-assert(h.Icon.visible and h.Model.alpha == 0 and h.Name.text == 'Описание задания')
+assert(h.Icon.visible and h.Model.alpha == 0 and h.Name.text == 'Рассказчик')
 local noIndex = WV:GetReplaySpeaker(999999)
 assert(not noIndex.speaker)
 print('PASS: old quests recover exact indexed givers, duplicate titles stay distinct, receiver is never substituted')
@@ -73,6 +73,10 @@ assert(h.Icon.visible)
 WowVoiceSpeakers.givers[179] = {npcID=658,name='First'}
 replay(179)
 assert(h.Model.creatureID == 658 and not h.Icon.visible)
+WowVoiceSpeakers.givers[179] = {narrator=true}
+replay(179)
+assert(h.Icon.visible and h.Model.alpha == 0 and h.Name.text == 'Рассказчик')
+assert(not questCache()[179], 'Inferred narration must not replace captured game data')
 WowVoiceSpeakers = originalDatabase
 
 -- Model failure must not interrupt playback; asynchronous success reveals it.

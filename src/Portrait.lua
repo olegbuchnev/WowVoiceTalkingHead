@@ -228,6 +228,13 @@ local function recoverQuestNPC(questId, record, quests, snapshot, section)
     local database = speakerDatabase()
     local role = (section == "p" or section == "c") and "finishers" or "givers"
     local indexed = database and database[role][questId]
+    if indexed and indexed.narrator then
+        local narrated = {}
+        if record then for key, value in pairs(record) do narrated[key] = value end end
+        narrated.questId, narrated.narrator = questId, true
+        narrated.name = L["Рассказчик"]
+        return narrated
+    end
     if not (indexed and positive(indexed.npcID)) then return record end
     local recovered = {}
     if record then for key, value in pairs(record) do recovered[key] = value end end

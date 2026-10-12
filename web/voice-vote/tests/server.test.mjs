@@ -16,6 +16,15 @@ test('OGG range requests, suffixes and invalid ranges', () => {
   for(const range of ['bytes=100-','bytes=30-20','bytes=-0','bytes=0-1,3-4','not-a-range']) assert.equal(audioRange(range,100),null);
 });
 
+test('explicit description narrator exports no receiving NPC or race/sex', async()=>{
+  const {catalogue}=buildCatalogue(undefined,{questIDs:[98247,98248]});
+  assert.equal(catalogue.quests.length,2);
+  for(const quest of catalogue.quests) {
+    assert.deepEqual(quest.npc,{id:0,displayID:0,race:null,sex:null,name:'Рассказчик'});
+    assert.equal(quest.variants.length,2,'Narration still participates in quest voting');
+  }
+});
+
 test('audio delivery rejects changed bytes even when the file size is unchanged', async()=>{
   const directory=await fs.mkdtemp(path.join(os.tmpdir(),'voice-vote-audio-'));
   const file=path.join(directory,'fixture.bin');

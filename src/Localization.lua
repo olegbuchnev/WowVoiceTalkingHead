@@ -12,6 +12,7 @@ local translations = {
     ["Квест "] = "Quest ",
     ["Сдача: "] = "Turn-in: ",
     ["Описание задания"] = "Quest description",
+    ["Рассказчик"] = "Narrator",
     ["Выполнение задания"] = "Quest progress",
     ["Завершение задания"] = "Quest completion",
     ["Текст задания недоступен."] = "Quest text is unavailable.",

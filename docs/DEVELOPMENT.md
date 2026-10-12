@@ -884,7 +884,13 @@ this fallback never substitutes the giver for a progress/completion speaker.
 
 `src/Speakers.lua` is the only runtime speaker database. It has `givers` and
 `finishers` keyed by quest ID, and `npcs` keyed by NPC ID. `false` mappings block
-ambiguous or confirmed non-NPC identities; an absent mapping is unknown.
+ambiguous identities; an absent mapping is unknown. `{ narrator = true }` is an
+explicit description narrator, selected at its library priority and blocking lower
+NPC fallbacks. CatQuest `CatQuestAudio.lua` description voice and Wayfarer `a.v`
+supply the marker; generic `qg` does not override narration in the same pack.
+Completion/progress voices do not determine description identity. The website
+exports narrator NPC/display/model IDs as zero and race/sex as null; no human
+race/sex preference is inferred. The portrait becomes a scroll labelled Narrator.
 All three TOCs load it. `Index.lua` still serves quest/audio recognition, but
 Portrait.lua no longer builds or searches a reverse Classic index.
 
@@ -910,7 +916,7 @@ frequency, not cross-project version numbers or the age of one particular import
 
 - Givers: **CatQuest > Wayfarer > current Quest Pins > Classic**.
 - Finishers: **CatQuest > Wayfarer > Classic**; the Pins inputs contain only starters.
-- Appearances: **CatQuest > Wayfarer**, joined by exact NPC ID.
+- Appearances: **CatQuest > Wayfarer > verified supplements**, joined by exact NPC ID.
 - Names: prefer Russian; within the same language preference,
   **CatQuest > Wayfarer > Classic**.
 
@@ -922,6 +928,12 @@ Captured game observations retain runtime priority over the resulting database.
 
 Inputs:
 
+- `npc-appearance-supplements.json` fills missing appearances using individually
+  verified Forever NPC pages. Every entry records a display ID, source URL,
+  verification date and evidence. Supplements cannot replace library appearances
+  or define quest roles; matching names are not evidence of identical models.
+  Fillion NPC 253285 uses display 137707, confirmed on its own Wowhead page,
+  independently of the existing mapping for NPC 253284.
 - Current [Forever Quest Pins](https://github.com/TylerAkins/forever-quest-markers)
   imports All The Things and fills gaps after CatQuest and Wayfarer. Multiple
   NPC starters remain explicit exclusions. The retired Wowhead snapshot and
@@ -940,8 +952,8 @@ Inputs:
 
 Input versions and hashes are tracked. Only factual metadata is imported;
 external addon code is never executed or required in-game. Source snapshots and
-reports stay outside `src/`. The generated database currently contains 2526 NPCs,
-4377 giver entries (including exclusions), 4288 finisher entries and 2302 models.
+reports stay outside `src/`. The generated database currently contains 2525 NPCs,
+4687 giver entries (including narrators/exclusions), 4288 finisher entries and 2304 NPCs with models.
 Pins was refreshed to `f26f006c94efce787d0f09a32462595ddac2fced` on October 12;
 see the [Wayfarer 3.2.0 migration](internal/wayfarer-3.2.0-integration.md) for
 the current combined import and validation results.

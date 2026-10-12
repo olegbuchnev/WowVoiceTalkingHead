@@ -76,7 +76,7 @@ export function buildCatalogue(addons = addonsDirectory(), {questIDs} = {}) {
     if (available.length < 2) continue;
     // A blocked/ambiguous giver must never inherit an arbitrary NPC's identity.
     quests.push({ questID, npc: { id:giver?.npcID || 0, displayID:npc?.displayID || 0,
-      race:npc?.race || null, sex:npc?.sex || null, name:npc?.name || giver?.name || '' },
+      race:npc?.race || null, sex:npc?.sex || null, name:giver?.narrator ? 'Рассказчик' : npc?.name || giver?.name || '' },
       text: texts[`${questID}a`]?.common || texts[`${questID}a`]?.male || '', variants:available });
   }
   return { catalogue: { app:'talkinghead-voice-vote', quests, warnings }, audio };

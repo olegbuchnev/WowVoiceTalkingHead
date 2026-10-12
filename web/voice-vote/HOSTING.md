@@ -73,6 +73,28 @@ exposing an updated catalogue; see [MODEL-CACHE.md](MODEL-CACHE.md).
 
 Portrait diagnostics: [log fields, SSH lookup and baseline](DIAGNOSTICS.md).
 
+### Persistent volume controls (2026-10-13 local time)
+
+Web image: `talkinghead-vote-web:volume-20261013`. The shared volume panel supports
+the slider, mute/restore and wheel changes in 5% steps. The default is 100%;
+`thru_vote_volume` and `thru_vote_previous_volume` cookies retain the setting and
+last audible level for one year. HTTPS cookies use Secure and SameSite=Lax.
+Inactive speaker waves remain dimmed. The panel sits beside the talking head on
+desktop and below it on narrow screens. Portrait diagnostics use only one JSON
+text node, without duplicate data attributes.
+
+Validation before deployment: all 47 frontend unit tests, delayed portrait and
+audio-preloading browser checks, addon tests and Docker build gates passed.
+The audio browser check also verifies mute/restore across a reload, wheel input,
+cookie persistence, uninterrupted playback and desktop/mobile placement.
+Run it against the deployed bundle with `VOICE_VOTE_TEST_URL` set to the public
+origin; its voting and audio endpoints are intercepted, so no test ballots are sent.
+
+Deploy only `web`; the API container, catalogue and persistent volumes are reused.
+Rollback image: `talkinghead-vote-web:before-volume-20261013`. Retag it as `:local`
+and recreate only `web` with `up -d --no-deps --no-build --wait web`, using both
+Compose files. Reload an already open browser tab to load the new controls.
+
 ### Portrait diagnostics (2026-10-12)
 
 Web image `talkinghead-vote-web:portrait-diagnostics-20261012`, bundle
@@ -180,6 +202,61 @@ All 35 frontend tests and both browser scenarios (batch flow and catalogue
 updates during playback/preparation) passed. Conditional GET supports weak ETags
 from gzip proxies. Production health and the new bundle were verified over HTTPS;
 no test votes were submitted to the production database.
+
+### Explicit narrators and portrait diagnostics (2026-10-13 local time)
+
+Web image: `talkinghead-vote-web:narrator-debug-20261013`; API image unchanged.
+All 3,808 comparisons and 9,863 recordings remain available. 305 descriptions now
+have an explicit Narrator label, including 98247/98248; 20 incorrect NPC links
+were removed (15 previously had a portrait). Narrators retain library choices
+and quest votes, with zero NPC/display/model IDs and null race/sex. Historical
+ballots are retained; changed speaker identities become historical comparisons
+and do not contribute to current race/sex aggregates.
+
+Quest 94007 now displays Elayaa (NPC 254084, display 137999), confirmed by the
+exact Wowhead Forever NPC page. Sixteen additional model dependencies were
+installed alongside existing assets. The complete pack test verified 314 files,
+with 15 supported original-file fallbacks and no errors. Elayaa's original and
+packed neutral/Talk poses matched. Full offline audit: 1,345/1,346 ready, only
+the existing quest 97290 camera exception. All 9,863 audio and 12,730 model
+dependency hashes matched on the host.
+
+`portrait-debug` now contains a single JSON text node for copying all diagnostic
+fields at once, while retaining its existing data attributes. Browser regression
+checks cover loading, late readiness and diagnostic consistency. Public checks
+confirmed quest 94007 ready (`p-42c287578831`), quest 98247's scroll/Narrator label
+with two choices, and the deployed audio preloading regression. No real test
+ballots were submitted. All 232 pre-update votes remained unchanged; SQLite
+integrity and both service health checks passed. Updated addon files are installed
+on ForeverBeta; in-game visual confirmation remains manual.
+
+Backup: `/srv/talkinghead/backups/20261013-narrator`; staged data:
+`/srv/talkinghead/import/narrator-20261013`. Roll back by stopping web/API,
+restoring the three catalogue JSON files and model reports from the backup,
+retagging the image ID in `web-image.txt` as `talkinghead-vote-web:local`, then
+starting both services. Keep the live votes volume and additional compatible
+model assets. The backup is a deployment snapshot, not a scheduled backup.
+
+### Fillion portrait correction (2026-10-13 local time)
+
+Quest 99260 now uses display 137707 for NPC 253285, confirmed from that exact
+NPC's Wowhead Forever page. The source libraries had no display for this NPC;
+the narrow, documented supplement is in
+`docs/internal/npc-appearance-supplements.json`. Existing model assets and
+application images were reused. No recording versions or quest texts changed.
+
+Full offline verification: 1,348/1,349 ready, with only the existing quest 97290
+camera exception. The Fillion original/packed pose regression and deployed audio
+preload test passed. The public portrait reached `ready` with verified portrait
+packs (`p-40f98b01a15e`). All 229 existing votes remained unchanged; no test votes
+were sent to production. All 9,863 audio and 12,714 model dependency hashes matched.
+The addon metadata was also installed on ForeverBeta; an in-game visual check
+remains manual.
+
+Backup: `/srv/talkinghead/backups/20261013-fillion-portrait`; staged metadata:
+`/srv/talkinghead/import/fillion-portrait-20261013`. For rollback, stop web/API,
+restore the three catalogue JSON files and model reports from this backup, then
+restart both services. Keep the live votes volume and existing model assets.
 
 ### Retired Forever snapshot removed (2026-10-13 local time)
 

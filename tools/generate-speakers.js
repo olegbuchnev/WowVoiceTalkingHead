@@ -13,11 +13,11 @@ const POLICY = {
   givers:['catquest','wayfarer','pins','classic'],
   finishers:['catquest','wayfarer','classic'],
   names:{preferRussian:true, sources:['catquest','wayfarer','classic']},
-  appearances:['catquest','wayfarer'],
+  appearances:['catquest','wayfarer','verified-supplement'],
   protectedExclusions:['multiple-or-conflicting-starters']
 };
 
-function merge({ classic, pins, cat, wayfarer = {givers:{},finishers:{},npcs:{}} }) {
+function merge({ classic, pins, cat, catAudio = {entries:{}}, wayfarer = {givers:{},finishers:{},npcs:{}}, supplements = {schemaVersion:1,npcs:{}} }) {
   const givers = {}, finishers = {}, npcs = {}, origins = {givers:{}, finishers:{}, npcs:{}}, conflicts = [];
   const names = new Map();
   function addName(id, name, source) {
@@ -41,17 +41,22 @@ function merge({ classic, pins, cat, wayfarer = {givers:{},finishers:{},npcs:{}}
   // Absence in Classic is unknown, not evidence of an item/object starter.
   function set(role, id, value, source) {
     const target = role === 'givers' ? givers : finishers;
-    if (!positive(Number(id)) || (value !== false && !positive(value.npcID))) throw Error('Invalid speaker mapping');
+    if (!positive(Number(id)) || (value !== false && value.narrator !== true && !positive(value.npcID))) throw Error('Invalid speaker mapping');
     if (id in target) {
-      if (target[id]?.npcID !== value?.npcID) conflicts.push({questId:Number(id), role,
+      if (target[id]?.npcID !== value?.npcID || target[id]?.narrator !== value?.narrator) conflicts.push({questId:Number(id), role,
         selected:origins[role][id], selectedNPC:target[id]?.npcID || false, rejected:source, rejectedNPC:value?.npcID || false});
       return;
     }
     target[id] = value; origins[role][id] = source;
   }
   const exclusions = {};
-  const npcMap = map => Object.fromEntries(Object.entries(map).map(([id,npcID]) => [id,npcID === false ? false : {npcID}]));
+  const npcMap = map => Object.fromEntries(Object.entries(map).map(([id,npcID]) => [id,
+    npcID === false ? false : npcID === 'narrator' ? {narrator:true} : {npcID}]));
   const giverSources = {catquest:npcMap(cat.tables.QuestGiver), wayfarer:npcMap(wayfarer.givers), pins:npcMap(pins.givers), classic:classicGivers};
+  for (const [key, entry] of Object.entries(catAudio.entries)) {
+    const match = /^(\d+)a$/.exec(key);
+    if (match && entry.voice === 'narrator') giverSources.catquest[match[1]] = {narrator:true};
+  }
   // A lower-priority explicit multiple-starter fact still prevents
   // guessing one NPC. Unknown/missing data does not block the next source.
   for (const source of POLICY.givers) for (const [id, entry] of sorted(giverSources[source])) if (entry === false) {
@@ -86,6 +91,20 @@ function merge({ classic, pins, cat, wayfarer = {givers:{},finishers:{},npcs:{}}
     }
     addName(Number(id),npc.name,'wayfarer');
   }
+  // Verified, exact-NPC appearances only fill missing library data. They never
+  // infer quest roles or copy an appearance from a similarly named character.
+  if (supplements.schemaVersion !== 1 || !supplements.npcs) throw Error('Invalid appearance supplements');
+  for (const [id, entry] of sorted(supplements.npcs)) {
+    if (!positive(Number(id)) || !positive(entry.displayID)
+        || !new RegExp('^https://www\\.wowhead\\.com/forever/(?:ru/)?npc='+id+'(?:/|$)').test(entry.source)
+        || !/^\d{4}-\d{2}-\d{2}$/.test(entry.verifiedOn) || !entry.evidence?.trim())
+      throw Error('Invalid appearance supplement: '+id);
+    const npc = npcs[id] ||= {};
+    if (!npc.displayID) {
+      npc.displayID = entry.displayID;
+      origins.npcs[id] ||= {}; origins.npcs[id].displayID = 'verified-supplement';
+    }
+  }
   for (const [id, candidates] of names) {
     // Language preference is independent of the identity/source priority.
     const rank = Object.fromEntries(POLICY.names.sources.map((source,index)=>[source,index]));
@@ -93,7 +112,7 @@ function merge({ classic, pins, cat, wayfarer = {givers:{},finishers:{},npcs:{}}
     npcs[id] ||= {}; npcs[id].name = candidates[0].name;
     origins.npcs[id] ||= {}; origins.npcs[id].name = candidates[0].source;
   }
-  for (const role of [givers, finishers]) for (const [id, record] of Object.entries(role)) if (record) {
+  for (const role of [givers, finishers]) for (const [id, record] of Object.entries(role)) if (record && !record.narrator) {
     npcs[record.npcID] ||= {};
     const name = npcs[record.npcID].name;
     if (name) record.name = name;
@@ -102,7 +121,7 @@ function merge({ classic, pins, cat, wayfarer = {givers:{},finishers:{},npcs:{}}
 }
 
 function luaValue(value) {
-  if (value === false) return 'false';
+  if (typeof value === 'boolean') return String(value);
   if (typeof value === 'number') return String(value);
   if (typeof value === 'string') return '"' + value.replace(/[\\"\x00-\x1f\x7f]/g, c =>
     c === '\\' || c === '"' ? '\\' + c : '\\' + c.charCodeAt(0).toString().padStart(3,'0')) + '"';
@@ -118,12 +137,13 @@ function render(database) {
 }
 function generate(check = false) {
   const files = {classic:'src/Index.lua',
-    pins:'docs/internal/forever-pins-speakers-source.json', cat:'docs/internal/catquest-speakers-source.json', wayfarer:'docs/internal/wayfarer-speakers-source.json'};
-  const inputs = {classic:dataTable(path.join(root,files.classic)), pins:read(files.pins), cat:read(files.cat), wayfarer:read(files.wayfarer)};
+    pins:'docs/internal/forever-pins-speakers-source.json', cat:'docs/internal/catquest-speakers-source.json', wayfarer:'docs/internal/wayfarer-speakers-source.json',
+    supplements:'docs/internal/npc-appearance-supplements.json',catAudio:'src/CatQuestAudio.lua'};
+  const inputs = {classic:dataTable(path.join(root,files.classic)), pins:read(files.pins), cat:read(files.cat), wayfarer:read(files.wayfarer), supplements:read(files.supplements),catAudio:dataTable(path.join(root,files.catAudio))};
   const result = merge(inputs);
   const report = {schemaVersion:1, policy:POLICY, sources:{
     pins:{commit:inputs.pins.commit, attCommit:inputs.pins.attCommit},
-    catquest:{version:inputs.cat.sourceVersion}, wayfarer:{packs:inputs.wayfarer.packs}},
+    catquest:{version:inputs.cat.sourceVersion,voicesVersion:inputs.catAudio.sourceVersion}, wayfarer:{packs:inputs.wayfarer.packs}},
     inputHashes:Object.fromEntries(Object.entries(files).map(([key,file])=>[key,
       sha256(fs.readFileSync(path.join(root,file),'utf8').replace(/\r\n/g,'\n'))])),
     counts:Object.fromEntries(['givers','finishers','npcs'].map(key => [key,Object.keys(result.database[key]).length])),

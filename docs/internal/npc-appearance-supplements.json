@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "npcs": {
+    "253285": {
+      "displayID": 137707,
+      "source": "https://www.wowhead.com/forever/ru/npc=253285",
+      "verifiedOn": "2026-10-13",
+      "evidence": "The NPC page sets linksButton.dataset.displayId = 137707. This is a separate NPC ID from 253284; the shared name alone is not used as evidence."
+    },
+    "254084": {
+      "displayID": 137999,
+      "source": "https://www.wowhead.com/forever/ru/npc=254084",
+      "verifiedOn": "2026-10-13",
+      "evidence": "The exact NPC page sets linksButton.dataset.displayId = 137999; quest 94007 starter is independently supplied by CatQuest, Wayfarer and current Pins."
+    }
+  }
+}

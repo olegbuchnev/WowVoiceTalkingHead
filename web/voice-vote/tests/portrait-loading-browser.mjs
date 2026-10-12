@@ -65,9 +65,12 @@ try {
       const loadID=await portrait.locator('.model').getAttribute('data-load-id');
       assert.match(loadID,/^p-[a-f0-9]{12}$/);
       assert.equal(await page.locator('body > :first-child').getAttribute('id'),'portrait-debug');
-      assert.equal(await page.locator('#portrait-debug').getAttribute('data-load-id'),loadID);
-      assert.equal(await page.locator('#portrait-debug').getAttribute('data-state'),'ready');
+      assert.deepEqual(await page.locator('#portrait-debug').evaluate(el=>Object.keys(el.dataset)),[]);
       assert.equal(await page.locator('#portrait-debug').isVisible(),false);
+      const diagnosticText=await page.locator('#portrait-debug').textContent();
+      assert(!diagnosticText.includes('\n'),'diagnostics can be copied as one text node');
+      assert.deepEqual(JSON.parse(diagnosticText),{questID:1050,npcID:0,displayID:2049,
+        modelFileID:0,state:'ready',loadID});
       assert(reports.some(r=>r.loadID===loadID && r.stage==='started'));
       assert(reports.some(r=>r.loadID===loadID && r.stage==='ready'));
       assert.equal(reports.some(r=>r.stage==='timeout'),delay>120000);

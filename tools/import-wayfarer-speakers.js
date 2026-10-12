@@ -20,7 +20,7 @@ function collect(addons) {
   const result = {schemaVersion:1,packs:{},givers:{},finishers:{},npcs:{},conflicts:[]};
   function reference(role,id,npc,pack) {
     if (npc == null) return;
-    if (!positive(Number(id)) || !positive(npc)) throw Error(`Invalid Wayfarer ${role} reference: ${pack}/${id}`);
+    if (!positive(Number(id)) || (npc !== 'narrator' && !positive(npc))) throw Error(`Invalid Wayfarer ${role} reference: ${pack}/${id}`);
     const previous = result[role][id];
     if (previous != null && previous !== npc) {
       result.conflicts.push({role,questId:Number(id),previous,incoming:npc,pack});
@@ -29,10 +29,12 @@ function collect(addons) {
   }
   for (const {pack,sha256} of packs) {
     result.packs[pack.name] = {version:pack.version,model:pack.model || '',indexSha256:sha256};
-    for (const [id,npc] of Object.entries(pack.qg || {})) reference('givers',id,npc,pack.name);
+    // A description's explicit narrator is more specific than generic qg data.
+    for (const [id,npc] of Object.entries(pack.qg || {}))
+      if (pack.q[id]?.a?.v !== 'narrator') reference('givers',id,npc,pack.name);
     for (const [id,quest] of Object.entries(pack.q)) {
       if (!positive(Number(id))) throw Error('Invalid Wayfarer quest ID');
-      reference('givers',id,quest.a?.s,pack.name);
+      reference('givers',id,quest.a?.v === 'narrator' ? 'narrator' : quest.a?.s,pack.name);
       reference('finishers',id,quest.c?.s,pack.name);
       reference('finishers',id,quest.p?.s,pack.name);
     }

@@ -13,6 +13,7 @@ import {createCatalogueClient,comparisonKey,questKey,refreshComparisons,withLoca
 import {watchPortraitReadiness} from './portrait-readiness.js';
 import {createAudioPreloader} from './audio-preload.js';
 import {observePortrait} from './portrait-diagnostics.js';
+import {readVolume,readPreviousVolume,saveVolume} from './volume-preference.js';
 import './style.css';
 
 // A reload starts a fresh, silent sample. Browser scroll restoration must not
@@ -21,6 +22,39 @@ history.scrollRestoration = 'manual';
 
 const letters = ['А','Б','В'];
 function Icon({stop=false}) { return <svg viewBox="0 0 24 24" aria-hidden="true">{stop ? <rect x="6" y="6" width="12" height="12" rx="1"/> : <path d="M8 4.5v15l12-7.5z"/>}</svg>; }
+
+function VolumeControl({value,onChange,onToggleMute}) {
+  const panel=useRef(null),current=useRef({value,onChange});
+  current.current={value,onChange};
+  useEffect(()=>{
+    const element=panel.current;
+    const adjust=event=>{
+      if(event.ctrlKey || event.metaKey || !event.deltaY) return;
+      event.preventDefault();
+      const next=Math.max(0,Math.min(100,current.current.value-Math.sign(event.deltaY)*5));
+      current.current.value=next;
+      current.current.onChange(next);
+    };
+    // React's delegated wheel listener is passive; cancel page scrolling here.
+    element.addEventListener('wheel',adjust,{passive:false});
+    return ()=>element.removeEventListener('wheel',adjust);
+  },[]);
+  return <div className="volume-control" ref={panel}>
+    <button type="button" className="volume-mute" aria-label={value>0 ? 'Выключить звук' : 'Включить звук'} title={value>0 ? 'Выключить звук' : 'Включить звук'} onClick={onToggleMute}>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M11 5 6 9H3v6h3l5 4Z"/>
+        {value>0 && <>
+          <path d="M12.83 8.79A5 5 0 0 1 12.83 15.21"/>
+          <path className={value<=33 ? 'volume-wave-inactive' : undefined} d="M15.13 6.86A8 8 0 0 1 15.13 17.14"/>
+          <path className={value<=66 ? 'volume-wave-inactive' : undefined} d="M17.43 4.93A11 11 0 0 1 17.43 19.07"/>
+        </>}
+        {value===0 && <path d="m16 9 6 6m0-6-6 6"/>}
+      </svg>
+    </button>
+    <input id="voice-volume" aria-label="Громкость" type="range" min="0" max="100" step="1" value={value} data-muted={value===0} aria-valuetext={`${value}%`} onChange={event=>onChange(Number(event.target.value))}/>
+    <output htmlFor="voice-volume">{value}%</output>
+  </div>;
+}
 
 function PlaybackProgress({audio, duration, position, playing}) {
   const fill = useRef(null);
@@ -88,10 +122,8 @@ function Portrait({npc, questID, playing, current}) {
     if(!current) return;
     const debug=document.getElementById('portrait-debug');
     if(!debug) return;
-    debug.dataset.loadId=element.current?.dataset.loadId || '';
-    debug.dataset.questId=String(questID);
-    debug.dataset.displayId=String(npc.displayID || 0);
-    debug.dataset.state=state;
+    debug.textContent=JSON.stringify({questID,npcID:npc.id || 0,displayID:npc.displayID || 0,
+      modelFileID:npc.modelFileID || 0,state,loadID:element.current?.dataset.loadId || ''});
   },[current,questID,npc.displayID,state,cameraRevision]);
   useEffect(() => { setTalking(viewer.current, playing); }, [playing]);
   return <div className="portrait"><div className="portrait-well"/><div className="model-clip"><div ref={element} className="model" data-model-state={state}/></div><div className="portrait-frame"/>
@@ -197,6 +229,15 @@ function App() {
   const summary=sessionSummary(sessionVotes);
   const submitting=useRef(false), initialized=useRef(null);
   const audio = useRef(null), sequence = useRef(0), scroll = useRef(null);
+  const [volume,setVolume]=useState(readVolume);
+  const [initialPreviousVolume]=useState(readPreviousVolume);
+  const previousVolume=useRef(initialPreviousVolume);
+  useEffect(()=>{if(audio.current) audio.current.volume=volume/100;},[volume]);
+  function changeVolume(value) {
+    if(value>0) previousVolume.current=value;
+    if(audio.current) audio.current.volume=value/100;
+    setVolume(value);saveVolume(value,previousVolume.current);
+  }
   const [audioPreloader]=useState(()=>createAudioPreloader());
   useEffect(()=>{
     const entries=finished ? (preparedBatch || []).slice(0,1) : comparisons.slice(batchIndex,batchIndex+2);
@@ -318,12 +359,12 @@ function App() {
       {finished && !choice && completion}
       {layoutQuest && <div className={`comparison-step${finished && !choice ? ' is-complete' : ''}`} inert={finished && !choice} aria-hidden={finished && !choice ? true : undefined}>
       <div className="intro"><h1 ref={finished && !choice ? null : comparisonTitle} tabIndex={-1}><span style={{visibility:finished && choice ? 'hidden' : undefined}} aria-hidden={finished && choice ? true : undefined}>Какой голос лучше подходит персонажу?</span>{finished && choice && <span className="completion-title">Готово!</span>}</h1><p className="batch-progress" style={{visibility:finished ? 'hidden' : undefined}} aria-hidden={finished ? true : undefined} role="status">Сравнение {batchIndex+1} из {comparisons.length}</p></div>
-      <section className="head-stage" aria-label="Говорящая голова"><div className="head-content" style={{visibility:choice ? 'hidden' : undefined}} aria-hidden={choice ? true : undefined}><div className="head-viewport"><div className="talking-head"><div className="head-background"/>{(finished ? (preparedBatch || []).slice(0,1) : comparisons.slice(batchIndex,batchIndex+2)).map((entry,i)=><div key={entry.key} className={`portrait-slot ${!finished && i===0 ? 'current' : 'upcoming'}`} data-quest-id={entry.quest.questID} aria-hidden={finished || i!==0 ? true : undefined}><Portrait npc={entry.quest.npc} questID={entry.quest.questID} current={!finished && i===0} playing={!finished && i===0 && playing}/></div>)}<div className="speech"><h2>{layoutQuest.npc.name}</h2><div className="quest-text" ref={scroll}><p>{layoutQuest.text}</p></div></div>
+      <div className="head-shell"><section className="head-stage" aria-label="Говорящая голова"><div className="head-content" style={{visibility:choice ? 'hidden' : undefined}} aria-hidden={choice ? true : undefined}><div className="head-viewport"><div className="talking-head"><div className="head-background"/>{(finished ? (preparedBatch || []).slice(0,1) : comparisons.slice(batchIndex,batchIndex+2)).map((entry,i)=><div key={entry.key} className={`portrait-slot ${!finished && i===0 ? 'current' : 'upcoming'}`} data-quest-id={entry.quest.questID} aria-hidden={finished || i!==0 ? true : undefined}><Portrait npc={entry.quest.npc} questID={entry.quest.questID} current={!finished && i===0} playing={!finished && i===0 && playing}/></div>)}<div className="speech"><h2>{layoutQuest.npc.name}</h2><div className="quest-text" ref={scroll}><p>{layoutQuest.text}</p></div></div>
         <PlaybackProgress audio={audio} duration={length} position={position} playing={playing}/>
       </div></div>
         <div className="transport"><span className={playing ? 'signal playing' : 'signal'}><i/><i/><i/><i/></span><span>{active ? `Вариант ${letters[variants.findIndex(v=>v.id===active.id)]}` : 'Выберите запись ниже'}</span></div>
       </div>{choice && <div className={`choice-confirmation library-${libraries.indexOf(choice)}`}><div role="status"><span className="choice-check" aria-hidden="true">✓</span><p>Вы выбрали</p><strong>{choice}</strong></div><button className="next-sample" style={{visibility:finished ? 'hidden' : undefined}} disabled={finished || advancing} aria-busy={advancing} aria-hidden={finished ? true : undefined} tabIndex={finished ? -1 : undefined} onClick={next} autoFocus={!finished}>Следующая реплика <span aria-hidden="true">→</span></button></div>}
-      </section>
+      </section><VolumeControl value={volume} onChange={changeVolume} onToggleMute={()=>changeVolume(volume>0 ? 0 : previousVolume.current)}/></div>
       <div className="options-stage">
       <div className={`options-content${finished ? ' is-complete' : ''}`} inert={finished} aria-hidden={finished ? true : undefined}>
       <div className="variants">{layoutVariants.map((variant,i)=><div className={`voice-card ${active?.id===variant.id ? 'active' : ''}`} key={variant.id}><div className="voice-label"><span>ВАРИАНТ {letters[i]}</span></div><button className="play-button" disabled={!!choice} onClick={()=>play(variant)} aria-label={`${playing && active?.id===variant.id ? 'Остановить' : 'Послушать'} вариант ${letters[i]}`}><span className="play-disc"><Icon stop={playing && active?.id===variant.id}/></span>{playing && active?.id===variant.id ? 'Играет' : 'Послушать'}</button><button className="vote-button" disabled={!!choice || heard.length < 2 || !heard.includes(variant.id)} onClick={()=>vote(variant)}><span>Выбрать этот голос</span><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m5 12 4 4L19 6"/></svg></button></div>)}</div>

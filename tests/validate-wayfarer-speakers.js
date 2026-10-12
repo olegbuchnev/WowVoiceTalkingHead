@@ -14,7 +14,7 @@ try {
   const r=collect(directory);
   assert.equal(r.givers[1],10);
   assert.equal(r.givers[2],false,'Inconsistent qg/description identity stays ambiguous');
-  assert.equal(r.givers[3],undefined,'Narrator must not become the receiver NPC');
+  assert.equal(r.givers[3],'narrator','Explicit narrator must survive import');
   assert.equal(r.finishers[1],11);
   assert.equal(r.finishers[3],30);
   assert.equal(r.finishers[4],false,'Conflicting progress/completion identities must not be guessed');
@@ -22,6 +22,11 @@ try {
   assert.equal(r.npcs[20].displayID,333);
   assert(r.conflicts.some(c=>c.npcID===10));
   assert.match(r.packs.Wayfarer_Voices_A.indexSha256,/^[a-f0-9]{64}$/);
+  pack('Wayfarer_Voices_B',{qg:{5:50},q:{5:{a:{v:'narrator'},c:{s:51}},6:{a:{}}}});
+  const narrated=collect(directory);
+  assert.equal(narrated.givers[5],'narrator','Description narration overrides generic qg in the same pack');
+  assert.equal(narrated.finishers[5],51,'Narration must not erase the completion NPC');
+  assert.equal(narrated.givers[6],undefined,'Missing voice and speaker remain unknown');
   // No audio files exist in this fixture; NPC import remains independent of playback.
   fs.appendFileSync(path.join(directory,'Wayfarer_Voices_A/Index.lua'),'\nWayfarer:RegisterPack({})');
   assert.throws(()=>collect(directory),/Expected one/);

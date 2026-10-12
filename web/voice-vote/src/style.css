@@ -46,7 +46,29 @@ main{position:relative;max-width:1024px;padding:32px 24px 30px;margin:auto}
 .batch-complete p{margin:20px 0 0;font-size:20px;line-height:1.5;color:#bcb7af}
 .continue-batch:disabled{opacity:.6}
 h1{font-family:var(--font-site);font-weight:400;font-size:28px;line-height:1.3;letter-spacing:normal;color:#f2eee8;margin:0}
-.head-stage{position:relative;margin-top:24px;padding:12px 23px 18px;background:#202020;border:1px solid #35332f;border-radius:9px}
+.head-shell{position:relative;margin-top:24px}
+.head-stage{position:relative;padding:12px 23px 18px;background:#202020;border:1px solid #35332f;border-radius:9px}
+.volume-control{position:absolute;right:calc(100% + 20px);top:0;bottom:0;display:flex;flex-direction:column;align-items:center;gap:12px;width:max-content;padding:16px 8px;border:1px solid #35332f;border-radius:9px;background:#202020;color:#bcb7af;font:400 16px/1.3 var(--font-site)}
+.volume-control svg{flex-shrink:0;width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.volume-mute{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:32px;height:32px;margin:-5px 0;padding:2px;border:0;border-radius:4px;background:transparent;color:inherit}
+.volume-mute:hover{color:#e8d3a5;background:#ffffff0a}
+.volume-wave-inactive{opacity:.25}
+.volume-control input{--volume-thumb:#d0b475;writing-mode:vertical-lr;direction:rtl;flex:1;min-height:0;width:28px;margin:0;accent-color:var(--volume-thumb);cursor:pointer}
+.volume-control input[data-muted="true"]{--volume-thumb:#777780}
+/* Styling the Firefox thumb disables its native track, so define all parts. */
+@supports selector(input::-moz-range-thumb){
+.volume-control input{appearance:none;background:transparent;border:0}
+.volume-control input::-moz-range-track{width:6px;height:100%;border:0;border-radius:3px;background:#d7d7df}
+.volume-control input::-moz-range-progress{width:6px;height:100%;border:0;border-radius:3px;background:#d0b475}
+.volume-control input::-moz-range-thumb{box-sizing:border-box;width:20px;height:20px;border:2px solid #eeeeef;border-radius:50%;background:var(--volume-thumb)}
+}
+.volume-control input:focus-visible{outline:2px solid #d0b475;outline-offset:4px;border-radius:3px}
+.volume-control output{flex-shrink:0;min-width:44px;text-align:center;font-variant-numeric:tabular-nums;color:#e8d3a5}
+@media(max-width:1240px){
+.volume-control{position:static;transform:none;flex-direction:row;justify-content:center;width:auto;margin-top:12px;padding:10px 16px;gap:14px}
+.volume-control input{writing-mode:horizontal-tb;direction:ltr;flex:0 1 160px;width:160px;min-width:0;max-width:35vw;height:28px}
+.volume-control input::-moz-range-track,.volume-control input::-moz-range-progress{width:100%;height:6px}
+}
 .head-viewport{overflow-x:auto;scrollbar-width:thin}
 /* Match the supplied game capture: its portrait/text are ~1.63 times larger
    than the original web preview. Keep the underlying addon geometry intact.

@@ -157,7 +157,10 @@ TalkingHeadRuDB.questSpeakers = {}
 local recovered, blocked = 0, 0
 for id, starter in pairs(WowVoiceSpeakers.givers) do
     local speaker = WV:GetReplaySpeaker(id).speaker
-    if starter then
+    if starter and starter.narrator then
+        assert(speaker and speaker.narrator and not speaker.npcID and speaker.name == 'Рассказчик')
+        blocked = blocked + 1
+    elseif starter then
         assert(speaker and speaker.npcID == starter.npcID and speaker.name == starter.name)
         recovered = recovered + 1
     else

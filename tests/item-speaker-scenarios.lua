@@ -54,14 +54,14 @@ npcGUID=nil
 -- without an indexed NPC giver (176 is a wanted poster).
 C_Container=nil
 questID=176; event('QUEST_DETAIL'); portraitEvent('QUEST_ACCEPTED',176)
-assert(h.Name.text=='Описание задания' and h.Icon.texture=='Interface\\Icons\\INV_Misc_Note_01')
+assert(h.Name.text=='Рассказчик' and h.Icon.texture=='Interface\\Icons\\INV_Misc_Note_01')
 assert(h.Icon.visible and not questCache()[176].itemID)
 WV:Silence()
 C_Container={GetContainerNumSlots=function() return 1 end,
     GetContainerItemQuestInfo=function() return {isQuestItem=true,questID=99999} end,
     GetContainerItemInfo=function() error('unrelated quest item must not be used') end}
 event('QUEST_DETAIL')
-assert(h.Name.text=='Описание задания' and h.Icon.texture=='Interface\\Icons\\INV_Misc_Note_01')
+assert(h.Name.text=='Рассказчик' and h.Icon.texture=='Interface\\Icons\\INV_Misc_Note_01')
 WV:Silence()
 print('PASS: absent API and unrelated quest items use neutral fallback')
 
