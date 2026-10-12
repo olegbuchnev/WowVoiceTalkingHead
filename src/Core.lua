@@ -985,7 +985,10 @@ f:SetScript("OnEvent", function(self, event, arg1)
                 links[#links + 1] = source.name .. " — " .. source.url
             end
         end
-        if #links > 0 then msg("Озвучка: %s", table.concat(links, "; ")) end
+        if #links > 0 then
+            msg("Озвучка: %s", table.concat(links, "; "))
+            msg("Голосуйте за лучшую озвучку: %s", "https://talkingheadru.tw1.ru/")
+        end
 
     elseif event == "PLAYER_LOGIN" then
         WV:RefreshAudioSources()
@@ -1135,8 +1138,11 @@ SlashCmdList["WOWVOICETALKINGHEAD"] = function(input)
     elseif cmd == "boosty" then
         StaticPopup_Show("WOWVOICE_BOOSTY")
 
+    elseif cmd == "vote" then
+        if WV.ShowVoteInvite then WV:ShowVoteInvite(true) end
+
     else
-        msg("команды /thead: on | off | stop | boosty | duck <on|off>")
+        msg("команды /thead: on | off | stop | boosty | vote | duck <on|off>")
         msg("         volume <0..1> | tail <сек>")
         msg("         channel <auto|sound|music> | ext <mp3|ogg>")
         msg("         stopmode <silence|cvar|stopmusic>")

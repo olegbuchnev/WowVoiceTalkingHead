@@ -34,6 +34,10 @@ local translations = {
     ["для описания этого квеста нет записи в установленном аудиопаке"] = "No description recording for this quest in the installed voice packs.",
     ["не удалось воспроизвести описание квеста %d"] = "Could not play the description of quest %d.",
     ["Озвучка: %s"] = "Voices: %s",
+    ["Голосуйте за лучшую озвучку: %s"] = "Vote for the best voiceovers: %s",
+    ["Голосуйте за лучшую озвучку"] = "Vote for the best voiceovers",
+    ["Сравните голоса из WowVoice, CatQuest и Wayfarer. Ваш выбор поможет подобрать озвучку для заданий и персонажей WoW Forever."] = "Compare voices from WowVoice, CatQuest and Wayfarer. Your votes will help choose voiceovers for WoW Forever quests and characters.",
+    ["Нажмите на ссылку, затем Ctrl+C"] = "Click the link, then press Ctrl+C",
     ["Спасибо, что поддерживаешь WowVoice! |cffffd100Ctrl+C|r скопирует ссылку — вставь её в браузер:"] = "Thank you for supporting WowVoice! Press |cffffd100Ctrl+C|r to copy the link, then paste it into your browser:",
     ["Закрыть"] = "Close",
 }

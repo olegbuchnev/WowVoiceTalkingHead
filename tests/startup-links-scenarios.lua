@@ -9,12 +9,16 @@ local sources = {
     {'Wayfarer', 'Wayfarer — https://discord.gg/sgTeeQCZvh'},
 }
 local prefix = WowVoiceLocale.isEnglish and 'Voices: ' or 'Озвучка: '
+local invitation = (WowVoiceLocale.isEnglish and 'Vote for the best voiceovers: '
+    or 'Голосуйте за лучшую озвучку: ') .. 'https://talkingheadru.tw1.ru/'
 local function startup()
     local first = #messages + 1
     event('ADDON_LOADED')
     local lines = {}
     for i=first,#messages do
-        if messages[i]:find(prefix,1,true) then lines[#lines+1] = messages[i] end
+        if messages[i]:find(prefix,1,true) or messages[i]:find(invitation,1,true) then
+            lines[#lines+1] = messages[i]
+        end
     end
     return lines
 end
@@ -28,9 +32,10 @@ for mask=0,7 do
         end
     end
     local lines = startup()
-    assert(#lines == (#expected > 0 and 1 or 0), 'one combined notice, none without loaded sources')
+    assert(#lines == (#expected > 0 and 2 or 0), 'separate credits and invitation, none without loaded sources')
     if #expected > 0 then
         assert(lines[1] == '|cff66ccffTalkingHead Ru|r: ' .. prefix .. table.concat(expected, '; '))
+        assert(lines[2] == '|cff66ccffTalkingHead Ru|r: ' .. invitation)
         assert(not lines[1]:find('Cathey',1,true))
     end
 end

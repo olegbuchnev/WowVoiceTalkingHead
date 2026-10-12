@@ -29,3 +29,16 @@ icon width and centers the speaker without changing its proportions.
 Saved as uncompressed 32-bit BGRA TGA with a top-left origin and 8-bit alpha.
 The addon references this shared texture in TalkingHeadRu/Media.
 The artwork belongs to Blizzard Entertainment; it is not original WowVoice TalkingHead artwork.
+
+VoteAdventurers.tga contains the unchanged Recruit A Friend artwork used by
+web/voice-vote/public/welcome-adventurers.png. tools/convert-vote-art.ps1 packages
+the original 346x290 pixels in a transparent 512x512 uncompressed BGRA TGA.
+Source: https://worldofwarcraft.blizzard.com/en-us/game/recruit-a-friend
+Original asset:
+https://blz-contentstack-images.akamaized.net/v3/assets/blt3452e3b114fab0cd/bltdc2f76ae58a5627e/5db72f7213b457491b4be503/1or3_card_MultipleFriends_desktop.png
+The artwork belongs to Blizzard Entertainment.
+
+Fonts/frizqt___cyr.ttf is the same original Blizzard Russian Friz font as on the
+voting site, extracted from the installed Forever 1.60.1.70338 client (FileDataID
+615971). It is used by the independent voting invitation on all client locales.
+All font rights remain with their respective owners.
