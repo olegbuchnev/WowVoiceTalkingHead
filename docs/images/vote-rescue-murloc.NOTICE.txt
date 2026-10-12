@@ -1,0 +1,8 @@
+vote-rescue-murloc.png is based on Blizzard Entertainment's rescue murloc
+from the Blizzard website's 404 page. The character belongs to Blizzard.
+
+Reference screenshot:
+https://www.ionos.com/digitalguide/fileadmin/_processed_/2/2/csm_blizzard-404-page_4d78f43c89.webp
+
+The background was removed with an image editing model for the website banner.
+This is an edited derivative, not an unmodified Blizzard asset.

@@ -57,7 +57,7 @@ const markdown = new Marked({
   },
 });
 const tokens = markdown.lexer(readme);
-const imagePaths = new Set();
+const imagePaths = new Set(['docs/images/vote-rescue-murloc.png']);
 markdown.walkTokens([...tokens, ...markdown.lexer(guide)], token => {
   if ((token.type === 'image' || token.type === 'link') && token.href.startsWith('docs/images/')) {
     imagePaths.add(token.href);
@@ -196,6 +196,14 @@ function page(content, isGuide = false) {
     </div>
     <a class="button curseforge-button" href="https://www.curseforge.com/wow/addons/talkinghead-ru" data-goatcounter-click="curseforge-open" data-goatcounter-title="Переход на CurseForge" data-goatcounter-no-session="1"><span class="curseforge-button-label">Открыть на CurseForge</span><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="18" height="18"><path d="M6 18 18 6M6 6h12v12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/></svg></a>
   </aside>
+  ${isGuide ? '' : `<aside class="vote-invite" aria-labelledby="vote-invite-title">
+    <img class="vote-invite-art" src="${escape(imageURL('docs/images/vote-rescue-murloc.png'))}" width="110" height="100" alt="" aria-hidden="true">
+    <div class="vote-invite-copy">
+      <h2 id="vote-invite-title">Примите участие в выборе лучших голосов</h2>
+      <p>Сравните озвучки WowVoice, CatQuest и Wayfarer.<br>Ваш выбор поможет подобрать голоса для заданий и персонажей.</p>
+    </div>
+    <a class="button vote-invite-button" href="https://talkingheadru.tw1.ru/">Сравнить голоса <span aria-hidden="true">→</span></a>
+  </aside>`}
   <div class="layout">
     <header class="sidebar">
       <a class="brand" href="index.html">TalkingHead Ru</a>
