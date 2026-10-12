@@ -172,6 +172,10 @@ Run `node tools/audio-recording-history.js --check` to compare the history again
 current manifests without writing; omit `--check` to record audited manifests.
 The check and revision lifecycle fixtures run in `tests/run.js`.
 See [schema and maintenance rules](internal/audio-recording-history.md).
+Before implementing addon selection from website votes, revisit the
+[deferred revision-weighted ranking task](internal/audio-recording-history.md#задача-учитывать-прошлые-оценки-при-выборе-озвучки-в-аддоне).
+Historical votes must remain tied to their original hashes; any inherited
+contribution belongs in a separate derived score with a cap and decay.
 Unknown future WowVoice formats still require a separate adaptation; no runtime
 version-based muting or guessed metadata fallback is introduced.
 

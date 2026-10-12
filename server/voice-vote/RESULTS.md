@@ -45,6 +45,12 @@ an array in JSON. Formula-like text receives a leading apostrophe in CSV only.
 
 ## Identity and version rules
 
+Before implementing addon voice selection, revisit the
+[planned revision-weighted ranking](../../docs/internal/audio-recording-history.md#задача-учитывать-прошлые-оценки-при-выборе-озвучки-в-аддоне).
+It proposes a capped, fading contribution from previous recordings (initial
+weight suggestion: 0.5). This is a future derived ranking, not a change to raw
+vote counts or the current export contract; thresholds are not finalized.
+
 - `comparisonID` identifies quest description, speaker metadata and the sorted
   candidate recording IDs. `stage` is always `a`. Candidate IDs include library,
   file path and SHA-256. A release-number change without changed bytes does not
