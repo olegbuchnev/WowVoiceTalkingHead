@@ -57,7 +57,8 @@ description: Update and audit the WowVoice, CatQuest and Wayfarer voice librarie
 - **Forever Quest Pins:** при `changed` получи `Database/ForeverQuests.lua` и
   `Database/Metadata.lua` из одного указанного коммита. Запусти
   `node tools/import-forever-pins-speakers.js <Database> <полный-SHA>`.
-  Старый подробный снимок Forever остаётся отдельным резервным источником.
+  Используй только актуальную базу Pins на основе All The Things. Старый снимок
+  Wowhead Forever и его импортёр удалены; не возвращай их как резервный источник.
 
 Все импорты NPC пересобирают единую `src/Speakers.lua`. В игре нет обхода
 отдельных баз по очереди. Источники и решения фиксируются в
@@ -175,11 +176,11 @@ node web/voice-vote/install-portrait-packs.mjs
 Основной критерий — частота поддержки источника. Порядок фиксирован в
 `tools/generate-speakers.js`; номера версий разных проектов не сравниваются.
 
-- Выдающие NPC: CatQuest → Wayfarer → актуальные Pins → старый Forever → Classic.
+- Выдающие NPC: CatQuest → Wayfarer → актуальные Pins → Classic.
 - Принимающие NPC: CatQuest → Wayfarer → Classic.
 - Облики: CatQuest → Wayfarer, только по точному ID NPC.
-- Имена: предпочитать русские; при равном языке CatQuest → Wayfarer → Classic → старый Forever.
-- Явные сведения о предмете, объекте или нескольких/противоречивых квестодателях
+- Имена: предпочитать русские; при равном языке CatQuest → Wayfarer → Classic.
+- Явные сведения о нескольких/противоречивых квестодателях
   защищены от замены одиночным NPC; отсутствие сведений позволяет следующий источник.
 - В игре фактически полученные NPC и облики выше общей базы на любом языке.
   Резервные модели не записываются в наблюдения персонажа. Поздняя загрузка

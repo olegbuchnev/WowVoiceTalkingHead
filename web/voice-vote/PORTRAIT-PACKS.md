@@ -31,7 +31,9 @@ node web/voice-vote/install-portrait-packs.mjs
 cached viewer, comparing retained vertices, tracks, materials, attachments and
 cameras. It writes M2 files and a report to `artifacts/portrait-packs/`, outside
 Git. `tests/portrait-pack-render.mjs` compares rest, nine Talk samples and return
-to rest in WebGL, including bone matrices, materials and camera profile. Use
+to rest in WebGL, including bone matrices, materials and camera profile. The pose test
+clears frame-dependent cloth simulation overrides in both viewers so it compares
+authored animation tracks at identical times. Runtime cloth rendering is unchanged. Use
 `--quests=977,1050,179,1479,3741` to select cases. Before/after screenshots and
 mismatching poses are saved alongside the report. The known original camera
 failure for quest 97290 is not an optimization test.

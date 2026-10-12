@@ -181,6 +181,23 @@ updates during playback/preparation) passed. Conditional GET supports weak ETags
 from gzip proxies. Production health and the new bundle were verified over HTTPS;
 no test votes were submitted to the production database.
 
+### Retired Forever snapshot removed (2026-10-13 local time)
+
+NPC-only catalogue update: 38 additional quest portraits, including Arynia for
+quest 940; 3,808 comparisons and all 9,863 recordings retained. Current images
+were reused. Model cache was supplemented with 60 files and an updated verified
+pack manifest. Full offline audit: 1,348/1,349 ready, only the existing quest
+97290 camera exception. All 227 existing votes survived the switch unchanged.
+
+Backup: `/srv/talkinghead/backups/20261012-remove-legacy-forever`; staged metadata:
+`/srv/talkinghead/import/remove-legacy-forever-20261012`. To roll back, stop web/API,
+restore the three catalogue JSON files and model reports from that backup, then
+restart both services with the Compose command above. Keep the live votes volume;
+additional model files are compatible with the previous catalogue.
+Public quest 940 reached ready (`p-499bdfb5bd8d`), verified model packs were served,
+and the deployed audio-preload regression passed without sending real votes.
+[Import audit](../../docs/internal/retire-forever-snapshot.md).
+
 ### Wayfarer 3.2.0 data update (2026-10-12)
 
 The public catalogue contains 3,808 description comparisons and 9,863 recordings,

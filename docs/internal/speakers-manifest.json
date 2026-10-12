@@ -6,7 +6,6 @@
       "catquest",
       "wayfarer",
       "pins",
-      "forever",
       "classic"
     ],
     "finishers": [
@@ -19,8 +18,7 @@
       "sources": [
         "catquest",
         "wayfarer",
-        "classic",
-        "forever"
+        "classic"
       ]
     },
     "appearances": [
@@ -28,15 +26,10 @@
       "wayfarer"
     ],
     "protectedExclusions": [
-      "item",
-      "object",
       "multiple-or-conflicting-starters"
     ]
   },
   "sources": {
-    "forever": {
-      "commit": "2d354aa828af29cb2e997b7367f7bb59b75f10e2"
-    },
     "pins": {
       "commit": "f26f006c94efce787d0f09a32462595ddac2fced",
       "attCommit": "1b1ab4b5ea7c3f9744ef24ff0cc210de1bfb6a11"
@@ -71,15 +64,14 @@
   },
   "inputHashes": {
     "classic": "f13f9d3b8ee7ba01de59ed02ef8a5b729ec532805e65e4b0ac23d7f67dd0e1e2",
-    "forever": "13b0fe5dcaaf9fd9e570b68a3b42ef2398b618d74150f65dd9bcf9bb9837dd07",
     "pins": "a6102be44b12511f187e73132419dcc06c7c3b9c38b61914051162a235f58ec6",
     "cat": "a847ea1c523529be3c49b2288c5aa24e98e7165f3aee69ab020b254f77898325",
     "wayfarer": "8840227a97731a920a63ae2a6813cc46cf1cbadf46d8ef48a66c7ab8ba1caa06"
   },
   "counts": {
-    "givers": 4681,
+    "givers": 4377,
     "finishers": 4288,
-    "npcs": 2545
+    "npcs": 2526
   },
   "origins": {
     "givers": {
@@ -117,7 +109,6 @@
       "38": "catquest",
       "39": "catquest",
       "40": "catquest",
-      "45": "forever",
       "46": "catquest",
       "47": "catquest",
       "48": "catquest",
@@ -140,12 +131,9 @@
       "65": "catquest",
       "66": "catquest",
       "67": "catquest",
-      "68": "forever",
       "69": "catquest",
       "70": "catquest",
-      "71": "forever",
       "72": "catquest",
-      "74": "forever",
       "75": "catquest",
       "76": "catquest",
       "77": "catquest",
@@ -171,7 +159,6 @@
       "97": "catquest",
       "98": "catquest",
       "99": "catquest",
-      "100": "forever",
       "101": "catquest",
       "102": "catquest",
       "103": "catquest",
@@ -205,9 +192,6 @@
       "133": "catquest",
       "134": "catquest",
       "135": "catquest",
-      "138": "forever",
-      "139": "forever",
-      "140": "forever",
       "141": "catquest",
       "142": "catquest",
       "143": "catquest",
@@ -236,17 +220,14 @@
       "166": "catquest",
       "167": "catquest",
       "168": "catquest",
-      "169": "forever",
       "170": "catquest",
       "171": "catquest",
       "172": "catquest",
       "173": "catquest",
       "174": "catquest",
       "175": "catquest",
-      "176": "forever",
       "177": "catquest",
       "179": "catquest",
-      "180": "forever",
       "181": "catquest",
       "182": "catquest",
       "183": "catquest",
@@ -264,7 +245,6 @@
       "196": "catquest",
       "197": "catquest",
       "198": "catquest",
-      "199": "forever",
       "200": "catquest",
       "201": "catquest",
       "202": "catquest",
@@ -290,12 +270,10 @@
       "222": "catquest",
       "223": "catquest",
       "224": "catquest",
-      "225": "forever",
       "226": "catquest",
       "227": "catquest",
       "228": "catquest",
       "229": "catquest",
-      "230": "forever",
       "231": "catquest",
       "232": "catquest",
       "233": "catquest",
@@ -310,15 +288,13 @@
       "245": "catquest",
       "246": "catquest",
       "247": "pins",
-      "248": "forever",
-      "249": "forever",
+      "248": "catquest",
+      "249": "catquest",
       "250": "catquest",
       "251": "catquest",
       "252": "catquest",
       "253": "catquest",
-      "254": "forever",
       "255": "catquest",
-      "256": "forever",
       "257": "catquest",
       "258": "catquest",
       "261": "catquest",
@@ -343,16 +319,11 @@
       "280": "catquest",
       "281": "catquest",
       "282": "catquest",
-      "283": "forever",
-      "284": "forever",
-      "285": "forever",
-      "286": "forever",
       "287": "catquest",
       "288": "catquest",
       "289": "catquest",
       "290": "catquest",
       "291": "catquest",
-      "292": "forever",
       "293": "catquest",
       "294": "catquest",
       "295": "catquest",
@@ -370,7 +341,6 @@
       "308": "pins",
       "309": "catquest",
       "310": "catquest",
-      "311": "forever",
       "312": "catquest",
       "313": "catquest",
       "314": "catquest",
@@ -382,10 +352,7 @@
       "321": "catquest",
       "322": "catquest",
       "323": "catquest",
-      "324": "forever",
       "325": "catquest",
-      "328": "forever",
-      "329": "forever",
       "330": "catquest",
       "331": "catquest",
       "332": "catquest",
@@ -448,24 +415,20 @@
       "395": "catquest",
       "396": "catquest",
       "397": "catquest",
-      "398": "forever",
       "399": "catquest",
       "400": "catquest",
       "401": "catquest",
-      "403": "forever",
       "404": "catquest",
       "405": "catquest",
       "407": "catquest",
       "408": "catquest",
       "409": "catquest",
-      "410": "forever",
       "411": "catquest",
       "412": "catquest",
       "413": "catquest",
       "414": "catquest",
       "415": "pins",
       "416": "catquest",
-      "417": "forever",
       "418": "catquest",
       "419": "catquest",
       "420": "catquest",
@@ -479,7 +442,6 @@
       "428": "catquest",
       "429": "catquest",
       "430": "catquest",
-      "431": "forever",
       "432": "catquest",
       "433": "catquest",
       "434": "catquest",
@@ -487,7 +449,6 @@
       "436": "catquest",
       "437": "catquest",
       "438": "catquest",
-      "439": "forever",
       "440": "catquest",
       "441": "catquest",
       "442": "catquest",
@@ -509,7 +470,7 @@
       "458": "catquest",
       "459": "catquest",
       "460": "catquest",
-      "461": "forever",
+      "461": "catquest",
       "463": "catquest",
       "464": "catquest",
       "465": "catquest",
@@ -521,11 +482,9 @@
       "471": "catquest",
       "472": "catquest",
       "473": "catquest",
-      "474": "forever",
       "475": "catquest",
       "476": "catquest",
       "477": "catquest",
-      "478": "forever",
       "479": "catquest",
       "480": "catquest",
       "481": "catquest",
@@ -535,9 +494,9 @@
       "486": "catquest",
       "487": "catquest",
       "488": "catquest",
-      "489": "forever",
+      "489": "catquest",
       "490": "catquest",
-      "491": "forever",
+      "491": "catquest",
       "492": "catquest",
       "493": "catquest",
       "494": "catquest",
@@ -555,8 +514,6 @@
       "507": "catquest",
       "508": "catquest",
       "509": "catquest",
-      "510": "forever",
-      "511": "forever",
       "512": "catquest",
       "513": "catquest",
       "514": "catquest",
@@ -591,7 +548,6 @@
       "545": "catquest",
       "546": "catquest",
       "547": "catquest",
-      "549": "forever",
       "550": "catquest",
       "552": "catquest",
       "553": "catquest",
@@ -607,8 +563,6 @@
       "563": "catquest",
       "564": "catquest",
       "565": "catquest",
-      "566": "forever",
-      "567": "forever",
       "568": "catquest",
       "569": "catquest",
       "570": "catquest",
@@ -626,10 +580,7 @@
       "582": "catquest",
       "583": "catquest",
       "584": "catquest",
-      "585": "forever",
-      "586": "forever",
       "587": "catquest",
-      "588": "forever",
       "589": "catquest",
       "590": "catquest",
       "591": "catquest",
@@ -637,7 +588,6 @@
       "593": "pins",
       "595": "catquest",
       "596": "catquest",
-      "597": "forever",
       "598": "catquest",
       "599": "catquest",
       "600": "catquest",
@@ -658,36 +608,27 @@
       "616": "catquest",
       "617": "catquest",
       "618": "catquest",
-      "619": "forever",
       "621": "catquest",
       "622": "catquest",
       "623": "catquest",
-      "625": "forever",
-      "626": "forever",
       "627": "catquest",
       "628": "catquest",
       "629": "catquest",
       "630": "catquest",
       "631": "catquest",
-      "632": "forever",
       "633": "catquest",
       "634": "catquest",
       "638": "catquest",
       "639": "catquest",
       "640": "catquest",
       "641": "catquest",
-      "642": "forever",
       "643": "catquest",
       "644": "catquest",
       "645": "catquest",
-      "646": "forever",
       "647": "catquest",
       "648": "catquest",
       "649": "catquest",
       "650": "catquest",
-      "651": "forever",
-      "652": "forever",
-      "653": "forever",
       "655": "catquest",
       "656": "catquest",
       "657": "catquest",
@@ -717,11 +658,8 @@
       "681": "catquest",
       "682": "catquest",
       "683": "catquest",
-      "684": "forever",
-      "685": "forever",
       "686": "catquest",
-      "687": "forever",
-      "688": "forever",
+      "687": "catquest",
       "689": "catquest",
       "690": "catquest",
       "691": "catquest",
@@ -752,7 +690,6 @@
       "717": "catquest",
       "718": "catquest",
       "719": "catquest",
-      "720": "forever",
       "721": "catquest",
       "722": "catquest",
       "723": "catquest",
@@ -769,9 +706,8 @@
       "734": "catquest",
       "735": "catquest",
       "736": "catquest",
-      "737": "forever",
+      "737": "catquest",
       "738": "catquest",
-      "739": "forever",
       "741": "catquest",
       "742": "catquest",
       "743": "catquest",
@@ -782,7 +718,6 @@
       "748": "catquest",
       "749": "catquest",
       "750": "catquest",
-      "751": "forever",
       "752": "catquest",
       "753": "catquest",
       "754": "catquest",
@@ -808,7 +743,6 @@
       "776": "catquest",
       "777": "catquest",
       "778": "catquest",
-      "779": "forever",
       "780": "catquest",
       "782": "catquest",
       "783": "catquest",
@@ -822,7 +756,6 @@
       "792": "catquest",
       "793": "catquest",
       "794": "catquest",
-      "795": "forever",
       "804": "catquest",
       "805": "catquest",
       "806": "catquest",
@@ -900,13 +833,9 @@
       "892": "catquest",
       "893": "catquest",
       "894": "catquest",
-      "895": "forever",
       "896": "catquest",
       "898": "catquest",
       "899": "catquest",
-      "900": "forever",
-      "901": "forever",
-      "902": "forever",
       "903": "catquest",
       "905": "catquest",
       "906": "catquest",
@@ -927,11 +856,8 @@
       "923": "catquest",
       "924": "catquest",
       "925": "catquest",
-      "926": "forever",
       "928": "catquest",
       "929": "catquest",
-      "930": "forever",
-      "931": "forever",
       "932": "catquest",
       "933": "catquest",
       "934": "catquest",
@@ -939,7 +865,7 @@
       "936": "catquest",
       "937": "catquest",
       "938": "catquest",
-      "940": "forever",
+      "940": "catquest",
       "941": "catquest",
       "942": "catquest",
       "943": "catquest",
@@ -947,8 +873,7 @@
       "945": "catquest",
       "947": "catquest",
       "948": "catquest",
-      "949": "forever",
-      "950": "forever",
+      "949": "catquest",
       "951": "catquest",
       "952": "catquest",
       "953": "catquest",
@@ -990,13 +915,8 @@
       "993": "catquest",
       "994": "catquest",
       "995": "catquest",
-      "996": "forever",
       "997": "catquest",
-      "998": "forever",
       "1000": "catquest",
-      "1001": "forever",
-      "1002": "forever",
-      "1003": "forever",
       "1004": "catquest",
       "1007": "catquest",
       "1008": "catquest",
@@ -1046,7 +966,6 @@
       "1052": "catquest",
       "1053": "catquest",
       "1054": "catquest",
-      "1055": "forever",
       "1056": "catquest",
       "1057": "catquest",
       "1058": "catquest",
@@ -1170,8 +1089,6 @@
       "1190": "catquest",
       "1191": "pins",
       "1192": "pins",
-      "1193": "forever",
-      "1194": "forever",
       "1195": "catquest",
       "1196": "catquest",
       "1197": "catquest",
@@ -1185,12 +1102,9 @@
       "1205": "catquest",
       "1206": "catquest",
       "1218": "catquest",
-      "1219": "forever",
       "1220": "catquest",
       "1221": "catquest",
       "1222": "catquest",
-      "1238": "forever",
-      "1239": "forever",
       "1240": "catquest",
       "1241": "catquest",
       "1242": "catquest",
@@ -1202,20 +1116,14 @@
       "1248": "catquest",
       "1249": "catquest",
       "1250": "catquest",
-      "1251": "forever",
-      "1252": "forever",
-      "1253": "forever",
       "1258": "catquest",
       "1259": "catquest",
       "1260": "catquest",
-      "1261": "forever",
       "1262": "catquest",
       "1264": "catquest",
       "1265": "catquest",
       "1266": "catquest",
       "1267": "pins",
-      "1268": "forever",
-      "1269": "forever",
       "1270": "catquest",
       "1271": "pins",
       "1273": "catquest",
@@ -1223,7 +1131,6 @@
       "1275": "catquest",
       "1276": "catquest",
       "1282": "catquest",
-      "1284": "forever",
       "1285": "catquest",
       "1286": "catquest",
       "1287": "catquest",
@@ -1306,7 +1213,6 @@
       "1452": "catquest",
       "1453": "catquest",
       "1454": "catquest",
-      "1455": "forever",
       "1456": "catquest",
       "1457": "catquest",
       "1458": "catquest",
@@ -1314,7 +1220,6 @@
       "1462": "pins",
       "1463": "pins",
       "1464": "pins",
-      "1465": "forever",
       "1466": "catquest",
       "1467": "catquest",
       "1468": "catquest",
@@ -1356,7 +1261,6 @@
       "1511": "catquest",
       "1512": "catquest",
       "1513": "catquest",
-      "1514": "forever",
       "1515": "catquest",
       "1516": "catquest",
       "1517": "catquest",
@@ -1369,7 +1273,6 @@
       "1524": "catquest",
       "1525": "catquest",
       "1526": "catquest",
-      "1527": "forever",
       "1528": "catquest",
       "1529": "catquest",
       "1530": "catquest",
@@ -1445,11 +1348,11 @@
       "1711": "pins",
       "1712": "catquest",
       "1713": "catquest",
-      "1714": "forever",
+      "1714": "pins",
       "1715": "catquest",
       "1716": "catquest",
       "1717": "catquest",
-      "1718": "forever",
+      "1718": "catquest",
       "1719": "catquest",
       "1738": "catquest",
       "1739": "catquest",
@@ -1517,7 +1420,7 @@
       "1886": "catquest",
       "1898": "catquest",
       "1899": "catquest",
-      "1919": "forever",
+      "1919": "catquest",
       "1920": "catquest",
       "1921": "catquest",
       "1938": "catquest",
@@ -1568,7 +1471,7 @@
       "2201": "catquest",
       "2202": "catquest",
       "2203": "catquest",
-      "2204": "forever",
+      "2204": "catquest",
       "2205": "catquest",
       "2206": "catquest",
       "2218": "catquest",
@@ -1580,9 +1483,6 @@
       "2258": "catquest",
       "2259": "catquest",
       "2260": "catquest",
-      "2278": "forever",
-      "2279": "forever",
-      "2280": "forever",
       "2281": "catquest",
       "2282": "catquest",
       "2283": "catquest",
@@ -1607,7 +1507,6 @@
       "2382": "catquest",
       "2383": "catquest",
       "2398": "catquest",
-      "2399": "forever",
       "2418": "catquest",
       "2438": "catquest",
       "2439": "catquest",
@@ -1627,7 +1526,6 @@
       "2520": "catquest",
       "2521": "catquest",
       "2522": "catquest",
-      "2523": "forever",
       "2541": "catquest",
       "2561": "catquest",
       "2581": "catquest",
@@ -1655,7 +1553,6 @@
       "2701": "catquest",
       "2702": "catquest",
       "2721": "catquest",
-      "2741": "forever",
       "2742": "catquest",
       "2743": "catquest",
       "2744": "catquest",
@@ -1687,8 +1584,7 @@
       "2771": "catquest",
       "2772": "catquest",
       "2773": "catquest",
-      "2781": "forever",
-      "2782": "forever",
+      "2781": "pins",
       "2783": "catquest",
       "2784": "catquest",
       "2801": "catquest",
@@ -1714,27 +1610,24 @@
       "2858": "catquest",
       "2859": "catquest",
       "2860": "catquest",
-      "2861": "forever",
+      "2861": "catquest",
       "2862": "catquest",
       "2863": "catquest",
       "2864": "catquest",
       "2865": "catquest",
       "2866": "catquest",
-      "2867": "forever",
       "2869": "catquest",
       "2870": "catquest",
       "2871": "catquest",
       "2872": "catquest",
       "2873": "catquest",
       "2874": "catquest",
-      "2875": "forever",
+      "2875": "pins",
       "2877": "catquest",
-      "2878": "forever",
       "2879": "catquest",
       "2880": "catquest",
       "2881": "pins",
       "2902": "catquest",
-      "2903": "forever",
       "2904": "catquest",
       "2922": "catquest",
       "2923": "catquest",
@@ -1747,33 +1640,24 @@
       "2930": "catquest",
       "2931": "catquest",
       "2932": "catquest",
-      "2933": "forever",
       "2934": "catquest",
       "2935": "catquest",
       "2936": "catquest",
       "2937": "catquest",
       "2938": "catquest",
       "2939": "catquest",
-      "2940": "forever",
       "2941": "catquest",
-      "2942": "forever",
       "2943": "catquest",
       "2944": "catquest",
       "2946": "catquest",
-      "2947": "forever",
       "2948": "catquest",
-      "2949": "forever",
       "2950": "catquest",
-      "2951": "forever",
-      "2952": "forever",
-      "2953": "forever",
-      "2954": "forever",
+      "2954": "catquest",
       "2962": "catquest",
       "2963": "catquest",
       "2964": "catquest",
       "2965": "catquest",
       "2966": "catquest",
-      "2967": "forever",
       "2968": "catquest",
       "2969": "catquest",
       "2970": "catquest",
@@ -1782,7 +1666,6 @@
       "2974": "catquest",
       "2975": "catquest",
       "2976": "catquest",
-      "2977": "forever",
       "2979": "catquest",
       "2980": "catquest",
       "2981": "catquest",
@@ -1872,11 +1755,9 @@
       "3341": "catquest",
       "3361": "catquest",
       "3362": "catquest",
-      "3363": "forever",
       "3364": "catquest",
       "3365": "catquest",
       "3367": "catquest",
-      "3368": "forever",
       "3369": "catquest",
       "3370": "catquest",
       "3371": "catquest",
@@ -1910,14 +1791,12 @@
       "3461": "catquest",
       "3462": "catquest",
       "3463": "catquest",
-      "3481": "forever",
       "3483": "pins",
       "3501": "catquest",
       "3502": "catquest",
       "3503": "pins",
       "3504": "catquest",
       "3505": "catquest",
-      "3506": "forever",
       "3507": "catquest",
       "3508": "catquest",
       "3509": "catquest",
@@ -1998,8 +1877,8 @@
       "3790": "catquest",
       "3791": "catquest",
       "3792": "pins",
-      "3801": "forever",
-      "3802": "forever",
+      "3801": "catquest",
+      "3802": "catquest",
       "3803": "pins",
       "3804": "pins",
       "3821": "catquest",
@@ -2010,8 +1889,6 @@
       "3841": "catquest",
       "3842": "catquest",
       "3843": "catquest",
-      "3844": "forever",
-      "3845": "forever",
       "3861": "catquest",
       "3881": "catquest",
       "3882": "catquest",
@@ -2027,8 +1904,7 @@
       "3909": "catquest",
       "3911": "catquest",
       "3912": "catquest",
-      "3913": "forever",
-      "3914": "forever",
+      "3913": "catquest",
       "3921": "catquest",
       "3922": "catquest",
       "3923": "catquest",
@@ -2052,9 +1928,6 @@
       "4061": "catquest",
       "4062": "catquest",
       "4063": "catquest",
-      "4081": "forever",
-      "4082": "forever",
-      "4083": "forever",
       "4084": "catquest",
       "4101": "catquest",
       "4102": "catquest",
@@ -2068,13 +1941,6 @@
       "4110": "pins",
       "4111": "pins",
       "4112": "pins",
-      "4113": "forever",
-      "4114": "forever",
-      "4115": "forever",
-      "4116": "forever",
-      "4117": "forever",
-      "4118": "forever",
-      "4119": "forever",
       "4120": "catquest",
       "4121": "catquest",
       "4122": "catquest",
@@ -2082,7 +1948,6 @@
       "4124": "catquest",
       "4125": "catquest",
       "4126": "catquest",
-      "4127": "forever",
       "4128": "catquest",
       "4129": "catquest",
       "4130": "catquest",
@@ -2090,7 +1955,6 @@
       "4132": "catquest",
       "4133": "catquest",
       "4134": "catquest",
-      "4135": "forever",
       "4136": "catquest",
       "4141": "catquest",
       "4142": "catquest",
@@ -2108,8 +1972,6 @@
       "4185": "catquest",
       "4186": "catquest",
       "4201": "catquest",
-      "4221": "forever",
-      "4222": "forever",
       "4223": "catquest",
       "4224": "catquest",
       "4241": "catquest",
@@ -2120,7 +1982,6 @@
       "4261": "catquest",
       "4262": "catquest",
       "4263": "catquest",
-      "4265": "forever",
       "4266": "catquest",
       "4267": "catquest",
       "4282": "catquest",
@@ -2136,7 +1997,7 @@
       "4292": "catquest",
       "4293": "catquest",
       "4294": "catquest",
-      "4295": "forever",
+      "4295": "classic",
       "4296": "catquest",
       "4297": "catquest",
       "4298": "catquest",
@@ -2147,37 +2008,14 @@
       "4324": "catquest",
       "4341": "catquest",
       "4342": "catquest",
-      "4343": "forever",
       "4361": "catquest",
       "4362": "catquest",
       "4363": "catquest",
-      "4381": "forever",
-      "4382": "forever",
-      "4383": "forever",
-      "4384": "forever",
-      "4385": "forever",
-      "4386": "forever",
-      "4401": "forever",
       "4402": "catquest",
-      "4403": "forever",
       "4421": "catquest",
       "4441": "catquest",
       "4442": "catquest",
-      "4443": "forever",
-      "4444": "forever",
-      "4445": "forever",
-      "4446": "forever",
-      "4447": "forever",
-      "4448": "forever",
-      "4449": "forever",
-      "4450": "forever",
-      "4461": "forever",
-      "4462": "forever",
       "4463": "pins",
-      "4464": "forever",
-      "4465": "forever",
-      "4466": "forever",
-      "4467": "forever",
       "4481": "pins",
       "4482": "pins",
       "4483": "pins",
@@ -2194,7 +2032,6 @@
       "4494": "catquest",
       "4495": "catquest",
       "4496": "catquest",
-      "4501": "forever",
       "4502": "catquest",
       "4503": "catquest",
       "4504": "catquest",
@@ -2209,40 +2046,22 @@
       "4513": "catquest",
       "4521": "catquest",
       "4542": "catquest",
-      "4561": "forever",
       "4581": "catquest",
-      "4601": "forever",
-      "4602": "forever",
-      "4603": "forever",
-      "4604": "forever",
-      "4605": "forever",
-      "4606": "forever",
       "4621": "catquest",
       "4641": "catquest",
       "4642": "catquest",
-      "4661": "forever",
       "4681": "catquest",
       "4701": "catquest",
       "4721": "catquest",
-      "4722": "forever",
-      "4723": "forever",
       "4724": "catquest",
-      "4725": "forever",
       "4726": "catquest",
-      "4727": "forever",
-      "4728": "forever",
       "4729": "catquest",
-      "4730": "forever",
-      "4731": "forever",
-      "4732": "forever",
-      "4733": "forever",
       "4734": "catquest",
       "4735": "catquest",
       "4736": "catquest",
       "4737": "catquest",
       "4738": "catquest",
       "4739": "catquest",
-      "4740": "forever",
       "4741": "catquest",
       "4742": "catquest",
       "4743": "catquest",
@@ -2277,15 +2096,12 @@
       "4810": "catquest",
       "4811": "catquest",
       "4812": "catquest",
-      "4813": "forever",
       "4821": "catquest",
       "4822": "catquest",
       "4841": "catquest",
       "4842": "catquest",
       "4861": "catquest",
       "4862": "catquest",
-      "4863": "forever",
-      "4864": "forever",
       "4865": "catquest",
       "4866": "catquest",
       "4867": "catquest",
@@ -2324,8 +2140,6 @@
       "5001": "catquest",
       "5002": "catquest",
       "5021": "catquest",
-      "5022": "forever",
-      "5023": "forever",
       "5041": "catquest",
       "5042": "pins",
       "5043": "pins",
@@ -2335,28 +2149,24 @@
       "5047": "catquest",
       "5048": "catquest",
       "5049": "catquest",
-      "5050": "forever",
+      "5050": "catquest",
       "5051": "catquest",
       "5052": "catquest",
       "5054": "catquest",
       "5055": "catquest",
       "5056": "catquest",
       "5057": "catquest",
-      "5058": "forever",
-      "5059": "forever",
-      "5060": "forever",
       "5061": "catquest",
       "5062": "catquest",
-      "5063": "forever",
+      "5063": "pins",
       "5064": "catquest",
       "5065": "catquest",
       "5066": "catquest",
-      "5067": "forever",
-      "5068": "forever",
+      "5067": "pins",
+      "5068": "pins",
       "5081": "catquest",
       "5082": "catquest",
       "5084": "catquest",
-      "5085": "forever",
       "5086": "catquest",
       "5087": "catquest",
       "5088": "catquest",
@@ -2370,11 +2180,10 @@
       "5097": "catquest",
       "5098": "catquest",
       "5102": "catquest",
-      "5103": "forever",
       "5121": "catquest",
-      "5122": "forever",
+      "5122": "classic",
       "5124": "catquest",
-      "5125": "forever",
+      "5125": "classic",
       "5126": "catquest",
       "5127": "catquest",
       "5128": "catquest",
@@ -2384,7 +2193,6 @@
       "5144": "catquest",
       "5145": "catquest",
       "5146": "catquest",
-      "5147": "forever",
       "5148": "catquest",
       "5149": "catquest",
       "5150": "pins",
@@ -2403,8 +2211,6 @@
       "5163": "catquest",
       "5164": "catquest",
       "5165": "catquest",
-      "5166": "forever",
-      "5167": "forever",
       "5168": "catquest",
       "5181": "catquest",
       "5201": "catquest",
@@ -2418,26 +2224,14 @@
       "5214": "catquest",
       "5215": "catquest",
       "5216": "catquest",
-      "5217": "forever",
-      "5218": "forever",
       "5219": "catquest",
-      "5220": "forever",
-      "5221": "forever",
       "5222": "catquest",
-      "5223": "forever",
-      "5224": "forever",
       "5225": "catquest",
-      "5226": "forever",
-      "5227": "forever",
       "5228": "catquest",
       "5229": "catquest",
-      "5230": "forever",
       "5231": "catquest",
-      "5232": "forever",
       "5233": "catquest",
-      "5234": "forever",
       "5235": "catquest",
-      "5236": "forever",
       "5237": "pins",
       "5238": "pins",
       "5241": "catquest",
@@ -2490,7 +2284,6 @@
       "5461": "catquest",
       "5462": "catquest",
       "5463": "catquest",
-      "5464": "forever",
       "5465": "catquest",
       "5466": "catquest",
       "5481": "catquest",
@@ -2510,14 +2303,14 @@
       "5515": "catquest",
       "5517": "catquest",
       "5518": "catquest",
-      "5519": "forever",
+      "5519": "classic",
       "5521": "catquest",
       "5522": "catquest",
       "5524": "catquest",
-      "5525": "forever",
+      "5525": "classic",
       "5526": "catquest",
       "5527": "catquest",
-      "5528": "forever",
+      "5528": "classic",
       "5529": "catquest",
       "5531": "catquest",
       "5533": "catquest",
@@ -2527,9 +2320,9 @@
       "5537": "catquest",
       "5538": "catquest",
       "5541": "catquest",
-      "5542": "forever",
-      "5543": "forever",
-      "5544": "forever",
+      "5542": "catquest",
+      "5543": "catquest",
+      "5544": "catquest",
       "5545": "catquest",
       "5561": "catquest",
       "5581": "catquest",
@@ -2653,7 +2446,6 @@
       "6021": "catquest",
       "6022": "catquest",
       "6023": "catquest",
-      "6024": "forever",
       "6025": "catquest",
       "6026": "catquest",
       "6027": "catquest",
@@ -2716,7 +2508,6 @@
       "6146": "catquest",
       "6147": "catquest",
       "6148": "catquest",
-      "6161": "forever",
       "6162": "catquest",
       "6163": "catquest",
       "6164": "catquest",
@@ -2732,7 +2523,6 @@
       "6281": "catquest",
       "6282": "catquest",
       "6283": "catquest",
-      "6284": "forever",
       "6285": "catquest",
       "6301": "catquest",
       "6321": "catquest",
@@ -2756,8 +2546,6 @@
       "6386": "catquest",
       "6387": "catquest",
       "6388": "catquest",
-      "6389": "forever",
-      "6390": "forever",
       "6391": "catquest",
       "6392": "catquest",
       "6393": "catquest",
@@ -2862,7 +2650,7 @@
       "6941": "pins",
       "6942": "pins",
       "6943": "pins",
-      "6961": "forever",
+      "6961": "catquest",
       "6962": "catquest",
       "6963": "catquest",
       "6964": "catquest",
@@ -2875,7 +2663,7 @@
       "7002": "pins",
       "7003": "catquest",
       "7021": "catquest",
-      "7022": "forever",
+      "7022": "catquest",
       "7023": "catquest",
       "7024": "catquest",
       "7025": "catquest",
@@ -2939,7 +2727,7 @@
       "7383": "catquest",
       "7385": "pins",
       "7386": "pins",
-      "7429": "forever",
+      "7429": "classic",
       "7441": "catquest",
       "7461": "catquest",
       "7462": "catquest",
@@ -2962,7 +2750,7 @@
       "7508": "catquest",
       "7509": "catquest",
       "7541": "pins",
-      "7562": "forever",
+      "7562": "catquest",
       "7563": "catquest",
       "7564": "catquest",
       "7581": "catquest",
@@ -3026,7 +2814,6 @@
       "7676": "classic",
       "7677": "classic",
       "7678": "classic",
-      "7701": "forever",
       "7703": "catquest",
       "7721": "catquest",
       "7722": "catquest",
@@ -3035,8 +2822,6 @@
       "7725": "catquest",
       "7726": "catquest",
       "7727": "catquest",
-      "7728": "forever",
-      "7729": "forever",
       "7730": "catquest",
       "7731": "catquest",
       "7732": "catquest",
@@ -3110,8 +2895,6 @@
       "7848": "catquest",
       "7849": "catquest",
       "7850": "catquest",
-      "7861": "forever",
-      "7862": "forever",
       "7863": "pins",
       "7864": "pins",
       "7865": "pins",
@@ -3236,7 +3019,7 @@
       "8148": "pins",
       "8149": "catquest",
       "8150": "catquest",
-      "8151": "forever",
+      "8151": "catquest",
       "8153": "catquest",
       "8154": "catquest",
       "8155": "catquest",
@@ -3275,7 +3058,7 @@
       "8229": "pins",
       "8231": "catquest",
       "8232": "catquest",
-      "8233": "forever",
+      "8233": "catquest",
       "8234": "catquest",
       "8235": "catquest",
       "8236": "catquest",
@@ -3287,11 +3070,11 @@
       "8243": "pins",
       "8246": "pins",
       "8249": "pins",
-      "8250": "forever",
+      "8250": "catquest",
       "8251": "catquest",
       "8252": "catquest",
       "8253": "catquest",
-      "8254": "forever",
+      "8254": "catquest",
       "8255": "catquest",
       "8256": "catquest",
       "8257": "catquest",
@@ -3314,7 +3097,6 @@
       "8280": "catquest",
       "8281": "catquest",
       "8282": "catquest",
-      "8283": "forever",
       "8284": "catquest",
       "8285": "catquest",
       "8286": "catquest",
@@ -3337,7 +3119,6 @@
       "8310": "catquest",
       "8311": "catquest",
       "8312": "catquest",
-      "8313": "forever",
       "8314": "catquest",
       "8315": "catquest",
       "8316": "pins",
@@ -3389,33 +3170,32 @@
       "8380": "pins",
       "8381": "pins",
       "8382": "pins",
-      "8383": "forever",
-      "8384": "forever",
-      "8385": "forever",
-      "8386": "forever",
-      "8387": "forever",
-      "8388": "forever",
-      "8389": "forever",
-      "8390": "forever",
-      "8391": "forever",
-      "8392": "forever",
+      "8383": "classic",
+      "8384": "classic",
+      "8385": "classic",
+      "8386": "classic",
+      "8387": "classic",
+      "8388": "classic",
+      "8389": "classic",
+      "8390": "classic",
+      "8391": "classic",
+      "8392": "classic",
       "8393": "catquest",
       "8394": "catquest",
       "8395": "catquest",
       "8396": "catquest",
-      "8397": "forever",
-      "8398": "forever",
+      "8397": "classic",
+      "8398": "classic",
       "8399": "catquest",
       "8400": "catquest",
       "8401": "catquest",
       "8402": "catquest",
       "8403": "catquest",
-      "8404": "forever",
-      "8405": "forever",
-      "8406": "forever",
-      "8407": "forever",
-      "8408": "forever",
-      "8409": "forever",
+      "8404": "classic",
+      "8405": "classic",
+      "8406": "classic",
+      "8407": "classic",
+      "8408": "classic",
       "8410": "pins",
       "8411": "catquest",
       "8412": "catquest",
@@ -3423,7 +3203,7 @@
       "8414": "catquest",
       "8415": "pins",
       "8416": "catquest",
-      "8417": "forever",
+      "8417": "catquest",
       "8418": "catquest",
       "8419": "pins",
       "8420": "catquest",
@@ -3437,19 +3217,19 @@
       "8428": "catquest",
       "8429": "catquest",
       "8430": "catquest",
-      "8431": "forever",
-      "8432": "forever",
-      "8433": "forever",
-      "8434": "forever",
-      "8435": "forever",
+      "8431": "classic",
+      "8432": "classic",
+      "8433": "classic",
+      "8434": "classic",
+      "8435": "classic",
       "8436": "catquest",
       "8437": "catquest",
       "8438": "catquest",
       "8439": "catquest",
-      "8440": "forever",
-      "8441": "forever",
-      "8442": "forever",
-      "8443": "forever",
+      "8440": "classic",
+      "8441": "classic",
+      "8442": "classic",
+      "8443": "classic",
       "8447": "catquest",
       "8460": "catquest",
       "8461": "catquest",
@@ -3484,7 +3264,6 @@
       "8516": "catquest",
       "8517": "catquest",
       "8518": "catquest",
-      "8519": "forever",
       "8520": "catquest",
       "8521": "catquest",
       "8522": "catquest",
@@ -3509,7 +3288,7 @@
       "8551": "catquest",
       "8553": "catquest",
       "8554": "catquest",
-      "8555": "forever",
+      "8555": "classic",
       "8556": "catquest",
       "8557": "catquest",
       "8558": "catquest",
@@ -3521,7 +3300,7 @@
       "8573": "catquest",
       "8574": "catquest",
       "8575": "catquest",
-      "8576": "forever",
+      "8576": "classic",
       "8577": "catquest",
       "8579": "classic",
       "8580": "catquest",
@@ -3542,7 +3321,6 @@
       "8595": "classic",
       "8596": "catquest",
       "8597": "catquest",
-      "8598": "forever",
       "8599": "catquest",
       "8600": "catquest",
       "8601": "classic",
@@ -3587,7 +3365,7 @@
       "8641": "catquest",
       "8642": "pins",
       "8643": "pins",
-      "8644": "forever",
+      "8644": "classic",
       "8645": "pins",
       "8646": "pins",
       "8647": "pins",
@@ -3680,10 +3458,7 @@
       "8735": "catquest",
       "8736": "catquest",
       "8741": "catquest",
-      "8742": "forever",
-      "8743": "forever",
-      "8744": "forever",
-      "8745": "forever",
+      "8742": "classic",
       "8746": "catquest",
       "8747": "pins",
       "8748": "pins",
@@ -3705,10 +3480,6 @@
       "8764": "pins",
       "8765": "pins",
       "8766": "pins",
-      "8767": "forever",
-      "8768": "forever",
-      "8769": "forever",
-      "8788": "forever",
       "8789": "catquest",
       "8790": "catquest",
       "8792": "catquest",
@@ -3721,7 +3492,6 @@
       "8799": "catquest",
       "8800": "catquest",
       "8802": "catquest",
-      "8803": "forever",
       "8811": "classic",
       "8812": "classic",
       "8813": "classic",
@@ -3783,7 +3553,6 @@
       "8881": "pins",
       "8882": "pins",
       "8883": "catquest",
-      "8893": "forever",
       "8897": "catquest",
       "8898": "catquest",
       "8899": "catquest",
@@ -3809,15 +3578,15 @@
       "8919": "catquest",
       "8920": "catquest",
       "8921": "catquest",
-      "8922": "forever",
-      "8923": "forever",
+      "8922": "catquest",
+      "8923": "catquest",
       "8924": "catquest",
       "8925": "catquest",
       "8926": "catquest",
       "8927": "catquest",
       "8928": "catquest",
-      "8929": "forever",
-      "8930": "forever",
+      "8929": "catquest",
+      "8930": "catquest",
       "8931": "catquest",
       "8932": "catquest",
       "8933": "catquest",
@@ -3847,7 +3616,7 @@
       "8957": "catquest",
       "8958": "catquest",
       "8959": "catquest",
-      "8960": "forever",
+      "8960": "catquest",
       "8961": "catquest",
       "8962": "catquest",
       "8963": "catquest",
@@ -3910,7 +3679,6 @@
       "9026": "catquest",
       "9027": "catquest",
       "9028": "catquest",
-      "9029": "forever",
       "9032": "catquest",
       "9033": "catquest",
       "9034": "catquest",
@@ -3966,7 +3734,6 @@
       "9091": "catquest",
       "9092": "catquest",
       "9093": "catquest",
-      "9094": "forever",
       "9095": "catquest",
       "9096": "catquest",
       "9097": "catquest",
@@ -4057,18 +3824,9 @@
       "9272": "pins",
       "9292": "catquest",
       "9310": "catquest",
-      "9317": "forever",
-      "9318": "forever",
       "9319": "catquest",
-      "9320": "forever",
-      "9321": "forever",
       "9322": "catquest",
       "9323": "catquest",
-      "9333": "forever",
-      "9334": "forever",
-      "9335": "forever",
-      "9336": "forever",
-      "9337": "forever",
       "9338": "pins",
       "9339": "catquest",
       "9362": "catquest",
@@ -4077,8 +3835,8 @@
       "9367": "catquest",
       "9368": "catquest",
       "9386": "catquest",
-      "9388": "forever",
-      "9389": "forever",
+      "9388": "catquest",
+      "9389": "catquest",
       "9415": "catquest",
       "9416": "catquest",
       "9419": "catquest",
@@ -4124,65 +3882,18 @@
       "76156": "catquest",
       "76160": "catquest",
       "76240": "catquest",
-      "78124": "forever",
-      "78127": "forever",
-      "78132": "forever",
-      "78133": "forever",
-      "78134": "forever",
-      "78142": "forever",
-      "78143": "forever",
-      "78145": "forever",
-      "78146": "forever",
-      "78147": "forever",
-      "78148": "forever",
-      "78149": "forever",
-      "78150": "forever",
-      "78261": "forever",
-      "79007": "forever",
-      "79008": "forever",
       "79091": "catquest",
       "79092": "catquest",
-      "79093": "forever",
-      "79094": "forever",
-      "79095": "forever",
-      "79097": "forever",
-      "79192": "forever",
       "79360": "catquest",
       "79362": "catquest",
       "79363": "catquest",
       "79535": "catquest",
-      "79536": "forever",
-      "79637": "forever",
-      "79947": "forever",
-      "79948": "forever",
       "79949": "catquest",
-      "79950": "forever",
-      "79951": "forever",
-      "79952": "forever",
-      "79974": "forever",
-      "79975": "forever",
-      "79976": "forever",
-      "79980": "forever",
-      "80001": "forever",
-      "81947": "forever",
-      "81949": "forever",
-      "81952": "forever",
-      "81953": "forever",
-      "81954": "forever",
-      "81955": "forever",
-      "81956": "forever",
-      "84395": "forever",
-      "84396": "forever",
       "84397": "catquest",
-      "84398": "forever",
-      "84399": "forever",
-      "84400": "forever",
       "84401": "catquest",
-      "84402": "forever",
       "86574": "catquest",
       "86576": "catquest",
       "86585": "catquest",
-      "86614": "forever",
       "86667": "catquest",
       "86758": "catquest",
       "86776": "catquest",
@@ -4203,7 +3914,6 @@
       "91725": "catquest",
       "91732": "catquest",
       "91733": "catquest",
-      "91736": "forever",
       "91738": "pins",
       "91743": "catquest",
       "91745": "catquest",
@@ -4217,12 +3927,7 @@
       "91858": "catquest",
       "91859": "catquest",
       "91860": "catquest",
-      "91861": "forever",
       "91862": "catquest",
-      "91899": "forever",
-      "91900": "forever",
-      "91904": "forever",
-      "91905": "forever",
       "91920": "catquest",
       "91921": "catquest",
       "92109": "catquest",
@@ -4292,7 +3997,6 @@
       "92700": "catquest",
       "92701": "catquest",
       "92703": "catquest",
-      "92706": "forever",
       "92708": "catquest",
       "92709": "catquest",
       "92727": "catquest",
@@ -4310,7 +4014,6 @@
       "92819": "catquest",
       "92834": "catquest",
       "92840": "catquest",
-      "92849": "forever",
       "92850": "catquest",
       "92860": "catquest",
       "92871": "catquest",
@@ -4329,7 +4032,6 @@
       "93172": "catquest",
       "93176": "catquest",
       "93317": "catquest",
-      "93318": "forever",
       "93319": "catquest",
       "93320": "catquest",
       "93459": "catquest",
@@ -4343,7 +4045,7 @@
       "93739": "catquest",
       "93740": "catquest",
       "93746": "catquest",
-      "93791": "forever",
+      "93791": "catquest",
       "93797": "catquest",
       "93835": "pins",
       "93836": "catquest",
@@ -4374,13 +4076,10 @@
       "94438": "catquest",
       "94440": "catquest",
       "94441": "catquest",
-      "94449": "forever",
+      "94449": "catquest",
       "94465": "catquest",
       "94466": "catquest",
       "94467": "catquest",
-      "94468": "forever",
-      "94472": "forever",
-      "94473": "forever",
       "94484": "catquest",
       "94485": "catquest",
       "94486": "catquest",
@@ -4396,12 +4095,9 @@
       "94500": "catquest",
       "94501": "catquest",
       "94502": "catquest",
-      "94503": "forever",
       "94505": "catquest",
       "94568": "catquest",
-      "94616": "forever",
       "94638": "catquest",
-      "94773": "forever",
       "94774": "catquest",
       "94775": "catquest",
       "94776": "catquest",
@@ -4460,11 +4156,8 @@
       "95774": "catquest",
       "95803": "catquest",
       "95805": "catquest",
-      "95883": "forever",
-      "95885": "forever",
       "95981": "catquest",
       "95998": "catquest",
-      "95999": "forever",
       "96031": "catquest",
       "96044": "catquest",
       "96045": "catquest",
@@ -4503,11 +4196,9 @@
       "96627": "catquest",
       "96628": "catquest",
       "96629": "catquest",
-      "96630": "forever",
       "96634": "catquest",
       "96638": "catquest",
       "96646": "catquest",
-      "96652": "forever",
       "96655": "catquest",
       "96656": "catquest",
       "96658": "catquest",
@@ -4542,7 +4233,7 @@
       "97234": "catquest",
       "97237": "catquest",
       "97242": "catquest",
-      "97243": "forever",
+      "97243": "catquest",
       "97244": "catquest",
       "97245": "catquest",
       "97246": "catquest",
@@ -4550,12 +4241,11 @@
       "97250": "catquest",
       "97253": "catquest",
       "97257": "catquest",
-      "97263": "forever",
+      "97263": "catquest",
       "97275": "catquest",
       "97277": "catquest",
       "97279": "catquest",
       "97282": "catquest",
-      "97286": "forever",
       "97287": "pins",
       "97289": "catquest",
       "97290": "catquest",
@@ -4640,8 +4330,6 @@
       "98013": "catquest",
       "98021": "catquest",
       "98024": "catquest",
-      "98025": "forever",
-      "98042": "forever",
       "98046": "catquest",
       "98065": "catquest",
       "98067": "catquest",
@@ -9908,9 +9596,6 @@
         "displayID": "catquest",
         "name": "catquest"
       },
-      "955": {
-        "name": "forever"
-      },
       "956": {
         "name": "catquest"
       },
@@ -11652,9 +11337,6 @@
         "displayID": "catquest",
         "name": "classic"
       },
-      "3047": {
-        "name": "forever"
-      },
       "3048": {
         "displayID": "catquest",
         "name": "wayfarer"
@@ -13137,9 +12819,6 @@
         "displayID": "catquest",
         "name": "wayfarer"
       },
-      "4567": {
-        "name": "forever"
-      },
       "4568": {
         "displayID": "catquest",
         "name": "catquest"
@@ -13148,15 +12827,9 @@
         "displayID": "wayfarer",
         "name": "wayfarer"
       },
-      "4583": {
-        "name": "forever"
-      },
       "4586": {
         "displayID": "catquest",
         "name": "catquest"
-      },
-      "4593": {
-        "name": "forever"
       },
       "4595": {
         "name": "catquest"
@@ -13550,9 +13223,6 @@
         "displayID": "catquest",
         "name": "classic"
       },
-      "5480": {
-        "name": "forever"
-      },
       "5489": {
         "displayID": "catquest",
         "name": "wayfarer"
@@ -13584,9 +13254,6 @@
       "5515": {
         "displayID": "catquest",
         "name": "wayfarer"
-      },
-      "5516": {
-        "name": "forever"
       },
       "5518": {
         "displayID": "catquest",
@@ -13760,9 +13427,6 @@
         "displayID": "catquest",
         "name": "wayfarer"
       },
-      "5753": {
-        "name": "forever"
-      },
       "5759": {
         "displayID": "catquest",
         "name": "catquest"
@@ -13798,9 +13462,6 @@
       "5811": {
         "displayID": "catquest",
         "name": "catquest"
-      },
-      "5815": {
-        "name": "forever"
       },
       "5817": {
         "displayID": "catquest",
@@ -14186,9 +13847,6 @@
       "6376": {
         "displayID": "catquest",
         "name": "catquest"
-      },
-      "6382": {
-        "name": "forever"
       },
       "6389": {
         "displayID": "catquest",
@@ -15688,9 +15346,6 @@
         "displayID": "catquest",
         "name": "catquest"
       },
-      "11049": {
-        "name": "forever"
-      },
       "11050": {
         "displayID": "catquest",
         "name": "catquest"
@@ -16053,9 +15708,6 @@
       "12031": {
         "displayID": "catquest",
         "name": "wayfarer"
-      },
-      "12042": {
-        "name": "forever"
       },
       "12096": {
         "displayID": "catquest",
@@ -17412,9 +17064,6 @@
         "displayID": "catquest",
         "name": "catquest"
       },
-      "15693": {
-        "name": "forever"
-      },
       "15700": {
         "displayID": "catquest",
         "name": "wayfarer"
@@ -17811,9 +17460,6 @@
       "49808": {
         "name": "wayfarer"
       },
-      "184290": {
-        "name": "forever"
-      },
       "185317": {
         "displayID": "catquest",
         "name": "catquest"
@@ -17821,32 +17467,14 @@
       "205729": {
         "name": "catquest"
       },
-      "208518": {
-        "name": "forever"
-      },
-      "210995": {
-        "name": "forever"
-      },
       "211022": {
         "name": "wayfarer"
       },
       "211033": {
         "name": "wayfarer"
       },
-      "216902": {
-        "name": "forever"
-      },
-      "216924": {
-        "name": "forever"
-      },
       "217412": {
         "name": "catquest"
-      },
-      "230317": {
-        "name": "forever"
-      },
-      "230319": {
-        "name": "forever"
       },
       "244808": {
         "displayID": "catquest",
@@ -18182,9 +17810,6 @@
       "254078": {
         "name": "catquest"
       },
-      "254082": {
-        "name": "forever"
-      },
       "254084": {
         "name": "wayfarer"
       },
@@ -18298,9 +17923,6 @@
       "258098": {
         "displayID": "catquest",
         "name": "catquest"
-      },
-      "258113": {
-        "name": "forever"
       },
       "258203": {
         "displayID": "catquest",
@@ -18814,9 +18436,6 @@
         "displayID": "catquest",
         "name": "wayfarer"
       },
-      "276171": {
-        "name": "forever"
-      },
       "276194": {
         "displayID": "catquest",
         "name": "catquest"
@@ -18942,345 +18561,17 @@
     }
   },
   "protectedExclusions": {
-    "45": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "68": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "71": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "74": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "100": {
-      "source": "forever",
-      "reason": "object"
-    },
     "109": {
       "source": "pins",
       "reason": "multiple-or-conflicting-starters"
-    },
-    "138": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "139": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "140": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "169": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "176": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "180": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "199": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "225": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "230": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "248": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "249": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "254": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "256": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "283": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "284": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "285": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "286": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "292": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "311": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "324": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "328": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "329": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "398": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "403": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "410": {
-      "source": "forever",
-      "reason": "object"
     },
     "415": {
       "source": "pins",
       "reason": "multiple-or-conflicting-starters"
     },
-    "417": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "431": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "439": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "461": {
-      "source": "forever",
-      "reason": "object"
-    },
     "467": {
       "source": "pins",
       "reason": "multiple-or-conflicting-starters"
-    },
-    "474": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "478": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "489": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "491": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "510": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "511": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "549": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "566": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "567": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "585": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "586": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "588": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "597": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "619": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "625": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "626": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "632": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "642": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "646": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "651": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "652": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "653": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "684": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "685": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "687": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "688": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "720": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "737": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "739": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "751": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "779": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "795": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "895": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "900": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "901": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "902": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "926": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "930": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "931": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "940": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "949": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "950": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "996": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "998": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "1001": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "1002": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "1003": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "1055": {
-      "source": "forever",
-      "reason": "object"
     },
     "1067": {
       "source": "pins",
@@ -19290,77 +18581,13 @@
       "source": "pins",
       "reason": "multiple-or-conflicting-starters"
     },
-    "1193": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "1194": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "1219": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "1238": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "1239": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "1251": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "1252": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "1253": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "1261": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "1268": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "1269": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "1284": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
     "1361": {
       "source": "pins",
       "reason": "multiple-or-conflicting-starters"
     },
-    "1455": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "1465": {
-      "source": "forever",
-      "reason": "object"
-    },
     "1505": {
       "source": "pins",
       "reason": "multiple-or-conflicting-starters"
-    },
-    "1514": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "1527": {
-      "source": "forever",
-      "reason": "object"
     },
     "1638": {
       "source": "pins",
@@ -19374,24 +18601,12 @@
       "source": "pins",
       "reason": "multiple-or-conflicting-starters"
     },
-    "1714": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "1718": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
     "1823": {
       "source": "pins",
       "reason": "multiple-or-conflicting-starters"
     },
     "1883": {
       "source": "pins",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "1919": {
-      "source": "forever",
       "reason": "multiple-or-conflicting-starters"
     },
     "1939": {
@@ -19408,506 +18623,6 @@
     },
     "1959": {
       "source": "pins",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "2204": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "2278": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "2279": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "2280": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "2399": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "2523": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "2741": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "2781": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "2782": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "2861": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "2867": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "2875": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "2878": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "2903": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "2933": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "2940": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "2942": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "2947": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "2949": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "2951": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "2952": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "2953": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "2954": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "2967": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "2977": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "3363": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "3368": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "3481": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "3506": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "3801": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "3802": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "3844": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "3845": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "3913": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "3914": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4081": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4082": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4083": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4113": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4114": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4115": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4116": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4117": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4118": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4119": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4127": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4135": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4221": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4222": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4265": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4343": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4381": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4382": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4383": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4384": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4385": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4386": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4401": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4403": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4443": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4444": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4445": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4446": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4447": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4448": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4449": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4450": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4461": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4462": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4464": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4465": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4466": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4467": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4501": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4561": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4601": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4602": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4603": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4604": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4605": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4606": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4661": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4722": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4723": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4725": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4727": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4728": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4730": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4731": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4732": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4733": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4740": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4813": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4863": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "4864": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "5022": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "5023": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "5050": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "5058": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "5059": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "5060": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "5063": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "5067": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "5068": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "5085": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "5103": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "5147": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "5166": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "5167": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "5217": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "5218": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "5220": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "5221": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "5223": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "5224": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "5226": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "5227": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "5230": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "5232": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "5234": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "5236": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "5464": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "5542": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "5543": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "5544": {
-      "source": "forever",
       "reason": "multiple-or-conflicting-starters"
     },
     "5627": {
@@ -19934,34 +18649,6 @@
       "source": "pins",
       "reason": "multiple-or-conflicting-starters"
     },
-    "6024": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "6161": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "6284": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "6389": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "6390": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "6961": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "7022": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
     "7124": {
       "source": "pins",
       "reason": "multiple-or-conflicting-starters"
@@ -19974,10 +18661,6 @@
       "source": "pins",
       "reason": "multiple-or-conflicting-starters"
     },
-    "7562": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
     "7643": {
       "source": "pins",
       "reason": "multiple-or-conflicting-starters"
@@ -19985,54 +18668,6 @@
     "7644": {
       "source": "pins",
       "reason": "multiple-or-conflicting-starters"
-    },
-    "7701": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "7728": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "7729": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "7861": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "7862": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "8151": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "8233": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "8250": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "8254": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "8283": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "8313": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "8409": {
-      "source": "forever",
-      "reason": "object"
     },
     "8410": {
       "source": "pins",
@@ -20042,213 +18677,21 @@
       "source": "pins",
       "reason": "multiple-or-conflicting-starters"
     },
-    "8417": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
     "8419": {
       "source": "pins",
       "reason": "multiple-or-conflicting-starters"
-    },
-    "8519": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "8598": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "8743": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "8744": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "8767": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "8768": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "8769": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "8788": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "8803": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "8893": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "8922": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "8923": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "8929": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "8930": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "8960": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "9029": {
-      "source": "forever",
-      "reason": "object"
     },
     "9063": {
       "source": "pins",
       "reason": "multiple-or-conflicting-starters"
     },
-    "9388": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "9389": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "78261": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "79007": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "79008": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "79192": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "79637": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "79974": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "79975": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "79976": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "79980": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "80001": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "86614": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "91736": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "91861": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "92706": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "92849": {
-      "source": "forever",
-      "reason": "object"
-    },
     "92947": {
       "source": "pins",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "93318": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "93791": {
-      "source": "forever",
       "reason": "multiple-or-conflicting-starters"
     },
     "93835": {
       "source": "pins",
       "reason": "multiple-or-conflicting-starters"
-    },
-    "94449": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "94468": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "94503": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "95883": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "95885": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "95999": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "96630": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "96652": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "97243": {
-      "source": "forever",
-      "reason": "multiple-or-conflicting-starters"
-    },
-    "97263": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "98025": {
-      "source": "forever",
-      "reason": "object"
-    },
-    "98042": {
-      "source": "forever",
-      "reason": "object"
     }
   },
   "conflicts": [
@@ -20261,22 +18704,6 @@
       "rejectedNPC": 233
     },
     {
-      "questId": 248,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 313
-    },
-    {
-      "questId": 249,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 313
-    },
-    {
       "questId": 415,
       "role": "givers",
       "selected": "pins",
@@ -20285,68 +18712,12 @@
       "rejectedNPC": 1378
     },
     {
-      "questId": 461,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 2782
-    },
-    {
       "questId": 467,
       "role": "givers",
       "selected": "pins",
       "selectedNPC": false,
       "rejected": "catquest",
       "rejectedNPC": 2092
-    },
-    {
-      "questId": 489,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 2083
-    },
-    {
-      "questId": 491,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 2782
-    },
-    {
-      "questId": 687,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 2786
-    },
-    {
-      "questId": 737,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 2786
-    },
-    {
-      "questId": 940,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 3519
-    },
-    {
-      "questId": 949,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 3616
     },
     {
       "questId": 1067,
@@ -20405,14 +18776,6 @@
       "rejectedNPC": 5113
     },
     {
-      "questId": 1718,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 4595
-    },
-    {
       "questId": 1823,
       "role": "givers",
       "selected": "pins",
@@ -20427,14 +18790,6 @@
       "selectedNPC": false,
       "rejected": "catquest",
       "rejectedNPC": 3049
-    },
-    {
-      "questId": 1919,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 7312
     },
     {
       "questId": 1939,
@@ -20469,102 +18824,6 @@
       "rejectedNPC": 2128
     },
     {
-      "questId": 2204,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 6826
-    },
-    {
-      "questId": 2861,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 4568
-    },
-    {
-      "questId": 2954,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 7918
-    },
-    {
-      "questId": 3801,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 8888
-    },
-    {
-      "questId": 3802,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 8888
-    },
-    {
-      "questId": 3913,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 9299
-    },
-    {
-      "questId": 5050,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 3520
-    },
-    {
-      "questId": 5542,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 1855
-    },
-    {
-      "questId": 5543,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 1855
-    },
-    {
-      "questId": 5544,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 1855
-    },
-    {
-      "questId": 6961,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 13418
-    },
-    {
-      "questId": 7022,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 13433
-    },
-    {
       "questId": 7124,
       "role": "givers",
       "selected": "pins",
@@ -20589,14 +18848,6 @@
       "rejectedNPC": 2198
     },
     {
-      "questId": 7562,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 5520
-    },
-    {
       "questId": 7643,
       "role": "givers",
       "selected": "pins",
@@ -20611,38 +18862,6 @@
       "selectedNPC": false,
       "rejected": "catquest",
       "rejectedNPC": 14566
-    },
-    {
-      "questId": 8151,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 3039
-    },
-    {
-      "questId": 8233,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 918
-    },
-    {
-      "questId": 8250,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 331
-    },
-    {
-      "questId": 8254,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 5489
     },
     {
       "questId": 8410,
@@ -20661,60 +18880,12 @@
       "rejectedNPC": 928
     },
     {
-      "questId": 8417,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 3354
-    },
-    {
       "questId": 8419,
       "role": "givers",
       "selected": "pins",
       "selectedNPC": false,
       "rejected": "catquest",
       "rejectedNPC": 461
-    },
-    {
-      "questId": 8922,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 16013
-    },
-    {
-      "questId": 8923,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 16012
-    },
-    {
-      "questId": 8929,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 16013
-    },
-    {
-      "questId": 8930,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 16012
-    },
-    {
-      "questId": 8960,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 16013
     },
     {
       "questId": 9063,
@@ -20725,22 +18896,6 @@
       "rejectedNPC": 3033
     },
     {
-      "questId": 9388,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 16817
-    },
-    {
-      "questId": 9389,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 16817
-    },
-    {
       "questId": 92947,
       "role": "givers",
       "selected": "pins",
@@ -20749,44 +18904,12 @@
       "rejectedNPC": 253844
     },
     {
-      "questId": 93791,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 256507
-    },
-    {
       "questId": 93835,
       "role": "givers",
       "selected": "pins",
       "selectedNPC": false,
       "rejected": "catquest",
       "rejectedNPC": 253590
-    },
-    {
-      "questId": 94449,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 258098
-    },
-    {
-      "questId": 97243,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 252382
-    },
-    {
-      "questId": 97263,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "catquest",
-      "rejectedNPC": 6569
     },
     {
       "questId": 109,
@@ -20813,14 +18936,6 @@
       "rejectedNPC": 271
     },
     {
-      "questId": 249,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "wayfarer",
-      "rejectedNPC": 313
-    },
-    {
       "questId": 415,
       "role": "givers",
       "selected": "pins",
@@ -20837,36 +18952,20 @@
       "rejectedNPC": 2092
     },
     {
-      "questId": 489,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "wayfarer",
-      "rejectedNPC": 2083
-    },
-    {
       "questId": 687,
       "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
+      "selected": "catquest",
+      "selectedNPC": 2786,
       "rejected": "wayfarer",
       "rejectedNPC": 2787
     },
     {
       "questId": 737,
       "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
+      "selected": "catquest",
+      "selectedNPC": 2786,
       "rejected": "wayfarer",
       "rejectedNPC": 2934
-    },
-    {
-      "questId": 940,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "wayfarer",
-      "rejectedNPC": 3519
     },
     {
       "questId": 1067,
@@ -20927,8 +19026,8 @@
     {
       "questId": 1718,
       "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
+      "selected": "catquest",
+      "selectedNPC": 4595,
       "rejected": "wayfarer",
       "rejectedNPC": 3041
     },
@@ -20951,8 +19050,8 @@
     {
       "questId": 1919,
       "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
+      "selected": "catquest",
+      "selectedNPC": 7312,
       "rejected": "wayfarer",
       "rejectedNPC": 1228
     },
@@ -20989,44 +19088,12 @@
       "rejectedNPC": 7311
     },
     {
-      "questId": 2204,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "wayfarer",
-      "rejectedNPC": 6826
-    },
-    {
       "questId": 2861,
       "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
+      "selected": "catquest",
+      "selectedNPC": 4568,
       "rejected": "wayfarer",
       "rejectedNPC": 3048
-    },
-    {
-      "questId": 3801,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "wayfarer",
-      "rejectedNPC": 8888
-    },
-    {
-      "questId": 3802,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "wayfarer",
-      "rejectedNPC": 8888
-    },
-    {
-      "questId": 3913,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "wayfarer",
-      "rejectedNPC": 9299
     },
     {
       "questId": 4485,
@@ -21053,38 +19120,6 @@
       "rejectedNPC": 10296
     },
     {
-      "questId": 5050,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "wayfarer",
-      "rejectedNPC": 3520
-    },
-    {
-      "questId": 5542,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "wayfarer",
-      "rejectedNPC": 1855
-    },
-    {
-      "questId": 5543,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "wayfarer",
-      "rejectedNPC": 1855
-    },
-    {
-      "questId": 5544,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "wayfarer",
-      "rejectedNPC": 1855
-    },
-    {
       "questId": 5674,
       "role": "givers",
       "selected": "catquest",
@@ -21107,22 +19142,6 @@
       "selectedNPC": 5116,
       "rejected": "wayfarer",
       "rejectedNPC": 5117
-    },
-    {
-      "questId": 6961,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "wayfarer",
-      "rejectedNPC": 13418
-    },
-    {
-      "questId": 7022,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "wayfarer",
-      "rejectedNPC": 13433
     },
     {
       "questId": 7124,
@@ -21149,14 +19168,6 @@
       "rejectedNPC": 10877
     },
     {
-      "questId": 7562,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "wayfarer",
-      "rejectedNPC": 5520
-    },
-    {
       "questId": 7643,
       "role": "givers",
       "selected": "pins",
@@ -21173,34 +19184,26 @@
       "rejectedNPC": 14566
     },
     {
-      "questId": 8151,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "wayfarer",
-      "rejectedNPC": 3039
-    },
-    {
       "questId": 8233,
       "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
+      "selected": "catquest",
+      "selectedNPC": 918,
       "rejected": "wayfarer",
       "rejectedNPC": 5165
     },
     {
       "questId": 8250,
       "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
+      "selected": "catquest",
+      "selectedNPC": 331,
       "rejected": "wayfarer",
       "rejectedNPC": 7311
     },
     {
       "questId": 8254,
       "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
+      "selected": "catquest",
+      "selectedNPC": 5489,
       "rejected": "wayfarer",
       "rejectedNPC": 6018
     },
@@ -21221,60 +19224,12 @@
       "rejectedNPC": 928
     },
     {
-      "questId": 8417,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "wayfarer",
-      "rejectedNPC": 3354
-    },
-    {
       "questId": 8419,
       "role": "givers",
       "selected": "pins",
       "selectedNPC": false,
       "rejected": "wayfarer",
       "rejectedNPC": 5172
-    },
-    {
-      "questId": 8922,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "wayfarer",
-      "rejectedNPC": 16013
-    },
-    {
-      "questId": 8923,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "wayfarer",
-      "rejectedNPC": 16012
-    },
-    {
-      "questId": 8929,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "wayfarer",
-      "rejectedNPC": 16013
-    },
-    {
-      "questId": 8930,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "wayfarer",
-      "rejectedNPC": 16012
-    },
-    {
-      "questId": 8960,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "wayfarer",
-      "rejectedNPC": 16013
     },
     {
       "questId": 9063,
@@ -21301,36 +19256,12 @@
       "rejectedNPC": 16531
     },
     {
-      "questId": 9388,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "wayfarer",
-      "rejectedNPC": 16817
-    },
-    {
-      "questId": 9389,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "wayfarer",
-      "rejectedNPC": 16817
-    },
-    {
       "questId": 92947,
       "role": "givers",
       "selected": "pins",
       "selectedNPC": false,
       "rejected": "wayfarer",
       "rejectedNPC": 253844
-    },
-    {
-      "questId": 93791,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "wayfarer",
-      "rejectedNPC": 256507
     },
     {
       "questId": 93835,
@@ -21341,14 +19272,6 @@
       "rejectedNPC": 253590
     },
     {
-      "questId": 94449,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "wayfarer",
-      "rejectedNPC": 258098
-    },
-    {
       "questId": 94912,
       "role": "givers",
       "selected": "catquest",
@@ -21357,76 +19280,12 @@
       "rejectedNPC": 2543
     },
     {
-      "questId": 97243,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "wayfarer",
-      "rejectedNPC": 252382
-    },
-    {
-      "questId": 249,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "pins",
-      "rejectedNPC": 313
-    },
-    {
-      "questId": 489,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "pins",
-      "rejectedNPC": 2083
-    },
-    {
-      "questId": 940,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "pins",
-      "rejectedNPC": 3519
-    },
-    {
       "questId": 1652,
       "role": "givers",
       "selected": "catquest",
       "selectedNPC": 6182,
       "rejected": "pins",
       "rejectedNPC": 6171
-    },
-    {
-      "questId": 1714,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "pins",
-      "rejectedNPC": 6176
-    },
-    {
-      "questId": 1919,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "pins",
-      "rejectedNPC": 7312
-    },
-    {
-      "questId": 2781,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "pins",
-      "rejectedNPC": 7407
-    },
-    {
-      "questId": 2875,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "pins",
-      "rejectedNPC": 7882
     },
     {
       "questId": 2968,
@@ -21445,14 +19304,6 @@
       "rejectedNPC": 5518
     },
     {
-      "questId": 3913,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "pins",
-      "rejectedNPC": 9299
-    },
-    {
       "questId": 4181,
       "role": "givers",
       "selected": "catquest",
@@ -21467,54 +19318,6 @@
       "selectedNPC": 6179,
       "rejected": "pins",
       "rejectedNPC": 5491
-    },
-    {
-      "questId": 5063,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "pins",
-      "rejectedNPC": 10637
-    },
-    {
-      "questId": 5067,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "pins",
-      "rejectedNPC": 10637
-    },
-    {
-      "questId": 5068,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "pins",
-      "rejectedNPC": 10637
-    },
-    {
-      "questId": 5542,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "pins",
-      "rejectedNPC": 1855
-    },
-    {
-      "questId": 5543,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "pins",
-      "rejectedNPC": 1855
-    },
-    {
-      "questId": 5544,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "pins",
-      "rejectedNPC": 1855
     },
     {
       "questId": 6066,
@@ -21541,68 +19344,12 @@
       "rejectedNPC": 5117
     },
     {
-      "questId": 6961,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "pins",
-      "rejectedNPC": 13418
-    },
-    {
-      "questId": 7022,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "pins",
-      "rejectedNPC": 13433
-    },
-    {
       "questId": 7632,
       "role": "givers",
       "selected": "catquest",
       "selectedNPC": 12018,
       "rejected": "pins",
       "rejectedNPC": 14524
-    },
-    {
-      "questId": 8922,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "pins",
-      "rejectedNPC": 16013
-    },
-    {
-      "questId": 8923,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "pins",
-      "rejectedNPC": 16012
-    },
-    {
-      "questId": 8929,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "pins",
-      "rejectedNPC": 16013
-    },
-    {
-      "questId": 8930,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "pins",
-      "rejectedNPC": 16012
-    },
-    {
-      "questId": 8960,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "pins",
-      "rejectedNPC": 16013
     },
     {
       "questId": 65593,
@@ -21631,8 +19378,8 @@
     {
       "questId": 93791,
       "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
+      "selected": "catquest",
+      "selectedNPC": 256507,
       "rejected": "pins",
       "rejectedNPC": 252373
     },
@@ -21661,140 +19408,12 @@
       "rejectedNPC": 786
     },
     {
-      "questId": 97243,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "pins",
-      "rejectedNPC": 252382
-    },
-    {
       "questId": 98285,
       "role": "givers",
       "selected": "catquest",
       "selectedNPC": 251684,
       "rejected": "pins",
       "rejectedNPC": 263664
-    },
-    {
-      "questId": 1067,
-      "role": "givers",
-      "selected": "pins",
-      "selectedNPC": false,
-      "rejected": "forever",
-      "rejectedNPC": 2216
-    },
-    {
-      "questId": 1794,
-      "role": "givers",
-      "selected": "pins",
-      "selectedNPC": 5149,
-      "rejected": "forever",
-      "rejectedNPC": 6179
-    },
-    {
-      "questId": 3629,
-      "role": "givers",
-      "selected": "catquest",
-      "selectedNPC": 5174,
-      "rejected": "forever",
-      "rejectedNPC": 5518
-    },
-    {
-      "questId": 4181,
-      "role": "givers",
-      "selected": "catquest",
-      "selectedNPC": 5518,
-      "rejected": "forever",
-      "rejectedNPC": 5174
-    },
-    {
-      "questId": 5627,
-      "role": "givers",
-      "selected": "pins",
-      "selectedNPC": false,
-      "rejected": "forever",
-      "rejectedNPC": 11401
-    },
-    {
-      "questId": 5652,
-      "role": "givers",
-      "selected": "pins",
-      "selectedNPC": false,
-      "rejected": "forever",
-      "rejectedNPC": 6018
-    },
-    {
-      "questId": 5658,
-      "role": "givers",
-      "selected": "pins",
-      "selectedNPC": false,
-      "rejected": "forever",
-      "rejectedNPC": 4606
-    },
-    {
-      "questId": 5676,
-      "role": "givers",
-      "selected": "pins",
-      "selectedNPC": false,
-      "rejected": "forever",
-      "rejectedNPC": 376
-    },
-    {
-      "questId": 5679,
-      "role": "givers",
-      "selected": "pins",
-      "selectedNPC": false,
-      "rejected": "forever",
-      "rejectedNPC": 4606
-    },
-    {
-      "questId": 5680,
-      "role": "givers",
-      "selected": "pins",
-      "selectedNPC": false,
-      "rejected": "forever",
-      "rejectedNPC": 6018
-    },
-    {
-      "questId": 7643,
-      "role": "givers",
-      "selected": "pins",
-      "selectedNPC": false,
-      "rejected": "forever",
-      "rejectedNPC": 928
-    },
-    {
-      "questId": 7644,
-      "role": "givers",
-      "selected": "pins",
-      "selectedNPC": false,
-      "rejected": "forever",
-      "rejectedNPC": 14566
-    },
-    {
-      "questId": 92947,
-      "role": "givers",
-      "selected": "pins",
-      "selectedNPC": false,
-      "rejected": "forever",
-      "rejectedNPC": 253844
-    },
-    {
-      "questId": 93835,
-      "role": "givers",
-      "selected": "pins",
-      "selectedNPC": false,
-      "rejected": "forever",
-      "rejectedNPC": 253590
-    },
-    {
-      "questId": 94912,
-      "role": "givers",
-      "selected": "catquest",
-      "selectedNPC": 270459,
-      "rejected": "forever",
-      "rejectedNPC": 2543
     },
     {
       "questId": 26,
@@ -21835,38 +19454,6 @@
       "selectedNPC": false,
       "rejected": "classic",
       "rejectedNPC": 1340
-    },
-    {
-      "questId": 489,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "classic",
-      "rejectedNPC": 2083
-    },
-    {
-      "questId": 687,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "classic",
-      "rejectedNPC": 2786
-    },
-    {
-      "questId": 737,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "classic",
-      "rejectedNPC": 2786
-    },
-    {
-      "questId": 940,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "classic",
-      "rejectedNPC": 3519
     },
     {
       "questId": 1067,
@@ -21943,8 +19530,8 @@
     {
       "questId": 1718,
       "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
+      "selected": "catquest",
+      "selectedNPC": 4595,
       "rejected": "classic",
       "rejectedNPC": 3041
     },
@@ -21967,8 +19554,8 @@
     {
       "questId": 1919,
       "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
+      "selected": "catquest",
+      "selectedNPC": 7312,
       "rejected": "classic",
       "rejectedNPC": 328
     },
@@ -22015,18 +19602,10 @@
     {
       "questId": 2861,
       "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
+      "selected": "catquest",
+      "selectedNPC": 4568,
       "rejected": "classic",
       "rejectedNPC": 3048
-    },
-    {
-      "questId": 2954,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "classic",
-      "rejectedNPC": 7918
     },
     {
       "questId": 3645,
@@ -22043,30 +19622,6 @@
       "selectedNPC": 7944,
       "rejected": "classic",
       "rejectedNPC": 7406
-    },
-    {
-      "questId": 3801,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "classic",
-      "rejectedNPC": 8888
-    },
-    {
-      "questId": 3802,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "classic",
-      "rejectedNPC": 8888
-    },
-    {
-      "questId": 3913,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "classic",
-      "rejectedNPC": 9299
     },
     {
       "questId": 4485,
@@ -22093,44 +19648,12 @@
       "rejectedNPC": 10296
     },
     {
-      "questId": 5050,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "classic",
-      "rejectedNPC": 3520
-    },
-    {
       "questId": 5511,
       "role": "givers",
       "selected": "pins",
       "selectedNPC": 11057,
       "rejected": "classic",
       "rejectedNPC": 10837
-    },
-    {
-      "questId": 5542,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "classic",
-      "rejectedNPC": 1855
-    },
-    {
-      "questId": 5543,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "classic",
-      "rejectedNPC": 1855
-    },
-    {
-      "questId": 5544,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "classic",
-      "rejectedNPC": 1855
     },
     {
       "questId": 5627,
@@ -22429,18 +19952,10 @@
       "rejectedNPC": 5515
     },
     {
-      "questId": 6961,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "classic",
-      "rejectedNPC": 13418
-    },
-    {
       "questId": 7022,
       "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
+      "selected": "catquest",
+      "selectedNPC": 13433,
       "rejected": "classic",
       "rejectedNPC": 13429
     },
@@ -22477,14 +19992,6 @@
       "rejectedNPC": 2198
     },
     {
-      "questId": 7562,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "classic",
-      "rejectedNPC": 5520
-    },
-    {
       "questId": 7643,
       "role": "givers",
       "selected": "pins",
@@ -22503,8 +20010,8 @@
     {
       "questId": 8151,
       "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
+      "selected": "catquest",
+      "selectedNPC": 3039,
       "rejected": "classic",
       "rejectedNPC": 3038
     },
@@ -22527,24 +20034,24 @@
     {
       "questId": 8233,
       "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
+      "selected": "catquest",
+      "selectedNPC": 918,
       "rejected": "classic",
       "rejectedNPC": 3328
     },
     {
       "questId": 8250,
       "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
+      "selected": "catquest",
+      "selectedNPC": 331,
       "rejected": "classic",
       "rejectedNPC": 3049
     },
     {
       "questId": 8254,
       "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
+      "selected": "catquest",
+      "selectedNPC": 5489,
       "rejected": "classic",
       "rejectedNPC": 376
     },
@@ -22567,8 +20074,8 @@
     {
       "questId": 8417,
       "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
+      "selected": "catquest",
+      "selectedNPC": 3354,
       "rejected": "classic",
       "rejectedNPC": 3041
     },
@@ -22581,68 +20088,12 @@
       "rejectedNPC": 461
     },
     {
-      "questId": 8922,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "classic",
-      "rejectedNPC": 16013
-    },
-    {
-      "questId": 8923,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "classic",
-      "rejectedNPC": 16012
-    },
-    {
-      "questId": 8929,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "classic",
-      "rejectedNPC": 16013
-    },
-    {
-      "questId": 8930,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "classic",
-      "rejectedNPC": 16012
-    },
-    {
-      "questId": 8960,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "classic",
-      "rejectedNPC": 16013
-    },
-    {
       "questId": 9063,
       "role": "givers",
       "selected": "pins",
       "selectedNPC": false,
       "rejected": "classic",
       "rejectedNPC": 3033
-    },
-    {
-      "questId": 9388,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "classic",
-      "rejectedNPC": 16817
-    },
-    {
-      "questId": 9389,
-      "role": "givers",
-      "selected": "forever",
-      "selectedNPC": false,
-      "rejected": "classic",
-      "rejectedNPC": 16817
     },
     {
       "questId": 172,

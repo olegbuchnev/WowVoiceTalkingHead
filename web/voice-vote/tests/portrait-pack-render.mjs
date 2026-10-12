@@ -29,6 +29,11 @@ window.prepare=async npc=>{
   // External .anim loads are not part of renderer.downloads. Wait for the
   // selected clips before comparing poses, and fix random variation selection.
   for(const index of m.am.u.map((a,i)=>[a,i]).filter(([a])=>(a.b===0&&a.f===0)||a.b===60).map(([,i])=>i))await m.am.f(index);
+ // Cloth simulation advances with real frame timing and writes bone overrides.
+ // Compare the authored animation tracks, not two unrelated physics histories.
+ // Disable cloth only in this harness before sampling exact bone matrices.
+ m.aC=null;
+ for(const bone of m.W) bone.m=null;
  const poses=[];
  for(const talking of [false,true,false]){
    setTalking(v,talking);await delay(150);await wait();actor.setAnimPaused(true);

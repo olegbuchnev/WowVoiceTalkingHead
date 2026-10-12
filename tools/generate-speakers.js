@@ -10,14 +10,14 @@ const read = file => JSON.parse(fs.readFileSync(path.join(root, file), 'utf8'));
 // comparisons between unrelated projects. Explicit exclusions are applied first.
 const POLICY = {
   basis:'maintenance-frequency',
-  givers:['catquest','wayfarer','pins','forever','classic'],
+  givers:['catquest','wayfarer','pins','classic'],
   finishers:['catquest','wayfarer','classic'],
-  names:{preferRussian:true, sources:['catquest','wayfarer','classic','forever']},
+  names:{preferRussian:true, sources:['catquest','wayfarer','classic']},
   appearances:['catquest','wayfarer'],
-  protectedExclusions:['item','object','multiple-or-conflicting-starters']
+  protectedExclusions:['multiple-or-conflicting-starters']
 };
 
-function merge({ classic, forever, pins, cat, wayfarer = {givers:{},finishers:{},npcs:{}} }) {
+function merge({ classic, pins, cat, wayfarer = {givers:{},finishers:{},npcs:{}} }) {
   const givers = {}, finishers = {}, npcs = {}, origins = {givers:{}, finishers:{}, npcs:{}}, conflicts = [];
   const names = new Map();
   function addName(id, name, source) {
@@ -49,22 +49,14 @@ function merge({ classic, forever, pins, cat, wayfarer = {givers:{},finishers:{}
     }
     target[id] = value; origins[role][id] = source;
   }
-  const foreverGivers = {}, exclusionKinds = {}, exclusions = {};
-  for (const quest of forever.quests) {
-    for (const starter of quest.starters) if (starter.kind === 'npc') addName(starter.id, starter.nameRU || starter.name, 'forever');
-    if (!quest.starters.length) continue;
-    const starter = quest.starters[0];
-    foreverGivers[quest.questId] = quest.starters.length === 1 && starter.kind === 'npc' ? {npcID:starter.id} : false;
-    if (foreverGivers[quest.questId] === false) exclusionKinds[quest.questId] = quest.starters.length > 1
-      ? 'multiple-or-conflicting-starters' : starter.kind;
-  }
+  const exclusions = {};
   const npcMap = map => Object.fromEntries(Object.entries(map).map(([id,npcID]) => [id,npcID === false ? false : {npcID}]));
-  const giverSources = {catquest:npcMap(cat.tables.QuestGiver), wayfarer:npcMap(wayfarer.givers), pins:npcMap(pins.givers), forever:foreverGivers, classic:classicGivers};
-  // A lower-priority explicit item/object/multiple-starter fact still prevents
+  const giverSources = {catquest:npcMap(cat.tables.QuestGiver), wayfarer:npcMap(wayfarer.givers), pins:npcMap(pins.givers), classic:classicGivers};
+  // A lower-priority explicit multiple-starter fact still prevents
   // guessing one NPC. Unknown/missing data does not block the next source.
   for (const source of POLICY.givers) for (const [id, entry] of sorted(giverSources[source])) if (entry === false) {
     set('givers', id, false, source);
-    exclusions[id] ||= {source, reason:source === 'forever' ? exclusionKinds[id] : 'multiple-or-conflicting-starters'};
+    exclusions[id] ||= {source, reason:'multiple-or-conflicting-starters'};
   }
   for (const source of POLICY.givers) for (const [id, entry] of sorted(giverSources[source])) {
     if (entry !== null) set('givers', id, entry, source);
@@ -125,12 +117,12 @@ function render(database) {
       .map(([id,value]) => `    [${id}] = ${luaValue(value)},`).join('\n')+'\n},').join('\n')+'\n}\n';
 }
 function generate(check = false) {
-  const files = {classic:'src/Index.lua', forever:'docs/internal/forever-speakers-manifest.json',
+  const files = {classic:'src/Index.lua',
     pins:'docs/internal/forever-pins-speakers-source.json', cat:'docs/internal/catquest-speakers-source.json', wayfarer:'docs/internal/wayfarer-speakers-source.json'};
-  const inputs = {classic:dataTable(path.join(root,files.classic)), forever:read(files.forever), pins:read(files.pins), cat:read(files.cat), wayfarer:read(files.wayfarer)};
+  const inputs = {classic:dataTable(path.join(root,files.classic)), pins:read(files.pins), cat:read(files.cat), wayfarer:read(files.wayfarer)};
   const result = merge(inputs);
   const report = {schemaVersion:1, policy:POLICY, sources:{
-    forever:{commit:inputs.forever.commit}, pins:{commit:inputs.pins.commit, attCommit:inputs.pins.attCommit},
+    pins:{commit:inputs.pins.commit, attCommit:inputs.pins.attCommit},
     catquest:{version:inputs.cat.sourceVersion}, wayfarer:{packs:inputs.wayfarer.packs}},
     inputHashes:Object.fromEntries(Object.entries(files).map(([key,file])=>[key,
       sha256(fs.readFileSync(path.join(root,file),'utf8').replace(/\r\n/g,'\n'))])),

@@ -908,13 +908,13 @@ per-role provenance, protected exclusions and conflicts in
 `docs/internal/speakers-manifest.json`. Priority is based on expected maintenance
 frequency, not cross-project version numbers or the age of one particular import:
 
-- Givers: **CatQuest > Wayfarer > current Quest Pins > historical Forever snapshot > Classic**.
+- Givers: **CatQuest > Wayfarer > current Quest Pins > Classic**.
 - Finishers: **CatQuest > Wayfarer > Classic**; the Pins inputs contain only starters.
 - Appearances: **CatQuest > Wayfarer**, joined by exact NPC ID.
 - Names: prefer Russian; within the same language preference,
-  **CatQuest > Wayfarer > Classic > historical Forever**.
+  **CatQuest > Wayfarer > Classic**.
 
-Explicit item/object/multiple-starter facts and conflicting Classic giver IDs
+Explicit multiple-starter facts and conflicting Classic giver IDs
 are applied before that priority order. They block guessing a single NPC even
 from a newer source. Missing data is unknown and allows the next source.
 These decisions are listed under `protectedExclusions` in the report.
@@ -922,18 +922,11 @@ Captured game observations retain runtime priority over the resulting database.
 
 Inputs:
 
-- Detailed [Wowhead Forever snapshot from Quest Pins](https://github.com/TylerAkins/forever-quest-markers/tree/2d354aa828af29cb2e997b7367f7bb59b75f10e2/data/forever-quests),
-  retained in `forever-speakers-manifest.json`, supplies historical giver identities
-  and explicit item/object/multiple-starter exclusions.
-- [Quest Pins database imported October 11](https://github.com/TylerAkins/forever-quest-markers/tree/ce1da1b14290645eb67a9f9bf373c2088713efe3/Database)
-  fills gaps after CatQuest and Wayfarer. The October 11, 2026 export uses
-  All The Things (`f5d90835055a8a21671d5406fc219ba17efba321`), with 3906 quests,
-  3627 single-NPC and 33 multiple-NPC starter mappings. It adds 289 single-NPC
-  mappings absent from the detailed snapshot. The old upstream JSON corpus was
-  removed October 5. Current Pins can infer a giver from an enclosing NPC and
-  omits non-NPC starter types, so explicit exclusions remain protected.
-  There are 15 differing single-NPC IDs and 23 single-NPC suggestions against
-  old explicit exclusions; all stay visible in the merge conflict report.
+- Current [Forever Quest Pins](https://github.com/TylerAkins/forever-quest-markers)
+  imports All The Things and fills gaps after CatQuest and Wayfarer. Multiple
+  NPC starters remain explicit exclusions. The retired Wowhead snapshot and
+  its importer were removed: stale exclusions no longer override maintained
+  sources. Quest 940 now resolves to Arynia Cloudsbreak (NPC 3519).
 - CatQuest 0.6.4 supplies preferred giver/receiver mappings and NPC appearances;
   Classic supplies remaining receivers and the last fallback for givers.
 - Wayfarer Alliance/Horde/Shared 3.2.0 supplies `qg`, `npc.n/d` and each quest
@@ -947,8 +940,8 @@ Inputs:
 
 Input versions and hashes are tracked. Only factual metadata is imported;
 external addon code is never executed or required in-game. Source snapshots and
-reports stay outside `src/`. The generated database currently contains 2545 NPCs,
-4681 giver entries (including exclusions), 4288 finisher entries and 2302 models.
+reports stay outside `src/`. The generated database currently contains 2526 NPCs,
+4377 giver entries (including exclusions), 4288 finisher entries and 2302 models.
 Pins was refreshed to `f26f006c94efce787d0f09a32462595ddac2fced` on October 12;
 see the [Wayfarer 3.2.0 migration](internal/wayfarer-3.2.0-integration.md) for
 the current combined import and validation results.
@@ -964,10 +957,7 @@ node tools/import-wayfarer-speakers.js <AddOns-directory> --check
 
 All NPC importers regenerate the unified database. After a Wayfarer pack update,
 run audio metadata generation, quest text import and NPC import; the last one is
-independent of OGG files. The historical
-`import-forever-speakers.js [<data/forever-quests-directory> <commit-SHA>]`
-remains available for detailed JSON snapshots; without arguments it rebuilds
-from the saved manifest. No runtime priority depends on installed voice packs.
+independent of OGG files. No runtime priority depends on installed voice packs.
 
 `build.cmd -Task CheckSources` checks GitHub's latest commit touching
 `Database/ForeverQuests.lua` against the imported Pins commit. Validate, deployment

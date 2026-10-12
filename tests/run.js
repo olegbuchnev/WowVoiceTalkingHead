@@ -24,7 +24,6 @@ for (const runner of [
   'validate-localization.js',
   'validate-site.js',
   'validate-audio-assets.js',
-  'validate-forever-speakers.js',
   'validate-speakers.js',
   'validate-wayfarer-speakers.js',
   'validate-catquest-speakers.js',
