@@ -71,6 +71,41 @@ exposing an updated catalogue; see [MODEL-CACHE.md](MODEL-CACHE.md).
 
 ## Public launch verification
 
+### CatQuest Voices 0.6.1 data update (2026-10-12)
+
+The public catalogue now uses Voices 0.6.1: 3,576 comparisons and 9,207 recordings.
+29 comparisons have a changed CatQuest recording hash. Application images did
+not change. Existing votes and their original recording hashes remain in SQLite.
+All 31 pre-update votes were verified unchanged after the restart; the pending
+inbox was empty. Public playback, admin login/export and all 29 new audio hashes
+were checked over HTTPS without submitting test votes.
+
+New audio was streamed directly from installed libraries into
+`libraries/CatQuest_Voices/revisions/<sha256>/<filename>`. The deployed
+`audio-manifest.json` maps these paths; previous recordings remain at their
+existing library paths. On the next update, preserve the current server mapping
+for unchanged recording IDs and add versioned paths for new IDs. Do not replace
+the deployed manifest blindly with the local export's original file paths.
+
+The model cache was reused: all 12,177 dependency hashes match, with 1,270 ready
+portraits and the same known camera exception for quest 97290. The full offline
+verification report was updated to match the new catalogue.
+
+A consistent SQLite backup, pending inbox, previous catalogue and model reports
+are in `/srv/talkinghead/backups/20261012-catquest-0.6.1` (root-only directory).
+An additional SQLite copy is in the ignored local directory
+`artifacts/voice-vote-deploy/updates/catquest-0.6.1/backup/`. This is a one-time
+deployment backup, not a scheduled backup service. Audio and secrets are excluded.
+
+To roll back this data update, stop web/API, restore the three catalogue JSON
+files and model reports from that backup, then start both services with the
+Compose command above. Previous audio files are still available. Keep the live
+votes volume: a catalogue rollback must not overwrite votes collected since
+the backup. The staged new metadata is in
+`/srv/talkinghead/import/catquest-0.6.1-20261012/`.
+
+### Initial deployment
+
 Deployment completed on 2026-10-12. Both containers are healthy,
 all 9,207 audio hashes and 12,177 model dependency hashes match the local snapshot,
 the catalogue contains 3,576 quests, and portrait rendering, two audio variants,

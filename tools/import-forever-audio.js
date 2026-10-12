@@ -141,7 +141,8 @@ function importPack(source, root = path.resolve(__dirname, '..')) {
   // Validate all source streams before replacing metadata. No audio pack is generated.
   // Always rebuild from all sibling libraries so a CatQuest refresh cannot erase
   // Wayfarer transcripts from the independent database.
-  require('./import-quest-texts').importTexts(path.dirname(source), root, {catquest:source});
+  require('./import-quest-texts').importTexts(path.dirname(source), root,
+    {catquest:source, catquestFiles:new Map(files.map(file => [file.file, file]))});
   fs.writeFileSync(path.join(root, 'src', 'CatQuestAudio.lua'),
     '-- Generated compatibility metadata; transcripts are in QuestTexts.lua.\n'
     + `WowVoiceCatQuestAudio = { schemaVersion = 1, sourceVersion = ${JSON.stringify(version)}, entries = {\n`

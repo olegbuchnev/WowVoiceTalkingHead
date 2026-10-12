@@ -1,5 +1,6 @@
 // Build independent quest text metadata. Never execute addon code or require audio files.
 const fs = require('fs'), path = require('path');
+const crypto = require('crypto');
 const {dataTable} = require('./import-forever-audio');
 const {readPack, literal} = require('./generate-wayfarer-metadata');
 const PRIORITY = ['wowvoice', 'catquest', 'wayfarer'];
@@ -9,6 +10,41 @@ function cueText(cues) {
     ? lines.map(line => line.trim()).join(' ') : undefined;
 }
 function valid(text) { return typeof text === 'string' && !!text.trim(); }
+// Retain removed subtitles only for the exact same external audio bytes.
+// Text-only imports still work when the audio files are not installed.
+function retainCatQuestTexts(directory, pack, json, texts, version, history, verifiedFiles) {
+  const retained = [];
+  for (const id of new Set([...Object.keys(pack), ...Object.keys(json)])) {
+    if (!/^[1-9]\d*$/.test(id)) continue;
+    for (const section of ['a', 'c']) {
+      const entry = section === 'a' ? (pack[id] || json[id]) : (pack[id]?.t || json[id]?.t);
+      if (!entry || !(entry.d > 0)) continue;
+      const key = id + section, stem = id + (section === 'c' ? '_t' : '');
+      for (const variant of entry.g ? ['male', 'female'] : ['common']) {
+        const file = stem + (variant === 'common' ? '' : '_' + variant[0]) + '.ogg';
+        const location = path.join(directory, 'Sounds/q', file);
+        const sha256 = verifiedFiles?.get(file)?.sha256
+          || (fs.existsSync(location) ? crypto.createHash('sha256').update(fs.readFileSync(location)).digest('hex') : null);
+        if (!sha256) continue;
+        const text = texts[key]?.common || texts[key]?.[variant];
+        if (valid(text)) {
+          history.files[file] ||= {};
+          const previous = history.files[file][sha256];
+          if (previous?.text !== text) history.files[file][sha256] = {text, sourceVersion:version};
+        } else {
+          // Do not let a historical common text override current gendered text.
+          if (variant === 'common' && (valid(texts[key]?.male) || valid(texts[key]?.female))) continue;
+          const previous = history.files[file]?.[sha256];
+          if (!valid(previous?.text)) continue;
+          texts[key] ||= {};
+          texts[key][variant] = previous.text;
+          retained.push({key, variant, file, sha256, sourceVersion:previous.sourceVersion});
+        }
+      }
+    }
+  }
+  return retained;
+}
 // Resolve each player variant separately: higher-priority common text also wins
 // over lower-priority gendered text. A missing variant can come from another source.
 function merge(sources) {
@@ -42,6 +78,11 @@ function collect(addons, options = {}) {
   // Current WowVoice Index.lua has text hashes, titles and NPCs, no transcripts.
   // Keep its reserved first position explicit in the shared merge algorithm.
   const sources = {wowvoice:{}, catquest:{}, wayfarer:{}}, versions = {};
+  const historyPath = path.join(options.textHistoryRoot || path.resolve(__dirname,'..'), 'docs/internal/catquest-text-history.json');
+  const catquestTextHistory = fs.existsSync(historyPath) ? JSON.parse(fs.readFileSync(historyPath,'utf8'))
+    : {schemaVersion:1, files:{}};
+  if (catquestTextHistory.schemaVersion !== 1 || !catquestTextHistory.files) throw Error('Invalid CatQuest text history');
+  let retainedCatQuestTexts = [];
   const cat = options.catquest || path.join(addons, 'CatQuest_Voices');
   if (fs.existsSync(cat)) {
     versions.catquest = fs.readFileSync(path.join(cat,'CatQuest_Voices.toc'),'utf8')
@@ -69,6 +110,8 @@ function collect(addons, options = {}) {
         }
       }
     }
+    retainedCatQuestTexts = retainCatQuestTexts(cat, pack, json, sources.catquest, versions.catquest,
+      catquestTextHistory, options.catquestFiles);
   }
   const packs = [];
   for (const name of fs.readdirSync(addons).filter(name => /^Wayfarer_Voices_/.test(name)).sort()) {
@@ -94,16 +137,16 @@ function collect(addons, options = {}) {
       }
     }
   }
-  return {sources, versions};
+  return {sources, versions, catquestTextHistory, retainedCatQuestTexts};
 }
 function importTexts(addons, root = path.resolve(__dirname,'..'), options = {}) {
-  const {sources,versions} = collect(addons,options);
+  const {sources,versions,catquestTextHistory,retainedCatQuestTexts} = collect(addons,{...options,textHistoryRoot:root});
   const {entries,provenance} = merge(sources);
   if (!Object.keys(entries).length) throw Error('No quest transcripts found');
   const report = {schemaVersion:1, priority:PRIORITY, versions,
     sources:Object.fromEntries(PRIORITY.map(source => [source,stats(sources[source])])),
     merged:stats(entries), selectedSections:Object.fromEntries(PRIORITY.map(source => [source,
-      Object.values(provenance).filter(record => Object.values(record).includes(source)).length])), provenance};
+      Object.values(provenance).filter(record => Object.values(record).includes(source)).length])), retainedCatQuestTexts, provenance};
   const database = '-- Generated by tools/import-quest-texts.js. Fixed priority: WowVoice > CatQuest > Wayfarer.\n'
     + '-- CatQuest: Cathey (daniilcathey), https://t.me/catheyco. Wayfarer: installed voice packs.\n'
     + `WowVoiceQuestTexts = { schemaVersion = 1, sourceVersion = ${literal(versions.catquest || '')}, entries = {\n`
@@ -111,6 +154,7 @@ function importTexts(addons, root = path.resolve(__dirname,'..'), options = {}) 
       + Object.entries(value).map(([variant,text]) => `${variant} = ${literal(text)}`).join(', ') + ' },').join('\n') + '\n} }\n';
   fs.mkdirSync(path.join(root,'src'),{recursive:true});
   fs.mkdirSync(path.join(root,'docs/internal'),{recursive:true});
+  fs.writeFileSync(path.join(root,'docs/internal/catquest-text-history.json'),JSON.stringify(catquestTextHistory,null,2)+'\n');
   fs.writeFileSync(path.join(root,'src/QuestTexts.lua'),database);
   fs.writeFileSync(path.join(root,'docs/internal/quest-texts-manifest.json'),JSON.stringify(report,null,2)+'\n');
   return report;

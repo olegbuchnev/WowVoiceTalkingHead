@@ -930,7 +930,7 @@ Inputs:
   omits non-NPC starter types, so explicit exclusions remain protected.
   There are 15 differing single-NPC IDs and 23 single-NPC suggestions against
   old explicit exclusions; all stay visible in the merge conflict report.
-- CatQuest 0.6.0 supplies preferred giver/receiver mappings and NPC appearances;
+- CatQuest 0.6.4 supplies preferred giver/receiver mappings and NPC appearances;
   Classic supplies remaining receivers and the last fallback for givers.
 - Wayfarer Alliance/Horde/Shared 3.1.0 supplies `qg`, `npc.n/d` and each quest
   stage's `s` field. Accept speakers and `qg` define givers; progress/completion
@@ -1105,7 +1105,7 @@ copy this field from the original TOC and preserve its filename in `X-Source-TOC
 Classic imports prefer `WowVoiceSounds_Vanilla.toc` over the generic TOC; the
 original Classic 1.15 archive has version 1.0.1 in that client-specific TOC and
 0.1.0 in the generic one. All 10,891 bundled Classic recordings match that archive
-byte-for-byte. Current CatQuest recordings are read directly from external CatQuest_Voices 0.6.0.
+byte-for-byte. Current CatQuest recordings are read directly from external CatQuest_Voices 0.6.1.
 
 Older published packs without source metadata are recognized by their exact
 adaptation versions (WowVoiceSounds 1.0.3-forever.1).
@@ -1139,10 +1139,10 @@ Tests, development tools, IDE settings, backups and internal manifests are exclu
 Maintain the installation and usage instructions in [USER_README.md](../USER_README.md)
 in Russian; the repository README presents the addon to players. This document contains development details.
 
-The Classic library includes 10,891 recordings. External CatQuest Voices 0.6.0
-adds 769 quests relative to Classic (742 descriptions and 576 turn-ins).
-The runtime index includes the complete CatQuest library: 3,077 quests,
-3,017 descriptions, 2,850 turn-ins and 7,774 files. Saved `voicePriority` orders
+The Classic library includes 10,891 recordings. External CatQuest Voices 0.6.1
+provides a separate source, including overlaps with Classic.
+The runtime index includes the complete CatQuest library: 3,091 quests,
+3,030 descriptions, 2,863 turn-ins and 7,807 files. Saved `voicePriority` orders
 WowVoice, CatQuest and Wayfarer. Routing uses the first available recording for
 each section; unavailable libraries do not erase the saved order. Changing the
 order invalidates availability caches without interrupting playback.
@@ -1176,6 +1176,15 @@ available. The prior visibility is restored with `/thead off` or at logout.
 CatQuest 0.6.0 retains autoDetail/autoComplete and the existing quest-window
 and journal click handlers; autoProgress is no longer used by its player.
 The separate Story modules are absent from CatQuest's 0.6.0 TOC.
+CatQuest 0.6.3 was audited on October 12, 2026 with Voices 0.6.0: NPC data
+(including the file hash), quest texts and all 7,774 audio files are unchanged.
+The autoplay flags, public quest button handlers and tracker icon fields used
+by our integration remain compatible. Its speaker fix for tracker playback is
+internal to CatQuest's player; our portraits use the shared speaker database.
+Only the audited source version in the metadata changes; no runtime data or
+voting-site catalogue/model cache update is needed for this release.
+CatQuest 0.6.4 retains the same integration points and NPC snapshot; the separate
+Voices 0.6.1 migration is documented in [the audit report](internal/catquest-0.6.1-integration.md).
 Its QuestTracker.lua uses private icon click handlers. Our separate tracker
 integration suppresses its icons on normal and campaign blocks, including
 newly created and recycled blocks, and restores them when our addon is disabled.
@@ -1221,7 +1230,7 @@ CatQuest. The Classic WowVoice source keeps the bundled index and durations.
 If an official WowVoice release for Forever becomes available, adapting it is
 a separate future task. Neither condition is unfinished work in the current scope.
 
-The importer generates src/CatQuestAudio.lua for the audited external 0.6.0
+The importer generates src/CatQuestAudio.lua for the audited external 0.6.1
 release, including per-file durations and JSON-only recovery. The installed
 CatQuestVoicePack.quests owns availability, sex variants and subtitles; snapshot
 entries are optional measurements, not an allowlist. New and changed records work
@@ -1287,9 +1296,17 @@ falling back to game text. With no game text, the merged database is used for
 every audio source. Display substitutions do not overwrite queue/session data.
 Bundled text alone never makes an unavailable recording playable.
 
-CatQuest 0.6.0 plus Wayfarer 3.1.0 produce 3,806 main descriptions, 19 progress
-texts and 3,730 turn-ins (9,465 stored text variants, 3,981 distinct quest IDs
-across all stages). CatQuest supplies 3,017 descriptions; Wayfarer adds 789.
+CatQuest Voices 0.6.1 plus Wayfarer 3.1.0 produce 3,819 main descriptions, 19 progress
+texts and 3,742 turn-ins (9,497 stored text variants, 3,994 distinct quest IDs
+across all stages). Missing CatQuest cues may be recovered from
+`docs/internal/catquest-text-history.json`, keyed by filename and audio SHA-256.
+Current cues win; history is used only for a still-indexed recording whose bytes
+match exactly. Changed, missing or removed audio cannot inherit historical text.
+Audio imports pass freshly measured hashes; standalone text imports hash available
+files and skip historical recovery when audio is absent. Ordinary text-only
+imports still do not require audio. Preserve this history in Git; the first
+snapshot was seeded from the audited 0.6.0 text provenance and audio manifest.
+The 0.6.1 import retains 2,700 such text variants, listed in the text manifest.
 The voice catalogue still counts audio descriptions independently of text coverage.
 
 ## Release package and website metadata

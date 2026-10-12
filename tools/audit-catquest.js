@@ -81,6 +81,26 @@ function audit(catDirectory, voicesDirectory) {
   compare('Complete CatQuest audio sections', expectedAudio, actualAudio);
   const manifest = JSON.parse(fs.readFileSync(path.join(root, 'docs/internal/forever-audio-manifest.json'), 'utf8'));
   const records = new Map(manifest.files.map(entry => [entry.file, entry]));
+  const textManifest = JSON.parse(fs.readFileSync(path.join(root,'docs/internal/quest-texts-manifest.json'),'utf8'));
+  const retained = textManifest.retainedCatQuestTexts || [];
+  if (retained.length) {
+    const history = JSON.parse(fs.readFileSync(path.join(root,'docs/internal/catquest-text-history.json'),'utf8'));
+    for (const saved of retained) {
+      const section = expectedAudio[saved.key], record = records.get(saved.file);
+      const historical = history.files?.[saved.file]?.[saved.sha256];
+      const expectedFile = section?.gender
+        ? section.files[saved.variant === 'male' ? 0 : saved.variant === 'female' ? 1 : -1]
+        : saved.variant === 'common' && section?.files[0];
+      check(expectedFile === saved.file && record?.sha256 === saved.sha256
+        && typeof historical?.text === 'string', 'Historical text identity: ' + saved.key + '/' + saved.variant);
+      const actual = texts.entries[saved.key];
+      for (const variant of saved.variant === 'common' ? ['male','female'] : [saved.variant]) {
+        check((actual?.common || actual?.[variant]) === historical?.text,
+          'Historical text content: ' + saved.key + '/' + variant);
+      }
+    }
+  }
+  counts['Historical text variants verified by audio SHA-256'] = retained.length;
   for (const file of files) {
     const buffer = fs.readFileSync(path.join(voicesDirectory, 'Sounds/q', file));
     const entry = records.get(file);

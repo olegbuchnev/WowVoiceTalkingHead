@@ -2,7 +2,7 @@
   "source": "CatQuest_Voices",
   "author": "Cathey (daniilcathey)",
   "authorUrl": "https://t.me/catheyco",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "selection": "Complete loaded Lua index plus JSON-only turn-ins without descriptions; includes WowVoice overlaps",
   "jsonOnlyTurnIns": [
     "16",
@@ -59,6 +59,7 @@
     "79093",
     "79094",
     "79095",
+    "79096",
     "79097",
     "94472",
     "94473",
@@ -66,18 +67,18 @@
     "94818",
     "97286"
   ],
-  "quests": 3077,
+  "quests": 3091,
   "sections": {
-    "a": 3017,
-    "c": 2850
+    "a": 3030,
+    "c": 2863
   },
   "texts": {
-    "quests": 3017,
+    "quests": 1885,
     "sections": {
-      "a": 3017,
-      "c": 2790
+      "a": 1884,
+      "c": 1834
     },
-    "variants": 7701
+    "variants": 5033
   },
   "files": [
     {
@@ -1452,31 +1453,31 @@
       "file": "103.ogg",
       "bytes": 174583,
       "duration": 32.88,
-      "sha256": "2796384bf2433e267117a5960b5484b73036f24562fb3c11f1a5a91b46d38929"
+      "sha256": "78aace448e493e9c7c5582aa86c74b262747b6a1814fa8c8a374b13f520b9a68"
     },
     {
       "file": "103_t_m.ogg",
       "bytes": 105711,
       "duration": 19.76,
-      "sha256": "b8bb73337da1e706952fe4827348ce677fff9484e57efbe94cc2d250648ce2d5"
+      "sha256": "e007ef252c08dbd28e2c35775b3c20b0ee4e3333dd04797d167f7cbb56d38c30"
     },
     {
       "file": "103_t_f.ogg",
       "bytes": 107693,
       "duration": 20.08,
-      "sha256": "a98d06668844e39d036603737a9a5beb081ddf006958c001ddd21d70f5f550ac"
+      "sha256": "8156a92c3dec62d7271f0511366ba9dc67d8e688f1007b6fb8bd94c307b22e58"
     },
     {
       "file": "104.ogg",
       "bytes": 187678,
       "duration": 35.2,
-      "sha256": "1d1c088992ae1feea1f2d10c57f53358c0770d59d9ad3cb08276c37cfb6c1f4a"
+      "sha256": "6e68beea64e1bbdecf4e3b71a031c29f03d081264d3c3592a996ab9557a2e6ae"
     },
     {
       "file": "104_t.ogg",
       "bytes": 113422,
       "duration": 21.28,
-      "sha256": "7755da967b4dbb63dd1d2e42f30cddf236fdd93c822bafad9849b34af71b8e8d"
+      "sha256": "962c24bae36bb6861e2e5ef89d53466566b97196ca2f0e8239ca48f1bb2c2a26"
     },
     {
       "file": "106.ogg",
@@ -2142,19 +2143,19 @@
       "file": "152_m.ogg",
       "bytes": 145000,
       "duration": 28,
-      "sha256": "bb970480151d8d7f7d60ae2c0329167118afff881beaf8b38e176e7de304d2e1"
+      "sha256": "16ffcd72618090a2154c25f53d5571a7d4eaaee12f836641287f1a5ef6a67a02"
     },
     {
       "file": "152_f.ogg",
       "bytes": 143438,
       "duration": 27.44,
-      "sha256": "c000ef47ab38330fc54b9619f6d2d415d807a9e7ab6d7dce038a1147d3ad9863"
+      "sha256": "02f09c5f025bd11f96c2aa1f6fe773fb57dc43c55e939b7f31cab6a01cd2fe43"
     },
     {
       "file": "152_t.ogg",
       "bytes": 48755,
       "duration": 8.96,
-      "sha256": "51f1941dda28aaa622554e15856806478b3c14e7088c3a018ae0b04a7a40f91b"
+      "sha256": "def02f366819326303b14a16efefe693a16da1837abe4d5469690cc304bc9093"
     },
     {
       "file": "153.ogg",
@@ -4174,15 +4175,15 @@
     },
     {
       "file": "292_t_m.ogg",
-      "bytes": 100245,
-      "duration": 21.04,
-      "sha256": "15489050b7bd423910a0a1e58f18a5f850d6c7cc5e24eef2ba7eba184768039f"
+      "bytes": 99379,
+      "duration": 20.96,
+      "sha256": "1b586dfb551468d1cbcc8da25a120c450ef82e5326a2142b884e74e2d85fa496"
     },
     {
       "file": "292_t_f.ogg",
-      "bytes": 100584,
-      "duration": 21.04,
-      "sha256": "eed4d1687c2a2f6635f60755ae3797478f3c0289960d9dc957d4f1abd62c7ccf"
+      "bytes": 102589,
+      "duration": 21.52,
+      "sha256": "6b1b8bc669b086c11a869e6eeb870dd0ec5b3bb52b315a8a7ae10e77a47a574c"
     },
     {
       "file": "293.ogg",
@@ -4444,15 +4445,15 @@
     },
     {
       "file": "310_t.ogg",
-      "bytes": 41424,
-      "duration": 7.68,
-      "sha256": "6ba36a01fbb4346c9cec478195be3e0401a7fbcc9fbd4fc2ebd812f7790f15bc"
+      "bytes": 40352,
+      "duration": 7.6,
+      "sha256": "076b337d6145b3e0861770ef13617f5012d2ce5a6f7ebe006f1c15ab36c1006f"
     },
     {
       "file": "311.ogg",
-      "bytes": 51382,
-      "duration": 9.68,
-      "sha256": "aaa4ed8de27ac585e0cf00381013b8009a46f7ff5b7a88c2c9596fc1e3919ea2"
+      "bytes": 51714,
+      "duration": 9.76,
+      "sha256": "422bccb1bde8c18fc1e3b1f14e50679f8f8653f332f75f31b2ff881514429364"
     },
     {
       "file": "311_t.ogg",
@@ -4462,9 +4463,9 @@
     },
     {
       "file": "312.ogg",
-      "bytes": 142238,
-      "duration": 29.76,
-      "sha256": "45fc3c4ac1d05699ee13cee1baededc1d3b2060c44b6f2ea46555fc9d5cb7ceb"
+      "bytes": 141752,
+      "duration": 29.44,
+      "sha256": "a257689b3c19f1a4a35f0d8da50b2c91aa139fa56d4500e29e846d98f8b61d78"
     },
     {
       "file": "312_t.ogg",
@@ -6808,9 +6809,9 @@
     },
     {
       "file": "477.ogg",
-      "bytes": 214159,
-      "duration": 44.16,
-      "sha256": "502e8a667e84a77d775b3a31aef20af2462585449e310c40d292a7a0261e06db"
+      "bytes": 209006,
+      "duration": 44.32,
+      "sha256": "2be951b48a69afc69c23243fb997c1c792104b9dc8c8545730ce03f4b557661d"
     },
     {
       "file": "477_t.ogg",
@@ -7042,9 +7043,9 @@
     },
     {
       "file": "493.ogg",
-      "bytes": 199849,
-      "duration": 41.84,
-      "sha256": "d78a5bb73d1309776183c3c0f170dd81f08f58f9cae5b9e71093f6817b0c6e4e"
+      "bytes": 199233,
+      "duration": 41.52,
+      "sha256": "c15189ddbc0b696b9d3cff67f02085209812e930251453ee7dc1d714da1b11de"
     },
     {
       "file": "493_t.ogg",
@@ -7054,21 +7055,21 @@
     },
     {
       "file": "494_m.ogg",
-      "bytes": 147137,
-      "duration": 33.36,
-      "sha256": "27773e190a286630773fad06005fab012045fc8ad51ece26ab3b1c1a92a5efc0"
+      "bytes": 150448,
+      "duration": 34.8,
+      "sha256": "01844a7f7094ece542cd8d2771a59f9c385ea830a5486f8d908c04b6aa9b529c"
     },
     {
       "file": "494_f.ogg",
-      "bytes": 143402,
-      "duration": 33.28,
-      "sha256": "7dea46f2781f71daecdcdbd84be4b774971eeb9d8837d6197d73781379413c65"
+      "bytes": 147970,
+      "duration": 34,
+      "sha256": "9c29c86928159589077d325a556866ec656ac4b51aa9fb24ec6dc02a088f4d07"
     },
     {
       "file": "494_t.ogg",
-      "bytes": 62879,
-      "duration": 13.68,
-      "sha256": "23ec75f5ad0386c782e5955a1d908e0d29583343b3b3f548891b602253e2ae1e"
+      "bytes": 66040,
+      "duration": 14.4,
+      "sha256": "421f1393ae06ef26777527c60e90951a1366706c0a2fe3c5443474a0dc656eee"
     },
     {
       "file": "495.ogg",
@@ -7138,9 +7139,9 @@
     },
     {
       "file": "501.ogg",
-      "bytes": 186015,
-      "duration": 40.08,
-      "sha256": "7e291842eecbdd503fb10655425031e7db7b1b7cb2e0dd123b967705d7d6ce9c"
+      "bytes": 186215,
+      "duration": 40,
+      "sha256": "f125eae32543742e0a9731a706ab275a4d36ea4a72eca31e4680888ab476a6ef"
     },
     {
       "file": "501_t.ogg",
@@ -7150,9 +7151,9 @@
     },
     {
       "file": "502.ogg",
-      "bytes": 189990,
-      "duration": 40.48,
-      "sha256": "d59ba097e3e595fe88162dd7f1644415e97c8b06c22f64fa00a7b58bf4fdba46"
+      "bytes": 189486,
+      "duration": 39.52,
+      "sha256": "8729ea535195310e7dcc1dba7356c120e65799d0d748c7abfb548c3234094aea"
     },
     {
       "file": "502_t.ogg",
@@ -7318,15 +7319,15 @@
     },
     {
       "file": "513_t_m.ogg",
-      "bytes": 134812,
-      "duration": 27.84,
-      "sha256": "30e5b555c7c7458bdf3d50a9fdb500e0bb113c84cc780063afa1efc261cbecda"
+      "bytes": 132333,
+      "duration": 27.36,
+      "sha256": "b0482e00a74a854a45f363e7d366454609d6e752e34cc16cef0a54fb81dd4f12"
     },
     {
       "file": "513_t_f.ogg",
-      "bytes": 130154,
-      "duration": 27.52,
-      "sha256": "1b83d48eb918ba7ac12b0c43666db2bb867505b23fe4260516dca2104ba081ee"
+      "bytes": 130897,
+      "duration": 27.28,
+      "sha256": "079f1c07166c70c64787031471cc72ccf8f449e97d226907ddfcc31099c118de"
     },
     {
       "file": "514.ogg",
@@ -7342,9 +7343,9 @@
     },
     {
       "file": "515.ogg",
-      "bytes": 177028,
-      "duration": 37.44,
-      "sha256": "0ba2f9558dbeed6cd596992bc9e7e1154304a1e20f06b53973db2ca9cf827930"
+      "bytes": 174909,
+      "duration": 37.04,
+      "sha256": "9f3e37779d6ee8c04d46f3909616025d01dc91a3d222ebcfbecd23e6b481f596"
     },
     {
       "file": "515_t.ogg",
@@ -7510,51 +7511,51 @@
     },
     {
       "file": "527_m.ogg",
-      "bytes": 154044,
-      "duration": 35.36,
-      "sha256": "4781dd853c4ecdc0ec8db04a19b2574e917f8baee0b1bd97ecea7fa8033fcdf9"
+      "bytes": 158380,
+      "duration": 36.16,
+      "sha256": "0ba64c2e64f76ae906f9d966f3ac2ef76dc083dd2481bdbbbf576ce578524bca"
     },
     {
       "file": "527_f.ogg",
-      "bytes": 154169,
-      "duration": 35.12,
-      "sha256": "533aee994af832eaeaecee0cc6f29cae9babedd15aeb251fffefd0179ca7b144"
+      "bytes": 150534,
+      "duration": 34,
+      "sha256": "f1910d3280891f3dd0d148f3c9f28e924726c9f45817ccd051f85e69da180312"
     },
     {
       "file": "527_t_m.ogg",
-      "bytes": 38631,
-      "duration": 8.24,
-      "sha256": "5a5ce0c351c950539735d2c50c5a3a26eac8fcb6ef7f5a0221049d0362c874fe"
+      "bytes": 39478,
+      "duration": 8.48,
+      "sha256": "ff074c9cc8846339abfeec4c5e9d478c01f00870975f32b033ff3d3a0383625b"
     },
     {
       "file": "527_t_f.ogg",
-      "bytes": 40404,
-      "duration": 8.72,
-      "sha256": "561e4a0e51468436eb679fe1f0efe4190cbcead37f8e5ec3b1304e5af7fe4be0"
+      "bytes": 40729,
+      "duration": 8.8,
+      "sha256": "c24bd9e4d2c532f393788a19b2d94c9e91e4bba4b6f499305d41e58c587cf1d1"
     },
     {
       "file": "528_m.ogg",
-      "bytes": 150511,
-      "duration": 33.92,
-      "sha256": "ca4a10d44cac0f0c939d72ad60962936518f5504c144a413cc282720c4559d3d"
+      "bytes": 148063,
+      "duration": 33.36,
+      "sha256": "faec4e426f23331bb845d5752d821c36d2bf60b1cb6a535c81a0720d11ce4718"
     },
     {
       "file": "528_f.ogg",
-      "bytes": 148565,
-      "duration": 32.88,
-      "sha256": "98ca09a5d85c4793a1b2e178b9ab5e752f531f49d05c81718ddec9a1f609ee61"
+      "bytes": 148384,
+      "duration": 33.6,
+      "sha256": "4d952ee9f357440e5b5b5af0e929e1ea4dea79fc04d895a1455ccfae6835b299"
     },
     {
       "file": "528_t.ogg",
-      "bytes": 40031,
-      "duration": 8.4,
-      "sha256": "4b54415ac6cd165e3da21edb5de3aeb45bbc382013f3532e8103ad35f4a1babc"
+      "bytes": 35906,
+      "duration": 7.44,
+      "sha256": "35903bb2297794f56b283068ea96660dec7ded63926a8c816f3f4cf389f495a6"
     },
     {
       "file": "529.ogg",
-      "bytes": 114115,
-      "duration": 24.32,
-      "sha256": "0ab625694319f28278c8ecc13595aab2dacf045754db88a3586ec427a613879d"
+      "bytes": 108091,
+      "duration": 23.68,
+      "sha256": "3583b58bf7f63d48781909b7f6fd5f251d9bb586c1952b55375d4e61a7517b07"
     },
     {
       "file": "529_t_m.ogg",
@@ -7606,21 +7607,21 @@
     },
     {
       "file": "532.ogg",
-      "bytes": 176240,
+      "bytes": 176570,
       "duration": 39.84,
-      "sha256": "00a3652e5c9dfa6b8044585dca88308dc2d9ba554902b63b5707bd8cf23ebea0"
+      "sha256": "6d9802eb9b8773c35b084b5d6d0362e845efdf52ee6841cabc63df82492ad727"
     },
     {
       "file": "532_t_m.ogg",
-      "bytes": 34587,
-      "duration": 6.88,
-      "sha256": "0c512039dd1436b55af156f507f180d515f4e01f877e21b05fe1aa5e445c155b"
+      "bytes": 33847,
+      "duration": 6.96,
+      "sha256": "b1e5a94905091544c6ac3221e47f38f8c5c644803a178950cbbe63ef36ab1c41"
     },
     {
       "file": "532_t_f.ogg",
-      "bytes": 35383,
-      "duration": 6.96,
-      "sha256": "c3b441a165c0a05e0e618aa233d7f37385a93cbc010e401cee63d8b6e76ca057"
+      "bytes": 35610,
+      "duration": 7.12,
+      "sha256": "6e13e04d134d18438a5d7be9717145bf596b1f1910e0a5638e3b388468741bd7"
     },
     {
       "file": "533.ogg",
@@ -7696,9 +7697,9 @@
     },
     {
       "file": "539.ogg",
-      "bytes": 157955,
-      "duration": 35.2,
-      "sha256": "81cedc75ee9d030b783f36760cb5f4d9d7bda0611158987e335f83a92aab547a"
+      "bytes": 157975,
+      "duration": 35.44,
+      "sha256": "8981fe58c8c876ff93b8c9c32c2b13e1189d2e4d3fc9b852bdc07fb3db9a3a73"
     },
     {
       "file": "539_t.ogg",
@@ -7720,15 +7721,15 @@
     },
     {
       "file": "541_m.ogg",
-      "bytes": 195064,
-      "duration": 43.92,
-      "sha256": "893a19499cd477f1cef15edcbf98b7e66911244beaac3489906d52515fddb583"
+      "bytes": 188505,
+      "duration": 43.6,
+      "sha256": "490214a3ac9b31ee04d65cf62545a07ea84b413321045c3b198bba36503800d0"
     },
     {
       "file": "541_f.ogg",
-      "bytes": 189187,
-      "duration": 44.08,
-      "sha256": "775f1a8d69ddb4b777d031f4061c5e3f277efc9c6aae78ef98e59b16ee201c53"
+      "bytes": 190993,
+      "duration": 43.44,
+      "sha256": "8fee309cb4e8d6a8f4cff75857a71c41adf6b28ba939efdc1c7dca16a54d41d7"
     },
     {
       "file": "541_t.ogg",
@@ -7792,9 +7793,9 @@
     },
     {
       "file": "546.ogg",
-      "bytes": 198780,
-      "duration": 42.72,
-      "sha256": "1f42c74eaf4d79fa70fdbeb45e65cc19dc3d95886d1102c31675505cab56266a"
+      "bytes": 196634,
+      "duration": 41.12,
+      "sha256": "347f6b2a6c6aa410fb55afe6880c96d2163d3b62cf52e8c440a060500088ba52"
     },
     {
       "file": "546_t.ogg",
@@ -8074,9 +8075,9 @@
     },
     {
       "file": "567.ogg",
-      "bytes": 211332,
-      "duration": 44.16,
-      "sha256": "1f17fbd3ce9df0d2d61399c828b5feff753f426b349f1d6316d5cb2b54fff03b"
+      "bytes": 210293,
+      "duration": 42.96,
+      "sha256": "f3529f21b3808288f9ed9ac2b2c7e1587a8d6dc84e369e3a3e80b4c73fb4972a"
     },
     {
       "file": "567_t_m.ogg",
@@ -12843,6 +12844,12 @@
       "sha256": "03ef2fa52a5fa6a0b0dd76bebd988323bf854bed6f7eb98c4f7696f7d6213fc3"
     },
     {
+      "file": "908.ogg",
+      "bytes": 203946,
+      "duration": 41.68,
+      "sha256": "454ee86742cbe11b54b2016a12b4a42917b5a57f0f833209a4d2ca13aa6b4d1f"
+    },
+    {
       "file": "913_m.ogg",
       "bytes": 91759,
       "duration": 18.56,
@@ -12964,9 +12971,9 @@
     },
     {
       "file": "921.ogg",
-      "bytes": 196879,
-      "duration": 38.72,
-      "sha256": "7dbb7acd87245a259181f0595babdf5d6edee1362c79fe4f3ffefec5a3c933bf"
+      "bytes": 195745,
+      "duration": 38.08,
+      "sha256": "4cc0217398467111d09d2f043330fe325894327348b3429f5605db7776229532"
     },
     {
       "file": "921_t.ogg",
@@ -13066,9 +13073,9 @@
     },
     {
       "file": "929_t.ogg",
-      "bytes": 112705,
-      "duration": 22.96,
-      "sha256": "9841c36ccc06cc75e44c6afa85bdc59be9004a1bbb30df115fe95499467ad892"
+      "bytes": 113206,
+      "duration": 22.72,
+      "sha256": "2a6d463d9e85958d4e3f819c82ed9430de3fd85acedd0ba8b246eadface56611"
     },
     {
       "file": "930.ogg",
@@ -13126,9 +13133,9 @@
     },
     {
       "file": "933_t.ogg",
-      "bytes": 156293,
-      "duration": 31.2,
-      "sha256": "675469f2ee24e0b6cda82eb833668d14431f5b57e3917366394f3adaced9b83b"
+      "bytes": 162229,
+      "duration": 32.32,
+      "sha256": "ec005ddba45c2fd549ea81e827f6908fa76a016565a665aae9d436681824c513"
     },
     {
       "file": "934.ogg",
@@ -13138,9 +13145,9 @@
     },
     {
       "file": "934_t.ogg",
-      "bytes": 180039,
-      "duration": 35.44,
-      "sha256": "e899ce551f85561b37b5217caef051d241e73527b75356d5a03f809df3b450b7"
+      "bytes": 180234,
+      "duration": 35.6,
+      "sha256": "ebac6d8bd5fbaabfcad7565dc0e11b4abf838eb56027dd98b5365e466e930710"
     },
     {
       "file": "935_m.ogg",
@@ -14710,9 +14717,9 @@
     },
     {
       "file": "1065.ogg",
-      "bytes": 210735,
-      "duration": 46.88,
-      "sha256": "d9c75be8d6af6297fddaab128fbe5d7f85a741a564bd3f97221c216b61fbf4a7"
+      "bytes": 212362,
+      "duration": 48.4,
+      "sha256": "99c8b56fa1f0100c85ca67556fb22b7f72eee3d4c72068a6dcbe67dcd44d7a02"
     },
     {
       "file": "1065_t.ogg",
@@ -19348,9 +19355,9 @@
     },
     {
       "file": "1536.ogg",
-      "bytes": 165477,
-      "duration": 35.6,
-      "sha256": "1babcb2f5c736ece1b2c2c15e104700d71ec93a3188686fbbf92162763b8c77f"
+      "bytes": 164936,
+      "duration": 35.12,
+      "sha256": "4ac94f4bcfcc8f7d37a99d3a8494314c5b844bb24c907d375b1c179bd078e808"
     },
     {
       "file": "1536_t.ogg",
@@ -25612,9 +25619,9 @@
     },
     {
       "file": "3101.ogg",
-      "bytes": 95574,
+      "bytes": 94744,
       "duration": 17.36,
-      "sha256": "76f32f8f8b780b7e027c1d570a5dab72ba9e03c9b231d249604c814d68a40def"
+      "sha256": "95c61d1d06df896e799f3daf0b76b30b3b6041749b262f01910a275f1ff27196"
     },
     {
       "file": "3101_t_m.ogg",
@@ -28246,9 +28253,9 @@
     },
     {
       "file": "4732_t.ogg",
-      "bytes": 132934,
-      "duration": 29.12,
-      "sha256": "8a2767518edf9063d768ee57aa682167390fee4a8580198c92c4d5328ed045e9"
+      "bytes": 134013,
+      "duration": 28.88,
+      "sha256": "b53260bce745c3a764b9d47d238f33d3497e021efb90fee4dae933ef1ec96232"
     },
     {
       "file": "4733.ogg",
@@ -31996,9 +32003,9 @@
     },
     {
       "file": "6383_t.ogg",
-      "bytes": 168613,
-      "duration": 36.8,
-      "sha256": "dd49b81abfaa45b6ecd75135752593d7aa5eb6a3cc24d645de000e420512f0c4"
+      "bytes": 166642,
+      "duration": 36.08,
+      "sha256": "143080974905e213fcaa55de87a51ef3b3870f0660ad5c4754a49cac72f67ae6"
     },
     {
       "file": "6384.ogg",
@@ -32158,21 +32165,21 @@
     },
     {
       "file": "6395.ogg",
-      "bytes": 191099,
-      "duration": 44.4,
-      "sha256": "a0073ecd647e97c55d49c381c749041dac603302dee26348583fec780da6e936"
+      "bytes": 196092,
+      "duration": 45.36,
+      "sha256": "f0c1fd3f77a0bc2915752120ba2815f32bf18e31e160d526fbdc858f800f059e"
     },
     {
       "file": "6395_t_m.ogg",
-      "bytes": 82226,
-      "duration": 18.4,
-      "sha256": "b34cb40bf77913ee0b7c195b5ec56dd1b5c98d51c744202d91a862a2e522568d"
+      "bytes": 83618,
+      "duration": 18.72,
+      "sha256": "d427023c4a326d94dec3937bfc5afabbb7fb69613b79b081e218381e19be399d"
     },
     {
       "file": "6395_t_f.ogg",
-      "bytes": 83469,
-      "duration": 18.8,
-      "sha256": "bd07bc01993ee495fe7b1ff1b4b51b2cf85c9762abdccb0ffb546696220acfab"
+      "bytes": 83820,
+      "duration": 18.48,
+      "sha256": "eefa96fc2cc6cbb65fda9b449960b1d12adb78047c073dc3e5407c226bcbe805"
     },
     {
       "file": "6401.ogg",
@@ -32932,15 +32939,15 @@
     },
     {
       "file": "6681_m.ogg",
-      "bytes": 153605,
-      "duration": 32.24,
-      "sha256": "e40df94fca8ff8315125acf8d94785e18554d5931678daeb2c03681d65983cdd"
+      "bytes": 159481,
+      "duration": 32.08,
+      "sha256": "ae9ff1f7120dd92e9630e197ae36fde2fa34669754029867517805d2e952c3bb"
     },
     {
       "file": "6681_f.ogg",
-      "bytes": 159054,
-      "duration": 33.04,
-      "sha256": "15ddf930e8d92220de9d3fb382571c301a1f27baf09578e19be4bcc09ebe686b"
+      "bytes": 156825,
+      "duration": 32.16,
+      "sha256": "ea10019cd9668d2df071dc92c738f5486f7a6115dfa2e98aba0a19493535c52e"
     },
     {
       "file": "6681_t_m.ogg",
@@ -33334,9 +33341,9 @@
     },
     {
       "file": "7383_t.ogg",
-      "bytes": 181746,
-      "duration": 35.04,
-      "sha256": "3590d397a4061183fb7f1a05f159fc416039b4386d336df54a8ac9f71a277831"
+      "bytes": 181714,
+      "duration": 35.6,
+      "sha256": "4de6cdd090a62e4ef726bfffa759b1a2b190108b93ab684ab1bc9932597084ba"
     },
     {
       "file": "7601_m.ogg",
@@ -35997,6 +36004,90 @@
       "sha256": "09f888f6261bcc64823f2aaeb07d7aa24a74499d96799602bbbe261e80a32f0f"
     },
     {
+      "file": "78088.ogg",
+      "bytes": 143638,
+      "duration": 29.52,
+      "sha256": "e4a93ceb49c2d5f81f89fb59209839dcf7c37bd2b5ea25ef4c144c2472e77d53"
+    },
+    {
+      "file": "78088_t_m.ogg",
+      "bytes": 17872,
+      "duration": 2.72,
+      "sha256": "28d6b5c0c6f81aada9b137e7d143269b10742ca9216c4ff7b522c032b436dcc3"
+    },
+    {
+      "file": "78088_t_f.ogg",
+      "bytes": 17990,
+      "duration": 2.96,
+      "sha256": "6aa147812010fa36e9f6effccdeaba8b02a01bcf1cdf2d2f6cb5a7cebc13f1be"
+    },
+    {
+      "file": "78089.ogg",
+      "bytes": 110894,
+      "duration": 20.96,
+      "sha256": "ae2ca553b5570a893e1ef62940124cb33ffd74d3f485d155675319f25381f7a0"
+    },
+    {
+      "file": "78089_t.ogg",
+      "bytes": 21331,
+      "duration": 3.68,
+      "sha256": "02a40775801479307b182f7e73d1fc65b0c658c4915ab4e8b8a66b29cb3e3165"
+    },
+    {
+      "file": "78090.ogg",
+      "bytes": 102691,
+      "duration": 22.16,
+      "sha256": "589537716b822568085529bfe15fe24d120b1eb4cf602ac90a3d8f9b6ed5305d"
+    },
+    {
+      "file": "78090_t.ogg",
+      "bytes": 26137,
+      "duration": 4.96,
+      "sha256": "b75108d15fee53b3dfe9854fae1b12b4bceca521440adb3d2a1430478464d8bd"
+    },
+    {
+      "file": "78091.ogg",
+      "bytes": 87492,
+      "duration": 18.64,
+      "sha256": "5368300dc25de7068d5173aba9024c7032ffd16d3d8c54986a9ec85d01288f6f"
+    },
+    {
+      "file": "78091_t.ogg",
+      "bytes": 38260,
+      "duration": 8,
+      "sha256": "17caa7028a6647b4cf182a5d921738dd1bad89440a1dd8d36691d6193bd80dc3"
+    },
+    {
+      "file": "78092.ogg",
+      "bytes": 174265,
+      "duration": 37.2,
+      "sha256": "4dfe33c31fcfaff89dc987fc798c90dec26d13ef95736ef10b790b01c35ec86e"
+    },
+    {
+      "file": "78092_t.ogg",
+      "bytes": 16738,
+      "duration": 2.88,
+      "sha256": "f75aeaf5608fc293314da12fd6ed5ccac7ff81205b3b6b9bdc774ecebeef26cf"
+    },
+    {
+      "file": "78093.ogg",
+      "bytes": 40072,
+      "duration": 7.68,
+      "sha256": "42ecff1fc402b16f7bdc44e0eae14d4e6563e02ce4c0338fd2ba8e54a9f49128"
+    },
+    {
+      "file": "78093_t_m.ogg",
+      "bytes": 71538,
+      "duration": 14,
+      "sha256": "4bd36d421d0ccaa132febde82ba33eee04afe66bb7d52b306c2d362203e88d8e"
+    },
+    {
+      "file": "78093_t_f.ogg",
+      "bytes": 71464,
+      "duration": 13.6,
+      "sha256": "8f0b35bd98f3fac011e06d2150bd9dce028898df66b21a93837fd80192fd66f9"
+    },
+    {
       "file": "78124_t.ogg",
       "bytes": 58790,
       "duration": 10.48,
@@ -36087,6 +36178,36 @@
       "sha256": "f5fb5af061516059144c32db704c3ecdcfdda047e81e43cba9763bd61331994f"
     },
     {
+      "file": "78916.ogg",
+      "bytes": 65025,
+      "duration": 12.88,
+      "sha256": "6d523be8a1e16bedddfc577013403aa467352a8584fdb5c92b8f693fef61ba9e"
+    },
+    {
+      "file": "78916_t.ogg",
+      "bytes": 92878,
+      "duration": 18,
+      "sha256": "2dcee2726f7eef275f362198a985906de6ee9ed91ae25cd8afaf54cf4254f1c2"
+    },
+    {
+      "file": "78917.ogg",
+      "bytes": 65114,
+      "duration": 12.8,
+      "sha256": "74b003465c5d31a6eeecac7bb2c96ddd849d7f666fc143509a4f414a25e603b5"
+    },
+    {
+      "file": "78917_t_m.ogg",
+      "bytes": 109719,
+      "duration": 24.08,
+      "sha256": "2211e36aded8c0cd8b04b8219d5dabe02807ca4f2d4ec29baf52b3542cee1ccd"
+    },
+    {
+      "file": "78917_t_f.ogg",
+      "bytes": 108757,
+      "duration": 23.84,
+      "sha256": "5ce92a2e3520d29ad55c531d81217c0033a4c7a783b5e0a1054d53e6cce151c1"
+    },
+    {
       "file": "79007.ogg",
       "bytes": 98343,
       "duration": 19.36,
@@ -36153,6 +36274,12 @@
       "sha256": "24a6e009067aa765e420ddf7f709b544525424d36c365fafe12172822931b9bc"
     },
     {
+      "file": "79096_t.ogg",
+      "bytes": 60575,
+      "duration": 12.16,
+      "sha256": "300cad26852bd053391b03c67cf37a1af9f56b1eeff6c36b8a53d66f5dc6db4f"
+    },
+    {
       "file": "79097_t.ogg",
       "bytes": 60505,
       "duration": 12.32,
@@ -36178,9 +36305,9 @@
     },
     {
       "file": "79362_t.ogg",
-      "bytes": 107664,
-      "duration": 20.72,
-      "sha256": "0c869930d15f34ffbca3aad83c4e7b7fb427b645a16406d9f3b2ec186e66c726"
+      "bytes": 106184,
+      "duration": 20.4,
+      "sha256": "9c797a45e6244d496dff26c69d10888b01964697814bce8ad44b06a35659d2c0"
     },
     {
       "file": "79363.ogg",
@@ -39016,15 +39143,15 @@
     },
     {
       "file": "94003_t_m.ogg",
-      "bytes": 128134,
-      "duration": 30,
-      "sha256": "28e129c98dacdb86655fe9e41ab635259e8b254a6d3d7303bda6b70e20b6a70b"
+      "bytes": 132922,
+      "duration": 30.48,
+      "sha256": "c601b8c3c1b2f74cd3fe5746d7fc3bfa323176c516a16b838218b7c949ab0e0d"
     },
     {
       "file": "94003_t_f.ogg",
-      "bytes": 130843,
-      "duration": 30.8,
-      "sha256": "32ab0f6331a5cdeacb63262fb3216c6eac457625d83b200f7d653df3272458f6"
+      "bytes": 129166,
+      "duration": 29.92,
+      "sha256": "135740d6a2f838d27ff9d39c9ec2d1f8180652559b3aba5d1113d28130596b67"
     },
     {
       "file": "94004.ogg",
@@ -40708,9 +40835,9 @@
     },
     {
       "file": "94616_t.ogg",
-      "bytes": 40360,
-      "duration": 8.08,
-      "sha256": "97e246733a14c706def73fa9148ef40ae6cb3210310f8ceaa07986994e15a5d0"
+      "bytes": 40454,
+      "duration": 7.92,
+      "sha256": "8f71de713b83e67911ea4b2f90a30fbc5c814e52a9d5e0d3ea1e19be752f52e1"
     },
     {
       "file": "94638_m.ogg",
@@ -40825,6 +40952,30 @@
       "bytes": 90808,
       "duration": 19.84,
       "sha256": "bba213a79bfdf6cd8373386f3ebc5863b11104039e5833bdccbbe0951c45a4c2"
+    },
+    {
+      "file": "94789_m.ogg",
+      "bytes": 147478,
+      "duration": 30.32,
+      "sha256": "d0bb2b044f6c93422b0027b1a9445a43ba7587acf15272f71f1cf278c4323e83"
+    },
+    {
+      "file": "94789_f.ogg",
+      "bytes": 152776,
+      "duration": 31.12,
+      "sha256": "a756cb6d60b61fa1e38b5fb9abf354d77254f6cba8b4a48c695f73b7e557246e"
+    },
+    {
+      "file": "94789_t_m.ogg",
+      "bytes": 60721,
+      "duration": 11.76,
+      "sha256": "b5d5f65c207d830730ab09c7f70106700336b6630ec71b38c7f49b7bbc2a2588"
+    },
+    {
+      "file": "94789_t_f.ogg",
+      "bytes": 61767,
+      "duration": 12.32,
+      "sha256": "0b6ceac692c4efb6ac20c32e014234b703bb1e2ca450ff812684e48b4178d2a7"
     },
     {
       "file": "94792.ogg",
@@ -41248,15 +41399,15 @@
     },
     {
       "file": "95042_m.ogg",
-      "bytes": 172133,
-      "duration": 36.08,
-      "sha256": "fde2544b49daf7ac24295d9bb970dbcdc75be2fd6865fa72fa0c791804175255"
+      "bytes": 182738,
+      "duration": 39.36,
+      "sha256": "cd6d4a2b2fa9cc6ed1fe40ab4ceed30e58e7bbdfd25ee077a316a73ce0dabd92"
     },
     {
       "file": "95042_f.ogg",
-      "bytes": 180134,
-      "duration": 38.64,
-      "sha256": "34ecd061f5adfed74acd5aaefc457fadfa0fbe3ef176c402ee7055c71d489875"
+      "bytes": 186216,
+      "duration": 40.16,
+      "sha256": "7a1bbdeef63dcf1ea06e76787ee09c6f5fb2e9cd9a62db4b7e1ac9d59e9d7f29"
     },
     {
       "file": "95042_t_m.ogg",
@@ -41890,15 +42041,15 @@
     },
     {
       "file": "96044_t_m.ogg",
-      "bytes": 135714,
-      "duration": 28.16,
-      "sha256": "07518700d4c62ce4d9e85abd976f0a9413db32bc7bb26e3877e9e5fe7e0d3a94"
+      "bytes": 134927,
+      "duration": 27.6,
+      "sha256": "dbab50e4830d20eed290945af5cf8d7f94a6f3a28013d862693c1b0051435fef"
     },
     {
       "file": "96044_t_f.ogg",
-      "bytes": 133934,
-      "duration": 27.28,
-      "sha256": "7f1482cdffbebeba3a1dfb8388472e69ddce9e7a321bc0655fc2769eaebada97"
+      "bytes": 135272,
+      "duration": 27.84,
+      "sha256": "d9b1fe321248c06ca1530c01f029cb1e678e422f20c32c292e35073e03d7008d"
     },
     {
       "file": "96045_m.ogg",
@@ -43570,15 +43721,15 @@
     },
     {
       "file": "97900_t_m.ogg",
-      "bytes": 144868,
-      "duration": 29.52,
-      "sha256": "207142289455dd3291ffc3e6adfd493c517cc4c1481863de18048ef3116ae69a"
+      "bytes": 147416,
+      "duration": 30.4,
+      "sha256": "e6994a30314b5aeb4326129af9d50ddaa12017d4d7ae1fb660e88870fad043d7"
     },
     {
       "file": "97900_t_f.ogg",
-      "bytes": 147508,
-      "duration": 30.08,
-      "sha256": "20c83a39c17f823d856eaad15ddf4dcb0c7ac916cd035e544e58a0b08d21c8a9"
+      "bytes": 141960,
+      "duration": 29.12,
+      "sha256": "e22b11b9c67ac016930ba66b9112b27820b4f2d04c580c78ae7adeef9bb72846"
     },
     {
       "file": "97901.ogg",
@@ -44188,15 +44339,15 @@
     },
     {
       "file": "97936_t_m.ogg",
-      "bytes": 171681,
-      "duration": 34.48,
-      "sha256": "df945f3979b232f56e6e253901933d97d4587c9424a849fa5823b356609ee87c"
+      "bytes": 167713,
+      "duration": 34.16,
+      "sha256": "5a5b63bc7231b09516f85254d9dfe926b7cfb21f887c3cf714fcc34e47da5b70"
     },
     {
       "file": "97936_t_f.ogg",
-      "bytes": 172081,
+      "bytes": 170654,
       "duration": 34.64,
-      "sha256": "654a70fac2283db31c3b94496281c13b4406ea1d22557999811ea5d4afc0a87c"
+      "sha256": "37093d2cf3cd85ef0d62e007214d735fb7da17ba4539dfd2eba44bfed0b41d4a"
     },
     {
       "file": "97937_m.ogg",
@@ -45052,9 +45203,27 @@
     },
     {
       "file": "98046_t.ogg",
-      "bytes": 64037,
-      "duration": 13.92,
-      "sha256": "bb652a4b4303ae4cba3ab23b7ddaeffe50671115cbed35236e997463f6d7bd8c"
+      "bytes": 65159,
+      "duration": 14.16,
+      "sha256": "b1c619306db44026b08c5de4f5a3a186aef9a8c791ceabb42f4d8101fa899227"
+    },
+    {
+      "file": "98059_m.ogg",
+      "bytes": 152028,
+      "duration": 28.64,
+      "sha256": "5cf39d28879224a510b0dfe478778ff66ecb8066a5257eb58f527ea4fe4dec37"
+    },
+    {
+      "file": "98059_f.ogg",
+      "bytes": 156632,
+      "duration": 29.52,
+      "sha256": "bbf866e92183b14a3f1e1f6bebfe5df304a152271da2c80d82858492574309f9"
+    },
+    {
+      "file": "98059_t.ogg",
+      "bytes": 93936,
+      "duration": 17.68,
+      "sha256": "26d65ceeec0ade92fe42e0a1a96f82add0b003ddd6a4558a46ca7ace319dbf27"
     },
     {
       "file": "98065.ogg",
@@ -45064,15 +45233,15 @@
     },
     {
       "file": "98065_t_m.ogg",
-      "bytes": 194925,
-      "duration": 44.08,
-      "sha256": "9e730d80e617397ac29bc4098cbeb5ef908edba5b3f723f567670ba7fb83cc04"
+      "bytes": 196572,
+      "duration": 43.92,
+      "sha256": "56a546414269129e1e56073afacb291794a2b5235af6bc41006cfc0fe660ff11"
     },
     {
       "file": "98065_t_f.ogg",
-      "bytes": 194954,
-      "duration": 43.04,
-      "sha256": "4082bb60c486a8f4c82964f869217da8ca504bcbee82f2c6146204c1841403bf"
+      "bytes": 193412,
+      "duration": 43.28,
+      "sha256": "7a6847eead251080b30fb04f08e831d067bd20b363174dd8e431a043d97c5452"
     },
     {
       "file": "98067.ogg",
@@ -45142,9 +45311,9 @@
     },
     {
       "file": "98095.ogg",
-      "bytes": 169199,
-      "duration": 35.6,
-      "sha256": "92b3f3bf350fa3b7e5e9d638c3988ee9ea3ba02919fda2ef6f26224115fbc937"
+      "bytes": 168503,
+      "duration": 35.12,
+      "sha256": "f4cbd3de193edb9d27ca5d1dea7b45f6c332bad6130683e9bab48cf5a36ffd86"
     },
     {
       "file": "98095_t.ogg",
@@ -45214,9 +45383,9 @@
     },
     {
       "file": "98197.ogg",
-      "bytes": 159933,
-      "duration": 32.56,
-      "sha256": "8ed1599ef75399ee2ba1fe815e0f7be1b1e80474f027407e11115565d6021304"
+      "bytes": 153183,
+      "duration": 31.52,
+      "sha256": "26088251950c95297165168abd3e3a9eb65bd5125ef945b7aa17fc588b13d0a8"
     },
     {
       "file": "98197_t_m.ogg",
@@ -45232,9 +45401,9 @@
     },
     {
       "file": "98208.ogg",
-      "bytes": 161338,
-      "duration": 35.2,
-      "sha256": "c09da016cf73e39c5b4cb41f02fccb71baf49b3d9bc13f14deeb3c47c24a82d4"
+      "bytes": 161722,
+      "duration": 35.28,
+      "sha256": "ee741b97d1232bfb5defda1204175bbbcc4c2ddd2ff69fb43223fb33f7e0a1e9"
     },
     {
       "file": "98208_t.ogg",
@@ -45244,9 +45413,9 @@
     },
     {
       "file": "98219.ogg",
-      "bytes": 149155,
-      "duration": 28.64,
-      "sha256": "d58a377372f8946026882246ea81c076c171f3e0be057c2503d1a57bd8187e90"
+      "bytes": 154353,
+      "duration": 29.68,
+      "sha256": "39db74044af4b4166cf00b72913c17d36554e0e7a237296eeecabca39d56669e"
     },
     {
       "file": "98219_t.ogg",
@@ -45346,9 +45515,9 @@
     },
     {
       "file": "98252_t.ogg",
-      "bytes": 123898,
-      "duration": 25.92,
-      "sha256": "15a92497eb27e39a1f6fa713adcc033e3e6aa0cd4fddc8bdaa6a5e6850c07b5f"
+      "bytes": 119348,
+      "duration": 24.96,
+      "sha256": "2035976162cc6ac270e95f3a17b357dc65044f52bc805b35d919b0230f007468"
     },
     {
       "file": "98282.ogg",
@@ -45424,9 +45593,9 @@
     },
     {
       "file": "98293.ogg",
-      "bytes": 76216,
-      "duration": 14.96,
-      "sha256": "0c60803c5e3962832fd37128e8b1b3c0c1ea07f77b7666e127702810917c6455"
+      "bytes": 74918,
+      "duration": 14.48,
+      "sha256": "6423ac06ab1d82df6bbc453904adccf2acc37ee74adf443773819688afca6c91"
     },
     {
       "file": "98298.ogg",
@@ -45652,9 +45821,9 @@
     },
     {
       "file": "98387_t.ogg",
-      "bytes": 48777,
-      "duration": 8.96,
-      "sha256": "124460ecc889bc765167420ee4e012aeeb10d0305ce3f7be5921709262e1779f"
+      "bytes": 49556,
+      "duration": 9.2,
+      "sha256": "8c6cf56285a34fc62be4f83a04727f54e459a7cf63dd67abe89668c94587e286"
     },
     {
       "file": "98389_m.ogg",
@@ -45885,6 +46054,36 @@
       "sha256": "60a38b2dd79dc9c0ebd7202d5173fe258c351d08a069b1de2ac679b5f49f3c6b"
     },
     {
+      "file": "98417.ogg",
+      "bytes": 143332,
+      "duration": 30.8,
+      "sha256": "e5877c3f8154a6d4b6db8ef7b577a48fe039d93c9db76773efe1b30a35c5fd87"
+    },
+    {
+      "file": "98417_t.ogg",
+      "bytes": 55854,
+      "duration": 11.6,
+      "sha256": "46c138da62548fb6258959689428828d3a8c550e8603181bf4084a2206f9bf88"
+    },
+    {
+      "file": "98418.ogg",
+      "bytes": 161242,
+      "duration": 34.32,
+      "sha256": "294a02452f3b71c60cd65deaf316c18ad83cbda654589f7cc551b3c08dbf3f05"
+    },
+    {
+      "file": "98418_t_m.ogg",
+      "bytes": 127580,
+      "duration": 27.28,
+      "sha256": "925b83f15b4cd5708f275c06f7690081076864c176054e88d601b3758ce600e2"
+    },
+    {
+      "file": "98418_t_f.ogg",
+      "bytes": 128497,
+      "duration": 27.76,
+      "sha256": "cc3bfbb6e13af034e7fdb458989c160bba47c946fb16776302adf3d59d827e1c"
+    },
+    {
       "file": "98423.ogg",
       "bytes": 113349,
       "duration": 22.48,
@@ -46018,15 +46217,15 @@
     },
     {
       "file": "98512_t_m.ogg",
-      "bytes": 61394,
-      "duration": 12.64,
-      "sha256": "e8f8a2bb90ab295329f3079edb248f820921ac7f9fce0e5fceb15194c9ed783b"
+      "bytes": 58448,
+      "duration": 11.92,
+      "sha256": "6cc6c862c1f929b56675e04b96296cc6cf1e2f4dd599b181939e2048017ff01a"
     },
     {
       "file": "98512_t_f.ogg",
-      "bytes": 58971,
-      "duration": 12.08,
-      "sha256": "10f50002e65095500ee967cf9c5d29ae4317c1b463bd4c50a9c1a7b30938cacb"
+      "bytes": 60370,
+      "duration": 12.48,
+      "sha256": "50ec28cbed231f0213218372cd5af969d8ea16b84d77adb3a0f9ff7960d01401"
     },
     {
       "file": "98517_m.ogg",

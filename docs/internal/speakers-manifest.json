@@ -42,7 +42,7 @@
       "attCommit": "f5d90835055a8a21671d5406fc219ba17efba321"
     },
     "catquest": {
-      "version": "0.6.0"
+      "version": "0.6.4"
     },
     "wayfarer": {
       "packs": {
@@ -68,7 +68,7 @@
     "classic": "f13f9d3b8ee7ba01de59ed02ef8a5b729ec532805e65e4b0ac23d7f67dd0e1e2",
     "forever": "13b0fe5dcaaf9fd9e570b68a3b42ef2398b618d74150f65dd9bcf9bb9837dd07",
     "pins": "ac60688e34ea1f98a3ae19e939f29b8d54a101746c57d9d786ab79250355ae65",
-    "cat": "1a998a91884bb3a2ae28eec99f140116480dfc963bb2c6703ff6e801ae6fe6b2",
+    "cat": "a847ea1c523529be3c49b2288c5aa24e98e7165f3aee69ab020b254f77898325",
     "wayfarer": "1776d63ae77f783d433d029f40a4383957526b967b2838b8b49f01b7f7bb160b"
   },
   "counts": {

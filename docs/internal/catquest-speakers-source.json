@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceVersion": "0.6.0",
+  "sourceVersion": "0.6.4",
   "sha256": "558588c80fa3d8a4cfa80efe697724b91630d311247dda694796c6a859461396",
   "tables": {
     "NpcData": {
