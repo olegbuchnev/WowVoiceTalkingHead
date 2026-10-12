@@ -1,0 +1,35 @@
+name: Voting site regression tests
+
+on:
+  push:
+    branches: [main]
+    paths: ['web/voice-vote/**', 'src/Camera*.lua', '.github/workflows/voice-vote-tests.yml']
+  pull_request:
+    paths: ['web/voice-vote/**', 'src/Camera*.lua', '.github/workflows/voice-vote-tests.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  portrait-loading:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: web/voice-vote/package-lock.json
+      - run: npm ci --prefix web/voice-vote
+      - name: Install test browser
+        working-directory: web/voice-vote
+        run: npx playwright install --with-deps firefox
+      - name: Check timeout recovery and browser UI
+        working-directory: web/voice-vote
+        run: |
+          node --test tests/portrait-readiness.test.mjs
+          npm run test:portraits
+      - name: Build site and verify binary model compression
+        run: docker build -t talkinghead-vote-web:test -f web/voice-vote/Dockerfile .

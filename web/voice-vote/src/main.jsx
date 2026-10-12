@@ -9,6 +9,8 @@ import { createComparisonBatch } from './comparison-queue.js';
 import {createCompletionMessages} from './completion-messages.js';
 import {createParticipationTracker} from './participation.js';
 import {createVoteDelivery} from './vote-delivery.js';
+import {createCatalogueClient,comparisonKey,questKey,refreshComparisons,withLocalRatings} from './catalogue-refresh.js';
+import {watchPortraitReadiness} from './portrait-readiness.js';
 import './style.css';
 
 // A reload starts a fresh, silent sample. Browser scroll restoration must not
@@ -49,7 +51,7 @@ function Portrait({npc, playing}) {
     return () => import.meta.hot.off('portrait-camera-changed',refresh);
   }, []);
   useEffect(() => {
-    let cancelled = false, timer, deadline = Date.now() + 40000;
+    let cancelled = false, stopWatching=()=>{};
     if (!npc.displayID) {setState('unavailable');return;}
     const controller=new AbortController();
     setState('loading');
@@ -57,13 +59,10 @@ function Portrait({npc, playing}) {
       if (cancelled) { instance.destroy(); return; }
       viewer.current = instance;
       // Wait for model data, not merely creation of the WebGL canvas.
-      timer = setInterval(() => {
-        if (Date.now() > deadline) { clearInterval(timer); setState('error'); return; }
-        let loaded;
-        try { loaded = isPortraitLoaded(instance); }
-        catch { clearInterval(timer); setState('error'); return; }
-        if (loaded) {
-          clearInterval(timer);
+      stopWatching=watchPortraitReadiness({
+        isReady:()=>isPortraitLoaded(instance),
+        onError:()=>setState('error'),
+        onReady:()=>{
           framePortrait(instance,controller.signal).then(()=>{
             if(cancelled) return;
             setTalking(instance, playback.current);
@@ -73,10 +72,10 @@ function Portrait({npc, playing}) {
               if (!cancelled) setState('ready');
             }));
           }).catch(()=>{if(!cancelled) setState('error');});
-        }
-      }, 150);
+        },
+      });
     }).catch(() => { if (!cancelled) setState('error'); });
-    return () => { cancelled = true; controller.abort(); clearInterval(timer); viewer.current?.destroy(); viewer.current = null; };
+    return () => { cancelled = true; controller.abort(); stopWatching(); viewer.current?.destroy(); viewer.current = null; };
   }, [npc.displayID, cameraRevision]);
   useEffect(() => { setTalking(viewer.current, playing); }, [playing]);
   return <div className="portrait"><div className="portrait-well"/><div className="model-clip"><div ref={element} className="model" data-model-state={state}/></div><div className="portrait-frame"/>
@@ -101,12 +100,28 @@ function VoteStats({summary}) {
 
 function App() {
   const [participation]=useState(()=>createParticipationTracker());
-  const [delivery]=useState(()=>createVoteDelivery({onAccepted:()=>participation.confirmed()}));
   const localRated=useRef(new Set());
+  const refreshAction=useRef(null),mounted=useRef(true),navigation=useRef(false);
+  const [catalogueClient]=useState(()=>createCatalogueClient());
+  const [delivery]=useState(()=>createVoteDelivery({
+    onAccepted:()=>participation.confirmed(),
+    onObsolete:ballot=>{
+      localRated.current.delete(comparisonKey(ballot.questID,ballot.variantIds));
+      return refreshAction.current?.();
+    },
+  }));
   useEffect(()=>{
-    const retry=()=>delivery.retry();
+    const refresh=()=>{if(!document.hidden) refreshAction.current?.().catch(()=>{});};
+    const retry=()=>{delivery.retry();refresh();};
     window.addEventListener('online',retry);
-    return ()=>{window.removeEventListener('online',retry);delivery.stop();participation.stop();};
+    window.addEventListener('focus',refresh);
+    document.addEventListener('visibilitychange',refresh);
+    const timer=setInterval(refresh,60000);
+    return ()=>{
+      mounted.current=false;clearInterval(timer);
+      window.removeEventListener('online',retry);window.removeEventListener('focus',refresh);
+      document.removeEventListener('visibilitychange',refresh);delivery.stop();participation.stop();
+    };
   },[delivery]);
   const [started, setStarted] = useState(false);
   const [finished, setFinished] = useState(false), [preparing,setPreparing]=useState(false);
@@ -131,9 +146,28 @@ function App() {
   const [catalogue, setCatalogue] = useState(null), [error, setError] = useState('');
   const [comparisons, setComparisons] = useState([]);
   const [preparedBatch,setPreparedBatch]=useState(null);
-  const portraitSequence=useRef(0), preparation=useRef(null);
-  const reserveBatch=(priorities,options)=>createComparisonBatch(catalogue.quests,priorities,options)
+  const portraitSequence=useRef(0), preparation=useRef(null),currentIndex=useRef(batchIndex),previousCatalogue=useRef(null);
+  currentIndex.current=batchIndex;
+  const [advancing,setAdvancing]=useState(false);
+  const reserveBatch=(data,priorities,options)=>createComparisonBatch(data.quests,priorities,options)
     .map(entry=>({...entry,key:++portraitSequence.current}));
+  async function refreshCatalogue() {
+    const data=await catalogueClient.load();
+    if(mounted.current) setCatalogue(data);
+    return data;
+  }
+  refreshAction.current=refreshCatalogue;
+  useEffect(()=>{
+    if(!catalogue) return;
+    const previous=previousCatalogue.current;
+    previousCatalogue.current=catalogue;
+    if(!previous) return;
+    const oldKeys=new Map(previous.quests.map(q=>[q.questID,questKey(q)]));
+    const unchanged=new Set(catalogue.quests.filter(q=>oldKeys.get(q.questID)===questKey(q)).map(q=>q.questID));
+    setRatedQuestIDs(old=>old.filter(id=>unchanged.has(id)));
+    setComparisons(old=>refreshComparisons(old,catalogue.quests,started ? currentIndex.current+1 : 0));
+    setPreparedBatch(old=>old && refreshComparisons(old,catalogue.quests));
+  },[catalogue]);
   const quest=comparisons[batchIndex]?.quest, variants=comparisons[batchIndex]?.variants || [];
   // After reload an exhausted catalogue has no batch. Use its first quest only
   // to size the inert layout, without loading a portrait or starting a replay.
@@ -155,7 +189,7 @@ function App() {
       if(!controller.signal.aborted) setError('История оценок недоступна: возможны повторы квестов.');
       return [];
     });
-    fetch('/api/catalogue', {signal:controller.signal}).then(async r => {const data = await r.json(); if (!r.ok) throw Error(data.error); return data;})
+    catalogueClient.load()
       .then(async data => {
         const rated=await history;
         if(controller.signal.aborted) return;
@@ -182,21 +216,32 @@ function App() {
     try { await audio.current.play(); if (sequence.current === token) {setPlaying(true); setHeard(old => [...new Set([...old,variant.id])]);participation.played(quest.questID,variant.id);} }
     catch (e) { if (sequence.current === token && e.name !== 'AbortError') setError('Не удалось воспроизвести запись. Проверьте, что библиотека установлена.'); }
   }
-  function next() {
-    if(!choice || finished || batchIndex+1>=comparisons.length) return;
-    submitting.current=false;stop(); setChoice(null); setActive(null); setPosition(0); setLength(0); setHeard([]); setError('');
-    if(scroll.current) scroll.current.scrollTop=0;
-    // Promote the already mounted portrait; its WebGL resources and configured
-    // camera survive the transition. Only the next reserve is newly created.
-    setBatchIndex(old=>old+1);
+  async function next() {
+    if(!choice || finished || navigation.current) return;
+    navigation.current=true;setAdvancing(true);
+    try {
+      const data=await refreshCatalogue();
+      const updated=refreshComparisons(comparisons,data.quests,batchIndex+1);
+      setComparisons(updated);
+      if(batchIndex+1>=updated.length) {setThankYou(messages.next());setFinished(true);return;}
+      submitting.current=false;stop(); setChoice(null); setActive(null); setPosition(0); setLength(0); setHeard([]); setError('');
+      if(scroll.current) scroll.current.scrollTop=0;
+      // Preserve the preloaded portrait and blind order if they are still valid.
+      setBatchIndex(old=>old+1);
+    } catch(error) {setError(error.message);}
+    finally {navigation.current=false;setAdvancing(false);}
   }
   function prepareBatch(repeat=false) {
     if(preparation.current) return preparation.current;
     setPreparing(true);setError('');
     preparation.current=(async()=>{
       await loadSummary();
-      const priorities=(await loadQueue()).map(p=>({...p,rated:p.rated || localRated.current.has(p.questID)}));
-      const batch=reserveBatch(priorities,{repeat,previousQuestID:quest?.questID});
+      await refreshCatalogue();
+      const queue=await loadQueue();
+      // A focus/poll refresh may finish while queue priorities are in flight.
+      const data=catalogueClient.current();
+      const priorities=withLocalRatings(queue,data.quests,localRated.current);
+      const batch=reserveBatch(data,priorities,{repeat,previousQuestID:quest?.questID});
       setRatedQuestIDs(priorities.filter(p=>p.rated).map(p=>p.questID));
       setPreparedBatch(batch);
       return batch;
@@ -207,32 +252,36 @@ function App() {
     return preparation.current;
   }
   async function beginBatch(repeat=false) {
+    if(navigation.current) return;
+    navigation.current=true;setAdvancing(true);
     try {
-      // Promote the exact reserved comparison and mounted viewer. Do not fetch
-      // or shuffle again on click: that would discard the preloaded portrait.
-      const batch=preparedBatch?.length ? preparedBatch : await prepareBatch(repeat);
+      const data=await refreshCatalogue();
+      const ready=preparedBatch && refreshComparisons(preparedBatch,data.quests);
+      const batch=ready?.length ? ready : await prepareBatch(repeat);
       submitting.current=false;stop();setChoice(null);setActive(null);setPosition(0);setLength(0);setHeard([]);
       setComparisons(batch);setBatchIndex(0);setFinished(batch.length===0);
       setPreparedBatch(null);
-    } catch { /* Keep the completed series visible; preparation already reported the error. */ }
+    } catch(error) {setError(error.message);}
+    finally {navigation.current=false;setAdvancing(false);}
   }
   function vote(variant) {
     if(finished || choice || submitting.current || heard.length<2 || !heard.includes(variant.id)) return;
     submitting.current=true;stop();setError('');
     // Feedback and navigation never wait for network or database completion.
-    const key=JSON.stringify([quest.questID,variants.map(v=>v.id).sort()]);
-    localRated.current.add(quest.questID);
+    const key=comparisonKey(quest.questID,variants.map(v=>v.id));
+    localRated.current.add(key);
     setSessionVotes(old=>({...old,[key]:variant.source}));
     setChoice(variant.source);setActive(null);
     setRatedQuestIDs(old=>[...new Set([...old,quest.questID])]);
     if(batchIndex+1===comparisons.length) {setThankYou(messages.next());setFinished(true);}
     delivery.enqueue({questID:quest.questID,selectedId:variant.id,variantIds:variants.map(v=>v.id),visitID:participation.visitID});
+    void refreshCatalogue().catch(()=>{});
   }
   const completion=finished && <section className="batch-complete" aria-label="Серия завершена">
         {!choice && <h1 id="batch-complete-title" ref={comparisonTitle} tabIndex={-1}>Все доступные задания уже оценены</h1>}
         {comparisons.length>0 && <p className="completion-message">{thankYou}</p>}
         {!nextBatchSize && comparisons.length>0 && <p>Вы оценили все доступные задания.</p>}
-        <button className="welcome-start continue-batch" disabled={preparing} aria-busy={preparing} onClick={()=>beginBatch(nextBatchSize===0)}>{nextBatchSize ? `Сравнить ещё ${nextBatchSize}` : 'Сравнить повторно'}</button>
+        <button className="welcome-start continue-batch" disabled={preparing || advancing} aria-busy={preparing || advancing} onClick={()=>beginBatch(nextBatchSize===0)}>{nextBatchSize ? `Сравнить ещё ${nextBatchSize}` : 'Сравнить повторно'}</button>
       </section>;
   return <div className="app"><header><a className="brand" href="/" aria-label="TalkingHead Ru"><img className="brand-icon" src="/addon-icon-cutout.png" width="48" height="48" alt=""/><span className="brand-text"><span>TalkingHead <b>Ru</b></span><span className="brand-tagline">Озвучки на выбор</span></span></a><a className="curseforge-button" href="https://www.curseforge.com/wow/addons/talkinghead-ru" target="_blank" rel="noopener noreferrer"><span className="curseforge-button-label">Аддон на CurseForge</span><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="18" height="18"><path d="M6 18 18 6M6 6h12v12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="square"/></svg></a></header>
     <main>
@@ -251,7 +300,7 @@ function App() {
         <PlaybackProgress audio={audio} duration={length} position={position} playing={playing}/>
       </div></div>
         <div className="transport"><span className={playing ? 'signal playing' : 'signal'}><i/><i/><i/><i/></span><span>{active ? `Вариант ${letters[variants.findIndex(v=>v.id===active.id)]}` : 'Выберите запись ниже'}</span></div>
-      </div>{choice && <div className={`choice-confirmation library-${libraries.indexOf(choice)}`}><div role="status"><span className="choice-check" aria-hidden="true">✓</span><p>Вы выбрали</p><strong>{choice}</strong></div><button className="next-sample" style={{visibility:finished ? 'hidden' : undefined}} disabled={finished} aria-hidden={finished ? true : undefined} tabIndex={finished ? -1 : undefined} onClick={next} autoFocus={!finished}>Следующая реплика <span aria-hidden="true">→</span></button></div>}
+      </div>{choice && <div className={`choice-confirmation library-${libraries.indexOf(choice)}`}><div role="status"><span className="choice-check" aria-hidden="true">✓</span><p>Вы выбрали</p><strong>{choice}</strong></div><button className="next-sample" style={{visibility:finished ? 'hidden' : undefined}} disabled={finished || advancing} aria-busy={advancing} aria-hidden={finished ? true : undefined} tabIndex={finished ? -1 : undefined} onClick={next} autoFocus={!finished}>Следующая реплика <span aria-hidden="true">→</span></button></div>}
       </section>
       <div className="options-stage">
       <div className={`options-content${finished ? ' is-complete' : ''}`} inert={finished} aria-hidden={finished ? true : undefined}>

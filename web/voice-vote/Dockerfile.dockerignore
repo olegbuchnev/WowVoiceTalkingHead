@@ -14,6 +14,8 @@
 !web/voice-vote/src/**
 !web/voice-vote/public/**
 !web/voice-vote/docker/**
+!web/voice-vote/tests/
+!web/voice-vote/tests/nginx-compression.mjs
 !web/voice-vote/*.mjs
 !web/voice-vote/native-camera-samples.json
 **/*.ogg

@@ -124,7 +124,7 @@ export async function modelAsset(urlPath) {
 }
 
 export function localApi(options = {}) {
-  let data;
+  let data,catalogueBody,catalogueETag;
   const catalogue=()=>data ||= options.loadData ? options.loadData() : buildCatalogue(undefined,options);
   return async (req, res, next) => {
     const url = new URL(req.url, 'http://localhost');
@@ -134,8 +134,15 @@ export function localApi(options = {}) {
     try {
       if (url.pathname === '/api/catalogue') {
         data = catalogue();
-        res.writeHead(200, {'Content-Type':'application/json; charset=utf-8', 'Cache-Control':'no-store'});
-        res.end(JSON.stringify(data.catalogue));
+        catalogueBody ||= JSON.stringify(data.catalogue);
+        catalogueETag ||= `"${crypto.createHash('sha256').update(catalogueBody).digest('hex')}"`;
+        const headers={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-cache','ETag':catalogueETag};
+        // Gzip proxies can weaken our ETag. GET/HEAD use weak comparison.
+        const matches=(req.headers['if-none-match'] || '').split(',')
+          .some(tag=>tag.trim()==='*' || tag.trim().replace(/^W\//,'')===catalogueETag);
+        if(matches) {res.writeHead(304,headers).end();return;}
+        res.writeHead(200,headers);
+        res.end(req.method==='HEAD' ? undefined : catalogueBody);
       } else if (/^\/api\/portrait-camera\/[1-9]\d{0,9}$/.test(url.pathname)) {
         const fileID = Number(url.pathname.split('/').at(-1));
         const bytes = await modelAsset(`/modelviewer/classicplus/m2/${fileID}.m2`);

@@ -15,3 +15,18 @@ test('temporary admission failure retries in memory without advancing order',asy
   delivery.enqueue({id:1});await tick();assert.deepEqual(accepted,[]);
   delivery.retry();await tick();assert.deepEqual(accepted,[1]);delivery.stop();
 });
+
+test('obsolete ballot triggers refresh without replaying or blocking later ballots',async()=>{
+  const sent=[],obsolete=[],accepted=[];
+  let finishRefresh;
+  const delivery=createVoteDelivery({identify:async()=>{},send:async b=>{
+    sent.push(b.id);
+    if(b.id===1) throw Object.assign(Error('Changed recordings'),{status:409});
+    return {};
+  },onAccepted:b=>accepted.push(b.id),onObsolete:b=>{
+    obsolete.push(b.id);return new Promise(resolve=>{finishRefresh=resolve;});
+  }});
+  delivery.enqueue({id:1});delivery.enqueue({id:2});await tick();
+  assert.deepEqual(sent,[1,2]);assert.deepEqual(obsolete,[1]);assert.deepEqual(accepted,[2]);
+  finishRefresh();delivery.retry();await tick();assert.deepEqual(sent,[1,2]);delivery.stop();
+});

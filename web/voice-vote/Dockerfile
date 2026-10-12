@@ -22,6 +22,7 @@ COPY --from=build /app/web/voice-vote/dist/ web/voice-vote/dist/
 RUN mkdir -p /cache && chown node:node /cache
 ENV NODE_ENV=production VOICE_VOTE_MODEL_CACHE=/cache
 USER node
+RUN --mount=type=bind,source=web/voice-vote/tests/nginx-compression.mjs,target=/tmp/nginx-compression.mjs,ro node /tmp/nginx-compression.mjs
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 CMD wget -q -O /dev/null http://127.0.0.1:8080/health || exit 1
 CMD ["node","web/voice-vote/serve.mjs"]

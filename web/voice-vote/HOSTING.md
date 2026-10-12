@@ -71,6 +71,48 @@ exposing an updated catalogue; see [MODEL-CACHE.md](MODEL-CACHE.md).
 
 ## Public launch verification
 
+### Slow portrait downloads (2026-10-12)
+
+Web image `talkinghead-vote-web:portrait-loading-20261012` fixes permanent scroll
+placeholders after the old 40-second readiness deadline. The readiness check now
+uses a 120-second soft timeout and can recover when a model finishes later. It
+checks readiness before elapsed time, including after background-tab throttling.
+Nginx also compresses binary model responses with gzip level 3 and sends Vary.
+
+Reproduced on the public site with quest 1050 (display 2049, model 950080): the
+28,484,602-byte model was still downloading when the old timer stopped checking.
+After deployment it reached ready in a fresh Firefox context. Its compressed
+transfer is 13,389,779 bytes; decompression was verified byte-for-byte against the
+cached original. This reduces transfer size, but a cold large model can still
+take substantial time on a slow connection. The 616 quests without a known
+display ID continue to use their intentional placeholder.
+
+Readiness timer tests, batch navigation and catalogue-refresh browser checks
+passed. Java, catalogue, models and votes were unchanged; live browser checks
+intercepted voting endpoints and submitted no production ballots. Rollback image:
+`talkinghead-vote-web:before-portrait-loading-20261012` (retag as `:local`, recreate
+only `web` using the Compose command above).
+
+### Catalogue refresh in open tabs (2026-10-12)
+
+Web image `talkinghead-vote-web:catalogue-refresh-20261012` adds conditional
+catalogue refresh on navigation, focus/visibility, once per visible minute, and
+after a rejected obsolete ballot. Only unseen comparisons are refreshed. Active
+playback, session chart and series position remain intact; no page reload occurs.
+An obsolete ballot still receives normal local confirmation but is not counted
+by the API and is never reassigned to replacement recordings.
+
+The web container was replaced; Java, the votes volume and catalogue data were
+unchanged. Rollback image: `talkinghead-vote-web:before-catalogue-refresh-20261012`.
+Retag it as `talkinghead-vote-web:local` and recreate only `web` with
+`up -d --no-deps --no-build --wait web` using both Compose files above.
+Existing tabs need one manual reload to load this client code.
+
+All 35 frontend tests and both browser scenarios (batch flow and catalogue
+updates during playback/preparation) passed. Conditional GET supports weak ETags
+from gzip proxies. Production health and the new bundle were verified over HTTPS;
+no test votes were submitted to the production database.
+
 ### Wayfarer 3.2.0 data update (2026-10-12)
 
 The public catalogue contains 3,808 description comparisons and 9,863 recordings,
