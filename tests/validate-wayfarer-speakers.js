@@ -43,6 +43,14 @@ try {
   assert.equal(children.npcs[101],undefined,'Ambiguous role cannot supply child metadata');
   assert.equal(children.npcs[120],undefined,'Conflicting child/adult voices are not NPC metadata');
   assert.equal(children.npcs.undefined,undefined,'Missing NPC identity must not be invented');
+  pack('Wayfarer_Voices_B',{qg:{20:200,21:201},q:{
+    20:{a:{v:'ancient-male'},c:{s:202,v:'furbolg-male'}},
+    21:{a:{s:211,v:'ancient-male'}},
+  }});
+  const creatures=collect(directory);
+  assert.equal(creatures.npcs[200].voiceRace,'ancient');
+  assert.equal(creatures.npcs[202].voiceRace,'furbolg');
+  assert.equal(creatures.npcs[211],undefined,'Conflicting speaker identity cannot supply a creature category');
   // No audio files exist in this fixture; NPC import remains independent of playback.
   fs.appendFileSync(path.join(directory,'Wayfarer_Voices_A/Index.lua'),'\nWayfarer:RegisterPack({})');
   assert.throws(()=>collect(directory),/Expected one/);

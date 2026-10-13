@@ -2,6 +2,7 @@
 const fs = require('fs'), path = require('path'), crypto = require('crypto');
 const { dataTable } = require('./import-forever-audio');
 const {childVoiceMetadata} = require('./child-voice-metadata');
+const {creatureVoiceMetadata} = require('./creature-voice-metadata');
 const root = path.resolve(__dirname, '..');
 const positive = n => Number.isSafeInteger(n) && n > 0;
 const sha256 = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
@@ -15,10 +16,13 @@ const POLICY = {
   finishers:['catquest','wayfarer','classic'],
   names:{preferRussian:true, sources:['catquest','wayfarer','classic','verified-supplement']},
   appearances:['catquest','wayfarer','verified-supplement'],
+  raceClassification:'verified-appearance-before-library-voice-label',
+  creatureCategories:['verified-appearance','catquest-voice','wayfarer-voice','catquest-npc'],
+  unsexedCreatureCategories:{ancient:'male',furbolg:'male'},
   protectedExclusions:['multiple-or-conflicting-starters']
 };
 
-function merge({ classic, pins, cat, catAudio = {entries:{}}, wayfarer = {givers:{},finishers:{},npcs:{}}, supplements = {schemaVersion:1,npcs:{}} }) {
+function merge({ classic, pins, cat, catAudio = {entries:{}}, wayfarer = {givers:{},finishers:{},npcs:{}}, supplements = {schemaVersion:1,npcs:{}}, raceClassifications = {schemaVersion:1,appearances:{},models:{}} }) {
   const givers = {}, finishers = {}, npcs = {}, origins = {givers:{}, finishers:{}, npcs:{}}, conflicts = [];
   const names = new Map();
   function addName(id, name, source) {
@@ -97,6 +101,11 @@ function merge({ classic, pins, cat, catAudio = {entries:{}}, wayfarer = {givers
   }
   for (const [id, metadata] of Object.entries(childVoiceMetadata(childObservations)))
     fillChildMetadata(id,metadata,'catquest-voice');
+  const creatureVoices = creatureVoiceMetadata(childObservations);
+  for (const [id, metadata] of Object.entries(creatureVoices)) {
+    (npcs[id] ||= {}).race = metadata.voiceRace;
+    (origins.npcs[id] ||= {}).race = 'catquest-voice';
+  }
   const appearanceConflicts = [];
   for (const [id,npc] of sorted(wayfarer.npcs)) {
     if (!positive(Number(id)) || (npc.displayID != null && !positive(npc.displayID))) throw Error('Invalid Wayfarer NPC/model ID');
@@ -109,6 +118,10 @@ function merge({ classic, pins, cat, catAudio = {entries:{}}, wayfarer = {givers
       origins.npcs[id] ||= {}; origins.npcs[id].displayID = 'wayfarer';
     }
     addName(Number(id),npc.name,'wayfarer');
+    if (!creatureVoices[id] && ['ancient','furbolg','banshee'].includes(npc.voiceRace)) {
+      existing.race = npc.voiceRace;
+      (origins.npcs[id] ||= {}).race = 'wayfarer-voice';
+    }
     if (npc.ageGroup === 'child' && ['male','female'].includes(npc.sex))
       fillChildMetadata(id,{ageGroup:npc.ageGroup,sex:npc.sex},'wayfarer-voice');
   }
@@ -130,6 +143,30 @@ function merge({ classic, pins, cat, catAudio = {entries:{}}, wayfarer = {givers
     if (!npc.displayID) {
       npc.displayID = entry.displayID;
       origins.npcs[id] ||= {}; origins.npcs[id].displayID = 'verified-supplement';
+    }
+  }
+  // Library voice categories may combine distinct races (e.g. furbolgs/tauren).
+  // Apply only verified appearances; never guess race from names or voice sex.
+  if (raceClassifications.schemaVersion !== 1 || !raceClassifications.appearances || !raceClassifications.models)
+    throw Error('Invalid NPC race classifications');
+  for (const [displayID, entry] of Object.entries(raceClassifications.appearances)) {
+    const model = raceClassifications.models[entry.modelFileID];
+    if (!positive(Number(displayID)) || !positive(entry.modelFileID)
+        || !/^[a-z][a-z0-9_]*$/.test(entry.race || '') || model?.race !== entry.race
+        || !model.file?.endsWith('.m2') || !model.source?.startsWith('https://'))
+      throw Error('Invalid NPC race classification: '+displayID);
+  }
+  for (const [id,npc] of Object.entries(npcs)) {
+    const classification = raceClassifications.appearances[npc.displayID];
+    if (classification) {
+      npc.race = classification.race;
+      (origins.npcs[id] ||= {}).race = 'verified-appearance';
+    }
+    // These vote categories intentionally have no male/female subdivisions.
+    // "male" is the schema's canonical grouping value, not a biological claim.
+    if (POLICY.unsexedCreatureCategories[npc.race]) {
+      npc.sex = POLICY.unsexedCreatureCategories[npc.race];
+      (origins.npcs[id] ||= {}).sex = 'unsexed-creature-category';
     }
   }
   for (const [id, candidates] of names) {
@@ -165,8 +202,8 @@ function render(database) {
 function generate(check = false) {
   const files = {classic:'src/Index.lua',
     pins:'docs/internal/forever-pins-speakers-source.json', cat:'docs/internal/catquest-speakers-source.json', wayfarer:'docs/internal/wayfarer-speakers-source.json',
-    supplements:'docs/internal/npc-appearance-supplements.json',catAudio:'src/CatQuestAudio.lua'};
-  const inputs = {classic:dataTable(path.join(root,files.classic)), pins:read(files.pins), cat:read(files.cat), wayfarer:read(files.wayfarer), supplements:read(files.supplements),catAudio:dataTable(path.join(root,files.catAudio))};
+    supplements:'docs/internal/npc-appearance-supplements.json',raceClassifications:'docs/internal/npc-race-classifications.json',catAudio:'src/CatQuestAudio.lua'};
+  const inputs = {classic:dataTable(path.join(root,files.classic)), pins:read(files.pins), cat:read(files.cat), wayfarer:read(files.wayfarer), supplements:read(files.supplements),raceClassifications:read(files.raceClassifications),catAudio:dataTable(path.join(root,files.catAudio))};
   const result = merge(inputs);
   const report = {schemaVersion:1, policy:POLICY, sources:{
     pins:{commit:inputs.pins.commit, attCommit:inputs.pins.attCommit},

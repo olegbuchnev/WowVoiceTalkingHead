@@ -3,7 +3,7 @@
 In DevTools Elements, the first element immediately inside `<body>` is hidden:
 
 ```html
-<div id="portrait-debug" hidden aria-hidden="true">{"questID":977,"npcID":10377,"displayID":9780,"modelFileID":119369,"state":"ready","loadID":"p-a81f3c92d640"}</div>
+<div id="portrait-debug" hidden aria-hidden="true">{"questID":5657,"npcID":4606,"displayID":10723,"modelFileID":123014,"race":"banshee","sex":"female","state":"ready","loadID":"p-fccf2ffa61e8"}</div>
 ```
 
 Double-click the single JSON text node in Elements to copy the complete diagnostic
@@ -12,6 +12,11 @@ JSON text, without duplicate data attributes. `loadID` identifies one portrait m
 the next portrait does not replace the current ID. On the series completion
 screen it retains the last displayed portrait. A quest without a model has an
 empty load ID and `state: "unavailable"`; no viewer request is made.
+`race` and `sex` are the catalogue values used by the server for stored speaker
+groups, not guesses from the portrait or camera family. Unknown values are
+explicitly `null`, including narrated descriptions. Both fields are present
+even when the portrait is unavailable or failed. `ancient` and `furbolg` use
+`sex: "male"` as one canonical group without sex subdivisions.
 
 ## Read over SSH
 
@@ -49,6 +54,16 @@ investigating a specific report. Host logs have a separate logrotate rule.
   Linux may satisfy the read from its page cache.
 - `asset_proxy`: container Nginx time, upstream timing, bytes and gzip ratio.
 - `asset_edge`: HTTPS Nginx time and bytes actually sent toward the client.
+
+The host log also captures `/`, `/index.html`, application bundles, the catalogue,
+vote queue/summary/health requests and all HTTP 4xx/5xx responses. These entries
+cover failures before the React application can send telemetry. `edgeRequestID`
+exists even when the upstream never responds; `requestID` still joins container
+asset logs when available. Compare `upstreamStatus`, `upstreamConnectSeconds`,
+`upstreamHeaderSeconds` and `totalSeconds` to separate connection failures,
+upstream processing and response delivery. Query strings and cookies are omitted.
+Requests that never reach Nginx (including DNS/network/TLS failures before HTTP)
+cannot be diagnosed from this access log alone; absence is not proof of uptime.
 
 Browser phase times are milliseconds since portrait creation: `viewerMs`,
 `assetsReadyMs` (geometry, animation and texture readiness), `visibleMs` (camera,
@@ -95,6 +110,15 @@ for 97922. These observations do not yet establish the cause in the user's tab;
 the added status snapshot is needed to distinguish texture/load/GPU failures.
 
 ## Host setup
+
+Navigation diagnostics were enabled on production at 2026-10-13 07:13 UTC
+after a report of intermittent initial-page failures (possibly HTTP 502).
+Twelve sequential HTTPS probes returned 200; a fresh Firefox session loaded the
+welcome screen and a ready portrait. No new host Nginx errors or container
+restarts accompanied the report. This did not reproduce or explain the incident.
+The previous host log-format configuration is backed up at
+`/srv/talkinghead/backups/navigation-diagnostics-20261013-071250/talkinghead-assets.conf`.
+Only host logging was reloaded; application images and voting data were unchanged.
 
 Install `docker/asset-diagnostics.conf` into `/etc/nginx/conf.d/`. In the HTTPS
 virtual host replace `access_log off` with:

@@ -1,5 +1,14 @@
 const assert = require('assert/strict');
 const {merge,generate,POLICY} = require('../tools/generate-speakers');
+const {creatureVoiceMetadata} = require('../tools/creature-voice-metadata');
+assert.deepEqual(creatureVoiceMetadata([
+  {npcID:1,voice:'creature/ancient'},{npcID:1,voice:'ancient-male'},
+  {npcID:2,voice:'furbolg-male'},{npcID:2,voice:'furbolg-female'},
+  {npcID:3,voice:'ancient-male'},{npcID:3,voice:'furbolg-male'},
+  {npcID:4,voice:'ancient-male'},{npcID:4,voice:'skyborne-male'},
+  {npcID:0,voice:'furbolg-male'},{voice:'ancient-male'},
+  {npcID:5,voice:'creature/banshee'},
+]),{1:{voiceRace:'ancient'},2:{voiceRace:'furbolg'},5:{voiceRace:'banshee'}},'Exact creature labels normalize without guessing ambiguous speakers');
 const inputs = {
   classic:{First:{1:{q:1,i:10,n:'Имя',ei:20,en:'Получатель'}}, Item:{1:{q:2,i:99}},
     Priority:{1:{q:7,i:70,n:'Классическое имя'},2:{q:8,i:80},3:{q:9,i:90}},
@@ -15,7 +24,41 @@ const inputs = {
   }]))}
 };
 const result = merge(inputs);
+const classifiedInputs=structuredClone(inputs);
+classifiedInputs.cat.tables.NpcData[10]={1:'tauren',2:'female',3:111};
+classifiedInputs.cat.tables.NpcData[20]={1:'tauren',2:'male',3:222};
+classifiedInputs.raceClassifications={schemaVersion:1,appearances:{111:{race:'furbolg',modelFileID:124118}},
+  models:{124118:{race:'furbolg',file:'creature/furbolg/furbolg.m2',source:'https://example.org/listfile'}}};
+const classified=merge(classifiedInputs);
+assert.equal(classified.database.npcs[10].race,'furbolg','A verified furbolg appearance overrides a tauren voice category');
+assert.equal(classified.database.npcs[10].sex,'male','Furbolg voting has a single canonical sex group');
+assert.equal(classified.database.npcs[20].race,'tauren','Other tauren remain tauren');
+assert.equal(classified.origins.npcs[10].race,'verified-appearance');
+classifiedInputs.cat.tables.NpcData[10][3]=333;
+assert.equal(merge(classifiedInputs).database.npcs[10].race,'tauren','A changed appearance must not inherit a stale correction');
+classifiedInputs.raceClassifications.appearances[111].race='orc';
+assert.throws(()=>merge(classifiedInputs),/Invalid NPC race classification/,'Classification must match its model evidence');
 const db = result.database;
+const creatureInputs=structuredClone(inputs);
+creatureInputs.cat.tables.QuestGiver[50]=500;
+creatureInputs.cat.tables.QuestFinisher[50]=501;
+creatureInputs.cat.tables.NpcData[500]={1:'skyborne',2:'female'};
+creatureInputs.cat.tables.QuestGiver[52]=504;
+creatureInputs.cat.tables.NpcData[504]={1:'troll',2:'female'};
+creatureInputs.catAudio={entries:{'50a':{voice:'creature/ancient'},'50c':{voice:'creature/furbolg'},'51a':{voice:'creature/ancient'}}};
+creatureInputs.catAudio.entries['52a']={voice:'creature/banshee'};
+creatureInputs.wayfarer.givers[51]=502;
+creatureInputs.wayfarer.npcs[500]={voiceRace:'furbolg'};
+creatureInputs.wayfarer.npcs[503]={voiceRace:'ancient'};
+creatureInputs.wayfarer.npcs[504]={voiceRace:'furbolg'};
+const creatures=merge(creatureInputs);
+assert.equal(creatures.database.npcs[500].race,'ancient','CatQuest explicit creature label wins over broad NPC and Wayfarer categories');
+assert.equal(creatures.database.npcs[500].sex,'male','Ancients do not split by legacy NPC sex');
+assert.equal(creatures.database.npcs[501].race,'furbolg','Completion speaker has its own category');
+assert.equal(creatures.database.npcs[502].race,undefined,'No voice transfer to another source\'s giver');
+assert.equal(creatures.database.npcs[503].race,'ancient','Wayfarer explicit creature category is preserved');
+assert.equal(creatures.database.npcs[504].race,'banshee','CatQuest banshee label wins even over a conflicting Wayfarer creature category');
+assert.equal(creatures.database.npcs[504].sex,'female','Banshee does not use the unsexed male group');
 assert.deepEqual(POLICY.givers,['catquest','wayfarer','pins','classic']);
 assert.equal(db.givers[1].npcID,999,'CatQuest wins over Pins and Classic');
 assert.equal(db.npcs[10].displayID,111,'Model enriches the same NPC chosen by another source');
@@ -95,6 +138,12 @@ assert.equal(narrated.database.givers[8].npcID,80,'Completion narration does not
 assert(!('undefined' in narrated.database.npcs));
 const {dataTable}=require('../tools/import-forever-audio');
 const current=dataTable(require('path').join(__dirname,'../src/Speakers.lua'),'TalkingHeadRuSpeakers');
+assert.equal(current.npcs[4606].race,'banshee','A banshee voice category must not become a troll');
+assert.equal(current.npcs[4606].sex,'female','Banshee keeps the female speaker metadata');
+for (const id of [3897,8405,11554,11555,11556,11557,15395])
+  assert(current.npcs[id].race==='furbolg' && current.npcs[id].sex==='male','Known furbolg NPCs have one shared category');
+for (const id of [1244,3616,9598,14524,14525,14526,270269])
+  assert(current.npcs[id].race==='ancient' && current.npcs[id].sex==='male','Ancients form one category independent of elf and tauren voices');
 assert.equal(current.givers[940].npcID,3519,'Quest 940 uses Arynia from maintained sources');
 assert(current.npcs[3519].displayID>0,'Arynia has a portrait');
 assert.equal(current.givers[99260].npcID,253285,'Fillion quest keeps its distinct NPC ID');

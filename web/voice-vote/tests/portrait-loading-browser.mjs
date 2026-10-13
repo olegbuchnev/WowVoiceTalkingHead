@@ -33,7 +33,8 @@ try {
       await page.route('**/test/model/*',route=>{model.resolve(route);});
       await page.route('**/test/camera',route=>{camera.resolve(route);});
       await page.route('**/api/catalogue',route=>route.fulfill({json:{quests:[{
-        questID:1050,text:'Delayed portrait fixture',npc:{displayID:2049,name:'Librarian'},
+        questID:1050,text:'Delayed portrait fixture',npc:{displayID:2049,name:'Librarian',
+          ...(delay===41000 ? {race:'banshee',sex:'female'} : {})},
         variants:[{id:'a',source:'WowVoice'},{id:'b',source:'CatQuest'}],
       }]}}));
       await page.route('**/api/votes/**',route=>route.fulfill({json:route.request().url().endsWith('/queue') ? [] : {total:0}}));
@@ -70,7 +71,7 @@ try {
       const diagnosticText=await page.locator('#portrait-debug').textContent();
       assert(!diagnosticText.includes('\n'),'diagnostics can be copied as one text node');
       assert.deepEqual(JSON.parse(diagnosticText),{questID:1050,npcID:0,displayID:2049,
-        modelFileID:0,state:'ready',loadID});
+        modelFileID:0,race:delay===41000 ? 'banshee' : null,sex:delay===41000 ? 'female' : null,state:'ready',loadID});
       assert(reports.some(r=>r.loadID===loadID && r.stage==='started'));
       assert(reports.some(r=>r.loadID===loadID && r.stage==='ready'));
       assert.equal(reports.some(r=>r.stage==='timeout'),delay>120000);
@@ -99,6 +100,17 @@ try {
       }
       assert.deepEqual(errors,[]);
       console.log('PASS: context loss shows the placeholder, reports the failed mount and retries twice without resetting the comparison.');
+      await page.unroute('**/api/catalogue');
+      await page.route('**/api/catalogue',route=>route.fulfill({json:{quests:[{
+        questID:5657,text:'Unavailable portrait fixture',npc:{id:4606,displayID:0,name:'Eltaliste',race:'banshee',sex:'female'},
+        variants:[{id:'a',source:'WowVoice'},{id:'b',source:'CatQuest'}],
+      }]}}));
+      await page.goto(base);
+      await page.locator('.welcome-start').click();
+      await page.waitForFunction(()=>JSON.parse(document.getElementById('portrait-debug').textContent).state==='unavailable');
+      assert.deepEqual(JSON.parse(await page.locator('#portrait-debug').textContent()),{
+        questID:5657,npcID:4606,displayID:0,modelFileID:0,race:'banshee',sex:'female',state:'unavailable',loadID:''});
+      console.log('PASS: unavailable portraits retain the exact catalogue race/sex in copyable debug JSON.');
     } finally {await context.close();}
   }
 } finally {await browser?.close();await server.close();}

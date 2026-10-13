@@ -140,8 +140,9 @@ function Portrait({npc, questID, playing, current}) {
     const debug=document.getElementById('portrait-debug');
     if(!debug) return;
     debug.textContent=JSON.stringify({questID,npcID:npc.id || 0,displayID:npc.displayID || 0,
-      modelFileID:npc.modelFileID || 0,state,loadID:element.current?.dataset.loadId || ''});
-  },[current,questID,npc.displayID,state,cameraRevision]);
+      modelFileID:npc.modelFileID || 0,race:npc.race ?? null,sex:npc.sex ?? null,
+      state,loadID:element.current?.dataset.loadId || ''});
+  },[current,questID,npc.id,npc.displayID,npc.modelFileID,npc.race,npc.sex,state,cameraRevision]);
   useEffect(() => { setTalking(viewer.current, playing); }, [playing]);
   return <div className="portrait"><div className="portrait-well"/><div className="model-clip"><div ref={element} className="model" data-model-state={state}/></div><div className="portrait-frame"/>
     {state !== 'ready' && <div className="portrait-placeholder" role="img" aria-label={state === 'loading' ? 'Загрузка портрета' : 'Портрет недоступен'} title={state === 'error' ? 'Модель недоступна' : undefined}><img src="/portrait-placeholder.png" alt=""/></div>}</div>;

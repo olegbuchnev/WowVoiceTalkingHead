@@ -81,6 +81,7 @@ async function main() {
                 || filename === 'creature/goblin/goblin.m2';
             const femaleOrc = filename.startsWith('character/orc/female/');
             const orcChild = filename === 'creature/orcmalekid/orcmalekid.m2';
+            const femaleOrcChild = filename === 'creature/orcfemalekid/orcfemalekid.m2';
             const femaleTauren = filename.startsWith('character/tauren/female/');
             const femaleDwarf = filename.startsWith('character/dwarf/female/')
                 || filename.startsWith('character/darkirondwarf/female/')
@@ -88,7 +89,7 @@ async function main() {
                 || filename === 'creature/dwarfrifleman_f/dwarfrifleman_f.m2';
             const femaleUndead = filename.startsWith('character/scourge/female/');
             const maleUndead = filename.startsWith('character/scourge/male/');
-            const family = orcChild ? 'orc_child' : femaleOrc ? 'orc_female' : maleGoblin ? 'goblin_male' : femaleBloodElf ? 'bloodelf_female'
+            const family = femaleOrcChild ? 'orc_child_female' : orcChild ? 'orc_child' : femaleOrc ? 'orc_female' : maleGoblin ? 'goblin_male' : femaleBloodElf ? 'bloodelf_female'
                 : femaleTauren ? 'tauren_female' : femaleDwarf ? 'dwarf_female' : femaleUndead ? 'undead_female'
                 : maleUndead ? 'undead_male' : maleNightElf ? 'nightelf_male'
                 : femaleNightElf ? 'nightelf_female'

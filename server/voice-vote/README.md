@@ -106,6 +106,16 @@ recording bytes produce a new ID and an independent comparison. Earlier votes
 remain associated with their original recordings. The full candidate snapshot
 is stored, including versions and hashes; absolute audio paths are not in votes.
 
+Race and sex are part of the comparison identity. Correcting a voice category
+from `tauren` to the distinct `furbolg` race creates a new comparison, even when
+the recordings and portrait stay the same. Do not migrate or inherit the old
+ballots: they remain historical, while the corrected race starts with no votes.
+The `race-sex.csv` and pairwise exports aggregate current comparisons only;
+historical rows with the former classification must not seed either race's
+future recommendations. Confirmed 2026-10-13.
+The `ancient` and `furbolg` categories each use one group without sex divisions;
+`sex=male` is their canonical schema value, regardless of previous library labels.
+
 The client displays each choice immediately and submits it to `POST /api/votes/submit`.
 HTTP 202 means the trusted ballot is accepted in a durable server-side inbox,
 not yet committed to SQLite. A single worker commits accepted ballots in order,

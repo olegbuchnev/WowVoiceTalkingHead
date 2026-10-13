@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "appearances": {
+    "1010": { "race": "furbolg", "modelFileID": 124118 },
+    "1012": { "race": "furbolg", "modelFileID": 124118 },
+    "5851": { "race": "furbolg", "modelFileID": 124118 },
+    "6829": { "race": "furbolg", "modelFileID": 124118 },
+    "11363": { "race": "furbolg", "modelFileID": 124118 },
+    "1455": { "race": "ancient", "modelFileID": 122893 },
+    "11362": { "race": "ancient", "modelFileID": 122895 },
+    "14567": { "race": "ancient", "modelFileID": 122893 },
+    "143127": { "race": "ancient", "modelFileID": 122895 }
+  },
+  "models": {
+    "122893": {
+      "race": "ancient",
+      "file": "creature/ancientoflore/ancientoflore.m2",
+      "source": "https://github.com/wowdev/wow-listfile/releases/tag/202609242243"
+    },
+    "122895": {
+      "race": "ancient",
+      "file": "creature/ancientofwar/ancientofwar.m2",
+      "source": "https://github.com/wowdev/wow-listfile/releases/tag/202609242243"
+    },
+    "124118": {
+      "race": "furbolg",
+      "file": "creature/furbolg/furbolg.m2",
+      "source": "https://github.com/wowdev/wow-listfile/releases/tag/202609242243"
+    }
+  },
+  "appearanceSource": "https://wow.zamimg.com/modelviewer/classicplus/meta/npc/{displayID}.json",
+  "verifiedOn": "2026-10-13",
+  "evidence": "Each listed ClassicPlus appearance resolves to its stated model in the cached viewer metadata. Shared speaker statistics distinguish furbolgs and ancients from broad library voice categories. These two groups do not distinguish sex; the shared generator uses male as a canonical grouping value."
+}

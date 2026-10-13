@@ -56,6 +56,31 @@ class ResultsExporterTest {
             assertNotEquals(output,ResultsExporter.export(database,catalogue,directory.resolve("exports")));
         }
     }
+    @Test void correctedFurbolgRaceDoesNotInheritTaurenBallots() throws Exception {
+        Path database=directory.resolve("votes.sqlite"), catalogue=directory.resolve("catalogue.json");
+        var a=variant('a',"WowVoice","1"); var b=variant('b',"CatQuest","1");
+        var old=new Catalogue.Quest(8231,new Catalogue.Npc(8405,1012,124118,"tauren","male"),List.of(a,b));
+        var corrected=new Catalogue.Quest(8231,new Catalogue.Npc(8405,1012,124118,"furbolg","male"),List.of(a,b));
+        var tauren=new Catalogue.Quest(99,new Catalogue.Npc(99,100,118652,"tauren","male"),List.of(a,b));
+        Files.writeString(catalogue,mapper.writeValueAsString(new Catalogue.Snapshot(2,List.of(corrected,tauren))));
+        assertNotEquals(VoteStore.comparisonID(old,mapper),VoteStore.comparisonID(corrected,mapper));
+        try(var store=new VoteStore(database.toString(),mapper)) {
+            var visitor=store.createVisitor();
+            store.save(visitor.id(),old,a.id());
+            store.save(visitor.id(),tauren,a.id());
+            var priority=store.queue(visitor.id(),List.of(corrected)).getFirst();
+            assertFalse(priority.rated());assertEquals(0,priority.votes());
+            store.save(visitor.id(),corrected,b.id());
+            var snapshot=ResultsExporter.read(database,catalogue);
+            assertEquals(3,snapshot.summary().votes());
+            assertEquals(2,snapshot.summary().currentVotes());
+            assertEquals(1,snapshot.summary().historicalVotes());
+            var furbolg=snapshot.raceSex().stream().filter(g->"furbolg".equals(g.race()) && g.source().equals("CatQuest")).findFirst().orElseThrow();
+            assertEquals(1,furbolg.selectedVotes());assertEquals(1,furbolg.offeredVotes());
+            var separateTauren=snapshot.raceSex().stream().filter(g->"tauren".equals(g.race()) && g.source().equals("WowVoice")).findFirst().orElseThrow();
+            assertEquals(1,separateTauren.selectedVotes());assertEquals(1,separateTauren.offeredVotes());
+        }
+    }
     @Test void emptyDatabaseExportsAndMissingDatabaseIsNotCreated() throws Exception {
         Path database=directory.resolve("votes.sqlite"), catalogue=directory.resolve("catalogue.json");
         var quest=new Catalogue.Quest(1,human,List.of(variant('a',"WowVoice","1"),variant('b',"CatQuest","1")));

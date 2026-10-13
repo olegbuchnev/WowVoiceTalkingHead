@@ -20,7 +20,7 @@ for id, key in pairs(WV.CameraModelProfiles) do
         protected=protected+1
     end
 end
-assert(count>1000 and protected>=57)
+assert(count>1000 and protected>=56)
 for _, family in ipairs({'goblin','troll','furbolg','murloc','centaur','dragon','ogre','quillboar'}) do
     assert(families[family])
 end
@@ -57,7 +57,7 @@ for _, id in ipairs({121087,949470,1838580}) do
         and profile.distance>WV.PortraitCameraProfiles.default.distance,
         'adult female orcs need their own framing, not the protected orc default')
 end
-for _, id in ipairs({121287,917116,1838578,1968587,125362,125365,125370,254785,254786,118652}) do
+for _, id in ipairs({121287,917116,1838578,1968587,125365,125370,254785,254786,118652}) do
     model.id=id
     local profile,key=WV:GetPortraitCameraProfile(model)
     assert(key=='orc' and profile.distance==1.1 and profile.y==0 and profile.z==-.025,
@@ -66,9 +66,16 @@ end
 model.id=125367
 do
     local profile,key=WV:GetPortraitCameraProfile(model)
-    assert(key=='orc_child' and profile.distance>WV.PortraitCameraProfiles.default.distance
-        and profile.z>WV.PortraitCameraProfiles.default.z,
-        'the Orc Orphan needs its own framing instead of the protected orc default')
+    assert(key=='orc_child' and profile.distance==1.5 and profile.y==.02 and profile.z==.04,
+        'the male Orc Orphan must retain its accepted framing')
+end
+model.id=125362
+do
+    local profile,key=WV:GetPortraitCameraProfile(model)
+    assert(key=='orc_child_female' and profile~=WV.PortraitCameraProfiles.orc_child
+        and profile.distance>WV.PortraitCameraProfiles.default.distance
+        and profile.y>0 and profile.z>WV.PortraitCameraProfiles.default.z,
+        'the female orc child needs independent framing with room below and to the left')
 end
 for _, id in ipairs({119376,1838570,124224}) do
     model.id=id

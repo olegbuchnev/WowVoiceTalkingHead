@@ -27,6 +27,17 @@
       "wayfarer",
       "verified-supplement"
     ],
+    "raceClassification": "verified-appearance-before-library-voice-label",
+    "creatureCategories": [
+      "verified-appearance",
+      "catquest-voice",
+      "wayfarer-voice",
+      "catquest-npc"
+    ],
+    "unsexedCreatureCategories": {
+      "ancient": "male",
+      "furbolg": "male"
+    },
     "protectedExclusions": [
       "multiple-or-conflicting-starters"
     ]
@@ -69,8 +80,9 @@
     "classic": "f13f9d3b8ee7ba01de59ed02ef8a5b729ec532805e65e4b0ac23d7f67dd0e1e2",
     "pins": "a6102be44b12511f187e73132419dcc06c7c3b9c38b61914051162a235f58ec6",
     "cat": "a847ea1c523529be3c49b2288c5aa24e98e7165f3aee69ab020b254f77898325",
-    "wayfarer": "718a9b84e260497c8709ca0f25955a0fc1d352bd5725818028ce5de1ecde923e",
+    "wayfarer": "8991da01983720686da3b2eeffa1e016a4734b974f7d7934b131cf56e65e2f53",
     "supplements": "813135ecb98b111795112a1c39b3fd982da0e61d2c941f29e4e7ad986ce7eb54",
+    "raceClassifications": "2b05c10208e8730f9e7c083ce3129d187f4a58ef1f1b7acabb709c6a91b510bd",
     "catAudio": "456a55f380c3a48a4de5c3274d33e899f78c997dee525558b035602c8aae6e2d"
   },
   "counts": {
@@ -9357,6 +9369,7 @@
         "name": "catquest"
       },
       "302": {
+        "race": "catquest-voice",
         "displayID": "wayfarer",
         "name": "wayfarer"
       },
@@ -10089,7 +10102,9 @@
         "name": "wayfarer"
       },
       "1244": {
+        "race": "catquest-voice",
         "displayID": "verified-supplement",
+        "sex": "unsexed-creature-category",
         "name": "catquest"
       },
       "1246": {
@@ -12689,7 +12704,9 @@
         "name": "wayfarer"
       },
       "3616": {
+        "race": "verified-appearance",
         "displayID": "wayfarer",
+        "sex": "unsexed-creature-category",
         "name": "catquest"
       },
       "3620": {
@@ -12832,7 +12849,9 @@
         "name": "wayfarer"
       },
       "3897": {
+        "race": "verified-appearance",
         "displayID": "verified-supplement",
+        "sex": "unsexed-creature-category",
         "name": "catquest"
       },
       "3901": {
@@ -13170,6 +13189,7 @@
         "name": "catquest"
       },
       "4606": {
+        "race": "catquest-voice",
         "displayID": "wayfarer",
         "name": "catquest"
       },
@@ -14888,7 +14908,9 @@
         "name": "wayfarer"
       },
       "8405": {
+        "race": "verified-appearance",
         "displayID": "verified-supplement",
+        "sex": "unsexed-creature-category",
         "name": "catquest"
       },
       "8416": {
@@ -15222,6 +15244,8 @@
       },
       "9598": {
         "displayID": "wayfarer",
+        "race": "verified-appearance",
+        "sex": "unsexed-creature-category",
         "name": "catquest"
       },
       "9616": {
@@ -15825,22 +15849,32 @@
         "name": "wayfarer"
       },
       "11554": {
+        "race": "verified-appearance",
         "displayID": "verified-supplement",
+        "sex": "unsexed-creature-category",
         "name": "catquest"
       },
       "11555": {
+        "race": "verified-appearance",
         "displayID": "verified-supplement",
+        "sex": "unsexed-creature-category",
         "name": "catquest"
       },
       "11556": {
+        "race": "verified-appearance",
         "displayID": "verified-supplement",
+        "sex": "unsexed-creature-category",
         "name": "catquest"
       },
       "11557": {
+        "race": "verified-appearance",
         "displayID": "verified-supplement",
+        "sex": "unsexed-creature-category",
         "name": "catquest"
       },
       "11558": {
+        "race": "wayfarer-voice",
+        "sex": "unsexed-creature-category",
         "name": "catquest"
       },
       "11596": {
@@ -16608,15 +16642,21 @@
         "name": "wayfarer"
       },
       "14524": {
+        "race": "verified-appearance",
         "displayID": "verified-supplement",
+        "sex": "unsexed-creature-category",
         "name": "catquest"
       },
       "14525": {
+        "race": "verified-appearance",
         "displayID": "verified-supplement",
+        "sex": "unsexed-creature-category",
         "name": "catquest"
       },
       "14526": {
+        "race": "verified-appearance",
         "displayID": "verified-supplement",
+        "sex": "unsexed-creature-category",
         "name": "catquest"
       },
       "14539": {
@@ -17031,7 +17071,9 @@
         "name": "wayfarer"
       },
       "15395": {
+        "race": "verified-appearance",
         "displayID": "verified-supplement",
+        "sex": "unsexed-creature-category",
         "name": "catquest"
       },
       "15431": {
@@ -18228,7 +18270,9 @@
         "name": "catquest"
       },
       "255853": {
+        "race": "catquest-voice",
         "displayID": "verified-supplement",
+        "sex": "unsexed-creature-category",
         "name": "catquest"
       },
       "255979": {
@@ -18714,7 +18758,9 @@
         "name": "catquest"
       },
       "270269": {
+        "race": "verified-appearance",
         "displayID": "verified-supplement",
+        "sex": "unsexed-creature-category",
         "name": "catquest"
       },
       "270438": {

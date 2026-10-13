@@ -831,7 +831,24 @@ confirmed the initial correction, then the user requested a small lift.
 The user confirmed the final female framing on 2026-10-13. The website reads
 the same profiles; deployed in the cumulative website update on 2026-10-13.
 
-CatQuest NPC race/sex take priority. Missing child metadata can be filled from
+Explicit creature voice labels distinguish `ancient` and `furbolg`: CatQuest
+uses `creature/ancient` and `creature/furbolg`, Wayfarer uses `ancient-male` and
+`furbolg-male`. Only unambiguous observations tied to each source's own stage
+speaker are imported; CatQuest explicit categories precede Wayfarer categories.
+They override broad CatQuest NPC voice labels such as `tauren` and `skyborne`.
+CatQuest's `creature/banshee` also supplies the separate `banshee` category
+(including Eltaliste and Blind Mary); it preserves the NPC's female sex.
+The ancient and furbolg categories intentionally do not distinguish sex: the generator uses
+`sex=male` as the canonical group value, not a claim about biological sex.
+Other CatQuest NPC race/sex take priority, except verified race classifications in
+`docs/internal/npc-race-classifications.json`. The generator applies those by the
+final resolved display ID, independently of library voice categories. For example,
+five verified appearances of model `124118` classify seven NPCs as `furbolg`,
+not `tauren`. The file records the model identity and appearance metadata source;
+it is a maintained build input, not a dependency on the local viewer cache.
+Classification never changes quest roles or portrait selection. The two
+unsexed categories use the same canonical group value regardless of source.
+Missing child metadata can be filled from
 CatQuest or Wayfarer `child-male` / `child-female` voice labels tied to their own
 known stage speaker. Conflicting voices are not inferred; an unknown completion
 speaker is never replaced by the giver. A child voice does not prove human race
@@ -869,8 +886,11 @@ model. Female orcs have a separate profile with more distance and a small
 leftward and upward shift, also confirmed for the tested model.
 The Orc Orphan model `125367` uses `orc_child`: distance `1.5`, lateral `0.02`,
 vertical `0.04`, confirmed in game on quest `925` on 2026-10-13. This separates
-its forward Talk dip from the protected default orc framing; other child models
-remain unchanged until separately checked.
+its forward Talk dip from the protected default orc framing.
+Female orc child model `125362` uses the independent `orc_child_female` profile:
+distance `1.5`, lateral `0.02`, vertical `0.04`. This correction leaves room
+for the downward Talk dip and was confirmed in game on quest `97326`, 2026-10-13.
+Other child models remain unchanged until separately checked.
 Female tauren have a slight vertical lift with the original zoom and lateral position.
 Female undead have a slight downward and rightward correction with the shared
 profile's zoom. Male undead have a smaller downward correction to leave a margin

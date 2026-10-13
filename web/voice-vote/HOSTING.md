@@ -1,5 +1,40 @@
 # Timeweb Cloud deployment
 
+## Creature categories, camera and debug update (2026-10-13)
+
+Deployed image `talkinghead-vote-web:categories-camera-20261013` with the
+female orc child camera confirmed by the user in game: quest 97326, model 125362,
+profile `orc_child_female`, distance 1.5, offset Y 0.02 / Z 0.04.
+The image was rebuilt from the final repository sources after confirmation.
+
+The catalogue changes 34 comparisons for 17 NPCs to `ancient/male`,
+`furbolg/male` or `banshee/female`. Sex is a single canonical group value for
+ancients/furbolgs. Explicit CatQuest Voices creature categories precede Wayfarer
+and broad NPC voice labels. Old votes and comparison IDs were not migrated:
+previous classifications remain historical, and corrected categories collect
+independent votes. Audio hashes, recording IDs/paths, texts, portrait assets and
+the 3,808-comparison set are unchanged. The React debug JSON now includes the
+exact catalogue `race` and `sex`, including null values and unavailable portraits.
+
+Backup: `/srv/talkinghead/backups/furbolg-20261013-075908`.
+Deployment verified that all 530 existing votes and 530 comparison records
+were preserved; SQLite integrity and both container health checks passed.
+The backup includes the database, pending inbox, previous catalogue and image ID.
+
+Validation artifacts are in `artifacts/review/furbolg/`: addon suite, 49 web
+unit tests, layout, portrait recovery/debug fields and audio preloading passed.
+`ResultsExporterTest` confirms separate identities and no inherited race votes.
+Full offline portrait verification completed at 1,425/1,426, with only the known
+quest 97290 / display 146706 missing-camera exception. The full run used
+`verified-catalogue.json`; the final snapshot differs only in race/sex fields,
+and deployment preflight verified identical portrait/audio workload.
+Packed-model verification passed: 342 verified, 22 original-format fallbacks,
+no failed packs. The final female orc profile also passed a focused render check
+in neutral pose, nine talk frames and reset. Audio preloading and cookie-based
+volume checks passed again against the deployed frontend without real ballots.
+Live Firefox checks also loaded and played quests 8231, 7636, 5657 and 97326,
+confirming ready portraits, catalogue-matching debug categories and contained text.
+
 The voting site and Java API share one Ubuntu server. Nginx on the host terminates
 HTTPS and proxies the entire site to `127.0.0.1:8080`. Java has no public port.
 

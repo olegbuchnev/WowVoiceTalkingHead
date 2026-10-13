@@ -3,6 +3,7 @@ const fs = require('fs'), path = require('path');
 const {readPack} = require('./generate-wayfarer-metadata');
 const {sha256} = require('./generate-speakers');
 const {childVoiceMetadata} = require('./child-voice-metadata');
+const {creatureVoiceMetadata} = require('./creature-voice-metadata');
 const positive = id => Number.isSafeInteger(id) && id > 0;
 function collect(addons) {
   const packs = [];
@@ -61,6 +62,8 @@ function collect(addons) {
   for (const [id, metadata] of Object.entries(childVoiceMetadata(observations))) {
     Object.assign(result.npcs[id] ||= {}, metadata);
   }
+  for (const [id, metadata] of Object.entries(creatureVoiceMetadata(observations)))
+    Object.assign(result.npcs[id] ||= {}, metadata);
   return result;
 }
 function importSpeakers(addons, check = false) {

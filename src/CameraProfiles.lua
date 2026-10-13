@@ -10,6 +10,9 @@ local profiles = {
     -- Orc Orphan (125367): allow room for the forward dip during speech.
     -- Rightward shift and framing confirmed in game on quest 925, 2026-10-13.
     orc_child = { distance = 1.5, y = 0.02, z = 0.04 },
+    -- Female orc child (125362): leave room for the downward Talk dip.
+    -- Framing confirmed in game on quest 97326, 2026-10-13.
+    orc_child_female = { distance = 1.5, y = 0.02, z = 0.04 },
     -- Slightly lift female tauren; keep the accepted zoom and lateral position.
     tauren_female = { distance = 1.1, y = 0, z = 0 },
     human = { distance = 1.15, y = 0, z = -0.025 },
