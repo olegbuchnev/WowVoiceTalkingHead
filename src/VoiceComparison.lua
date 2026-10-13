@@ -144,13 +144,11 @@ local function attachQuestSuggestions(frame, input)
                     if button.SetMotionScriptsWhileDisabled then button:SetMotionScriptsWhileDisabled(true) end
                     button:SetScript("OnEnter", function(self)
                         if self:IsEnabled() then self.Icon:SetSize(26, 26) end
-                        if source == "wayfarer" and row.questID then
-                            local recording = Comparison.Resolve(row.questID, source)
+                        if source == "wayfarer" and row.questID and not Comparison.Resolve(row.questID, source) then
                             local names = WowVoiceWayfarerSource.PacksForQuest(row.questID, "a")
                             GameTooltip:SetOwner(self, "ANCHOR_TOP")
-                            GameTooltip:AddLine(recording and "Wayfarer" or "Wayfarer: запись недоступна", 1, 0.82, 0.25)
-                            GameTooltip:AddLine(recording and recording.packName
-                                or table.concat(names, "\n"), 1, 1, 1, true)
+                            GameTooltip:AddLine("Wayfarer: запись недоступна", 1, 0.82, 0.25)
+                            GameTooltip:AddLine(table.concat(names, "\n"), 1, 1, 1, true)
                             GameTooltip:Show()
                             L.OptionsTooltip(GameTooltip)
                         end

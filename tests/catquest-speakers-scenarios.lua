@@ -5,13 +5,13 @@ local quests = TalkingHeadRuDB.questSpeakers[playerGUID]
 for _, id in ipairs({98245, 98246}) do
     local context = WV:GetReplaySpeaker(id)
     assert(context.speaker.npcID == 270637 and context.speaker.displayID == 11740)
-    assert(context.speaker.name == '[Howin Kindfeather]')
+    assert(context.speaker.name == 'Ховин Мягкоперый')
     assert(not quests[id], 'Imported NPC metadata must remain transient')
     assert(WV:ReplayQuest(id))
     local head = frames.TalkingHeadRu
     assert(head:IsShown() and head.Model.displayID == 11740 and not head.Icon.visible)
-    assert(head.Name.text == 'Howin Kindfeather', 'Imported outer brackets must not appear in the heading')
-    assert(TalkingHeadRuSpeakers.npcs[270637].name == '[Howin Kindfeather]', 'Source metadata must stay intact')
+    assert(head.Name.text == 'Ховин Мягкоперый', 'Use the Russian name supplied by CatQuest 0.7.0')
+    assert(TalkingHeadRuSpeakers.npcs[270637].name == 'Ховин Мягкоперый', 'Source metadata must stay intact')
     WV:Silence()
 end
 quests[98246] = {questId=98246, npcID=123, displayID=456, name='Captured'}

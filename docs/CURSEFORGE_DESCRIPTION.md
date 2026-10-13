@@ -38,7 +38,7 @@ Disable automatic queue playback to let the current recording finish and start t
 ## Voice sources
 
 * **[WowVoice](https://www.curseforge.com/wow/addons/wowvoice-classic)** — classic quest voiceovers with **3,669 main quest descriptions**.
-* **[CatQuest](https://www.curseforge.com/wow/addons/catquest) + [CatQuest Voices](https://www.curseforge.com/wow/addons/catquest-voices)** — alternative voiceovers and additional Forever quests, with **3,030 main quest descriptions**.
+* **[CatQuest](https://www.curseforge.com/wow/addons/catquest) + [CatQuest Voices](https://www.curseforge.com/wow/addons/catquest-voices)** — alternative voiceovers and additional Forever quests, with **4,473 main quest descriptions**.
 * **[Wayfarer](https://www.curseforge.com/wow/addons/wayfarer-russian-voiceover)** — Alliance, Horde, and shared quest voiceovers, with **3,790 main quest descriptions** across three modules.
 
 These counts include only main quest descriptions, excluding progress lines, turn-ins, and additional gender variants. Some quests are available in multiple libraries.
@@ -55,7 +55,7 @@ Set the library priority in settings. TalkingHead Ru selects each recording from
 
 ## Compatibility
 
-While TalkingHead Ru is enabled, CatQuest and Wayfarer are used as voice libraries: automatic playback, quest playback buttons and automatic notifications are suppressed. Manual book reading and location lore remain available. If you enable location lore or its indicator again in the library's settings, TalkingHead Ru remembers that choice and stops overriding it, including after a restart.
+While TalkingHead Ru is enabled, CatQuest and Wayfarer are used as voice libraries: automatic playback, quest playback buttons and automatic notifications are suppressed. Manual book reading and location lore remain available. If you enable location lore, its indicator or CatQuest world voices again in the library's settings, TalkingHead Ru remembers that choice and stops overriding it, including after a restart.
 
 Disabling TalkingHead Ru restores only the settings it still controls, preserving your explicit lore preferences. The startup message includes links only for loaded voice libraries.
 
@@ -120,7 +120,7 @@ On English clients, player controls use English; settings and the voice catalogu
 ## Источники озвучки
 
 * **[WowVoice](https://www.curseforge.com/wow/addons/wowvoice-classic)** — озвучка классических заданий: **3 669 основных описаний**.
-* **[CatQuest](https://www.curseforge.com/wow/addons/catquest) + [CatQuest Voices](https://www.curseforge.com/wow/addons/catquest-voices)** — альтернативная озвучка и дополнительные задания Forever: **3 030 основных описаний**.
+* **[CatQuest](https://www.curseforge.com/wow/addons/catquest) + [CatQuest Voices](https://www.curseforge.com/wow/addons/catquest-voices)** — альтернативная озвучка и дополнительные задания Forever: **4 473 основных описания**.
 * **[Wayfarer](https://www.curseforge.com/wow/addons/wayfarer-russian-voiceover)** — озвучка заданий Альянса, Орды и общих заданий: **3 790 основных описаний** в трёх модулях.
 
 Указано количество только основных описаний заданий, без реплик выполнения, сдачи и дополнительных вариантов пола персонажа. Часть заданий озвучена в нескольких библиотеках.
@@ -137,7 +137,7 @@ On English clients, player controls use English; settings and the voice catalogu
 
 ## Совместимость
 
-Пока TalkingHead Ru включён, CatQuest и Wayfarer используются как библиотеки: автозапуск, квестовые кнопки и автоматические уведомления подавляются. Ручное чтение книг и лора мест остаётся доступным. Если снова включить лор мест или его значок в настройках библиотеки, TalkingHead Ru запомнит этот выбор и больше не будет менять эту настройку, в том числе после перезапуска.
+Пока TalkingHead Ru включён, CatQuest и Wayfarer используются как библиотеки: автозапуск, квестовые кнопки и автоматические уведомления подавляются. Ручное чтение книг и лора мест остаётся доступным. Если снова включить лор мест, его значок или голоса мира CatQuest в настройках библиотеки, TalkingHead Ru запомнит этот выбор и больше не будет менять эту настройку, в том числе после перезапуска.
 
 При отключении TalkingHead Ru восстанавливаются только настройки, которыми он ещё управляет; ваш явный выбор лора сохраняется. Стартовое сообщение содержит ссылки только на загруженные библиотеки озвучки.
 

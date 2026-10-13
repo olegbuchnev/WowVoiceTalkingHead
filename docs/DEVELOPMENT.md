@@ -991,7 +991,7 @@ Inputs:
   NPC starters remain explicit exclusions. The retired Wowhead snapshot and
   its importer were removed: stale exclusions no longer override maintained
   sources. Quest 940 now resolves to Arynia Cloudsbreak (NPC 3519).
-- CatQuest 0.6.4 supplies preferred giver/receiver mappings and NPC appearances;
+- CatQuest 0.7.0 supplies preferred giver/receiver mappings and NPC appearances;
   Classic supplies remaining receivers and the last fallback for givers.
 - Wayfarer Alliance/Horde/Shared 3.2.0 supplies `qg`, `npc.n/d` and each quest
   stage's `s` field. Accept speakers and `qg` define givers; progress/completion
@@ -1004,8 +1004,8 @@ Inputs:
 
 Input versions and hashes are tracked. Only factual metadata is imported;
 external addon code is never executed or required in-game. Source snapshots and
-reports stay outside `src/`. The generated database currently contains 2525 NPCs,
-4687 giver entries (including narrators/exclusions), 4288 finisher entries and 2395 NPCs with models.
+reports stay outside `src/`. The generated database currently contains 2673 NPCs,
+4973 giver entries (including narrators/exclusions), 4753 finisher entries and 2541 NPCs with models.
 Pins was refreshed to `f26f006c94efce787d0f09a32462595ddac2fced` on October 12;
 see the [Wayfarer 3.2.0 migration](internal/wayfarer-3.2.0-integration.md) for
 the current combined import and validation results.

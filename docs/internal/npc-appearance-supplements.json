@@ -637,6 +637,20 @@
       "verifiedOn": "2026-10-13",
       "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
       "nameRu": "Фендаал Камень Ветров"
+    },
+    "13020": {
+      "displayID": 13992,
+      "source": "https://www.wowhead.com/forever/ru/npc=13020",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Валестраз Порочный"
+    },
+    "14902": {
+      "displayID": 14994,
+      "source": "https://www.wowhead.com/forever/ru/npc=14902",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Джин'рок Разрушитель"
     }
   }
 }

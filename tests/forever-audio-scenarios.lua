@@ -47,7 +47,7 @@ for _, variant in ipairs({{2, entry.male}, {3, entry.female}}) do
 end
 sex = 2
 
--- JSON-only quest 1462 has completion audio; its earlier stages are text-only.
+-- Turn-in-only quest 1462 has completion audio; its earlier stages are text-only.
 questID = 1462
 assert(not WV:HasQuestAudio(questID))
 assert(WV:SoundPath(questID, 'a') == nil and WV:SoundPath(questID, 'p') == nil)

@@ -6,7 +6,7 @@
 На английском клиенте кнопки плеера отображаются на английском, настройки — на русском.
 Говорящая голова использует шрифты заданий Blizzard, включая их кириллические варианты.
 
-**[Скачать аддон](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.3.3-forever/TalkingHeadRu-1.3.3-forever.zip)** ·
+**[Скачать аддон](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.3.4-forever/TalkingHeadRu-1.3.4-forever.zip)** ·
 [Инструкция](USER_README.md) ·
 [Сообщить об ошибке](https://github.com/olegbuchnev/WowVoiceTalkingHead/issues)
 
@@ -73,7 +73,7 @@
 
 ### CatQuest
 
-Альтернативная озвучка классических заданий и дополнительные квесты Forever — 3 030 основных описаний.
+Альтернативная озвучка классических заданий и дополнительные квесты Forever — 4 473 основных описания.
 
 **Что установить:** [CatQuest](https://www.curseforge.com/wow/addons/catquest/files/all?page=1&pageSize=20&gameVersionTypeId=88568&showAlphaFiles=hide)
 и [CatQuest Voices](https://www.curseforge.com/wow/addons/catquest-voices/files/all?page=1&pageSize=20&gameVersionTypeId=88568&showAlphaFiles=hide).
@@ -81,7 +81,7 @@
 
 **Как работает с TalkingHead Ru:** автозапуск, квестовые кнопки и всплывающие уведомления
 временно отключаются. Книги и лор можно запускать вручную. Если снова включить
-автоматический лор или его значок в настройках CatQuest, этот выбор сохраняется,
+автоматический лор, его значок или голоса мира в настройках CatQuest, этот выбор сохраняется,
 в том числе после перезапуска игры. При отключении TalkingHead Ru восстанавливаются
 только настройки, которыми он ещё управляет, и исходная видимость кнопок.
 
@@ -105,7 +105,7 @@
 
 ## Установка
 
-1. **[Скачайте аддон](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.3.3-forever/TalkingHeadRu-1.3.3-forever.zip)**.
+1. **[Скачайте аддон](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.3.4-forever/TalkingHeadRu-1.3.4-forever.zip)**.
    Закройте игру и скопируйте папку `TalkingHeadRu` из архива
    в `_classic_beta_/Interface/AddOns/`.
 2. **Установите одну или несколько библиотек для Forever:**
@@ -168,6 +168,17 @@ TalkingHead показывает ссылки на авторов загруже
 Поддержать авторов и связаться с ними можно по ссылкам выше.
 
 ## Что нового
+
+<details name="releases">
+<summary><strong>Версия 1.3.4-forever</strong> · <time datetime="2026-10-13">13 октября 2026</time></summary>
+
+- **Добавлена поддержка CatQuest и CatQuest Voices 0.7.0** — теперь библиотека содержит 4 473 описания заданий.
+- **Обновлены русские тексты заданий.**
+- **Дополнены и исправлены портреты и русские имена квестодателей** по актуальным данным Wowhead Forever. Уточнено определение рассказчика.
+- **Исправлены ракурсы детей людей и орков:** головы больше не выходят за границы портрета.
+- **Автоматические реплики мира CatQuest по умолчанию отключаются** при использовании TalkingHead Ru. Их можно включить вручную в настройках CatQuest.
+
+</details>
 
 <details name="releases">
 <summary><strong>Версия 1.3.3-forever</strong> · <time datetime="2026-10-12">12 октября 2026</time></summary>

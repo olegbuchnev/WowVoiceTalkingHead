@@ -61,9 +61,9 @@ WV.PlaybackTime = GetTimePreciseSec or GetTime
 local catQuestOverride
 local catQuestPreferences = {autoDetail=false, autoProgress=false, autoComplete=false,
     autoBooks=false, autoGreeting=false, autoGossip=false, loreAuto=false,
-    loreMark="hidden", codexToasts=false, storyCard=false}
+    loreMark="hidden", codexToasts=false, storyCard=false, world=false}
 -- Lore preferences remain under user control after an explicit settings edit.
-local catQuestCustomizable = {loreAuto=true, loreMark=true}
+local catQuestCustomizable = {loreAuto=true, loreMark=true, world=true}
 local catQuestButtonsActive, catQuestRefreshPending
 local catQuestButtonVisibility, catQuestButtonHooks, catQuestParentHooks = {}, {}, {}
 local catQuestTrackerHooks, catQuestTrackerButtons = {}, {}

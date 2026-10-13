@@ -67,7 +67,11 @@ for mask = 0, 7 do
         assert(button:IsShown() and button:IsEnabled() == loaded[name])
         assert(button.UnavailableMark.visible == not loaded[name])
         button.scripts.OnEnter(button)
-        assert(GameTooltip.visible and GameTooltip.lines[2]:find(name,1,true))
+        if loaded[name] then
+            assert(not GameTooltip.visible, 'Available recordings do not need a module tooltip')
+        else
+            assert(GameTooltip.visible and GameTooltip.lines[2]:find(name,1,true))
+        end
         button.scripts.OnLeave(button)
         if not loaded[name] then
             local before = #plays
