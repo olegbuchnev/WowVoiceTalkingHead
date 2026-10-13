@@ -21,7 +21,7 @@ const harness=`<!doctype html><html><body style="background:#222"><div id="portr
 import {createPortrait,isPortraitLoaded,framePortrait,setTalking} from '/src/model.js';
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
 window.prepare=async npc=>{
- const el=document.querySelector('#portrait'),v=await createPortrait(el,npc);
+ const el=document.querySelector('#portrait'),v=await createPortrait(el,npc,{versionedAssets:false});
  const wait=async()=>{const start=Date.now();while(!isPortraitLoaded(v)){if(Date.now()-start>30000)throw Error('Portrait timed out');await delay(25);}};
  await wait();await framePortrait(v);
  const actor=v.renderer.actors[0],m=actor.c;

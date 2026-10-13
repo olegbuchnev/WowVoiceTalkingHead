@@ -1,5 +1,56 @@
 # Timeweb Cloud deployment
 
+## Browser model cache and catalogue revalidation (2026-10-13)
+
+Deployed `talkinghead-vote-web:model-cache-20261013`. Portrait resources now use
+per-file SHA-256 query versions with `public, max-age=31536000, immutable`.
+The small per-portrait version manifest is revalidated; unchanged resources keep
+their URLs across deployments. Hashes cover the actual packed/fallback model and
+adapted viewer bytes. Mismatched hashes fail with non-cacheable 410 responses.
+Preparation/deployment requirements are in [MODEL-CACHE.md](MODEL-CACHE.md).
+
+The earlier catalogue fix changes the client from `no-store` to `no-cache`,
+allowing revalidation and reuse of its compressed body across page reloads.
+Public Firefox verification confirmed 200 then 304 for the catalogue, a ready
+portrait and a model reused after reload with its original cached request ID.
+No production ballots were submitted. All 52 web unit tests, the image build's
+audio/layout/cache gates, and real cached-viewer neutral/talk/reset checks for
+quests 179, 925, 5657 and 97326 passed. The latter made no model requests on
+repeated portraits; all 53 initial resource requests carried content hashes.
+
+Only the web container was replaced. The API container and catalogue hashes were
+verified unchanged; the votes volume was untouched. Rollback image references:
+`/srv/talkinghead/backups/model-cache-20261013-185146` and
+`/srv/talkinghead/backups/catalogue-cache-20261013-183803`.
+Logs: `artifacts/review/model-cache-*` and `catalogue-cache-*`.
+
+## CatQuest 0.7.0 catalogue update (2026-10-13)
+
+Updated CatQuest and Voices metadata, including current Forever Quest Pins.
+The catalogue now contains 4,103 comparisons and 11,437 recordings: 295 added
+comparisons, none removed. Transferred 2,565 new audio files directly from the
+installed libraries (332,356,313 bytes) to hash-addressed paths; unchanged
+recording IDs retain their previous paths. Previous audio remains available.
+
+Backup: `/srv/talkinghead/backups/catquest-0.7.0-20261013-181810`, including
+SQLite, the pending inbox, previous catalogues/model manifests and image IDs.
+All 544 existing votes and 544 comparison records were preserved. Both services
+are healthy; database integrity and unchanged application image IDs were checked.
+The local weighted race/sex queue changes are not included in this data update.
+
+Full offline verification completed at 1,441/1,442 portraits, with only the known
+quest 97290 / display 146706 missing-camera exception. Added 185 original model
+resources. Packed-model checks passed: 349 verified, 26 original-format
+fallbacks, no failed packs. New model families passed neutral/talk/reset WebGL
+checks. The compressed model delta, including verified packs, was 21,454,213 bytes.
+
+Public Firefox checks loaded portraits and played every available voice for
+quests 3381, 4970, 8058, 8544, 495 and 97326 without production ballots.
+The public catalogue matches the staged snapshot. Audio preloading, playback
+reuse and cookie volume checks passed against the deployed frontend with mocked
+vote/audio requests. Artifacts: `artifacts/review/catquest-0.7.0-*` and
+`artifacts/voice-vote-deploy/updates/catquest-0.7.0/`.
+
 ## Creature categories, camera and debug update (2026-10-13)
 
 Deployed image `talkinghead-vote-web:categories-camera-20261013` with the

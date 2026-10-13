@@ -1,21 +1,26 @@
 import $ from 'jquery';
 import {installPortraitCamera} from './portrait-camera.js';
 import {installPortraitLighting} from './portrait-light.js';
+import {loadModelVersions,modelAssetURL} from './model-versions.js';
+// Applies only to this site's model requests, including jQuery metadata/bones.
+$.ajaxPrefilter(options=>{options.url=modelAssetURL(options.url);});
 let loading;
 export function loadViewer() {
   if (window.ZamModelViewer) return Promise.resolve();
   if (loading) return loading;
   window.$ = window.jQuery = $;
   window.WH ||= { debug:()=>{}, defaultAnimation:'Stand', WebP:{getImageExtension:()=>'.webp'} };
+  window.WH.modelAssetURL=modelAssetURL;
   loading = new Promise((resolve, reject) => {
     const script = document.createElement('script');
-    script.src = '/modelviewer/live/viewer/viewer.min.js?portrait-light=2';
+    script.src = modelAssetURL('/modelviewer/live/viewer/viewer.min.js?portrait-light=2');
     script.onload = resolve; script.onerror = () => { loading = null; script.remove(); reject(Error('Просмотрщик недоступен')); };
     document.head.append(script);
   });
   return loading;
 }
-export async function createPortrait(container, npc, {originalAssets=false}={}) {
+export async function createPortrait(container, npc, {originalAssets=false,versionedAssets=!originalAssets}={}) {
+  if(versionedAssets) await loadModelVersions(npc.displayID);
   await loadViewer();
   const viewer = new window.ZamModelViewer({type:2, container:$(container), aspect:1,
     // Forever is named classicplus on Wowhead's asset CDN. Display IDs are

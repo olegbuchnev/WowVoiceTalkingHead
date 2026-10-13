@@ -24,6 +24,10 @@ Docker may reuse a passed layer only when its source, tests and dependencies are
 unchanged. For a local check: `npm run test:audio --prefix web/voice-vote`.
 The image also checks talking-head text containment for short and wrapped NPC
 names at desktop and mobile widths (`npm run test:layout`).
+It also checks catalogue revalidation across reloads and year-long caching of
+hash-addressed model assets. These cache checks use real browser HTTP caching,
+without Playwright routing. Changed model bytes must get a new URL; unchanged
+textures must stay cached. See [MODEL-CACHE.md](MODEL-CACHE.md).
 
 From the repository root, with the current external voice libraries installed:
 
@@ -66,8 +70,8 @@ docker compose logs --tail 100 web api
 
 Locally open `http://127.0.0.1:8080/`; the admin panel is at `/admin/` on the same
 address. The first startup checks all mapped library files and can take longer
-with Docker Desktop bind mounts. Models are fetched on demand from Wowhead and
-cached in the `model_cache` volume. Audio is read directly from the mounted
+with Docker Desktop bind mounts. Import the prepared model cache, including its
+`manifest.json`, into the `model_cache` volume before using portraits. Audio is read directly from the mounted
 libraries and hash-checked when served. An updated file with an old hash is
 rejected instead of being evaluated as the old recording.
 

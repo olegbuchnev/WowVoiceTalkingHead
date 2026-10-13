@@ -7,6 +7,7 @@ import {cameraProfile, readPortraitCamera, calibratedCamera} from './portrait-ca
 import {adaptViewerLighting} from './viewer-lighting.mjs';
 import {createDiagnosticsHandler} from './diagnostics.mjs';
 import {readPortraitPack} from './portrait-pack-store.mjs';
+import {createModelVersions,adaptViewerAssetURLs,modelHash,matchesETag,viewerPath,sendModelAsset} from './model-versions.mjs';
 
 const require = createRequire(import.meta.url);
 const { dataTable } = require('../../tools/import-forever-audio.js');
@@ -140,6 +141,11 @@ export async function modelAsset(urlPath, timings) {
 
 export function localApi(options = {}) {
   const diagnostics=createDiagnosticsHandler();
+  const readAsset=async (url,timings)=>{
+    const bytes=await modelAsset(url,timings);
+    return url===viewerPath ? adaptViewerAssetURLs(adaptViewerLighting(bytes)) : bytes;
+  };
+  const versions=createModelVersions({readAsset,cacheRoot:()=>process.env.VOICE_VOTE_MODEL_CACHE || path.join(repo,'artifacts/voice-vote-model-cache')});
   let data,catalogueBody,catalogueETag;
   const catalogue=()=>data ||= options.loadData ? options.loadData() : buildCatalogue(undefined,options);
   return async (req, res, next) => {
@@ -164,6 +170,11 @@ export function localApi(options = {}) {
         if(matches) {res.writeHead(304,headers).end();return;}
         res.writeHead(200,headers);
         res.end(req.method==='HEAD' ? undefined : catalogueBody);
+      } else if (/^\/api\/model-versions\/[1-9]\d{0,9}$/.test(url.pathname)) {
+        const body=JSON.stringify(await versions(url.pathname.split('/').at(-1)));
+        const etag=`"${modelHash(body)}"`,headers={'Content-Type':'application/json','Cache-Control':'no-cache','ETag':etag};
+        if(matchesETag(req.headers['if-none-match'],etag)) res.writeHead(304,headers).end();
+        else res.writeHead(200,headers).end(req.method==='HEAD' ? undefined : body);
       } else if (/^\/api\/portrait-camera\/[1-9]\d{0,9}$/.test(url.pathname)) {
         const fileID = Number(url.pathname.split('/').at(-1));
         const bytes = await modelAsset(`/modelviewer/classicplus/m2/${fileID}.m2`,timings);
@@ -187,12 +198,11 @@ export function localApi(options = {}) {
         if (req.method === 'HEAD') res.end();
         else res.end(bytes.subarray(range.start, range.end + 1));
       } else if (url.pathname.startsWith('/modelviewer/')) {
-        let bytes = await modelAsset(url.pathname,timings);
-        if(url.pathname==='/modelviewer/live/viewer/viewer.min.js') bytes=adaptViewerLighting(bytes);
+        const bytes = await readAsset(url.pathname,timings);
         const ext = path.extname(url.pathname);
         const mime = {'.js':'text/javascript', '.css':'text/css', '.json':'application/json', '.png':'image/png', '.webp':'image/webp'}[ext] || 'application/octet-stream';
         timings.bytes=bytes.length;
-        res.writeHead(200, {'Content-Type':mime,'Cache-Control':'public, max-age=86400','Server-Timing':`read;dur=${timings.readMs || 0}`}).end(req.method==='HEAD' ? undefined : bytes);
+        sendModelAsset(req,res,url,bytes,mime,timings);
       } else res.writeHead(404).end();
     } catch (error) {
       console.warn('Voice preview:', error.message);

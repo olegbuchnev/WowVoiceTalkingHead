@@ -12,8 +12,10 @@ COPY web/voice-vote/tests/audio-preload.test.mjs web/voice-vote/tests/audio-prel
 COPY web/voice-vote/tests/portrait-pack.test.mjs tests/
 COPY web/voice-vote/tests/head-layout-browser.mjs tests/
 COPY web/voice-vote/tests/catalogue-cache-browser.mjs tests/
+COPY web/voice-vote/tests/model-cache-browser.mjs web/voice-vote/tests/model-versions.test.mjs tests/
+COPY web/voice-vote/model-versions.mjs ./
 COPY web/voice-vote/portrait-pack.mjs web/voice-vote/portrait-pack-store.mjs ./
-RUN node --test tests/audio-preload.test.mjs tests/portrait-pack.test.mjs && npm run test:layout && npm run test:audio && node tests/catalogue-cache-browser.mjs
+RUN node --test tests/audio-preload.test.mjs tests/portrait-pack.test.mjs tests/model-versions.test.mjs && npm run test:layout && npm run test:audio && node tests/catalogue-cache-browser.mjs && node tests/model-cache-browser.mjs
 RUN npm run build -- --config docker/vite.config.mjs
 
 FROM node:24-alpine AS runtime
@@ -26,6 +28,7 @@ COPY src/CameraModels.lua src/CameraProfiles.lua src/
 COPY web/voice-vote/server.mjs web/voice-vote/portrait-camera.mjs web/voice-vote/viewer-lighting.mjs web/voice-vote/native-camera-samples.json web/voice-vote/portable-data.mjs web/voice-vote/serve.mjs web/voice-vote/
 COPY web/voice-vote/diagnostics.mjs web/voice-vote/diagnostics.mjs
 COPY web/voice-vote/portrait-pack-store.mjs web/voice-vote/portrait-pack-store.mjs
+COPY web/voice-vote/model-versions.mjs web/voice-vote/model-versions.mjs
 COPY web/voice-vote/docker/nginx.conf web/voice-vote/docker/nginx.conf
 COPY --from=build /app/web/voice-vote/dist/ web/voice-vote/dist/
 RUN mkdir -p /cache && chown node:node /cache
