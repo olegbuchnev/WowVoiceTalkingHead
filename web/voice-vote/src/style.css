@@ -63,7 +63,7 @@ h1{font-family:var(--font-site);font-weight:400;font-size:28px;line-height:1.3;l
 .volume-control input::-moz-range-thumb{box-sizing:border-box;width:20px;height:20px;border:2px solid #eeeeef;border-radius:50%;background:var(--volume-thumb)}
 }
 .volume-control input:focus-visible{outline:2px solid #d0b475;outline-offset:4px;border-radius:3px}
-.volume-control output{flex-shrink:0;min-width:44px;text-align:center;font-variant-numeric:tabular-nums;color:#e8d3a5}
+.volume-control output{flex-shrink:0;min-width:44px;text-align:center;font-variant-numeric:tabular-nums;color:inherit}
 @media(max-width:1240px){
 .volume-control{position:static;transform:none;flex-direction:row;justify-content:center;width:auto;margin-top:12px;padding:10px 16px;gap:14px}
 .volume-control input{writing-mode:horizontal-tb;direction:ltr;flex:0 1 160px;width:160px;min-width:0;max-width:35vw;height:28px}
@@ -92,10 +92,12 @@ h1{font-family:var(--font-site);font-weight:400;font-size:28px;line-height:1.3;l
 .portrait-placeholder img{display:block;width:64px;height:64px}
 /* Retail 12.1.0.69933 TalkingHeadUI.xml: Name RIGHT / Text BOTTOMRIGHT x=-42.
    Keep the same right inset as src/Portrait.lua, even without a close button. */
-.speech{position:absolute;left:152px;right:42px;top:25px}
+.speech{position:absolute;left:152px;right:42px;top:25px;bottom:15px;display:flex;flex-direction:column;overflow:hidden}
 /* Compensate for browser line-box metrics: match the game's visible title gap. */
-.talking-head h2{font-family:var(--font-quest-title);color:#ffd105;font-size:var(--quest-title);line-height:18px;margin:0 0 6px;font-weight:400;text-shadow:1px 1px #7d590d}
-.quest-text{height:91px;overflow:auto;scrollbar-width:none}
+.talking-head h2{font-family:var(--font-quest-title);color:#ffd105;font-size:var(--quest-title);line-height:18px;margin:0 0 6px;font-weight:400;text-shadow:1px 1px #7d590d;flex-shrink:0;max-height:54px;overflow:hidden;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3}
+/* Reserve the same bottom inset when the speaker name wraps. ResizeObserver
+   in useQuestScroll rebuilds pagination for the resulting text viewport. */
+.quest-text{flex:1;min-height:0;overflow:auto;scrollbar-width:none}
 .quest-text p{font-family:var(--font-ui);font-size:var(--quest-body);line-height:13px;margin:0;color:#fff;text-shadow:none;white-space:pre-wrap;overflow-wrap:anywhere}
 .transport{display:flex;align-items:center;gap:9px;color:#bcb7af;font-size:var(--site-small);margin:8px 0 12px}
 .signal{display:flex;gap:2px;height:12px;align-items:center}

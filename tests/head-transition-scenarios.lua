@@ -68,7 +68,7 @@ advance(now+0.5)
 local nextStart=now
 assert(WV:ReplayQuest(861))
 opacity(h,1)
-advance(nextStart+0.8); assert(h.visible and h.Model.displayID==WowVoiceSpeakers.npcs[3052].displayID)
+advance(nextStart+0.8); assert(h.visible and h.Model.displayID==TalkingHeadRuSpeakers.npcs[3052].displayID)
 advance(nextStart+1.6); near(h.Close.alpha,1)
 WV:FinishTalkingHead()
 WV:ToggleHeadPreview()

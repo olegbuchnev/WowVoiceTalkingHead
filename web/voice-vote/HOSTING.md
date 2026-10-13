@@ -73,6 +73,34 @@ exposing an updated catalogue; see [MODEL-CACHE.md](MODEL-CACHE.md).
 
 Portrait diagnostics: [log fields, SSH lookup and baseline](DIAGNOSTICS.md).
 
+### Portrait catalogue and text containment (2026-10-13)
+
+Web image: `talkinghead-vote-web:portraits-20261013`; API image unchanged.
+The bundle adds portraits to 177 comparisons for 84 NPCs and localizes seven
+missing/English names. All 3,808 comparisons, 9,863 recordings, hashes, texts and
+deployed audio paths are retained. The shared addon database and website use
+verified exact-NPC supplements, including the first automated Wowhead pass.
+`TalkingHeadRuSpeakers` replaces the old internal global in runtime and generation.
+
+Wrapped NPC names now reduce the description viewport inside a fixed bottom
+inset. Single-line geometry stays unchanged; extreme names are capped at three
+lines. The volume percentage matches the idle speaker icon. Text containment
+checks run both in `npm test` and as a required Docker build gate.
+
+Validation: six importer tests, addon tests, 49 frontend unit tests, layout,
+portrait recovery, audio preload/volume and Docker checks passed. Full offline
+check: 1,425/1,426 ready, with only the existing quest 97290 / display 146706
+missing-camera exception. All 342 packed models passed parser verification;
+22 unsupported formats retain originals. Default pose checks and eleven additional
+new model checks passed. The bundle adds 677 original dependencies without
+replacing existing assets; the manifest covers 13,491 dependencies.
+
+Deployment bundle: `/srv/talkinghead/import/portraits-20261013`; backup location:
+`/srv/talkinghead/backups/20261013-portraits`. The switch script stops services,
+backs up SQLite plus the pending inbox and metadata, then installs the catalogue
+and image. Its rollback restores metadata and the old image while preserving
+live votes. Local validation logs: `artifacts/review/portraits-*.log`.
+
 ### Cumulative portrait update (2026-10-13)
 
 Web image: `talkinghead-vote-web:cumulative-20261013`; API image unchanged.

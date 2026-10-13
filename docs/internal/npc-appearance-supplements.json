@@ -54,6 +54,589 @@
       "source": "https://www.wowhead.com/forever/npc=255853/ursendris",
       "verifiedOn": "2026-10-13",
       "evidence": "The exact NPC page sets linksButton.dataset.displayId = 139269 and uses the same displayId in View in 3D for NPC 255853. CatQuest identifies the giver of quest 94638 but omits its appearance; Wayfarer supplies no NPC metadata for this ID."
+    },
+    "252095": {
+      "displayID": 137338,
+      "source": "https://www.wowhead.com/forever/npc=252095/hanaa-nightwind",
+      "verifiedOn": "2026-10-13",
+      "evidence": "The exact NPC page sets linksButton.dataset.displayId = 137338 and uses the same displayId in View in 3D for NPC 252095. CatQuest and Wayfarer identify the giver of quest 92544 but omit its appearance."
+    },
+    "252475": {
+      "displayID": 138152,
+      "source": "https://www.wowhead.com/forever/npc=252475/elaadrin-evengale",
+      "verifiedOn": "2026-10-13",
+      "evidence": "The exact NPC page sets linksButton.dataset.displayId = 138152 and uses the same displayId in View in 3D for NPC 252475. CatQuest and Wayfarer identify the giver of quest 92860 but omit its appearance. The distinct quest receiver is preserved."
+    },
+    "254151": {
+      "displayID": 138042,
+      "source": "https://www.wowhead.com/forever/npc=254151/vayn-moongaze",
+      "verifiedOn": "2026-10-13",
+      "evidence": "The exact NPC page sets linksButton.dataset.displayId = 138042 and data-mv-type-id 254151 uses data-mv-display-id 138042. CatQuest and Wayfarer identify the giver of quest 93459 but omit its appearance."
+    },
+    "251684": {
+      "displayID": 137165,
+      "source": "https://www.wowhead.com/forever/npc=251684/strange-hermit",
+      "verifiedOn": "2026-10-13",
+      "evidence": "The exact NPC page sets linksButton.dataset.displayId = 137165 and data-mv-type-id 251684 uses data-mv-display-id 137165. CatQuest and Wayfarer identify the giver of quest 93159 but omit its appearance."
+    },
+    "918": {
+      "displayID": 1507,
+      "nameRu": "Осборн Дитя Ночи",
+      "source": "https://www.wowhead.com/forever/ru/npc=918",
+      "verifiedOn": "2026-10-13",
+      "evidence": "The exact Russian NPC page names Osborne the Night Man as Осборн Дитя Ночи and sets linksButton.dataset.displayId = 1507; data-mv-type-id 918 uses data-mv-display-id 1507. CatQuest supplies the quest 8233 giver but omits its appearance and Russian name."
+    },
+    "252359": {
+      "displayID": 137418,
+      "nameRu": "Лотелум Звездный Ветер",
+      "source": "https://www.wowhead.com/forever/ru/npc=252359",
+      "verifiedOn": "2026-10-13",
+      "evidence": "The exact Russian NPC page confirms the localized name and sets linksButton.dataset.displayId = 137418; data-mv-type-id 252359 uses data-mv-display-id 137418. CatQuest and Wayfarer identify the quest 94006 giver but omit its appearance."
+    },
+    "331": {
+      "displayID": 1484,
+      "source": "https://www.wowhead.com/forever/ru/npc=331",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Магинор Дюма"
+    },
+    "1244": {
+      "displayID": 480,
+      "source": "https://www.wowhead.com/forever/ru/npc=1244",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Ретиль Страж Природы"
+    },
+    "1776": {
+      "displayID": 11650,
+      "source": "https://www.wowhead.com/forever/ru/npc=1776",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Магтур"
+    },
+    "2546": {
+      "displayID": 797,
+      "source": "https://www.wowhead.com/forever/ru/npc=2546",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Командир флота Фираллон"
+    },
+    "2782": {
+      "displayID": 2434,
+      "source": "https://www.wowhead.com/forever/ru/npc=2782",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Управляющий Аларик"
+    },
+    "3897": {
+      "displayID": 1010,
+      "source": "https://www.wowhead.com/forever/ru/npc=3897",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Кролг"
+    },
+    "4595": {
+      "displayID": 2614,
+      "source": "https://www.wowhead.com/forever/ru/npc=4595",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Балтус Птицелов"
+    },
+    "5955": {
+      "displayID": 2902,
+      "source": "https://www.wowhead.com/forever/ru/npc=5955",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Тоога"
+    },
+    "6271": {
+      "displayID": 4959,
+      "source": "https://www.wowhead.com/forever/ru/npc=6271",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Мышь"
+    },
+    "9459": {
+      "displayID": 2552,
+      "source": "https://www.wowhead.com/forever/ru/npc=9459",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Цирус Раскаиватель"
+    },
+    "10321": {
+      "displayID": 6374,
+      "source": "https://www.wowhead.com/forever/ru/npc=10321",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Огнебор"
+    },
+    "10740": {
+      "displayID": 6293,
+      "source": "https://www.wowhead.com/forever/ru/npc=10740",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Ауби"
+    },
+    "11554": {
+      "displayID": 5851,
+      "source": "https://www.wowhead.com/forever/ru/npc=11554",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Гразл"
+    },
+    "11555": {
+      "displayID": 1012,
+      "source": "https://www.wowhead.com/forever/ru/npc=11555",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Горн Одноглаз"
+    },
+    "11556": {
+      "displayID": 6829,
+      "source": "https://www.wowhead.com/forever/ru/npc=11556",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Сальфа"
+    },
+    "11557": {
+      "displayID": 11363,
+      "source": "https://www.wowhead.com/forever/ru/npc=11557",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Мелиош"
+    },
+    "11862": {
+      "displayID": 5562,
+      "source": "https://www.wowhead.com/forever/ru/npc=11862",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Цунаман"
+    },
+    "11957": {
+      "displayID": 11910,
+      "source": "https://www.wowhead.com/forever/ru/npc=11957",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Дух Великой Кошки"
+    },
+    "13636": {
+      "displayID": 13730,
+      "source": "https://www.wowhead.com/forever/ru/npc=13636",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Чудной снеговик"
+    },
+    "14524": {
+      "displayID": 14567,
+      "source": "https://www.wowhead.com/forever/ru/npc=14524",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Вартус Древний"
+    },
+    "14525": {
+      "displayID": 14567,
+      "source": "https://www.wowhead.com/forever/ru/npc=14525",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Стома Древний"
+    },
+    "14526": {
+      "displayID": 14567,
+      "source": "https://www.wowhead.com/forever/ru/npc=14526",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Хастат Древний"
+    },
+    "15192": {
+      "displayID": 2719,
+      "source": "https://www.wowhead.com/forever/ru/npc=15192",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Анахронос"
+    },
+    "15395": {
+      "displayID": 5851,
+      "source": "https://www.wowhead.com/forever/ru/npc=15395",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Нафиэн"
+    },
+    "15481": {
+      "displayID": 15473,
+      "source": "https://www.wowhead.com/forever/ru/npc=15481",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Дух Азургероса"
+    },
+    "15624": {
+      "displayID": 12432,
+      "source": "https://www.wowhead.com/forever/ru/npc=15624",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Лесной огонек"
+    },
+    "16431": {
+      "displayID": 16136,
+      "source": "https://www.wowhead.com/forever/ru/npc=16431",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Треснутый некротический кристалл"
+    },
+    "16531": {
+      "displayID": 16136,
+      "source": "https://www.wowhead.com/forever/ru/npc=16531",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Тусклый некротический кристалл"
+    },
+    "49808": {
+      "displayID": 36630,
+      "source": "https://www.wowhead.com/forever/ru/npc=49808",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Гренхильда Темнокоготь"
+    },
+    "205729": {
+      "displayID": 112671,
+      "source": "https://www.wowhead.com/forever/ru/npc=205729",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Бортон Теневой Тотем"
+    },
+    "246378": {
+      "displayID": 129985,
+      "source": "https://www.wowhead.com/forever/ru/npc=246378",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Данита Морр"
+    },
+    "248755": {
+      "displayID": 131648,
+      "source": "https://www.wowhead.com/forever/ru/npc=248755",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Люмина Виндсингер"
+    },
+    "249363": {
+      "displayID": 136971,
+      "source": "https://www.wowhead.com/forever/ru/npc=249363",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Яла Загонщица Ветров"
+    },
+    "250686": {
+      "displayID": 136424,
+      "source": "https://www.wowhead.com/forever/ru/npc=250686",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Табита Пленное Сердце"
+    },
+    "251001": {
+      "displayID": 1590,
+      "source": "https://www.wowhead.com/forever/ru/npc=251001",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Страж смерти Кристоф"
+    },
+    "251166": {
+      "displayID": 1162,
+      "source": "https://www.wowhead.com/forever/ru/npc=251166",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Низшее воплощение земли"
+    },
+    "251523": {
+      "displayID": 138153,
+      "source": "https://www.wowhead.com/forever/ru/npc=251523",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Констебль Аонда"
+    },
+    "251904": {
+      "displayID": 138143,
+      "source": "https://www.wowhead.com/forever/ru/npc=251904",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Сания Серебряный Поток"
+    },
+    "251905": {
+      "displayID": 137343,
+      "source": "https://www.wowhead.com/forever/ru/npc=251905",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Зеррил Нежный Ветерок"
+    },
+    "251906": {
+      "displayID": 138107,
+      "source": "https://www.wowhead.com/forever/ru/npc=251906",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Тири Добрый Ветер"
+    },
+    "251991": {
+      "displayID": 136970,
+      "source": "https://www.wowhead.com/forever/ru/npc=251991",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Талин Сверкающая Нить"
+    },
+    "251993": {
+      "displayID": 137059,
+      "source": "https://www.wowhead.com/forever/ru/npc=251993",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Индари Солнечное Кружево"
+    },
+    "252172": {
+      "displayID": 138150,
+      "source": "https://www.wowhead.com/forever/ru/npc=252172",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Данарий Воющая Вуаль"
+    },
+    "252378": {
+      "displayID": 137825,
+      "source": "https://www.wowhead.com/forever/ru/npc=252378",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Йорана Ветреный Тростник"
+    },
+    "252383": {
+      "displayID": 137871,
+      "source": "https://www.wowhead.com/forever/ru/npc=252383",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Валенния Штормовой Кулак"
+    },
+    "252389": {
+      "displayID": 140075,
+      "source": "https://www.wowhead.com/forever/ru/npc=252389",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Кве'лана Быстрый Порыв"
+    },
+    "252448": {
+      "displayID": 144573,
+      "source": "https://www.wowhead.com/forever/ru/npc=252448",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Альварион Перекати-поле"
+    },
+    "252476": {
+      "displayID": 137873,
+      "source": "https://www.wowhead.com/forever/ru/npc=252476",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Талаанис Песня Теней"
+    },
+    "252800": {
+      "displayID": 137628,
+      "source": "https://www.wowhead.com/forever/ru/npc=252800",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Аамелия Перекати-поле"
+    },
+    "253004": {
+      "displayID": 140062,
+      "source": "https://www.wowhead.com/forever/ru/npc=253004",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Иаадария Горький Ветер"
+    },
+    "253204": {
+      "displayID": 143666,
+      "source": "https://www.wowhead.com/forever/ru/npc=253204",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Дондаллион Шелест Ветра"
+    },
+    "253576": {
+      "displayID": 137888,
+      "source": "https://www.wowhead.com/forever/ru/npc=253576",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Хюсаа Быстрый Бриз"
+    },
+    "253590": {
+      "displayID": 137871,
+      "source": "https://www.wowhead.com/forever/ru/npc=253590",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Валенния Штормовой Кулак"
+    },
+    "254078": {
+      "displayID": 137996,
+      "source": "https://www.wowhead.com/forever/ru/npc=254078",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Том \"Полурыб\" Уилсон"
+    },
+    "254344": {
+      "displayID": 138130,
+      "source": "https://www.wowhead.com/forever/ru/npc=254344",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Эндария Туманный Взор"
+    },
+    "256083": {
+      "displayID": 138120,
+      "source": "https://www.wowhead.com/forever/ru/npc=256083",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Риаани Ночной Ветер"
+    },
+    "257006": {
+      "displayID": 140040,
+      "source": "https://www.wowhead.com/forever/ru/npc=257006",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Ниала Яркое Пламя"
+    },
+    "257065": {
+      "displayID": 139939,
+      "source": "https://www.wowhead.com/forever/ru/npc=257065",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Миссионер Джасаан"
+    },
+    "257655": {
+      "displayID": 7117,
+      "source": "https://www.wowhead.com/forever/ru/npc=257655",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Страж смерти Билмут"
+    },
+    "257663": {
+      "displayID": 1666,
+      "source": "https://www.wowhead.com/forever/ru/npc=257663",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Страж смерти Фалган"
+    },
+    "257944": {
+      "displayID": 140525,
+      "source": "https://www.wowhead.com/forever/ru/npc=257944",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Элегаэль Колючая Лапа"
+    },
+    "258113": {
+      "displayID": 140654,
+      "source": "https://www.wowhead.com/forever/ru/npc=258113",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Ингрид Дунвальд"
+    },
+    "259012": {
+      "displayID": 138006,
+      "source": "https://www.wowhead.com/forever/ru/npc=259012",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Эалана Летучий Ореол"
+    },
+    "259084": {
+      "displayID": 143215,
+      "source": "https://www.wowhead.com/forever/ru/npc=259084",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Денаарис Звездная Буря"
+    },
+    "259118": {
+      "displayID": 137889,
+      "source": "https://www.wowhead.com/forever/ru/npc=259118",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Мулн Гнев Земли"
+    },
+    "259119": {
+      "displayID": 143208,
+      "source": "https://www.wowhead.com/forever/ru/npc=259119",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Алаана Штормовой Полет"
+    },
+    "259611": {
+      "displayID": 141689,
+      "source": "https://www.wowhead.com/forever/ru/npc=259611",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Страж смерти Балдрен"
+    },
+    "259620": {
+      "displayID": 131648,
+      "source": "https://www.wowhead.com/forever/ru/npc=259620",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId."
+    },
+    "265810": {
+      "displayID": 144649,
+      "source": "https://www.wowhead.com/forever/ru/npc=265810",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Кага Дикое Копыто"
+    },
+    "266484": {
+      "displayID": 5711,
+      "source": "https://www.wowhead.com/forever/ru/npc=266484",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Морбин Погибель Света"
+    },
+    "267009": {
+      "displayID": 146496,
+      "source": "https://www.wowhead.com/forever/ru/npc=267009",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Хадрик Харлсон"
+    },
+    "268684": {
+      "displayID": 14616,
+      "source": "https://www.wowhead.com/forever/ru/npc=268684",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Тра"
+    },
+    "269068": {
+      "displayID": 145744,
+      "source": "https://www.wowhead.com/forever/ru/npc=269068",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Эйла Солнечный Рог"
+    },
+    "270269": {
+      "displayID": 143127,
+      "source": "https://www.wowhead.com/forever/ru/npc=270269",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Арбал"
+    },
+    "270438": {
+      "displayID": 146378,
+      "source": "https://www.wowhead.com/forever/ru/npc=270438",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Страж смерти Масодж"
+    },
+    "270459": {
+      "displayID": 2191,
+      "source": "https://www.wowhead.com/forever/ru/npc=270459",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Альфина Ночной Взор"
+    },
+    "272054": {
+      "displayID": 146918,
+      "source": "https://www.wowhead.com/forever/ru/npc=272054",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Аватара Сэйлинана"
+    },
+    "273017": {
+      "displayID": 147228,
+      "source": "https://www.wowhead.com/forever/ru/npc=273017",
+      "verifiedOn": "2026-10-13",
+      "evidence": "Exact localized Forever NPC canonical URL; matching View in 3D NPC/display attributes and linksButton.dataset.displayId. Russian name comes from the NPC heading without its title.",
+      "nameRu": "Фендаал Камень Ветров"
     }
   }
 }

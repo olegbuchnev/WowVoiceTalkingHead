@@ -37,18 +37,18 @@ end
 
 event('QUEST_DETAIL')
 local head = frames.TalkingHeadRu
-assert(head.visible and head.Name.text == 'Совик' and head.Model.displayID == WowVoiceSpeakers.npcs[3413].displayID)
+assert(head.visible and head.Name.text == 'Совик' and head.Model.displayID == TalkingHeadRuSpeakers.npcs[3413].displayID)
 assert(plays[#plays].file == 'Interface\\AddOns\\WowVoiceSounds\\2842a.ogg')
 portraitEvent('QUEST_ACCEPTED', 2842)
 local captured = questCache()[2842]
 assert(captured.description == description and captured.npcID == nil and captured.name == nil)
 WV:Silence()
 assert(WV:ReplayQuest(2842))
-assert(head.Name.text == 'Совик' and head.Model.displayID == WowVoiceSpeakers.npcs[3413].displayID)
+assert(head.Name.text == 'Совик' and head.Model.displayID == TalkingHeadRuSpeakers.npcs[3413].displayID)
 WV:Silence()
 for _, section in ipairs({'p', 'c'}) do
     local speaker = WV:CaptureQuestSpeaker(2842, section, title, description).speaker
-    assert(speaker.npcID == WowVoiceSpeakers.finishers[2842].npcID and speaker.npcID ~= 3413, 'Resolve the receiver independently of the giver')
+    assert(speaker.npcID == TalkingHeadRuSpeakers.finishers[2842].npcID and speaker.npcID ~= 3413, 'Resolve the receiver independently of the giver')
 end
 assert(not WV:CaptureQuestSpeaker(999999, 'a', title, description).speaker.npcID)
 assert(WV:Resolve('Дворфские экипировщики', 'a', '') == 179,

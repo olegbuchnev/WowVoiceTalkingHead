@@ -20,4 +20,5 @@
 *.bak
 *.log
 *.tmp
+__pycache__/
 *~

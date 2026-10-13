@@ -1,11 +1,11 @@
 -- Exercise creature loading when the unified database has no known appearance.
-WowVoiceSpeakers.npcs[658].displayID = nil
-WowVoiceSpeakers.npcs[3052].displayID = nil
+TalkingHeadRuSpeakers.npcs[658].displayID = nil
+TalkingHeadRuSpeakers.npcs[3052].displayID = nil
 event('ADDON_LOADED')
 event('PLAYER_LOGIN')
 local WV = WowVoice
 TalkingHeadRuDB.questSpeakers = {}
-local originalDatabase = WowVoiceSpeakers
+local originalDatabase = TalkingHeadRuSpeakers
 local function replay(id)
     WV:Silence()
     assert(WV:ReplayQuest(id))
@@ -64,20 +64,20 @@ questCache()[179] = nil
 print('PASS: captured identity wins, partial records retain text, known appearances are unambiguous and character-local')
 
 -- Missing/replaced metadata and ambiguous giver IDs cannot produce a wrong NPC.
-WowVoiceSpeakers = nil
+TalkingHeadRuSpeakers = nil
 replay(179)
 assert(h.Icon.visible)
-WowVoiceSpeakers = {schemaVersion=1, givers={[179]=false}, finishers={}, npcs={}}
+TalkingHeadRuSpeakers = {schemaVersion=1, givers={[179]=false}, finishers={}, npcs={}}
 replay(179)
 assert(h.Icon.visible)
-WowVoiceSpeakers.givers[179] = {npcID=658,name='First'}
+TalkingHeadRuSpeakers.givers[179] = {npcID=658,name='First'}
 replay(179)
 assert(h.Model.creatureID == 658 and not h.Icon.visible)
-WowVoiceSpeakers.givers[179] = {narrator=true}
+TalkingHeadRuSpeakers.givers[179] = {narrator=true}
 replay(179)
 assert(h.Icon.visible and h.Model.alpha == 0 and h.Name.text == 'Рассказчик')
 assert(not questCache()[179], 'Inferred narration must not replace captured game data')
-WowVoiceSpeakers = originalDatabase
+TalkingHeadRuSpeakers = originalDatabase
 
 -- Model failure must not interrupt playback; asynchronous success reveals it.
 local creature = h.Model.SetCreature

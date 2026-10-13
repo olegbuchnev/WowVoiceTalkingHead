@@ -13,7 +13,7 @@ local panel = frames.WowVoiceOptionsPanel
 assert(WV:SetSharedQuestVoice('catquest'))
 local snapshot = WowVoiceCatQuestAudio.sourceVersion
 assert(snapshot == '0.6.1' and not S.Status().updated and not panel.AudioSourceWarning:IsShown())
-assert(TalkingHeadRuQuestTexts.sourceVersion == snapshot and WowVoiceSpeakers.schemaVersion == 1)
+assert(TalkingHeadRuQuestTexts.sourceVersion == snapshot and TalkingHeadRuSpeakers.schemaVersion == 1)
 -- Real 0.6.0 replacements: independently measured recordings and live metadata.
 -- These live fields come from the external index, independently of the snapshot.
 local previousFive, previousTwentySeven = quests[5], quests[27]

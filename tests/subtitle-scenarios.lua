@@ -52,7 +52,7 @@ WV:Silence()
 expectedID=861
 WV:ReplayQuest(861)
 assert(head.Body.text=='Description from journal' and head.Name.text=='Скорн Белое Облако')
-assert(head.Model.displayID==WowVoiceSpeakers.npcs[3052].displayID)
+assert(head.Model.displayID==TalkingHeadRuSpeakers.npcs[3052].displayID)
 WV:Silence()
 C_QuestLog.GetLogIndexForQuestID=function() return nil end
 GetQuestLogQuestText=function() error('Never read selected quest with nil index') end

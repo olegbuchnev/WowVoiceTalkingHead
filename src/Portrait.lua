@@ -190,7 +190,7 @@ local function questStarterItem(questId)
 end
 
 local function speakerDatabase()
-    local database = _G.WowVoiceSpeakers
+    local database = _G.TalkingHeadRuSpeakers
     return type(database) == "table" and database.schemaVersion == 1 and database or nil
 end
 local function npcMetadata(speaker)

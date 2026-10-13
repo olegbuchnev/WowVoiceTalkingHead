@@ -862,6 +862,13 @@ node tools/generate-speakers.js --check
 ```
 
 Пересборка из сохранённых исходников: `node tools/generate-speakers.js`.
+Автодополнение отсутствующих обликов и русских имён по точному NPC из Wowhead:
+`python tools/fill-wowhead-appearances.py --scope voting --apply`.
+По умолчанию проверяются только NPC голосования; `--scope all` охватывает общую базу.
+Ответы и возобновляемый отчёт хранятся в `artifacts/wowhead-appearances/`.
+Проверка парсера: `python tests/test_wowhead_appearances.py`.
+После импорта обязательны проверки общей базы и подготовка кэша новых моделей
+по [скиллу](.agents/skills/update-libraries/SKILL.md); скрипт сам сайт не публикует.
 Для обновления CatQuest: `node tools/import-catquest-speakers.js "<папка CatQuest>"`.
 Для текущего Forever Quest Pins:
 `node tools/import-forever-pins-speakers.js "<папка Database>" <полный SHA коммита>`.
@@ -886,7 +893,9 @@ node tools/generate-speakers.js --check
 - Облики: **CatQuest → Wayfarer → подтверждённые дополнения**, по точному ID NPC.
   Точечные дополнения с источником и датой проверки хранятся в
   `docs/internal/npc-appearance-supplements.json`; они заполняют только пробелы.
-- Имена: сначала русские; при равном языке **CatQuest → Wayfarer → Classic**.
+- Имена: сначала русские; при равном языке **CatQuest → Wayfarer → Classic → подтверждённые дополнения**.
+  Поле `nameRu` дополнения хранит имя с русской страницы Wowhead для точного ID NPC;
+  заменяет английское или отсутствующее имя и сохраняется при перегенерации.
 
 Явные сведения о нескольких квестодателях защищены от
 замены одиночным NPC независимо от порядка источников. Данные, полученные
@@ -897,7 +906,7 @@ node tools/generate-speakers.js --check
 заменяет NPC сдачи. После обновления CatQuest Voices пересобирай общую базу:
 `node tools/generate-speakers.js`.
 Текущий итог: 2525 NPC, 4687 записей выдачи (включая рассказчиков и запреты
-неоднозначного выбора), 4288 записей сдачи; облики известны для 2311 NPC.
+неоднозначного выбора), 4288 записей сдачи; облики известны для 2395 NPC.
 Версии источников и результаты текущей сборки — в манифесте выше.
 
 В игре после установки проверить: повтор старого задания без сохранённого NPC,

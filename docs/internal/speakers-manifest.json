@@ -18,7 +18,8 @@
       "sources": [
         "catquest",
         "wayfarer",
-        "classic"
+        "classic",
+        "verified-supplement"
       ]
     },
     "appearances": [
@@ -69,7 +70,7 @@
     "pins": "a6102be44b12511f187e73132419dcc06c7c3b9c38b61914051162a235f58ec6",
     "cat": "a847ea1c523529be3c49b2288c5aa24e98e7165f3aee69ab020b254f77898325",
     "wayfarer": "718a9b84e260497c8709ca0f25955a0fc1d352bd5725818028ce5de1ecde923e",
-    "supplements": "6f0add4527e3aefc193e9219218207014d7a4cde06d823755cf905b172840e73",
+    "supplements": "813135ecb98b111795112a1c39b3fd982da0e61d2c941f29e4e7ad986ce7eb54",
     "catAudio": "456a55f380c3a48a4de5c3274d33e899f78c997dee525558b035602c8aae6e2d"
   },
   "counts": {
@@ -9376,7 +9377,8 @@
         "name": "catquest"
       },
       "331": {
-        "name": "catquest"
+        "displayID": "verified-supplement",
+        "name": "verified-supplement"
       },
       "332": {
         "displayID": "catquest",
@@ -9873,7 +9875,8 @@
         "name": "catquest"
       },
       "918": {
-        "name": "catquest"
+        "displayID": "verified-supplement",
+        "name": "verified-supplement"
       },
       "925": {
         "displayID": "catquest",
@@ -10086,6 +10089,7 @@
         "name": "wayfarer"
       },
       "1244": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "1246": {
@@ -10647,6 +10651,7 @@
         "name": "catquest"
       },
       "1776": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "1842": {
@@ -11291,6 +11296,7 @@
         "name": "wayfarer"
       },
       "2546": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "2594": {
@@ -11405,6 +11411,7 @@
         "name": "wayfarer"
       },
       "2782": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "2784": {
@@ -12825,6 +12832,7 @@
         "name": "wayfarer"
       },
       "3897": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "3901": {
@@ -13150,7 +13158,8 @@
         "name": "catquest"
       },
       "4595": {
-        "name": "catquest"
+        "displayID": "verified-supplement",
+        "name": "verified-supplement"
       },
       "4598": {
         "displayID": "catquest",
@@ -13939,6 +13948,7 @@
         "name": "catquest"
       },
       "5955": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "5994": {
@@ -14104,6 +14114,7 @@
       "6271": {
         "ageGroup": "catquest-voice",
         "sex": "catquest-voice",
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "6286": {
@@ -15134,6 +15145,7 @@
         "name": "catquest"
       },
       "9459": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "9500": {
@@ -15381,6 +15393,7 @@
         "name": "wayfarer"
       },
       "10321": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "10369": {
@@ -15484,6 +15497,7 @@
         "name": "wayfarer"
       },
       "10740": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "10776": {
@@ -15811,15 +15825,19 @@
         "name": "wayfarer"
       },
       "11554": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "11555": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "11556": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "11557": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "11558": {
@@ -15957,6 +15975,7 @@
         "name": "wayfarer"
       },
       "11862": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "11863": {
@@ -16024,6 +16043,7 @@
         "name": "catquest"
       },
       "11957": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "12018": {
@@ -16359,6 +16379,7 @@
         "name": "classic"
       },
       "13636": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "13656": {
@@ -16587,12 +16608,15 @@
         "name": "wayfarer"
       },
       "14524": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "14525": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "14526": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "14539": {
@@ -16941,6 +16965,7 @@
         "name": "wayfarer"
       },
       "15192": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "15194": {
@@ -17006,6 +17031,7 @@
         "name": "wayfarer"
       },
       "15395": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "15431": {
@@ -17097,6 +17123,7 @@
         "name": "wayfarer"
       },
       "15481": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "15498": {
@@ -17387,6 +17414,7 @@
         "name": "classic"
       },
       "15624": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "15659": {
@@ -17702,6 +17730,7 @@
         "name": "classic"
       },
       "16431": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "16458": {
@@ -17732,6 +17761,7 @@
         "name": "wayfarer"
       },
       "16531": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "16786": {
@@ -17787,6 +17817,7 @@
         "name": "catquest"
       },
       "49808": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "185317": {
@@ -17794,6 +17825,7 @@
         "name": "catquest"
       },
       "205729": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "211022": {
@@ -17822,6 +17854,7 @@
         "name": "catquest"
       },
       "246378": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "246389": {
@@ -17889,6 +17922,7 @@
         "name": "catquest"
       },
       "248755": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "248840": {
@@ -17896,6 +17930,7 @@
         "name": "catquest"
       },
       "249363": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "249713": {
@@ -17904,6 +17939,7 @@
         "name": "catquest"
       },
       "250686": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "250873": {
@@ -17919,6 +17955,7 @@
         "name": "catquest"
       },
       "251001": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "251160": {
@@ -17926,6 +17963,7 @@
         "name": "catquest"
       },
       "251166": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "251306": {
@@ -17997,6 +18035,7 @@
         "name": "catquest"
       },
       "251523": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "251537": {
@@ -18012,6 +18051,7 @@
         "name": "catquest"
       },
       "251684": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "251902": {
@@ -18023,12 +18063,15 @@
         "name": "catquest"
       },
       "251904": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "251905": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "251906": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "251913": {
@@ -18048,6 +18091,7 @@
         "name": "wayfarer"
       },
       "251991": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "251992": {
@@ -18055,18 +18099,22 @@
         "name": "catquest"
       },
       "251993": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "252095": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "252155": {
         "name": "wayfarer"
       },
       "252172": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "252359": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "252373": {
@@ -18078,6 +18126,7 @@
         "name": "catquest"
       },
       "252378": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "252382": {
@@ -18085,24 +18134,31 @@
         "name": "catquest"
       },
       "252383": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "252389": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "252448": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "252475": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "252476": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "252800": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "253004": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "253092": {
@@ -18110,6 +18166,7 @@
         "name": "catquest"
       },
       "253204": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "253279": {
@@ -18132,15 +18189,18 @@
         "name": "catquest"
       },
       "253576": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "253590": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "253844": {
         "name": "catquest"
       },
       "254078": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "254084": {
@@ -18148,9 +18208,11 @@
         "name": "wayfarer"
       },
       "254151": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "254344": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "254345": {
@@ -18174,6 +18236,7 @@
         "name": "catquest"
       },
       "256083": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "256386": {
@@ -18188,6 +18251,7 @@
         "name": "catquest"
       },
       "257006": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "257018": {
@@ -18209,6 +18273,7 @@
         "name": "wayfarer"
       },
       "257065": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "257304": {
@@ -18239,9 +18304,11 @@
         "name": "catquest"
       },
       "257655": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "257663": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "257808": {
@@ -18249,6 +18316,7 @@
         "name": "catquest"
       },
       "257944": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "258043": {
@@ -18258,6 +18326,10 @@
       "258098": {
         "displayID": "catquest",
         "name": "catquest"
+      },
+      "258113": {
+        "displayID": "verified-supplement",
+        "name": "verified-supplement"
       },
       "258203": {
         "displayID": "catquest",
@@ -18284,15 +18356,19 @@
         "name": "catquest"
       },
       "259012": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "259084": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "259118": {
-        "name": "catquest"
+        "displayID": "verified-supplement",
+        "name": "verified-supplement"
       },
       "259119": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "259190": {
@@ -18304,9 +18380,11 @@
         "name": "catquest"
       },
       "259611": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "259620": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "259649": {
@@ -18387,6 +18465,7 @@
         "name": "catquest"
       },
       "265810": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "265811": {
@@ -18410,6 +18489,7 @@
         "name": "catquest"
       },
       "266484": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "266735": {
@@ -18444,6 +18524,7 @@
         "name": "catquest"
       },
       "267009": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "267118": {
@@ -18597,6 +18678,7 @@
       },
       "268684": {
         "ageGroup": "catquest-voice",
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "268701": {
@@ -18615,7 +18697,8 @@
         "name": "catquest"
       },
       "269068": {
-        "name": "catquest"
+        "displayID": "verified-supplement",
+        "name": "verified-supplement"
       },
       "269075": {
         "displayID": "catquest",
@@ -18631,13 +18714,16 @@
         "name": "catquest"
       },
       "270269": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "270438": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "270459": {
-        "name": "catquest"
+        "displayID": "verified-supplement",
+        "name": "verified-supplement"
       },
       "270637": {
         "displayID": "catquest",
@@ -18679,6 +18765,7 @@
         "name": "catquest"
       },
       "272054": {
+        "displayID": "verified-supplement",
         "name": "catquest"
       },
       "272203": {
@@ -18702,6 +18789,7 @@
         "name": "catquest"
       },
       "273017": {
+        "displayID": "verified-supplement",
         "name": "wayfarer"
       },
       "273458": {

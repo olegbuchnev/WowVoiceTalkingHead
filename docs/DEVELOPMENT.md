@@ -902,7 +902,8 @@ gossip option (for example, quest 2842 from Sovik). Captured NPCs, exact starter
 items and game objects keep priority. Inferred identities remain transient, and
 this fallback never substitutes the giver for a progress/completion speaker.
 
-`src/Speakers.lua` is the only runtime speaker database. It has `givers` and
+`src/Speakers.lua` exposes `TalkingHeadRuSpeakers`, the only runtime speaker database.
+The generator emits this name directly; regeneration checks validate it. It has `givers` and
 `finishers` keyed by quest ID, and `npcs` keyed by NPC ID. `false` mappings block
 ambiguous identities; an absent mapping is unknown. `{ narrator = true }` is an
 explicit description narrator, selected at its library priority and blocking lower
@@ -938,7 +939,7 @@ frequency, not cross-project version numbers or the age of one particular import
 - Finishers: **CatQuest > Wayfarer > Classic**; the Pins inputs contain only starters.
 - Appearances: **CatQuest > Wayfarer > verified supplements**, joined by exact NPC ID.
 - Names: prefer Russian; within the same language preference,
-  **CatQuest > Wayfarer > Classic**.
+  **CatQuest > Wayfarer > Classic > verified supplements**.
 
 Explicit multiple-starter facts and conflicting Classic giver IDs
 are applied before that priority order. They block guessing a single NPC even
@@ -952,6 +953,17 @@ Inputs:
   verified Forever NPC pages. Every entry records a display ID, source URL,
   verification date and evidence. Supplements cannot replace library appearances
   or define quest roles; matching names are not evidence of identical models.
+  Optional `nameRu` preserves a Russian name verified on the same NPC's
+  `/forever/ru/` page. It replaces missing/English names, while existing Russian
+  library names retain priority. Generation updates NPC and both role names;
+  the website catalogue inherits the same localized name.
+  `python tools/fill-wowhead-appearances.py --scope voting --apply` fills new
+  gaps automatically, with sequential requests, cached evidence, exact-NPC
+  identity checks and matching display values. `--scope all` includes NPCs
+  outside the voting catalogue. Reports and metadata backups stay under
+  `artifacts/wowhead-appearances/`; HTTP blocking stops the pass. Verify the
+  parser with `python tests/test_wowhead_appearances.py` and then validate
+  generated data and actual portrait rendering before deployment.
   Fillion NPC 253285 uses display 137707, confirmed on its own Wowhead page,
   independently of the existing mapping for NPC 253284.
 - Current [Forever Quest Pins](https://github.com/TylerAkins/forever-quest-markers)
@@ -973,7 +985,7 @@ Inputs:
 Input versions and hashes are tracked. Only factual metadata is imported;
 external addon code is never executed or required in-game. Source snapshots and
 reports stay outside `src/`. The generated database currently contains 2525 NPCs,
-4687 giver entries (including narrators/exclusions), 4288 finisher entries and 2311 NPCs with models.
+4687 giver entries (including narrators/exclusions), 4288 finisher entries and 2395 NPCs with models.
 Pins was refreshed to `f26f006c94efce787d0f09a32462595ddac2fced` on October 12;
 see the [Wayfarer 3.2.0 migration](internal/wayfarer-3.2.0-integration.md) for
 the current combined import and validation results.

@@ -22,6 +22,8 @@ they need no installed libraries or production access. Firefox and its system
 dependencies remain in the build stage and are not included in the runtime image.
 Docker may reuse a passed layer only when its source, tests and dependencies are
 unchanged. For a local check: `npm run test:audio --prefix web/voice-vote`.
+The image also checks talking-head text containment for short and wrapped NPC
+names at desktop and mobile widths (`npm run test:layout`).
 
 From the repository root, with the current external voice libraries installed:
 

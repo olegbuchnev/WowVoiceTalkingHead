@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5174 --strictPort",
     "build": "vite build",
-    "test": "npm run test:unit && npm run test:portraits && npm run test:audio",
+    "test": "npm run test:unit && npm run test:layout && npm run test:portraits && npm run test:audio",
+    "test:layout": "node tests/head-layout-browser.mjs",
     "test:audio": "node tests/audio-preload-browser.mjs",
     "test:unit": "node --test tests/*.test.mjs",
     "test:portraits": "node tests/portrait-loading-browser.mjs",

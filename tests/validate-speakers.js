@@ -49,6 +49,22 @@ assert.throws(()=>merge({...inputs,supplements:{schemaVersion:1,npcs:{90:{
   ...inputs.supplements.npcs[90],source:'https://www.wowhead.com/forever/npc=91',
 }}}}),/Invalid appearance supplement/,'Reject evidence for another NPC');
 const report=generate(true);
+const localizedInputs=structuredClone(inputs);
+localizedInputs.cat.tables.NpcData[90]={4:'English name'};
+localizedInputs.cat.tables.QuestFinisher[9]=90;
+for (const id of [10,70,90]) Object.assign(localizedInputs.supplements.npcs[id],{
+  nameRu:'Имя с Wowhead',source:`https://www.wowhead.com/forever/ru/npc=${id}`,
+});
+const localized=merge(localizedInputs);
+assert.equal(localized.database.npcs[90].name,'Имя с Wowhead','Verified Russian name replaces English');
+assert.equal(localized.database.givers[9].name,'Имя с Wowhead','Giver receives the localized name');
+assert.equal(localized.database.finishers[9].name,'Имя с Wowhead','Finisher receives the localized name');
+assert.equal(localized.origins.npcs[90].name,'verified-supplement');
+assert.equal(localized.database.npcs[10].name,'Имя','Existing Russian library name keeps priority');
+assert.equal(localized.database.npcs[70].name,'Новое русское имя');
+assert.equal(localized.database.npcs[10].displayID,111,'Localization cannot override a library appearance');
+localizedInputs.supplements.npcs[90].source='https://www.wowhead.com/forever/npc=90';
+assert.throws(()=>merge(localizedInputs),/Invalid Russian name supplement/,'Russian name requires the exact localized source');
 const children=merge({...inputs,cat:{tables:{
   NpcData:{101:{1:'orc',2:'male'},102:{1:'child',2:'female'}},
   QuestGiver:{21:100,22:101,23:102,24:103},QuestFinisher:{21:104},
@@ -78,7 +94,7 @@ assert.equal(narrated.database.finishers[12].npcID,121,'Description narration ke
 assert.equal(narrated.database.givers[8].npcID,80,'Completion narration does not change the description speaker');
 assert(!('undefined' in narrated.database.npcs));
 const {dataTable}=require('../tools/import-forever-audio');
-const current=dataTable(require('path').join(__dirname,'../src/Speakers.lua'));
+const current=dataTable(require('path').join(__dirname,'../src/Speakers.lua'),'TalkingHeadRuSpeakers');
 assert.equal(current.givers[940].npcID,3519,'Quest 940 uses Arynia from maintained sources');
 assert(current.npcs[3519].displayID>0,'Arynia has a portrait');
 assert.equal(current.givers[99260].npcID,253285,'Fillion quest keeps its distinct NPC ID');

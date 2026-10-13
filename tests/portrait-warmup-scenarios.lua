@@ -1,8 +1,8 @@
 -- Exercise creature loading when the unified database has no known appearance.
-WowVoiceSpeakers.npcs[658].displayID = nil
-WowVoiceSpeakers.npcs[3052].displayID = nil
-WowVoiceSpeakers.npcs[1378].displayID = nil
-WowVoiceSpeakers.npcs[2498].displayID = nil
+TalkingHeadRuSpeakers.npcs[658].displayID = nil
+TalkingHeadRuSpeakers.npcs[3052].displayID = nil
+TalkingHeadRuSpeakers.npcs[1378].displayID = nil
+TalkingHeadRuSpeakers.npcs[2498].displayID = nil
 event('ADDON_LOADED')
 event('PLAYER_LOGIN')
 TalkingHeadRuDB.questSpeakers = {}

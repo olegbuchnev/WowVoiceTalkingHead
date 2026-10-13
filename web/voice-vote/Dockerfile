@@ -10,8 +10,9 @@ COPY web/voice-vote/index.html ./
 COPY web/voice-vote/docker/vite.config.mjs docker/vite.config.mjs
 COPY web/voice-vote/tests/audio-preload.test.mjs web/voice-vote/tests/audio-preload-browser.mjs tests/
 COPY web/voice-vote/tests/portrait-pack.test.mjs tests/
+COPY web/voice-vote/tests/head-layout-browser.mjs tests/
 COPY web/voice-vote/portrait-pack.mjs web/voice-vote/portrait-pack-store.mjs ./
-RUN node --test tests/audio-preload.test.mjs tests/portrait-pack.test.mjs && npm run test:audio
+RUN node --test tests/audio-preload.test.mjs tests/portrait-pack.test.mjs && npm run test:layout && npm run test:audio
 RUN npm run build -- --config docker/vite.config.mjs
 
 FROM node:24-alpine AS runtime

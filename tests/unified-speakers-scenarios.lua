@@ -1,5 +1,5 @@
 event('ADDON_LOADED')
-local WV, database = WowVoice, WowVoiceSpeakers
+local WV, database = WowVoice, TalkingHeadRuSpeakers
 TalkingHeadRuDB.questSpeakers = {[playerGUID]={}}
 local quests = TalkingHeadRuDB.questSpeakers[playerGUID]
 local giver = database.givers[179].npcID

@@ -132,7 +132,7 @@ questCache()[97250] = nil
 npcGUID = 'Creature-0-1-0-1-999-0000000099'
 assert(WV:ReplayQuest(97250))
 local head = frames.TalkingHeadRu
-assert(head.Name.text == 'Рубака Логмар' and head.Model.displayID == WowVoiceSpeakers.npcs[5911].displayID)
+assert(head.Name.text == 'Рубака Логмар' and head.Model.displayID == TalkingHeadRuSpeakers.npcs[5911].displayID)
 assert(not head.Icon.visible and not questCache()[97250])
 assert(plays[#plays].file == WV:SoundPath(97250, 'a'))
 WV:Silence()
@@ -155,7 +155,7 @@ print('PASS: pre-update Forever quest recovers Logmar, preserves captured identi
 local savedQuests = TalkingHeadRuDB.questSpeakers
 TalkingHeadRuDB.questSpeakers = {}
 local recovered, blocked = 0, 0
-for id, starter in pairs(WowVoiceSpeakers.givers) do
+for id, starter in pairs(TalkingHeadRuSpeakers.givers) do
     local speaker = WV:GetReplaySpeaker(id).speaker
     if starter and starter.narrator then
         assert(speaker and speaker.narrator and not speaker.npcID and speaker.name == 'Рассказчик')
@@ -169,14 +169,14 @@ for id, starter in pairs(WowVoiceSpeakers.givers) do
     end
 end
 assert(recovered > 3000 and blocked > 0)
-local starter = WowVoiceSpeakers.givers[179]
-WowVoiceSpeakers.givers[179] = false
+local starter = TalkingHeadRuSpeakers.givers[179]
+TalkingHeadRuSpeakers.givers[179] = false
 assert(not WV:GetReplaySpeaker(179).speaker)
 questCache()[179] = {npcID=658, name='Captured giver', displayID=1234}
 assert(WV:GetReplaySpeaker(179).speaker.displayID == 1234)
 questCache()[179] = nil
-WowVoiceSpeakers.givers[179] = nil
+TalkingHeadRuSpeakers.givers[179] = nil
 assert(not WV:GetReplaySpeaker(179).speaker, 'Runtime must not fall back to the Classic index')
-WowVoiceSpeakers.givers[179] = starter
+TalkingHeadRuSpeakers.givers[179] = starter
 TalkingHeadRuDB.questSpeakers = savedQuests
 print('PASS: entire unified starter database, explicit exclusions, captured priority and no runtime source fallback')
