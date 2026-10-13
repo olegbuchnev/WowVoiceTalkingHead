@@ -1,17 +1,59 @@
 {
   "schemaVersion": 1,
   "npcs": {
+    "251968": {
+      "displayID": 137633,
+      "source": "https://www.wowhead.com/forever/npc=251968/ayessa-dawnsinger",
+      "verifiedOn": "2026-10-13",
+      "evidence": "The exact NPC page sets linksButton.dataset.displayId = 137633 and uses the same displayId in View in 3D for NPC 251968. The supplement fills only the missing appearance and preserves the independent quest giver and finisher mappings."
+    },
+    "251902": {
+      "displayID": 138155,
+      "source": "https://www.wowhead.com/forever/npc=251902/illaya-amberwind",
+      "verifiedOn": "2026-10-13",
+      "evidence": "The exact NPC page sets linksButton.dataset.displayId = 138155 and uses the same displayId in View in 3D for NPC 251902. CatQuest, Wayfarer and current Pins independently identify this NPC as the giver of quest 92595."
+    },
+    "8405": {
+      "displayID": 1012,
+      "source": "https://www.wowhead.com/forever/npc=8405/ogtinc",
+      "verifiedOn": "2026-10-13",
+      "evidence": "The exact NPC page sets linksButton.dataset.displayId = 1012 and uses the same displayId in View in 3D for NPC 8405. CatQuest, Wayfarer and current Pins identify this NPC as the giver of quest 8257; the finisher remains a separate NPC."
+    },
     "253285": {
       "displayID": 137707,
       "source": "https://www.wowhead.com/forever/ru/npc=253285",
       "verifiedOn": "2026-10-13",
       "evidence": "The NPC page sets linksButton.dataset.displayId = 137707. This is a separate NPC ID from 253284; the shared name alone is not used as evidence."
     },
+    "265812": {
+      "displayID": 144652,
+      "source": "https://www.wowhead.com/forever/npc=265812/eleanor-shackleton",
+      "verifiedOn": "2026-10-13",
+      "evidence": "The exact NPC page sets linksButton.dataset.displayId = 144652 and uses the same displayId in View in 3D. CatQuest, Wayfarer and current Pins independently identify NPC 265812 as the giver of quest 97958."
+    },
+    "265813": {
+      "displayID": 144653,
+      "source": "https://www.wowhead.com/forever/npc=265813/eric-brighthammer",
+      "verifiedOn": "2026-10-13",
+      "evidence": "The exact NPC page sets linksButton.dataset.displayId = 144653 and uses the same displayId in View in 3D for NPC 265813. CatQuest and Wayfarer independently identify this NPC as the giver of quest 96629."
+    },
     "254084": {
       "displayID": 137999,
       "source": "https://www.wowhead.com/forever/ru/npc=254084",
       "verifiedOn": "2026-10-13",
       "evidence": "The exact NPC page sets linksButton.dataset.displayId = 137999; quest 94007 starter is independently supplied by CatQuest, Wayfarer and current Pins."
+    },
+    "263664": {
+      "displayID": 143798,
+      "source": "https://www.wowhead.com/forever/npc=263664/raan-wildwind",
+      "verifiedOn": "2026-10-13",
+      "evidence": "The exact NPC page sets linksButton.dataset.displayId = 143798 and uses the same displayId in View in 3D for NPC 263664. CatQuest and Wayfarer both identify this NPC as the giver of quest 98284 but omit its appearance."
+    },
+    "255853": {
+      "displayID": 139269,
+      "source": "https://www.wowhead.com/forever/npc=255853/ursendris",
+      "verifiedOn": "2026-10-13",
+      "evidence": "The exact NPC page sets linksButton.dataset.displayId = 139269 and uses the same displayId in View in 3D for NPC 255853. CatQuest identifies the giver of quest 94638 but omits its appearance; Wayfarer supplies no NPC metadata for this ID."
     }
   }
 }

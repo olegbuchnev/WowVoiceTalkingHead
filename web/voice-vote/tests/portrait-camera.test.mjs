@@ -7,7 +7,8 @@ import {portraitView} from '../src/portrait-camera.js';
 test('addon resolver supplies model overrides, family profiles and the default',()=>{
   const profiles=loadCameraProfiles();
   assert(Object.keys(profiles).length>1200);
-  assert.deepEqual(profiles[124495],{key:'model:124495',distance:1.5,y:.02,z:.04});
+  assert.deepEqual(profiles[124495],{key:'human_child_male',distance:1.5,y:.02,z:.04});
+  assert.deepEqual(profiles[124456],{key:'human_child_female',distance:1.5,y:.02,z:.015});
   assert.deepEqual(profiles[878772],{key:'dwarf',distance:1.2,y:0,z:.005});
   assert.equal(profiles[1011653].key,'human_male');
   assert.equal(profiles[8125066].key,'model:8125066');

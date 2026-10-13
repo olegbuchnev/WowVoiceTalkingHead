@@ -7,13 +7,19 @@ local profiles = {
     -- Female orcs lean down and right while talking; allow room for both poses.
     -- Rightward adjustment confirmed in game for Seereth Stonebreaker, 2026-10-03.
     orc_female = { distance = 1.35, y = -0.02, z = 0 },
+    -- Orc Orphan (125367): allow room for the forward dip during speech.
+    -- Rightward shift and framing confirmed in game on quest 925, 2026-10-13.
+    orc_child = { distance = 1.5, y = 0.02, z = 0.04 },
     -- Slightly lift female tauren; keep the accepted zoom and lateral position.
     tauren_female = { distance = 1.1, y = 0, z = 0 },
     human = { distance = 1.15, y = 0, z = -0.025 },
     -- Lift adult female humans within the portrait.
     human_female = { distance = 1.15, y = 0, z = 0.025 },
-    -- Children sit lower than adults and dip during the talking animation.
-    human_child = { distance = 1.15, y = 0, z = 0.08 },
+    -- Human children need separate framing for the male and female models.
+    -- Boy framing confirmed on quests 1479 and 3741.
+    human_child_male = { distance = 1.5, y = 0.02, z = 0.04 },
+    -- Girl framing confirmed in game on quest 92110, 2026-10-13.
+    human_child_female = { distance = 1.5, y = 0.02, z = 0.015 },
     -- Lift male humans and shift slightly right within the portrait.
     human_male = { distance = 1.15, y = 0.02, z = 0 },
     -- Slightly lower male dwarves to leave room above hats during speech.
@@ -89,10 +95,6 @@ WV.PortraitCameraProfiles = profiles
 -- Add narrowly scoped corrections here when a particular model needs them.
 -- Keys are model file IDs, never NPC IDs or creature display IDs.
 WV.PortraitCameraOverrides = {
-    -- Human Orphan, NPC 14305 / quest 1479: live model ID 124495.
-    -- Distance 1.5 stops face clipping in game. A -0.025 height leaves only
-    -- the crown visible; keep height 0.04 and shift slightly right for speech.
-    [124495] = { distance = 1.5, y = 0.02, z = 0.04 },
     -- Forever model absent from the generated listfile mapping. Identity is
     -- recorded in the locally installed CatQuest/RaceModels.lua (Skyborne).
     [7478487] = profiles.skyborne_male,

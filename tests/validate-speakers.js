@@ -49,6 +49,23 @@ assert.throws(()=>merge({...inputs,supplements:{schemaVersion:1,npcs:{90:{
   ...inputs.supplements.npcs[90],source:'https://www.wowhead.com/forever/npc=91',
 }}}}),/Invalid appearance supplement/,'Reject evidence for another NPC');
 const report=generate(true);
+const children=merge({...inputs,cat:{tables:{
+  NpcData:{101:{1:'orc',2:'male'},102:{1:'child',2:'female'}},
+  QuestGiver:{21:100,22:101,23:102,24:103},QuestFinisher:{21:104},
+}},catAudio:{entries:{'21a':{voice:'child-female'},'21c':{voice:'child-male'},
+  '22a':{voice:'child-male'},'23a':{voice:'child-male'},'24a':{voice:'child-female'},
+  '24p':{voice:'child-male'},'25a':{voice:'child-female'}}},
+  wayfarer:{givers:{25:105},finishers:{},npcs:{100:{ageGroup:'child',sex:'male'},106:{ageGroup:'child',sex:'female'}}},
+}).database;
+assert.deepEqual(children.npcs[100],{ageGroup:'child',sex:'female'},'CatQuest child voice wins over Wayfarer fallback');
+assert.equal(children.npcs[101].race,'orc','Child voice is not proof of human race');
+assert.equal(children.npcs[101].ageGroup,'child','Age is independent of the known orc race');
+assert.equal(children.npcs[100].race,undefined,'Unknown race stays unknown for a child voice');
+assert.equal(children.npcs[102].sex,'female','Explicit NPC sex wins over voice label');
+assert.equal(children.npcs[103].sex,'female','Unknown progress speaker cannot alter the giver');
+assert.deepEqual(children.npcs[104],{ageGroup:'child',sex:'male'});
+assert.deepEqual(children.npcs[105],{},'No voice transfer to another source\'s NPC');
+assert.deepEqual(children.npcs[106],{ageGroup:'child',sex:'female'},'Wayfarer child metadata fills missing facts');
 const narrated=merge({...inputs,
   catAudio:{entries:{'7a':{voice:'narrator'},'8c':{voice:'narrator'}}},
   wayfarer:{...inputs.wayfarer,givers:{...inputs.wayfarer.givers,1:'narrator',9:'narrator',12:'narrator'}},

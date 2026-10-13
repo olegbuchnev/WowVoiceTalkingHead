@@ -34,6 +34,16 @@ investigating a specific report. Host logs have a separate logrotate rule.
 
 - `portrait_client`: started/ready/timeout/error/cancelled, quest/display/model
   IDs, load ID, visibility and timing. All mounts report, including preloads.
+  `context-lost` records a canvas WebGL context loss, including after `ready`.
+  The portrait shows the scroll and retries by creating a new viewer after one
+  second, at most twice for the mounted comparison. Each retry gets a new load
+  ID; join nearby events by quest/display when following recovery. Audio and
+  voting state stay mounted. Persistent GPU failure leaves the scroll instead
+  of an empty frame with a misleading `ready` state.
+  Error/timeout reports also include a bounded `status` snapshot: `contextLost`,
+  `actorLoaded`, animation count, pending download count, texture count and
+  pending texture count. This distinguishes a failed graphics context from
+  unfinished resources without recording URLs or arbitrary error text.
 - `asset_server`: read time and response finish time inside the Node asset
   service. Reading is asynchronous; it is **not** a promise of physical disk IO:
   Linux may satisfy the read from its page cache.
@@ -56,6 +66,33 @@ show errors to the visitor. Thus reports may be absent when the connection is
 lost or the tab closes. The endpoint validates and bounds fields and body size,
 and both Nginx and Node limit request volume. Client metrics are untrusted
 diagnostics, entirely separate from votes.
+
+## Context-loss recovery (deployed 2026-10-13)
+
+Production load `p-f71b6e837d19` (quest 391, NPC 1719, display 1865) reached
+`ready` in 821 ms. The trace shows successful cached M2 and camera requests;
+no HTTP failures were found in the surrounding two-minute web log. The report
+of a subsequently empty portrait is not explained by these loading-only logs.
+Ordinary playback and variant switching, and original/packed animation poses,
+passed locally. Injected WebGL context loss reproduced the empty frame and
+stale `ready` status, but is not proof of the cause in this user's browser.
+
+The fix records that failure and rebuilds only the portrait. The React
+browser regression checks the placeholder, diagnostics, recovery and retry
+limit; a real WebGL loss on model 1011653 also recovered during audio playback.
+Deployed in `talkinghead-vote-web:cumulative-20261013`. Public injected loss
+`p-06b9bf68a72f` logged `contextLost=true` with zero pending downloads/textures;
+the replacement `p-4d857282416a` reached ready without resetting audio or the series.
+
+The following comparison, quest 97922 / display 143698 / load
+`p-6f0692c34c65`, created its viewer in 6 ms but timed out after 120,535 ms.
+It reused model 1011653 from browser cache in 5 ms; neither assets readiness nor
+a fresh camera request was reached. `hidden: true` means the tab was hidden at
+some point, not necessarily throughout the timeout. No HTTP failures appeared
+in the surrounding web logs. A clean-browser sequence 258 -> 391 -> 97922 with
+concurrent next-portrait preparation passed, as did original/packed pose checks
+for 97922. These observations do not yet establish the cause in the user's tab;
+the added status snapshot is needed to distinguish texture/load/GPU failures.
 
 ## Host setup
 

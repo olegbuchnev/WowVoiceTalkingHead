@@ -1,6 +1,7 @@
 // Merge speaker facts at build time. The game loads only Speakers.lua.
 const fs = require('fs'), path = require('path'), crypto = require('crypto');
 const { dataTable } = require('./import-forever-audio');
+const {childVoiceMetadata} = require('./child-voice-metadata');
 const root = path.resolve(__dirname, '..');
 const positive = n => Number.isSafeInteger(n) && n > 0;
 const sha256 = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
@@ -78,6 +79,24 @@ function merge({ classic, pins, cat, catAudio = {entries:{}}, wayfarer = {givers
     if (typeof npc[2] === 'string') npcs[id].sex = npc[2];
     addName(Number(id), npc[4], 'catquest');
   }
+  // Fill absent child metadata from this source's own speaker references.
+  // Never attach a voice to a different NPC chosen from a lower-priority source.
+  const childObservations = [];
+  for (const [key, entry] of Object.entries(catAudio.entries)) {
+    const match = /^(\d+)([apc])$/.exec(key);
+    if (!match) continue;
+    const role = match[2] === 'a' ? 'QuestGiver' : 'QuestFinisher';
+    childObservations.push({npcID:cat.tables[role][match[1]],voice:entry.voice});
+  }
+  function fillChildMetadata(id, metadata, source) {
+    const npc = npcs[id] ||= {};
+    for (const field of ['ageGroup','sex']) if (!npc[field] && metadata[field]) {
+      npc[field] = metadata[field];
+      (origins.npcs[id] ||= {})[field] = source;
+    }
+  }
+  for (const [id, metadata] of Object.entries(childVoiceMetadata(childObservations)))
+    fillChildMetadata(id,metadata,'catquest-voice');
   const appearanceConflicts = [];
   for (const [id,npc] of sorted(wayfarer.npcs)) {
     if (!positive(Number(id)) || (npc.displayID != null && !positive(npc.displayID))) throw Error('Invalid Wayfarer NPC/model ID');
@@ -90,6 +109,8 @@ function merge({ classic, pins, cat, catAudio = {entries:{}}, wayfarer = {givers
       origins.npcs[id] ||= {}; origins.npcs[id].displayID = 'wayfarer';
     }
     addName(Number(id),npc.name,'wayfarer');
+    if (npc.ageGroup === 'child' && ['male','female'].includes(npc.sex))
+      fillChildMetadata(id,{ageGroup:npc.ageGroup,sex:npc.sex},'wayfarer-voice');
   }
   // Verified, exact-NPC appearances only fill missing library data. They never
   // infer quest roles or copy an appearance from a similarly named character.

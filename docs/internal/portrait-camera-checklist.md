@@ -3,13 +3,28 @@
 Internal development checklist. This file is not included in the release ZIP or
 deployed to the game: the build copies only the runtime from `src/`.
 
-Last updated: 2026-10-11.
+Last updated: 2026-10-13.
 
 ## Confirmed in game
 
 Checked entries reflect user confirmation, not automated tests. Approval applies
 to the tested models; it does not automatically cover every model variant using
 the same profile.
+
+- [x] Human girl — quest `92110`, NPC `249713`, display `257`, model `124456`.
+  User confirmed final framing on 2026-10-13: `human_child_female`, distance `1.5`,
+  lateral `0.02`, vertical `0.015`. The initial correction at `0` was raised
+  slightly on request. The former generic child lift (`0.08`) clipped the face.
+  Additional check candidate: quest `5149`, Pamela Redpath, the same model.
+  Website profile deployed on 2026-10-13. This model has no native camera measurement;
+  the male child's calibration must not be assumed to apply to the girl.
+
+- [x] Orc Orphan — NPC `14444`, quest `925`, model `125367`, display `14589`.
+  User confirmed final framing on 2026-10-13: `orc_child`, distance `1.5`,
+  lateral `0.02`, vertical `0.04`. More distance accommodates the forward Talk
+  dip; the rightward shift keeps the bent pose inside the frame.
+  Other orc models retain their existing profiles. The beta client has this
+  framing; website deployment is still pending and uses the same source settings.
 
 - [x] Goblin — male. Profile: `goblin_male`. User confirmed the leftward shift:
   distance `1.3`, lateral offset `-0.04`, vertical offset `0.04`.
@@ -79,12 +94,13 @@ the same profile.
   live diagnostics. User confirmed final framing: distance `1.5`, vertical
   offset `0.04`, lateral offset `0.02`. Face clipping is resolved and the
   model is centered after the rightward adjustment. This correction applies
-  to every NPC using model `124495`; other child models keep the family profile.
+  to every NPC using model `124495`; the shared `human_child_male` profile now
+  carries these values for male human child variants. Other variants still need visual checks.
 
 - [x] Human child — Shawn / Шоун (NPC `8965`, quest `3741`, «Ожерелье Хилари»).
   User confirmed the current framing on 2026-10-11, after the quest `1479`
   correction. Shawn's live model file ID was not reported. This confirmation
-  applies to the tested NPC, not every variant of the `human_child` profile.
+  applies to the tested NPC, not every variant of the `human_child_male` profile.
 
 - [x] Dwarf — male. User confirmed the final height on 2026-10-11 after the
   Prospector Ryedol and Balir Frosthammer screenshots:

@@ -38,6 +38,19 @@ export function isPortraitLoaded(viewer) {
     && [...textures.values()].every(texture => texture.m());
 }
 
+// Bounded status fields only: no URLs, texture names or browser error messages.
+export function portraitStatus(viewer) {
+  try {
+    const r=viewer?.renderer, actor=r?.actors?.[0], textures=r?.textureCache;
+    const canvas=r?.canvas?.[0], gl=canvas?.getContext('webgl2');
+    const values=textures instanceof Map ? [...textures.values()] : [];
+    return {contextLost:!!gl?.isContextLost(),actorLoaded:!!actor?.isLoaded?.(),
+      animations:actor?.getNumAnimations?.() || 0,
+      pendingDownloads:Object.keys(r?.downloads || {}).length,
+      textures:values.length,pendingTextures:values.filter(t=>!t.m()).length};
+  } catch {return {};}
+}
+
 function fitPortraitResolution(viewer, container) {
   // The viewer assumes CSS pixels are framebuffer pixels. Account for both the
   // head's CSS zoom and display DPR, then supersample 2x to reduce moving edges.

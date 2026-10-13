@@ -81,7 +81,7 @@ try {
       return {id:r.actors[0].c.aX,profile:e.dataset.cameraProfile,
         distance:r.distance,eye:Array.from(r.eye),target:Array.from(r.target),projection:Array.from(r.projMatrix)};
     });
-    const profiles={878772:'dwarf',124495:'model:124495',1011653:'human_male'};
+    const profiles={878772:'dwarf',124495:'human_child_male',1011653:'human_male'};
     assert.equal(snapshot.profile,profiles[snapshot.id],'camera profile follows the loaded Forever model ID');
     if(cameraSnapshots.has(snapshot.id)) assert.deepEqual(snapshot,cameraSnapshots.get(snapshot.id),'playback, stopping and resizing must preserve the portrait camera');
     else cameraSnapshots.set(snapshot.id,snapshot);

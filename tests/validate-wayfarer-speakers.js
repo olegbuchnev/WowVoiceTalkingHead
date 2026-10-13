@@ -27,6 +27,22 @@ try {
   assert.equal(narrated.givers[5],'narrator','Description narration overrides generic qg in the same pack');
   assert.equal(narrated.finishers[5],51,'Narration must not erase the completion NPC');
   assert.equal(narrated.givers[6],undefined,'Missing voice and speaker remain unknown');
+  pack('Wayfarer_Voices_B',{qg:{7:70,8:80,10:100,12:120},q:{
+    7:{a:{v:'child-female',m:'7a.ogg'},c:{s:71,v:'child-male'}},
+    8:{a:{v:'child-male'},c:{v:'child-female'}},
+    9:{a:{v:'child-female'}},
+    10:{a:{s:101,v:'child-female'}},
+    11:{a:{s:70,v:'child-female'}},
+    12:{a:{v:'child-female'},c:{s:120,v:'human-female'}},
+  }});
+  const children=collect(directory);
+  assert.deepEqual(children.npcs[70],{ageGroup:'child',sex:'female'},'Voice sex is independent of male-player recording');
+  assert.deepEqual(children.npcs[71],{ageGroup:'child',sex:'male'},'Receiver keeps its own voice metadata');
+  assert.deepEqual(children.npcs[80],{ageGroup:'child',sex:'male'},'Unknown completion speaker cannot overwrite the giver');
+  assert.equal(children.npcs[100],undefined);
+  assert.equal(children.npcs[101],undefined,'Ambiguous role cannot supply child metadata');
+  assert.equal(children.npcs[120],undefined,'Conflicting child/adult voices are not NPC metadata');
+  assert.equal(children.npcs.undefined,undefined,'Missing NPC identity must not be invented');
   // No audio files exist in this fixture; NPC import remains independent of playback.
   fs.appendFileSync(path.join(directory,'Wayfarer_Voices_A/Index.lua'),'\nWayfarer:RegisterPack({})');
   assert.throws(()=>collect(directory),/Expected one/);

@@ -5,6 +5,18 @@ import {once} from 'node:events';
 import {sanitizePortraitReport,createDiagnosticsHandler} from '../diagnostics.mjs';
 
 const report={version:1,loadID:'p-a81f3c92d640',questID:977,displayID:9780,modelFileID:119369,stage:'ready',totalMs:48000,resources:[{path:'/modelviewer/classicplus/m2/119369.m2',durationMs:47000,requestID:'a'.repeat(32),cookie:'secret'}]};
+test('context loss after portrait readiness is accepted as a diagnostic event',()=>{
+  assert.equal(sanitizePortraitReport({...report,stage:'context-lost'}).stage,'context-lost');
+});
+test('portrait readiness details retain only bounded counts and boolean states',()=>{
+  const value=sanitizePortraitReport({...report,stage:'timeout',status:{
+    contextLost:false,actorLoaded:true,animations:60,pendingDownloads:0,textures:20,
+    pendingTextures:1,url:'secret',cookie:'secret',message:'secret'}});
+  assert.deepEqual(value.status,{contextLost:false,actorLoaded:true,animations:60,
+    pendingDownloads:0,textures:20,pendingTextures:1});
+  assert.deepEqual(sanitizePortraitReport({...report,status:{contextLost:'false',animations:Infinity,
+    textures:100001,pendingTextures:-1,pendingDownloads:1.5}}).status,{});
+});
 test('portrait telemetry whitelists fields and bounds client-controlled values',()=>{
   const value=sanitizePortraitReport({...report,cookie:'secret',ip:'secret',message:'secret'});
   assert(!JSON.stringify(value).includes('secret'));

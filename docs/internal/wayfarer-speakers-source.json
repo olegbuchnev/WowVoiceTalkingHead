@@ -7553,7 +7553,9 @@
     },
     "247": {
       "displayID": 221,
-      "name": "Билли Маклюр"
+      "name": "Билли Маклюр",
+      "ageGroup": "child",
+      "sex": "male"
     },
     "248": {
       "displayID": 2959,
@@ -8638,7 +8640,9 @@
     },
     "2142": {
       "displayID": 2377,
-      "name": "Дозорный Каллахан"
+      "name": "Дозорный Каллахан",
+      "ageGroup": "child",
+      "sex": "male"
     },
     "2150": {
       "displayID": 10035,
@@ -11480,11 +11484,15 @@
     },
     "8962": {
       "displayID": 257,
-      "name": "Hilary"
+      "name": "Hilary",
+      "ageGroup": "child",
+      "sex": "female"
     },
     "8965": {
       "displayID": 221,
-      "name": "Shawn"
+      "name": "Shawn",
+      "ageGroup": "child",
+      "sex": "male"
     },
     "8997": {
       "displayID": 8229,
@@ -11967,7 +11975,9 @@
     },
     "10926": {
       "displayID": 10445,
-      "name": "Памела Редпат"
+      "name": "Памела Редпат",
+      "ageGroup": "child",
+      "sex": "female"
     },
     "10927": {
       "displayID": 10232,
@@ -12641,7 +12651,9 @@
     },
     "14305": {
       "displayID": 338,
-      "name": "Ребенок-сирота"
+      "name": "Ребенок-сирота",
+      "ageGroup": "child",
+      "sex": "male"
     },
     "14325": {
       "displayID": 11564,
@@ -12705,7 +12717,9 @@
     },
     "14444": {
       "displayID": 14589,
-      "name": "Орк-сирота"
+      "name": "Орк-сирота",
+      "ageGroup": "child",
+      "sex": "male"
     },
     "14450": {
       "displayID": 14500,
@@ -13022,11 +13036,15 @@
     },
     "15309": {
       "displayID": 14616,
-      "name": "Spoops"
+      "name": "Spoops",
+      "ageGroup": "child",
+      "sex": "female"
     },
     "15310": {
       "displayID": 338,
-      "name": "Jesper"
+      "name": "Jesper",
+      "ageGroup": "child",
+      "sex": "male"
     },
     "15350": {
       "displayID": 15387,
@@ -14050,7 +14068,9 @@
       "name": "Олариан Быстрая Вспышка"
     },
     "268682": {
-      "name": "Миги"
+      "name": "Миги",
+      "ageGroup": "child",
+      "sex": "male"
     },
     "268684": {
       "name": "Тра"

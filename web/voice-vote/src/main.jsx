@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { createPortrait, isPortraitLoaded, setTalking, framePortrait } from './model.js';
+import { createPortrait, isPortraitLoaded, setTalking, framePortrait, portraitStatus } from './model.js';
 import { useQuestScroll } from './use-quest-scroll.js';
 import { libraries } from './vote-history.js';
 import {loadSummary, loadQueue, migrateLocalVotes} from './vote-api.js';
@@ -77,6 +77,7 @@ function PlaybackProgress({audio, duration, position, playing}) {
 
 function Portrait({npc, questID, playing, current}) {
   const element = useRef(), viewer = useRef(), playback = useRef(playing);
+  const recovery = useRef({displayID:npc.displayID,attempts:0});
   const [state, setState] = useState('loading');
   const [cameraRevision, setCameraRevision] = useState(0);
   playback.current = playing;
@@ -87,36 +88,52 @@ function Portrait({npc, questID, playing, current}) {
     return () => import.meta.hot.off('portrait-camera-changed',refresh);
   }, []);
   useEffect(() => {
-    let cancelled = false, stopWatching=()=>{};
+    let cancelled = false, contextLost = false, recoveryTimer, stopWatching=()=>{};
     if (!npc.displayID) {setState('unavailable');return;}
+    if(recovery.current.displayID!==npc.displayID) recovery.current={displayID:npc.displayID,attempts:0};
     const diagnostics=observePortrait({questID,npc});
     element.current.dataset.loadId=diagnostics.loadID;
     const controller=new AbortController();
+    const container=element.current;
+    const lost=event=>{
+      if(cancelled || contextLost) return;
+      event.preventDefault();
+      contextLost=true;
+      stopWatching();controller.abort();
+      setState('error');diagnostics.report('context-lost',portraitStatus(viewer.current));
+      // Rebuild only the portrait; preserve audio, the comparison and votes.
+      // A persistent GPU failure must not create an endless remount loop.
+      if(recovery.current.attempts<2) {
+        recovery.current.attempts++;
+        recoveryTimer=setTimeout(()=>{if(!cancelled) setCameraRevision(value=>value+1);},1000);
+      }
+    };
+    container.addEventListener('webglcontextlost',lost,true);
     setState('loading');
     createPortrait(element.current, npc).then(instance => {
-      if (cancelled) { instance.destroy(); return; }
+      if (cancelled || contextLost) { instance.destroy(); return; }
       viewer.current = instance;
       diagnostics.mark('viewerMs');
       // Wait for model data, not merely creation of the WebGL canvas.
       stopWatching=watchPortraitReadiness({
         isReady:()=>isPortraitLoaded(instance),
-        onError:error=>{setState('error');diagnostics.report(error ? 'assets-error' : 'timeout');},
+        onError:error=>{setState('error');diagnostics.report(error ? 'assets-error' : 'timeout',portraitStatus(instance));},
         onReady:()=>{
           diagnostics.mark('assetsReadyMs');
           framePortrait(instance,controller.signal).then(()=>{
-            if(cancelled) return;
+            if(cancelled || contextLost) return;
             diagnostics.mark('cameraMs');
             setTalking(instance, playback.current);
             // Let the renderer draw the configured camera/light/pose before
             // revealing the canvas. The scroll covers all intermediate views.
             requestAnimationFrame(()=>requestAnimationFrame(()=>{
-              if (!cancelled) {setState('ready');diagnostics.mark('visibleMs');diagnostics.ready();}
+              if (!cancelled && !contextLost) {setState('ready');diagnostics.mark('visibleMs');diagnostics.ready();}
             }));
-          }).catch(()=>{if(!cancelled) {setState('error');diagnostics.report('camera-error');}});
+          }).catch(()=>{if(!cancelled && !contextLost) {setState('error');diagnostics.report('camera-error',portraitStatus(instance));}});
         },
       });
     }).catch(() => { if (!cancelled) {setState('error');diagnostics.report('viewer-error');} });
-    return () => { cancelled = true; controller.abort(); stopWatching(); diagnostics.stop(); viewer.current?.destroy(); viewer.current = null; };
+    return () => { cancelled = true; clearTimeout(recoveryTimer); container.removeEventListener('webglcontextlost',lost,true); controller.abort(); stopWatching(); diagnostics.stop(); viewer.current?.destroy(); viewer.current = null; };
   }, [npc.displayID, cameraRevision]);
   useEffect(()=>{
     if(!current) return;

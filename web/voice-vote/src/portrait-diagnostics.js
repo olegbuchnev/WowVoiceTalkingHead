@@ -18,7 +18,7 @@ export function observePortrait({questID,npc}, {clock=performance,send=payload=>
     observer=new PerformanceObserver(list=>collect(list.getEntries()));
     observer.observe({type:'resource',buffered:true});
   }
-  function report(stage) {
+  function report(stage,status) {
     const totalMs=round(clock.now()-start);
     collect(observer?.takeRecords() || []);
     const modelFileID=npc.modelFileID;
@@ -26,7 +26,7 @@ export function observePortrait({questID,npc}, {clock=performance,send=payload=>
       || new URL(r.name,location.origin).pathname===`/modelviewer/portrait-v1/classicplus/m2/${modelFileID}.m2`
       || new URL(r.name,location.origin).pathname===`/api/portrait-camera/${modelFileID}`);
     const latest=[...new Map(matching.map(r=>[r.name,r])).values()];
-    const payload={version:1,loadID,questID,displayID:npc.displayID,modelFileID,stage,totalMs,hidden,...phases,
+    const payload={version:1,loadID,questID,displayID:npc.displayID,modelFileID,stage,totalMs,hidden,...phases,status,
       resources:latest.slice(-5).map(r=>({path:new URL(r.name).pathname,
         durationMs:round(r.duration),ttfbMs:round(r.responseStart-r.requestStart),
         transferMs:round(r.responseEnd-r.responseStart),transferBytes:r.transferSize,

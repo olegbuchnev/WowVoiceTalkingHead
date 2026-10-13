@@ -20,12 +20,24 @@ for id, key in pairs(WV.CameraModelProfiles) do
         protected=protected+1
     end
 end
-assert(count>1000 and protected>=58)
+assert(count>1000 and protected>=57)
 for _, family in ipairs({'goblin','troll','furbolg','murloc','centaur','dragon','ogre','quillboar'}) do
     assert(families[family])
 end
 assert(WV.CameraModelProfiles[125358]=='aquatic', 'orcas are not orcs')
 assert(WV.CameraModelProfiles[124225]=='construct', 'goblin shredders are machines')
+for _, id in ipairs({124456,1608483,1632972}) do
+    model.id=id
+    local profile,key=WV:GetPortraitCameraProfile(model)
+    assert(key=='human_child_female' and profile.distance==1.5 and profile.y==.02 and profile.z==.015,
+        'human girls share a separate, slightly raised child profile')
+end
+for _, id in ipairs({124495,124496,254782,254784,1622489,1622490}) do
+    model.id=id
+    local profile,key=WV:GetPortraitCameraProfile(model)
+    assert(key=='human_child_male' and profile.distance==1.5 and profile.y==.02 and profile.z==.04,
+        'human boys retain the accepted framing independently of girls')
+end
 for _, id in ipairs({118135,950080,1838562,1890763,1892825,5548259,2123288}) do
     model.id=id
     local profile,key=WV:GetPortraitCameraProfile(model)
@@ -45,11 +57,18 @@ for _, id in ipairs({121087,949470,1838580}) do
         and profile.distance>WV.PortraitCameraProfiles.default.distance,
         'adult female orcs need their own framing, not the protected orc default')
 end
-for _, id in ipairs({121287,917116,1838578,1968587,125362,125367,118652}) do
+for _, id in ipairs({121287,917116,1838578,1968587,125362,125365,125370,254785,254786,118652}) do
     model.id=id
     local profile,key=WV:GetPortraitCameraProfile(model)
     assert(key=='orc' and profile.distance==1.1 and profile.y==0 and profile.z==-.025,
-        'female orc correction must not affect males, children or other orc families')
+        'dedicated orc profiles must not affect other orc models')
+end
+model.id=125367
+do
+    local profile,key=WV:GetPortraitCameraProfile(model)
+    assert(key=='orc_child' and profile.distance>WV.PortraitCameraProfiles.default.distance
+        and profile.z>WV.PortraitCameraProfiles.default.z,
+        'the Orc Orphan needs its own framing instead of the protected orc default')
 end
 for _, id in ipairs({119376,1838570,124224}) do
     model.id=id

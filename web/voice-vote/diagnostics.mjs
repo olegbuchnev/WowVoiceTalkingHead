@@ -1,6 +1,6 @@
 const number=(value,max=3600000)=>typeof value==='number' && Number.isFinite(value) && value>=0 && value<=max;
 const id=value=>Number.isSafeInteger(value) && value>0 && value<2147483648;
-const stages=new Set(['started','ready','timeout','viewer-error','assets-error','camera-error','cancelled']);
+const stages=new Set(['started','ready','timeout','viewer-error','assets-error','camera-error','context-lost','cancelled']);
 const resourcePath=/^\/(?:modelviewer\/(?:portrait-v1\/)?classicplus\/(?:m2|skel|textures|meta)\/[a-zA-Z0-9_./-]+|api\/portrait-camera\/\d+)$/;
 
 // Whitelist fields: never persist arbitrary client messages, URLs, cookies or IPs.
@@ -10,6 +10,13 @@ export function sanitizePortraitReport(input) {
   for(const key of ['questID','modelFileID']) if(id(input[key])) report[key]=input[key];
   for(const key of ['viewerMs','assetsReadyMs','cameraMs','visibleMs']) if(number(input[key])) report[key]=Math.round(input[key]);
   report.hidden=!!input.hidden;
+  if(input.status && typeof input.status==='object') {
+    report.status={};
+    for(const key of ['contextLost','actorLoaded'])
+      if(typeof input.status[key]==='boolean') report.status[key]=input.status[key];
+    for(const key of ['animations','pendingDownloads','textures','pendingTextures'])
+      if(Number.isSafeInteger(input.status[key]) && number(input.status[key],100000)) report.status[key]=input.status[key];
+  }
   report.resources=(Array.isArray(input.resources)?input.resources:[]).slice(0,5).flatMap(r=>{
     if(!r || typeof r.path!=='string' || r.path.length>180 || !resourcePath.test(r.path) || r.path.includes('..')) return [];
     const out={path:r.path,reused:!!r.reused};

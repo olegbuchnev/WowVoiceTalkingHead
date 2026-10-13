@@ -2,6 +2,7 @@
 const fs = require('fs'), path = require('path');
 const {readPack} = require('./generate-wayfarer-metadata');
 const {sha256} = require('./generate-speakers');
+const {childVoiceMetadata} = require('./child-voice-metadata');
 const positive = id => Number.isSafeInteger(id) && id > 0;
 function collect(addons) {
   const packs = [];
@@ -47,6 +48,18 @@ function collect(addons) {
       if (npc.d && !previous.displayID) previous.displayID = npc.d;
       if (npc.n?.trim() && (!previous.name || (/[А-Яа-яЁё]/.test(npc.n) && !/[А-Яа-яЁё]/.test(previous.name)))) previous.name = npc.n;
     }
+  }
+  const observations = [];
+  for (const {pack} of packs) for (const [id, quest] of Object.entries(pack.q)) {
+    for (const stage of ['a','p','c']) {
+      const entry = quest[stage];
+      const npcID = entry?.s ?? (stage === 'a' ? pack.qg?.[id] : undefined);
+      const role = stage === 'a' ? 'givers' : 'finishers';
+      if (npcID === result[role][id]) observations.push({npcID,voice:entry?.v});
+    }
+  }
+  for (const [id, metadata] of Object.entries(childVoiceMetadata(observations))) {
+    Object.assign(result.npcs[id] ||= {}, metadata);
   }
   return result;
 }

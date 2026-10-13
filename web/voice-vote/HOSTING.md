@@ -73,6 +73,90 @@ exposing an updated catalogue; see [MODEL-CACHE.md](MODEL-CACHE.md).
 
 Portrait diagnostics: [log fields, SSH lookup and baseline](DIAGNOSTICS.md).
 
+### Cumulative portrait update (2026-10-13)
+
+Web image: `talkinghead-vote-web:cumulative-20261013`; API image unchanged.
+The catalogue retains 3,808 comparisons and 9,863 recordings, including all
+previous recording IDs, hashes, text and deployed audio paths. Thirty comparisons
+now have portraits for Ogtinc (8405), Illaya Amberwind (251902), Ayessa Dawnsinger
+(251968), Raan Wildwind (263664) and Ursendris (255853). One additional comparison
+receives missing speaker sex metadata. Child voice labels provide age and sex,
+never a guessed biological race or camera model.
+
+The confirmed Orc Orphan camera and separate male/female human child cameras
+are deployed. WebGL context loss replaces the blank frame with the scroll and
+rebuilds only the portrait, at most twice per mounted display. Audio, the series
+and votes remain intact. Error reports include bounded renderer status for SSH
+investigation; this does not establish the cause of the earlier browser-wide freeze.
+
+Validation: 49 frontend unit tests, delayed portrait/context-loss recovery tests,
+local and deployed audio-preload/volume regressions, addon tests and Docker gates
+passed. Full offline audit: 1,352/1,353 ready; only the documented quest 97290 /
+display 146706 has no portrait camera. All 320 derived models passed verification;
+16 unsupported formats keep original assets. Ten original/packed rest/Talk/rest
+pose comparisons passed. The host verified all 9,863 audio hashes and 12,814 model
+dependency hashes; 65 dependencies were added alongside the existing cache.
+
+Public Firefox checks loaded quests 925, 92110, 8257, 92595, 93735, 98284, 94638,
+391 and 97922 and played their audio. An injected real WebGL loss on quest 391
+(`p-06b9bf68a72f`) produced a server diagnostic and recovered as `p-4d857282416a`
+without resetting playback or the series. All voting endpoints were intercepted.
+All 383 existing votes from 20 participants remained unchanged; SQLite integrity
+passed, pending and quarantine were empty. Both services are healthy.
+
+Consistent backup: `/srv/talkinghead/backups/20261013-cumulative`; staging:
+`/srv/talkinghead/import/cumulative-20261013`. To roll back, stop web/API, restore
+the three catalogue files and model reports from this backup, retag the image ID
+in `web-image.txt` as `talkinghead-vote-web:local`, then restart both services.
+Preserve the live votes volume and compatible model assets; never replace votes
+collected since the backup with its historical copy.
+
+### Eric portrait metadata (2026-10-13 local time)
+
+NPC 265813 now uses display 144653, confirmed by its exact Wowhead Forever page.
+The shared appearance supplement supplies the addon and site. Eleven comparisons
+gain the portrait: 96031, 96044, 96046, 96047, 96050, 96055-96058, 96608 and 96629.
+All 3,808 comparisons, 9,863 recordings, texts, variant IDs and deployed audio
+paths are retained. Existing application images are reused.
+
+Full offline audit: 1,347/1,348 ready, with only the known quest 97290 camera
+exception. All 314 portrait packs passed verification; fifteen existing
+unsupported formats retain original assets. Eric's neutral pose, nine Talk
+samples and return pose matched the original. The host verified 12,749 model
+dependency hashes and all audio hashes. Public quest 96629 reached `ready`
+(`p-75456e9bc923`), served the verified model 878772 pack and played its audio.
+Local and public audio-preload tests passed without production ballots.
+
+All 295 existing votes remained unchanged; SQLite integrity passed, pending and
+quarantine were empty. Consistent backup: `/srv/talkinghead/backups/20261013-erik`;
+staged metadata: `/srv/talkinghead/import/erik-20261013`. To roll back, stop web/API,
+restore the three catalogue files and model reports from this backup, and restart
+both services while preserving the live votes volume and model assets.
+ForeverBeta has matching speaker metadata; in-game visual confirmation is manual.
+
+### Eleanor portrait metadata (2026-10-13 local time)
+
+NPC 265812 now uses display 144652, confirmed by its exact Wowhead Forever page.
+The shared database supplies this appearance to the addon and site. Thirteen
+comparisons gain the portrait: 96607, 96658 and 97951–97961. The catalogue still
+contains 3,808 comparisons and 9,863 recordings; texts, variant IDs and deployed
+audio paths are unchanged. The existing volume web image and API image are reused.
+
+The original cache gained fifteen dependencies. All 314 portrait packs passed
+verification, with fifteen unchanged original-format fallbacks; Eleanor's rest,
+nine Talk samples and return pose matched the original model. Full offline audit:
+1,346/1,347 ready, with only the known quest 97290 camera exception. The host verified
+all 9,863 audio and 12,745 model dependency hashes. Public quest 97958 reached ready
+(`p-213534e29c74`), served the verified model 997378 pack and played its audio.
+The deployed audio-preload and volume regression passed without production ballots.
+
+All 253 previous votes remained unchanged; SQLite integrity passed, pending and
+quarantine were empty. Consistent backup: `/srv/talkinghead/backups/20261013-eleanor`;
+staged metadata: `/srv/talkinghead/import/eleanor-20261013`. For a catalogue rollback,
+stop web/API, restore the three catalogue files and model reports from the backup,
+then restart both services, preserving the live votes volume and model assets.
+ForeverBeta received the same speaker metadata; in-game visual confirmation is manual.
+
 ### Persistent volume controls (2026-10-13 local time)
 
 Web image: `talkinghead-vote-web:volume-20261013`. The shared volume panel supports

@@ -824,14 +824,30 @@ styling; that integration does not change the talking head's Retail appearance.
 
 ## Portrait camera profiles
 
-The classic human boy model `124495` has a separate camera (`distance=1.5`,
+Human child models are split into `human_child_male` (6 models) and
+`human_child_female` (3 models), based on male/female kid model filenames.
+The female profile is `distance=1.5`, `y=0.02`, `z=0.015`: quest `92110`
+confirmed the initial correction, then the user requested a small lift.
+The user confirmed the final female framing on 2026-10-13. The website reads
+the same profiles; deployed in the cumulative website update on 2026-10-13.
+
+CatQuest NPC race/sex take priority. Missing child metadata can be filled from
+CatQuest or Wayfarer `child-male` / `child-female` voice labels tied to their own
+known stage speaker. Conflicting voices are not inferred; an unknown completion
+speaker is never replaced by the giver. A child voice does not prove human race
+or select a camera: actual model file identity controls framing. These labels
+only fill `ageGroup=child` and missing `sex`; they never populate `race`.
+Legacy `race=child` values explicitly supplied by CatQuest remain source data,
+not proof that a child is human. Unknown biological race must not be guessed.
+
+The classic human boy model `124495` uses the male child camera (`distance=1.5`,
 `y=0.02`, `z=0.04`). The user confirmed this model on the Human Orphan (NPC `14305`,
 quest `1479`) and that distance 1.5 eliminates face clipping. The initial
 height -0.025 placed the face below the frame; the revised height is 0.04.
 A slight rightward shift of 0.02 addresses the next screenshot. The user
 confirmed the final framing in game, and also confirmed Shawn (NPC `8965`,
-quest `3741`); Shawn's live model file ID was not reported. Other child models
-retain their existing profile.
+quest `3741`); Shawn's live model file ID was not reported. Male child variants
+now share that family profile, independently of female children.
 
 Camera framing is selected from the loaded model's `GetModelFileID()`, so it
 also works for journal replays without a nearby NPC. `CameraProfiles.lua`
@@ -851,6 +867,10 @@ blood elf models also have a separate, wider and higher framing to leave
 room for their talking animation in both directions, confirmed for the tested
 model. Female orcs have a separate profile with more distance and a small
 leftward and upward shift, also confirmed for the tested model.
+The Orc Orphan model `125367` uses `orc_child`: distance `1.5`, lateral `0.02`,
+vertical `0.04`, confirmed in game on quest `925` on 2026-10-13. This separates
+its forward Talk dip from the protected default orc framing; other child models
+remain unchanged until separately checked.
 Female tauren have a slight vertical lift with the original zoom and lateral position.
 Female undead have a slight downward and rightward correction with the shared
 profile's zoom. Male undead have a smaller downward correction to leave a margin
@@ -953,7 +973,7 @@ Inputs:
 Input versions and hashes are tracked. Only factual metadata is imported;
 external addon code is never executed or required in-game. Source snapshots and
 reports stay outside `src/`. The generated database currently contains 2525 NPCs,
-4687 giver entries (including narrators/exclusions), 4288 finisher entries and 2304 NPCs with models.
+4687 giver entries (including narrators/exclusions), 4288 finisher entries and 2311 NPCs with models.
 Pins was refreshed to `f26f006c94efce787d0f09a32462595ddac2fced` on October 12;
 see the [Wayfarer 3.2.0 migration](internal/wayfarer-3.2.0-integration.md) for
 the current combined import and validation results.

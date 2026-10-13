@@ -75,6 +75,30 @@ try {
       assert(reports.some(r=>r.loadID===loadID && r.stage==='ready'));
       assert.equal(reports.some(r=>r.stage==='timeout'),delay>120000);
       console.log(`PASS: portrait delayed ${delay/1000}s recovers through the real React UI after camera readiness, without reloading.`);
+      await page.unroute('**/test/model/*');
+      await page.unroute('**/test/camera');
+      await page.route('**/test/model/*',r=>r.fulfill({body:Buffer.from([1,2,3,4])}));
+      await page.route('**/test/camera',r=>r.fulfill({json:{}}));
+      for(let loss=0;loss<3;loss++) {
+        const previousID=await portrait.locator('.model').getAttribute('data-load-id');
+        await portrait.locator('canvas').evaluate(canvas=>canvas.dispatchEvent(new Event('webglcontextlost',{cancelable:true})));
+        await page.waitForFunction(()=>document.querySelector('.portrait-slot.current .model')?.dataset.modelState==='error');
+        assert.equal(await portrait.locator('.portrait-placeholder').count(),1);
+        assert.equal(JSON.parse(await page.locator('#portrait-debug').textContent()).state,'error');
+        await page.clock.fastForward(1500);
+        if(loss<2) {
+          await page.waitForFunction(()=>document.querySelector('.portrait-slot.current .model')?.dataset.modelState==='ready');
+          assert.notEqual(await portrait.locator('.model').getAttribute('data-load-id'),previousID);
+        } else {
+          assert.equal(await portrait.locator('.model').getAttribute('data-load-id'),previousID,'persistent context loss must not loop');
+          assert.equal(await portrait.locator('.model').getAttribute('data-model-state'),'error');
+        }
+        assert.equal(await page.locator('.batch-progress').textContent(),progress);
+        assert.equal(await page.locator('.welcome').count(),0);
+        assert(reports.some(r=>r.loadID===previousID && r.stage==='context-lost'));
+      }
+      assert.deepEqual(errors,[]);
+      console.log('PASS: context loss shows the placeholder, reports the failed mount and retries twice without resetting the comparison.');
     } finally {await context.close();}
   }
 } finally {await browser?.close();await server.close();}
