@@ -19,7 +19,7 @@ const files=fs.readdirSync(path.join(cache,'classicplus/m2')).filter(f=>f.endsWi
 const viewer=fs.readFileSync(path.join(cache,'live/viewer/viewer.min.js'),'utf8');
 const marker='window.ZamModelViewer=Tf,ts()';
 assert.equal(viewer.split(marker).length,2,'viewer parser adapter must match exactly');
-const injected=viewer.replace(marker,`${marker};window.parseM2=(m,s)=>new pA(new hA(m),new CA(s),null)`);
+const injected=viewer.replace(marker,`${marker};window.parseM2=(m,s,k)=>new pA(new hA(m),new CA(s),k ? new yA(k).c() : null)`);
 let current;
 const server=createServer((req,res)=>{
   if(req.url==='/jquery.js'){res.setHeader('Content-Type','text/javascript');res.end(fs.readFileSync(path.join(root,'web/voice-vote/node_modules/jquery/dist/jquery.min.js')));}
@@ -27,6 +27,8 @@ const server=createServer((req,res)=>{
   else if(req.url==='/original')res.end(current.input);
   else if(req.url==='/packed')res.end(current.packed);
   else if(req.url==='/skin')res.end(current.skin);
+  else if(req.url==='/skeleton')res.end(current.skeleton);
+  else if(req.url==='/packed-skeleton')res.end(current.packedSkeleton);
   else res.end('<!doctype html><html><body><script>window.WH={debug(){},WebP:{getImageExtension(){return ".webp"}}};</script><script src="/jquery.js"></script><script src="/viewer.js"></script></body></html>');
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
@@ -41,20 +43,24 @@ try {
   await page.goto(base);
   await page.waitForFunction(()=>typeof window.parseM2==='function');
   for(const file of files){
-    let packed,input,skin,stats;
+    let packed,input,skin,stats,skeleton,packedSkeleton,skeletonResult;
     try {
       input=fs.readFileSync(path.join(cache,'classicplus/m2',file));
       const skinID=chunksOf(input).find(c=>c.tag==='SFID')?.bytes.readUInt32LE();
       skin=fs.readFileSync(path.join(cache,'classicplus/skin',`${skinID}.skin`));
-      ({bytes:packed,stats}=packPortraitModel(input,skin));
+      const skeletonID=chunksOf(input).find(c=>c.tag==='SKID')?.bytes.readUInt32LE();
+      if(skeletonID)skeleton=fs.readFileSync(path.join(cache,'classicplus/skel',`${skeletonID}.skel`));
+      ({bytes:packed,stats,skeleton:skeletonResult}=packPortraitModel(input,skin,skeleton));
+      packedSkeleton=skeletonResult?.bytes;
     }catch(e){report.unsupported.push({file,error:e.message});continue;}
     try{
       assert.deepEqual(readPortraitCamera(packed),readPortraitCamera(input),'authored camera must stay identical');
-      current={input,packed,skin};
-      const failures=await page.evaluate(async stats=>{
+      current={input,packed,skin,skeleton,packedSkeleton};
+      const failures=await page.evaluate(async ({stats,hasSkeleton})=>{
         const fetchBytes=async url=>(await fetch(url)).arrayBuffer();
         const s=await fetchBytes('/skin');
-        const original=window.parseM2(await fetchBytes('/original'),s),packed=window.parseM2(await fetchBytes('/packed'),s);
+        const original=window.parseM2(await fetchBytes('/original'),s,hasSkeleton ? await fetchBytes('/skeleton'):null),
+          packed=window.parseM2(await fetchBytes('/packed'),s,hasSkeleton ? await fetchBytes('/packed-skeleton'):null);
         const differences=[];
         const equal=(a,b,label)=>{if(JSON.stringify(a)!==JSON.stringify(b))differences.push(label);};
         equal(packed.h,original.h.slice(0,stats.vertices),'base vertices');
@@ -84,9 +90,14 @@ try {
             compareTrack(original[field][i][key],packed[field][i][key],`${field}/${i}/${key}`);
         }
         return differences.slice(0,15);
-      },stats);
+      },{stats,hasSkeleton:!!skeleton});
       assert.deepEqual(failures,[]);
       const entry={file,...stats,sourceSha256:hash(input),skinSha256:hash(skin),sourceGzipBytes:gzipSync(input,{level:3}).length,gzipBytes:gzipSync(packed,{level:3}).length};
+      if(skeletonResult){
+        entry.skeleton={file:skeletonResult.file,sourceSha256:hash(skeleton),sha256:hash(packedSkeleton),sourceBytes:skeleton.length,packedBytes:packedSkeleton.length,
+          sourceGzipBytes:gzipSync(skeleton,{level:3}).length,gzipBytes:gzipSync(packedSkeleton,{level:3}).length};
+        fs.mkdirSync(path.join(out,'skel'),{recursive:true});fs.writeFileSync(path.join(out,'skel',skeletonResult.file),packedSkeleton);
+      }
       report.verified.push(entry);fs.writeFileSync(path.join(out,file),packed);
       console.log(`PASS ${file}: ${entry.sourceGzipBytes} -> ${entry.gzipBytes} gzip bytes`);
     }catch(e){report.failed.push({file,error:e.message});console.log(`FAIL ${file}: ${e.message}`);}

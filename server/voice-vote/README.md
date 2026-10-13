@@ -53,9 +53,12 @@ processes when overriding them.
   `HttpOnly`, `SameSite=Lax` cookie with a random 256-bit token, valid for one year.
   Only its SHA-256 hash is stored in the database. No login or fingerprinting.
 - `GET /api/votes/queue`: current quest priorities (`questID`, `rated`, `votes`).
-  Requires the visitor cookie and disables caching. Unrated comparisons come
-  first, then the lowest global vote counts, with randomized ties. Counts refer
-  to exact current comparisons, so changed recording IDs start at zero while
+  Requires the visitor cookie and disables caching. Samples race/sex groups
+  randomly with a soft penalty for recently selected groups; a group with many
+  quests gets no extra probability. Within the chosen group, unrated comparisons
+  precede rated ones and lower global vote counts come first, with random ties.
+  Automatic batches still exclude already rated comparisons. Counts refer to
+  exact current comparisons, so changed recording IDs start at zero while
   library version numbers alone do not reset coverage.
 - `POST /api/votes`: `{questID, selectedId, variantIds}`. Requires the visitor
   cookie, a same-origin request and a JSON body of at most 16 KiB.
@@ -126,6 +129,22 @@ admission failures while the page remains open. There is no persistent browser q
 closing the page before admission can lose an unaccepted choice. Accepted choices
 survive browser closure. Pending accepted comparisons are excluded from unrated
 recommendations for that cookie, including after page reload.
+
+Queue diversity targets the future community-choice recommendation unit:
+race/sex, not individual NPCs or quests. Explicit narrators (NPC ID 0) form one
+group, separate from NPCs with unknown demographics. Ancients/furbolgs already
+use their canonical sex value. The group key never uses a model or camera profile.
+Group selection is weighted randomness, not a round-robin cycle or a per-series
+quota. Every eligible group always has a positive chance, including consecutive
+appearances. A group's weight is `1 / (1 + 3 * recencyScore)`. Recent personal
+votes on current comparisons seed that score: the latest contributes 1, each
+preceding vote contributes 0.8 times the next, up to 20 retained comparisons.
+Each reserved comparison decays scores by 0.8 and adds 1 to its group's score.
+Thus one recent occurrence initially quarters that group's weight, then other
+comparisons gradually restore its relative chance. These are sampling parameters,
+not weights applied to voting results. Accepted pending votes also contribute.
+Groups without any remaining unrated quest do not force automatic replays.
+Raw ballots, comparison identities and exports are unchanged by queue ordering.
 
 The catalogue is validated once and cached until its file stamp changes. Deploy
 catalogue updates by atomic replacement. Read-only database connections are bounded

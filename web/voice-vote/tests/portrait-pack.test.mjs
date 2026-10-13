@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
-import {packPortraitModel,chunksOf} from '../portrait-pack.mjs';
+import {packPortraitModel,packPortraitSkeleton,chunksOf} from '../portrait-pack.mjs';
 import {readPortraitPack} from '../portrait-pack-store.mjs';
 
 function fixture(){
@@ -49,9 +49,63 @@ test('unsupported and truncated layouts never produce an optimized asset',()=>{
   const {input,skin}=fixture();
   assert.throws(()=>packPortraitModel(input.subarray(0,100),skin),/Truncated/);
   const particles=Buffer.from(input);particles.writeUInt32LE(1,8+296);
-  assert.throws(()=>packPortraitModel(particles,skin),/Emitter/);
+  assert.throws(()=>packPortraitModel(particles,skin),/Invalid data range/);
   const badSkin=Buffer.from(skin);badSkin.writeUInt16LE(99,48);
   assert.throws(()=>packPortraitModel(input,badSkin),/missing vertices/);
+});
+
+function chunk(tag,bytes){const h=Buffer.alloc(8);h.write(tag);h.writeUInt32LE(bytes.length,4);return Buffer.concat([h,bytes]);}
+function skeletonFixture(){
+  const {input,skin}=fixture(),md=chunksOf(input)[0].bytes;
+  const seq=Buffer.from(md),bones=Buffer.from(md);
+  for(const [dst,src]of [[0,20],[8,28],[16,36]])md.copy(seq,dst,src,src+8);
+  for(const [dst,src]of [[0,44],[8,52]])md.copy(bones,dst,src,src+8);
+  const skeleton=Buffer.concat([chunk('SKS1',seq),chunk('SKB1',bones),chunk('SKA1',Buffer.alloc(16))]);
+  const geometry=Buffer.from(md);for(const at of [20,28,36,44,52,240,248])geometry.fill(0,at,at+8);
+  const id=Buffer.alloc(4);id.writeUInt32LE(3);
+  return {skin,skeleton,input:Buffer.concat([chunk('MD21',geometry),chunk('SFID',chunksOf(input)[1].bytes),chunk('SKID',id)])};
+}
+
+test('external skeleton retains stand/talk bones and original sequence indices',()=>{
+  const {input,skin,skeleton}=skeletonFixture();
+  const before=Buffer.from(skeleton),pack=packPortraitModel(input,skin,skeleton);
+  assert.deepEqual(skeleton,before);
+  assert.equal(pack.stats.vertices,3);
+  assert.equal(pack.skeleton.file,'3.skel');
+  assert.deepEqual(pack.stats.retainedSequences.map(s=>s.id),[0,60]);
+  const bones=chunksOf(pack.skeleton.bytes).find(c=>c.tag==='SKB1').bytes;
+  const at=bones.readUInt32LE(4),values=bones.readUInt32LE(at+32);
+  assert.equal(bones.readFloatLE(bones.readUInt32LE(values+4)),1);
+  assert.equal(bones.readUInt32LE(values+8),0);
+  assert.equal(bones.readFloatLE(bones.readUInt32LE(values+20)),3);
+  assert.throws(()=>packPortraitModel(input,skin),/External skeleton/);
+  assert.throws(()=>packPortraitSkeleton(Buffer.concat([skeleton,chunk('SKPD',Buffer.alloc(16))])),/Parent/);
+});
+
+test('geometry and external skeleton fail back together when either source or pack changes',async()=>{
+  const root=await fs.mkdtemp(path.join(os.tmpdir(),'portrait-skeleton-'));
+  const hash=b=>createHash('sha256').update(b).digest('hex');
+  const {input,skin,skeleton}=skeletonFixture(),pack=packPortraitModel(input,skin,skeleton),viewer=Buffer.from('viewer');
+  const files={
+    'modelviewer/classicplus/m2/1.m2':input,'modelviewer/classicplus/skin/20.skin':skin,
+    'modelviewer/classicplus/skel/3.skel':skeleton,'modelviewer/live/viewer/viewer.min.js':viewer,
+    'portrait-packs-v1/1.m2':pack.bytes,'portrait-packs-v1/skel/3.skel':pack.skeleton.bytes,
+    'portrait-packs-v1/verification.json':JSON.stringify({version:1,failed:[],viewerSha256:hash(viewer),verified:[{
+      file:'1.m2',sourceSha256:hash(input),sha256:hash(pack.bytes),skinSha256:hash(skin),
+      skeleton:{file:'3.skel',sourceSha256:hash(skeleton),sha256:hash(pack.skeleton.bytes)},
+    }]}),
+  };
+  try {
+    for(const [name,bytes]of Object.entries(files)){await fs.mkdir(path.dirname(path.join(root,name)),{recursive:true});await fs.writeFile(path.join(root,name),bytes);}
+    assert.deepEqual(await readPortraitPack(root,'1.m2'),pack.bytes);
+    assert.deepEqual(await readPortraitPack(root,'3.skel'),pack.skeleton.bytes);
+    for(const name of ['modelviewer/classicplus/skel/3.skel','portrait-packs-v1/skel/3.skel','portrait-packs-v1/1.m2']) {
+      await fs.appendFile(path.join(root,name),'changed');
+      assert.equal(await readPortraitPack(root,'1.m2'),null,name);
+      assert.equal(await readPortraitPack(root,'3.skel'),null,name);
+      await fs.writeFile(path.join(root,name),files[name]);
+    }
+  } finally {await fs.rm(root,{recursive:true,force:true});}
 });
 
 test('pack serving verifies source, skin, viewer and derived bytes; mismatch falls back',async()=>{

@@ -156,6 +156,32 @@ class VoteApiTest {
         assertEquals(List.of(7L,179L,3741L),queue().stream().map(VoteStore.Priority::questID).toList());
     }
 
+    @Test void queueSamplesRaceSexGroupsAcrossRequestsAndIncludesPendingVotes() throws Exception {
+        var secondDwarf=new Catalogue.Quest(7,quest.npc(),quest.variants());
+        var orc=new Catalogue.Quest(8,new Catalogue.Npc(99,12,123,"orc","female"),quest.variants());
+        var otherOrc=new Catalogue.Quest(9,orc.npc(),quest.variants());
+        var quests=List.of(quest,secondDwarf,orc,otherOrc);
+        Files.writeString(catalogueFile,mapper.writeValueAsString(new Catalogue.Snapshot(2,quests)));
+        var store=context.getBean(VoteStore.class);
+        // Coverage would put both dwarves first without group rotation.
+        store.save(store.createVisitor().id(),orc,first);
+        store.save(store.createVisitor().id(),otherOrc,first);
+        summary();
+        var initialFirsts=new HashSet<Long>();
+        for(int i=0;i<40;i++) initialFirsts.add(queue().getFirst().questID());
+        assertTrue(initialFirsts.stream().anyMatch(Set.of(8L,9L)::contains),"Controller must not re-sort groups by quest coverage");
+        assertTrue(initialFirsts.stream().anyMatch(Set.of(179L,7L)::contains));
+        post(ballot(first),base);
+        assertFalse(queue().getFirst().rated());
+        restart();
+        assertTrue(queue().stream().filter(p->p.questID()==179).findFirst().orElseThrow().rated());
+        store=context.getBean(VoteStore.class);
+        var visitor=store.createVisitor();
+        var pending=store.queue(visitor.id(),quests,Set.of(179L));
+        assertFalse(pending.getFirst().rated());
+        assertTrue(pending.stream().filter(p->p.questID()==179).findFirst().orElseThrow().rated());
+    }
+
     @Test void validatesThreeDistinctRecordingRevisions() throws Exception {
         var current=quest.variants().getFirst();
         for (var hashes : List.of(List.of("f".repeat(64),"e".repeat(64),"d".repeat(64)),

@@ -10,8 +10,6 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.util.HexFormat;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -131,11 +129,15 @@ public class VoteStore implements AutoCloseable {
         return hash(identity);
     }
     public List<Priority> queue(String visitor, List<Catalogue.Quest> quests) throws SQLException {
+        return queue(visitor, quests, java.util.Set.of());
+    }
+    public List<Priority> queue(String visitor, List<Catalogue.Quest> quests, java.util.Set<Long> pending) throws SQLException {
         var counts = new HashMap<String, Long>();
-        var rated = new java.util.HashSet<String>();
+        var rated = new HashMap<String, Instant>();
         for(var row:rows("SELECT comparison_id,COUNT(*) AS count FROM votes GROUP BY comparison_id"))
             counts.put((String)row.get("comparison_id"),((Number)row.get("count")).longValue());
-        for(var row:rows("SELECT comparison_id FROM votes WHERE visitor_id=?",visitor)) rated.add((String)row.get("comparison_id"));
+        for(var row:rows("SELECT comparison_id,updated_at FROM votes WHERE visitor_id=?",visitor))
+            rated.put((String)row.get("comparison_id"), Instant.parse((String)row.get("updated_at")));
         var cache=identities;
         if(cache==null || cache.quests()!=quests) {
             // This lock protects only catalogue-derived data, never database IO.
@@ -149,14 +151,15 @@ public class VoteStore implements AutoCloseable {
             }
         }
         // Historical recording revisions must not inflate current coverage.
-        var result = new ArrayList<Priority>();
+        var result = new ArrayList<ComparisonQueue.Candidate>();
         for (var quest : quests) {
             String id = cache.ids().get(quest.questID());
-            result.add(new Priority(quest.questID(), rated.contains(id), counts.getOrDefault(id, 0L)));
+            boolean accepted = pending.contains(quest.questID());
+            result.add(new ComparisonQueue.Candidate(
+                new Priority(quest.questID(), accepted || rated.containsKey(id), counts.getOrDefault(id, 0L)),
+                quest.npc(), accepted ? Instant.MAX : rated.get(id)));
         }
-        Collections.shuffle(result);
-        result.sort(Comparator.comparing(Priority::rated).thenComparingLong(Priority::votes));
-        return result;
+        return ComparisonQueue.order(result);
     }
     public synchronized Saved save(String visitor, Catalogue.Quest quest, String selectedId) throws SQLException {
         return save(visitor,quest,selectedId,null);

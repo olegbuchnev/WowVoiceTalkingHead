@@ -24,6 +24,15 @@ for(const row of report.verified){
   const skinID=chunksOf(source).find(c=>c.tag==='SFID').bytes.readUInt32LE();
   const skin=await fs.readFile(path.join(cache,'modelviewer/classicplus/skin',`${skinID}.skin`));
   if(digest(source)!==row.sourceSha256||digest(packed)!==row.sha256||digest(skin)!==row.skinSha256)throw Error(`Asset changed after verification: ${row.file}`);
+  if(row.skeleton){
+    const entry=row.skeleton;
+    if(!/^\d+\.skel$/.test(entry.file))throw Error('Invalid skeleton filename');
+    const [original,derived]=await Promise.all([fs.readFile(path.join(cache,'modelviewer/classicplus/skel',entry.file)),fs.readFile(path.join(prepared,'skel',entry.file))]);
+    if(digest(original)!==entry.sourceSha256||digest(derived)!==entry.sha256)throw Error(`Skeleton changed after verification: ${entry.file}`);
+    await fs.mkdir(path.join(destination,'skel'),{recursive:true});
+    const temporary=path.join(destination,'skel',`${entry.file}.${randomUUID()}.tmp`);
+    await fs.writeFile(temporary,derived);await fs.rename(temporary,path.join(destination,'skel',entry.file));total+=derived.length;
+  }
   const temporary=path.join(destination,`${row.file}.${randomUUID()}.tmp`);
   await fs.writeFile(temporary,packed);await fs.rename(temporary,path.join(destination,row.file));total+=packed.length;
 }

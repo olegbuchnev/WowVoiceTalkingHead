@@ -9,24 +9,28 @@ const signature=stat=>`${stat.size}:${stat.mtimeMs}:${stat.ctimeMs}`;
 // Packs are generated and verified offline. No binary conversion on a request.
 // A changed source, base skin or pack falls back to the immutable source cache.
 export async function readPortraitPack(cacheRoot,file) {
-  if(!/^\d+\.m2$/.test(file))throw Error('Invalid portrait pack name');
+  if(!/^\d+\.(m2|skel)$/.test(file))throw Error('Invalid portrait pack name');
   const directory=path.join(cacheRoot,'portrait-packs-v1');
   const manifestPath=path.join(directory,'verification.json');
   try {
-    const sourcePath=path.join(cacheRoot,'modelviewer/classicplus/m2',file);
-    const packedPath=path.join(directory,file);
+    const report=JSON.parse(await fs.readFile(manifestPath,'utf8'));
+    if(report.version!==1||report.failed?.length) return null;
+    const isSkeleton=file.endsWith('.skel');
+    const entry=report.verified?.find(row=>isSkeleton ? row.skeleton?.file===file : row.file===file);
+    if(!entry)return null;
+    const sourcePath=path.join(cacheRoot,'modelviewer/classicplus/m2',entry.file);
+    const modelPath=path.join(directory,entry.file);
+    const packedPath=isSkeleton ? path.join(directory,'skel',file) : modelPath;
+    const skeletonPaths=entry.skeleton ? [path.join(cacheRoot,'modelviewer/classicplus/skel',entry.skeleton.file),path.join(directory,'skel',entry.skeleton.file)] : [];
     const viewerPath=path.join(cacheRoot,'modelviewer/live/viewer/viewer.min.js');
-    const stats=await Promise.all([manifestPath,sourcePath,packedPath,viewerPath].map(p=>fs.stat(p)));
+    const stats=await Promise.all([manifestPath,sourcePath,modelPath,viewerPath,...skeletonPaths].map(p=>fs.stat(p)));
     const key=`${directory}/${file}`,stamp=stats.map(signature).join('|');
     let check=checks.get(key);
     if(check?.stamp!==stamp){
       const promise=(async()=>{
-        const report=JSON.parse(await fs.readFile(manifestPath,'utf8'));
-        if(report.version!==1||report.failed?.length) return null;
-        const entry=report.verified?.find(row=>row.file===file);
-        if(!entry)return null;
-        const [source,packed,viewer]=await Promise.all([sourcePath,packedPath,viewerPath].map(p=>fs.readFile(p)));
+        const [source,packed,viewer,...skeletons]=await Promise.all([sourcePath,modelPath,viewerPath,...skeletonPaths].map(p=>fs.readFile(p)));
         if(digest(source)!==entry.sourceSha256||digest(packed)!==entry.sha256||digest(viewer)!==report.viewerSha256)return null;
+        if(entry.skeleton&&(digest(skeletons[0])!==entry.skeleton.sourceSha256||digest(skeletons[1])!==entry.skeleton.sha256))return null;
         // Locate SFID without importing the build-time binary optimizer.
         let skinID;
         for(let p=0;p+8<=source.length;){

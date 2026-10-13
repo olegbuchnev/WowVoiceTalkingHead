@@ -12,9 +12,12 @@ still point to the original animation files. Sequence indices stay unchanged;
 unused sequence table slots do not contain animation keys.
 
 This is an adapter for the cached viewer, not a general M2 converter. External
-SKID skeletons and particle/ribbon emitters currently use original assets.
-They are listed in `verification.json`; unknown or malformed formats fail
-closed. Do not remove this fallback to improve optimization counts.
+SKID skeletons without parents are packed separately under `skel/`; the model and
+skeleton are verified and served as a pair. Particle/ribbon data and all their
+tracks are preserved, including particle lifetime and global animation.
+Parent skeleton layouts still fail closed pending explicit verification.
+Inspect every `unsupported` entry and report its transfer size and affected
+portraits. Never present an original fallback as an optimized model.
 
 ## Build and verify after changing model assets
 
@@ -34,22 +37,24 @@ Git. `tests/portrait-pack-render.mjs` compares rest, nine Talk samples and retur
 to rest in WebGL, including bone matrices, materials and camera profile. The pose test
 clears frame-dependent cloth simulation overrides in both viewers so it compares
 authored animation tracks at identical times. Runtime cloth rendering is unchanged. Use
-`--quests=977,1050,179,1479,3741` to select cases. Before/after screenshots and
+`--quests=1116,898,271,5657` to select external-skeleton and emitter cases. These
+families are also included in the default regression set. Before/after screenshots and
 mismatching poses are saved alongside the report. The known original camera
 failure for quest 97290 is not an optimization test.
 
-The installer rechecks hashes and publishes files under
+Optimization and verification are mandatory whenever server models change.
+The installer rechecks hashes and publishes M2 and `skel/*.skel` files under
 `artifacts/voice-vote-model-cache/portrait-packs-v1/`. Original M2/skin files are
 never modified. Transfer that directory into the existing `model_cache` volume
 alongside `modelviewer/`, before deploying the web image. Do not put models in
 the application image. Preserve the manifest and filenames.
 
-The frontend uses `/modelviewer/portrait-v1/classicplus/`. M2 requests select
-verified packs; other assets use the original cache. A changed viewer, source
-M2, skin or derived file invalidates its pack. Missing or invalid packs use the
+The frontend uses `/modelviewer/portrait-v1/classicplus/`. Asset requests select
+verified packs for M2 and SKEL; other assets use the original cache. A changed viewer, source
+M2/skeleton, skin or derived file invalidates the pair. Missing or invalid packs use the
 original assets. Camera calibration reads the original M2. The audio-preload
 deployment gate remains mandatory; pack safety tests also run in image builds.
 
 Hash verification is cached by file timestamps and size. Models are read
-asynchronously, not pinned in Node's heap. Logs include `portraitPack` for M2
+asynchronously, not pinned in Node's heap. Logs include `portraitPack` for M2/SKEL
 requests. Old asset paths remain supported for already open pages.

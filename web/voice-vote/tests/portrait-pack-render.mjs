@@ -11,7 +11,7 @@ const packRoot=path.join(root,'artifacts/portrait-packs');
 const report=JSON.parse(fs.readFileSync(path.join(packRoot,'verification.json')));
 const verified=new Set(report.verified.map(row=>row.file));
 const catalogue=JSON.parse(fs.readFileSync(process.argv.find(a=>a.startsWith('--catalogue='))?.slice(12)||path.join(root,'artifacts/voice-vote-deploy/catalogue/site-catalogue.json')));
-const ids=(process.argv.find(a=>a.startsWith('--quests='))?.slice(9)||'977,1050,179,1479,3741').split(',').map(Number);
+const ids=(process.argv.find(a=>a.startsWith('--quests='))?.slice(9)||'977,1050,179,1479,3741,1116,898,271,5657').split(',').map(Number);
 const quests=ids.map(id=>catalogue.quests.find(q=>q.questID===id));
 assert(quests.every(Boolean),'all test quests must exist');
 process.env.VOICE_VOTE_MODEL_OFFLINE='true';
@@ -53,6 +53,8 @@ const server=await createServer({root:path.join(root,'web/voice-vote'),configFil
     if(req.url==='/__test'){res.setHeader('Content-Type','text/html');res.end(harness);return;}
     const match=/^\/modelviewer\/(?:portrait-v1\/)?classicplus\/m2\/(\d+\.m2)$/.exec(req.url);
     if(packed&&match&&verified.has(match[1])){res.setHeader('Content-Type','application/octet-stream');res.end(fs.readFileSync(path.join(packRoot,match[1])));return;}
+    const skel=/^\/modelviewer\/(?:portrait-v1\/)?classicplus\/skel\/(\d+\.skel)$/.exec(req.url);
+    if(packed&&skel&&report.verified.some(row=>row.skeleton?.file===skel[1])){res.setHeader('Content-Type','application/octet-stream');res.end(fs.readFileSync(path.join(packRoot,'skel',skel[1])));return;}
     req.url=req.url.replace('/modelviewer/portrait-v1/','/modelviewer/');
     return middleware(req,res,next);
   });}

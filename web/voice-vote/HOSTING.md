@@ -1,5 +1,37 @@
 # Timeweb Cloud deployment
 
+## External skeleton and emitter optimization (2026-10-13)
+
+Deployed `talkinghead-vote-web:portrait-packs-20261013` with 375 verified M2
+packs and three packed external skeletons. All 26 previous source-format
+fallbacks are now supported: three SKID models and 23 particle/ribbon models.
+The previous 349 derived files are byte-identical. Full body geometry, materials,
+effects, cameras and required Stand/Talk animation are retained.
+
+Quest 1116 / model 119376 previously took 38,509 ms in the reported browser
+trace. Its geometry and skeleton compressed payload fell from about 10.27 MB
+to 0.81 MB. A fresh public Firefox check reached ready in 4,969 ms, with
+`portraitPack: true` on both M2 and SKEL requests. This is a measured check,
+not a latency guarantee for every connection. Published bytes, SHA-256 URLs
+and year-long immutable cache headers were verified for all three SKID pairs.
+
+Validation: 375 source/packed comparisons through the actual viewer parser,
+no unsupported or failed packs; neutral, nine Talk samples and reset comparisons
+for the affected model families; 20 versioned WebGL cases with 506 hashed
+resource requests and no resource requests on repeat loads; 54 unit tests;
+Docker audio/layout/cache gates. Public portraits 1116, 898, 271, 154 and 92468
+loaded and played successfully. The deployed audio-preloading and volume checks
+passed. Browser voting requests were mocked; no test ballots were submitted.
+
+Backup: `/srv/talkinghead/backups/portrait-packs-20261013-193522`.
+Only the web container and model derivatives changed; the API container and
+voting data were left intact. Roll back the saved `verification.json` and retag
+`talkinghead-vote-web:before-expanded-packs-20261013` as `:local`, then recreate
+only `web`. New derivative files may remain; the old manifest does not select
+them. Logs and verification artifacts: `artifacts/review/portrait-pack*`.
+The update-libraries skill now requires optimization and explicit review of
+every unsupported file before model delivery.
+
 ## Browser model cache and catalogue revalidation (2026-10-13)
 
 Deployed `talkinghead-vote-web:model-cache-20261013`. Portrait resources now use

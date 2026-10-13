@@ -5,7 +5,7 @@ import {createHash} from 'node:crypto';
 const ARRAY_FIELDS = [[8,1],[20,4],[28,64],[36,2],[44,88],[52,2],[60,48],
   [72,40],[80,16],[88,20],[96,60],[104,2],[112,4],[120,2],[128,2],
   [136,2],[144,2],[152,2],[216,2],[224,12],[232,12],[240,40],[248,2],
-  [256,36],[264,156],[272,116],[280,2],[288,176],[296,476]];
+  [256,36],[264,156],[272,116],[280,2],[288,176],[296,492]];
 
 export function chunksOf(bytes) {
   const result=[];
@@ -59,8 +59,8 @@ class Writer {
   finish(){return Buffer.concat(this.parts);}
 }
 
-function animationSelection(data) {
-  const count=data.readUInt32LE(28),offset=data.readUInt32LE(32);
+function animationSelection(data,at=28) {
+  const count=data.readUInt32LE(at),offset=data.readUInt32LE(at+4);
   if(offset+count*64>data.length)throw Error('Invalid sequence table');
   const sequences=Array.from({length:count},(_,i)=>({
     index:i,id:data.readUInt16LE(offset+i*64),variation:data.readUInt16LE(offset+i*64+2),
@@ -88,25 +88,9 @@ function animationSelection(data) {
   return {selected,sequences,stand};
 }
 
-/** Retains exact base-skin vertices and required animation keys. No decimation. */
-export function packPortraitModel(input,skin) {
-  const chunks=chunksOf(input),md=chunks.find(c=>c.tag==='MD21');
-  if(!md)throw Error('Only chunked MD21 models are supported');
-  if(chunks.some(c=>c.tag==='SKID'))throw Error('External skeleton requires a separate skeleton pack');
-  const data=md.bytes,version=data.readUInt32LE(4);
-  if(data.toString('ascii',0,4)!=='MD20'||![272,274].includes(version))throw Error('Unsupported MD21 version');
-  if(data.readUInt32LE(288)||data.readUInt32LE(296))throw Error('Emitter layout requires a separate compatibility check');
-  if(skin.toString('ascii',0,4)!=='SKIN')throw Error('Invalid base skin');
-  const skinCount=skin.readUInt32LE(4),skinOffset=skin.readUInt32LE(8);
-  if(skinOffset+skinCount*2>skin.length)throw Error('Invalid skin vertex lookup');
-  let maxVertex=-1;
-  for(let i=0;i<skinCount;i++)maxVertex=Math.max(maxVertex,skin.readUInt16LE(skinOffset+2*i));
-  const originalVertices=data.readUInt32LE(60),vertices=maxVertex+1;
-  if(vertices>originalVertices)throw Error('Skin references missing vertices');
-  const {selected,sequences,stand}=animationSelection(data);
-  const writer=new Writer(data,(data.readUInt32LE(16)&8)?312:304),header=writer.parts[0];
-
-  function track(target,at,sourceAt,valueSize,{bone=false,all=false}={}) {
+function trackWriter(writer,{selected,sequences}) {
+  const data=writer.source;
+  return function track(target,at,sourceAt,valueSize,{bone=false,all=false}={}) {
     // The full table keeps original sequence indices and alias references.
     // Unused slots have zero counts; their keys are never copied to the pack.
     for(const [relative,stride] of [[4,4],[12,valueSize]]) {
@@ -125,6 +109,52 @@ export function packPortraitModel(input,skin) {
       });
     }
   }
+}
+
+export function packPortraitSkeleton(input) {
+  const chunks=chunksOf(input),seq=chunks.find(c=>c.tag==='SKS1');
+  if(chunks.some(c=>c.tag==='SKPD')||!seq)throw Error('Parent or incomplete skeleton requires separate verification');
+  const selection=animationSelection(seq.bytes,8);
+  const bytes=joinChunks(chunks.map(chunk=>{
+    if(!['SKS1','SKB1','SKA1'].includes(chunk.tag))return chunk;
+    const w=new Writer(chunk.bytes,chunk.tag==='SKS1'?32:16),h=w.parts[0];
+    const track=trackWriter(w,selection);
+    if(chunk.tag==='SKS1') {
+      w.array(h,0,0,4);
+      w.array(h,8,8,64,(out,dst,src,index)=>{if(selection.stand?.index===index)out.writeInt16LE(-1,dst+60);});
+      w.array(h,16,16,2);
+    } else if(chunk.tag==='SKB1') {
+      w.array(h,0,0,88,(out,dst,src)=>{track(out,dst+16,src+16,12,{bone:true});track(out,dst+36,src+36,8,{bone:true});track(out,dst+56,src+56,12,{bone:true});});
+      w.array(h,8,8,2);
+    } else {
+      w.array(h,0,0,40,(out,dst,src)=>track(out,dst+20,src+20,1,{all:true}));
+      w.array(h,8,8,2);
+    }
+    return {tag:chunk.tag,bytes:w.finish()};
+  }));
+  return {bytes,selection};
+}
+
+/** Retains exact base-skin vertices and required animation keys. No decimation. */
+export function packPortraitModel(input,skin,skeleton) {
+  const chunks=chunksOf(input),md=chunks.find(c=>c.tag==='MD21');
+  if(!md)throw Error('Only chunked MD21 models are supported');
+  const skeletonID=chunks.find(c=>c.tag==='SKID')?.bytes.readUInt32LE();
+  if(skeletonID&&!skeleton)throw Error('External skeleton requires a separate skeleton pack');
+  const packedSkeleton=skeletonID ? packPortraitSkeleton(skeleton) : null;
+  const data=md.bytes,version=data.readUInt32LE(4);
+  if(data.toString('ascii',0,4)!=='MD20'||![272,274].includes(version))throw Error('Unsupported MD21 version');
+  if(skin.toString('ascii',0,4)!=='SKIN')throw Error('Invalid base skin');
+  const skinCount=skin.readUInt32LE(4),skinOffset=skin.readUInt32LE(8);
+  if(skinOffset+skinCount*2>skin.length)throw Error('Invalid skin vertex lookup');
+  let maxVertex=-1;
+  for(let i=0;i<skinCount;i++)maxVertex=Math.max(maxVertex,skin.readUInt16LE(skinOffset+2*i));
+  const originalVertices=data.readUInt32LE(60),vertices=maxVertex+1;
+  if(vertices>originalVertices)throw Error('Skin references missing vertices');
+  const {selected,sequences,stand}=packedSkeleton?.selection || animationSelection(data);
+  const writer=new Writer(data,(data.readUInt32LE(16)&8)?312:304),header=writer.parts[0];
+
+  const track=trackWriter(writer,{selected,sequences});
   const callbacks={
     28:(out,dst,src,index)=>{
       if(stand?.index===index)out.writeInt16LE(-1,dst+60);
@@ -140,6 +170,22 @@ export function packPortraitModel(input,skin) {
     264:(out,dst,src)=>[12,4,12,4,4,4,1].forEach((size,i)=>track(out,dst+16+20*i,src+16+20*i,size)),
     // Keep all authored camera keys, including sequence zero calibration.
     272:(out,dst,src)=>{track(out,dst+12,src+12,36,{all:true});track(out,dst+44,src+44,36,{all:true});track(out,dst+76,src+76,12,{all:true});track(out,dst+96,src+96,12,{all:true});},
+    // Preserve emitter tracks in full, including global/lifetime animation.
+    // The audited viewer consumes 492-byte particle records (incl. UV scales).
+    288:(out,dst,src)=>{
+      for(const at of [20,28])writer.array(out,dst+at,src+at,2);
+      for(const [at,size]of [[36,12],[56,2],[76,4],[96,4],[132,2],[152,1]])track(out,dst+at,src+at,size,{all:true});
+    },
+    296:(out,dst,src)=>{
+      for(const at of [24,32])writer.array(out,dst+at,src+at,1);
+      for(const at of [52,72,92,112,132,152,176,200,220,240])track(out,dst+at,src+at,4,{all:true});
+      for(const [at,size]of [[260,12],[276,2],[292,8],[316,2],[332,2]]) {
+        writer.array(out,dst+at,src+at,2);
+        writer.array(out,dst+at+8,src+at+8,size);
+      }
+      writer.array(out,dst+448,src+448,12);
+      track(out,dst+456,src+456,1,{all:true});
+    },
   };
   for(const [at,stride] of ARRAY_FIELDS){
     if(at===60){header.writeUInt32LE(vertices,60);header.writeUInt32LE(writer.copy(data.readUInt32LE(64),vertices*48),64);}
@@ -160,7 +206,7 @@ export function packPortraitModel(input,skin) {
     }
     return chunk;
   }));
-  return {bytes:result,stats:{sourceBytes:input.length,packedBytes:result.length,
+  return {bytes:result,skeleton:packedSkeleton ? {file:`${skeletonID}.skel`,bytes:packedSkeleton.bytes,sourceSha256:createHash('sha256').update(skeleton).digest('hex')} : null,stats:{sourceBytes:input.length,packedBytes:result.length,
     sourceVertices:originalVertices,vertices,sourceSequences:sequences.length,
     retainedSequences:[...selected].map(i=>({index:i,id:sequences[i].id,variation:sequences[i].variation})),
     sha256:createHash('sha256').update(result).digest('hex')}};

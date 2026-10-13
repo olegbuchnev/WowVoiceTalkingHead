@@ -50,8 +50,7 @@ public class VoteController {
         String id = visitor(request);
         if (id == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Allow site cookies and reload the page.");
         var quests=catalogue.quests();var pending=inbox.pendingQuests(id,quests);
-        return store.queue(id,quests).stream().map(p->new VoteStore.Priority(p.questID(),p.rated() || pending.contains(p.questID()),p.votes()))
-            .sorted(java.util.Comparator.comparing(VoteStore.Priority::rated).thenComparingLong(VoteStore.Priority::votes)).toList();
+        return store.queue(id,quests,pending);
     }
     @PostMapping(value={"","/submit"},consumes="application/json")
     public Object vote(@RequestBody Ballot ballot, HttpServletRequest request, HttpServletResponse response) throws Exception {

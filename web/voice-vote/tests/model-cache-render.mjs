@@ -9,7 +9,7 @@ import {localApi} from '../server.mjs';
 const root=path.resolve(import.meta.dirname,'../../..');
 process.env.VOICE_VOTE_MODEL_OFFLINE='true';
 const catalogue=JSON.parse(fs.readFileSync(path.join(root,'artifacts/voice-vote-deploy/catalogue/site-catalogue.json')));
-const ids=(process.argv.find(a=>a.startsWith('--quests='))?.slice(9)||'179,925,5657,97326').split(',').map(Number);
+const ids=(process.argv.find(a=>a.startsWith('--quests='))?.slice(9)||'179,925,5657,97326,1116,898,271').split(',').map(Number);
 const requests=[];
 const api=localApi();
 const html=`<!doctype html><html><body><div id="portrait" style="width:300px;height:300px"></div>

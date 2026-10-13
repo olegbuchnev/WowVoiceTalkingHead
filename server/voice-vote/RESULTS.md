@@ -45,6 +45,15 @@ an array in JSON. Formula-like text receives a leading apostrophe in CSV only.
 
 ## Identity and version rules
 
+Community-choice playback is planned per race/sex group, not per individual
+quest. Quest-level and recording-revision results remain the underlying evidence
+for that group recommendation. Sampling should therefore favor group diversity
+using weighted randomness and a soft recency penalty, not fixed group cycles.
+Narrators must have a distinct recommendation group; the current export's null
+demographics also include unknown NPCs, so they must not be blindly merged when
+the future recommendation importer is implemented (use `npcID=0` to distinguish
+explicit narrators in comparison records).
+
 Before implementing addon voice selection, revisit the
 [planned revision-weighted ranking](../../docs/internal/audio-recording-history.md#задача-учитывать-прошлые-оценки-при-выборе-озвучки-в-аддоне).
 It proposes a capped, fading contribution from previous recordings (initial

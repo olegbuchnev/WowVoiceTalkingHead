@@ -113,7 +113,7 @@ export async function modelAsset(urlPath, timings) {
   if ((!viewerScript && !viewerStyle && !foreverAsset) || urlPath.includes('..')) throw Error('Invalid model path');
   const cacheRoot=process.env.VOICE_VOTE_MODEL_CACHE || path.join(repo, 'artifacts/voice-vote-model-cache');
   const cache = path.join(cacheRoot, urlPath.slice(1));
-  if(portraitAsset&&/^\/modelviewer\/classicplus\/m2\/\d+\.m2$/.test(urlPath)){
+  if(portraitAsset&&/^\/modelviewer\/classicplus\/(?:m2\/\d+\.m2|skel\/\d+\.skel)$/.test(urlPath)){
     const started=performance.now(),packed=await readPortraitPack(cacheRoot,path.basename(urlPath));
     if(timings)timings.portraitPack=!!packed;
     if(packed){if(timings)timings.readMs=Number((performance.now()-started).toFixed(2));return packed;}
