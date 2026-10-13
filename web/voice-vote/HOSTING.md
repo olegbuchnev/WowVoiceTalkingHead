@@ -1,5 +1,29 @@
 # Timeweb Cloud deployment
 
+## Weighted voice-group queue (2026-10-14)
+
+Deployed `talkinghead-vote-server:group-queue-20261014` from commit `fabaa5f`.
+The API now samples race/sex groups with a soft recency penalty, keeping explicit
+narrators separate from unknown NPCs. Group size does not increase selection
+probability; consecutive group appearances remain possible. Unrated comparisons
+stay ahead of repeats, and lower coverage determines ordering within a group.
+Pending accepted votes and recent stored votes contribute to the penalty.
+
+The Docker build passed the Java verification suite, including group sampling,
+API ordering, restart persistence and pending-vote tests. Twenty public queue
+requests returned all 4,103 unique comparisons and exercised 31 groups across
+their first five entries. The API retained the weighted ordering rather than
+sorting it back by global coverage. No ballots were submitted. Public audio
+preloading, playback reuse and cookie volume checks also passed.
+
+Backup: `/srv/talkinghead/backups/group-queue-20261013-215204` (UTC).
+All 622 existing votes and 622 comparison records were preserved; SQLite integrity
+passed. The web container and catalogue/audio manifest hashes are unchanged.
+The backup includes SQLite, the pending inbox and the previous API image ID.
+To roll back, retag `talkinghead-vote-server:before-group-queue-20261014` as
+`:local` and recreate only `api`; do not restore the database over newer votes.
+Evidence: `artifacts/review/group-queue-*`.
+
 ## External skeleton and emitter optimization (2026-10-13)
 
 Deployed `talkinghead-vote-web:portrait-packs-20261013` with 375 verified M2
