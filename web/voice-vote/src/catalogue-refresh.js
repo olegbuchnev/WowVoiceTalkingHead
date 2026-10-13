@@ -10,7 +10,7 @@ export function createCatalogueClient({request=fetch}={}) {
       if(pending) return pending;
       pending=(async()=>{
         const response=await request('/api/catalogue',{
-          cache:'no-store',signal:AbortSignal.timeout(15000),
+          cache:'no-cache',signal:AbortSignal.timeout(15000),
           headers:etag ? {'If-None-Match':etag} : {},
         });
         if(response.status===304 && snapshot) return snapshot;
