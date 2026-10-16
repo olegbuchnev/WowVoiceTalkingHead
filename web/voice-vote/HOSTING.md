@@ -1,5 +1,41 @@
 # Timeweb Cloud deployment
 
+## NPC classification and welcome spacing (deployed 2026-10-16)
+
+Deployed `talkinghead-vote-server:npc-layout-20261016` and
+`talkinghead-vote-web:npc-layout-20261016` from commit `8330c70` after local review.
+Both containers are healthy. The welcome description and start button have more
+vertical space, with a visible gap before the chart; the illustration stays
+240 px wide. The side-by-side layout now applies up to 1060 px viewport height.
+The five desktop viewport checks listed below passed without scrolling.
+
+Updated only NPC metadata in 11 existing comparisons: OOX quests 648, 836 and
+2767 use the narrator; quests 1369, 1371, 1375, 1381, 1386, 7046, 7066 and 7067
+use centaur/male. The ranking export now contains 38 race/sex groups. Existing
+audio paths, recordings, texts, model cache and optimized portrait packs were
+preserved. All 780 active ballots and 787 historical comparison rows matched
+before and after API startup. The stopped database and catalogue backup is
+`/srv/talkinghead/backups/npc-layout-20261016-164158`; SQLite integrity passed.
+Old images remain tagged `before-npc-layout-20261016`; rollback restores the
+backed-up catalogue and old image tags, retaining the current vote database.
+
+Full offline verification completed: 1440 of 1441 cached appearances ready;
+the sole failure remains the documented display 146706 for quest 97290, which
+uses the existing placeholder. No new model failures occurred. Report:
+`artifacts/voice-vote-model-cache/verify-report.json`. Public Firefox checks
+passed for all four affected centaur NPCs and three narrator comparisons,
+including playback from all three libraries. Chart reload/no-store, hover,
+keyboard, touch, desktop layout and audio preload/volume checks also passed;
+test ballots were intercepted and never submitted to production.
+
+The addon test suite, 49 backend tests and Docker build checks passed. Forever
+Quest Pins was checked on 2026-10-16 at 16:23 UTC and remains current at commit
+`999243d962372f124d337495571176de19807552`. The updated addon was installed in
+ForeverBeta, with backup `backups/20261016-192734-471-dc5890`.
+Deployment evidence: `artifacts/review/npc-layout-release/deployment.json`,
+`artifacts/review/npc-layout-public-check.json`, and `npc-layout-*.log` /
+`npc-layout-public-*.png` under `artifacts/review/`.
+
 ## Welcome community results (deployed 2026-10-16)
 
 Deployed `talkinghead-vote-server:community-20261016` and
