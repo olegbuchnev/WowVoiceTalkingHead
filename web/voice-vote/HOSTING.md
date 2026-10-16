@@ -1,6 +1,21 @@
 # Timeweb Cloud deployment
 
-## Local draft: welcome community results (2026-10-16; awaiting review)
+## Welcome community results (deployed 2026-10-16)
+
+Deployed `talkinghead-vote-server:community-20261016` and
+`talkinghead-vote-web:community-20261016` from commit `b2b5d31` after local review.
+Both containers are healthy. The database volume and pending inbox were copied
+while the API was stopped to `/srv/talkinghead/backups/community-20261016-155134`;
+SQLite integrity passed before and after deployment. Existing mounts and all
+catalogue hashes are unchanged. Public totals at verification: 770 comparisons
+(WowVoice 185, CatQuest 274, Wayfarer 311), read from the live API's memory cache.
+The old images remain tagged `before-community-20261016` for each application;
+rollback retags those images and recreates `api` and `web`, preserving newer votes.
+Public Firefox checks passed for reload/no-store, desktop layout without scrolling,
+hover/click/exit, keyboard/Escape, mobile touch selection, and audio preloading,
+playback and volume persistence. Test votes were intercepted in the browser.
+Deployment evidence: `artifacts/review/community-deploy.log`,
+`community-public-*.png`, and `community-*-image.log` in the same directory.
 
 The welcome page has a borderless pie chart below the start button, using the
 existing library colors and names directly on sectors. Hover/focus enlarges and
@@ -23,8 +38,7 @@ one API instance; external database edits require a restart. Responses and brows
 fetches use `no-store`; the page fetches on mount, reload and restoration from the
 back/forward cache. The optional development snapshot below still overrides the
 local API response when present.
-Prepared for local review only at http://127.0.0.1:5174/; NOT deployed.
-The preview uses an aggregate production snapshot (770 active comparisons,
+The local preview at http://127.0.0.1:5174/ uses an aggregate production snapshot (770 active comparisons,
 2026-10-16 15:15 UTC), stored in ignored `data/voice-vote/community-preview.json`.
 Only the Vite development server reads this optional file; removing it restores
 the local API counters. The production database and local ballots are unchanged.
