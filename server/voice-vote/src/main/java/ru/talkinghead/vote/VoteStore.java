@@ -29,8 +29,12 @@ public class VoteStore implements AutoCloseable {
     private final String databaseUrl;
     private final java.util.concurrent.Semaphore readers=new java.util.concurrent.Semaphore(8,true);
     private volatile IdentityCache identities;
+    private volatile Summary communityCache;
+    private record ActiveChoice(String visitor,long questID,String stage) {}
+    private final Map<ActiveChoice,String> communityChoices=new HashMap<>();
     private record IdentityCache(List<Catalogue.Quest> quests, Map<Long,String> ids) {}
     private final ObjectMapper mapper;
+    private final java.util.concurrent.atomic.AtomicLong voteOrder = new java.util.concurrent.atomic.AtomicLong();
 
     public VoteStore(@Value("${voice-vote.database}") String file, ObjectMapper mapper) throws Exception {
         this.mapper = mapper;
@@ -40,7 +44,7 @@ public class VoteStore implements AutoCloseable {
         db = DriverManager.getConnection(databaseUrl);
         execute("PRAGMA foreign_keys=ON"); execute("PRAGMA busy_timeout=5000"); execute("PRAGMA journal_mode=WAL");
         try (var statement = db.createStatement(); var row = statement.executeQuery("PRAGMA user_version")) {
-            if (row.next() && row.getInt(1) > 2) throw new SQLException("Unsupported voting schema version");
+            if (row.next() && row.getInt(1) > 3) throw new SQLException("Unsupported voting schema version");
         }
         execute("CREATE TABLE IF NOT EXISTS visitors (id TEXT PRIMARY KEY, created_at TEXT NOT NULL) STRICT");
         execute("""
@@ -88,15 +92,53 @@ public class VoteStore implements AutoCloseable {
         execute("CREATE INDEX IF NOT EXISTS votes_visitor_created ON votes(visitor_id,created_at)");
         execute("CREATE INDEX IF NOT EXISTS votes_visitor_updated ON votes(visitor_id,updated_at)");
         execute("CREATE INDEX IF NOT EXISTS visits_visitor_seen ON visits(visitor_id,last_seen)");
-        execute("PRAGMA user_version=2");
+        migrateActiveVotes(path);
+        try (var statement=db.createStatement();var rows=statement.executeQuery("SELECT COALESCE(MAX(accepted_order),0) FROM votes")) {
+            rows.next();voteOrder.set(Math.max(System.currentTimeMillis(),rows.getLong(1)));
+        }
+        // Warm the aggregate before the application accepts HTTP requests.
+        warmCommunitySummary();
     }
+    private void migrateActiveVotes(Path path) throws Exception {
+        try(var statement=db.createStatement();var rows=statement.executeQuery("PRAGMA user_version")) {
+            if(rows.next() && rows.getInt(1)==3) return;
+        }
+        long count;
+        try(var statement=db.createStatement();var rows=statement.executeQuery("SELECT COUNT(*) FROM votes")) {rows.next();count=rows.getLong(1);}
+        if(count>0) {
+            Path backup=path.resolveSibling(path.getFileName()+".before-active-votes-"+java.util.UUID.randomUUID()+".sqlite");
+            execute("VACUUM INTO '"+backup.toString().replace("'","''")+"'");
+        }
+        db.setAutoCommit(false);
+        try {
+            execute("ALTER TABLE votes ADD COLUMN quest_id INTEGER NOT NULL DEFAULT 0");
+            execute("ALTER TABLE votes ADD COLUMN stage TEXT NOT NULL DEFAULT 'a'");
+            execute("ALTER TABLE votes ADD COLUMN accepted_order INTEGER NOT NULL DEFAULT 0");
+            execute("UPDATE votes SET quest_id=(SELECT quest_id FROM comparisons WHERE id=comparison_id),stage=(SELECT stage FROM comparisons WHERE id=comparison_id)");
+            for(var row:rows(db,"SELECT visitor_id,comparison_id,updated_at FROM votes"))
+                update("UPDATE votes SET accepted_order=? WHERE visitor_id=? AND comparison_id=?",
+                    Instant.parse((String)row.get("updated_at")).toEpochMilli(),row.get("visitor_id"),row.get("comparison_id"));
+            execute("""
+                DELETE FROM votes WHERE rowid NOT IN (
+                  SELECT rowid FROM (SELECT rowid,ROW_NUMBER() OVER (
+                    PARTITION BY visitor_id,quest_id,stage ORDER BY julianday(updated_at) DESC,comparison_id DESC) AS position FROM votes)
+                  WHERE position=1)
+                """);
+            execute("CREATE UNIQUE INDEX votes_active_quest ON votes(visitor_id,quest_id,stage)");
+            execute("PRAGMA user_version=3");
+            db.commit();
+        } catch(Exception error) {db.rollback();throw error;}
+        finally {db.setAutoCommit(true);}
+    }
+    long nextVoteOrder() {return voteOrder.updateAndGet(previous->Math.max(previous+1,System.currentTimeMillis()));}
+    void observeVoteOrder(long order) {voteOrder.accumulateAndGet(order,Math::max);}
     private void execute(String sql) throws SQLException {
         try (var statement = db.createStatement()) { statement.execute(sql); }
     }
-    private void update(String sql, Object... values) throws SQLException {
+    private int update(String sql, Object... values) throws SQLException {
         try (var statement = db.prepareStatement(sql)) {
             for (int i = 0; i < values.length; i++) statement.setObject(i + 1, values[i]);
-            statement.executeUpdate();
+            return statement.executeUpdate();
         }
     }
     private static String hash(String value) { return Catalogue.hash(value.getBytes(StandardCharsets.UTF_8)); }
@@ -114,12 +156,37 @@ public class VoteStore implements AutoCloseable {
     public Summary summary(String visitor) throws SQLException {
         return summarize(rows("SELECT source,COUNT(*) AS count FROM votes WHERE visitor_id=? GROUP BY source",visitor));
     }
+    public Summary communitySummary() {
+        return communityCache;
+    }
+    private void warmCommunitySummary() throws SQLException {
+        var counts=new LinkedHashMap<String,Long>();
+        for(String name:List.of("WowVoice","CatQuest","Wayfarer")) counts.put(name,0L);
+        for(var row:rows(db,"SELECT visitor_id,quest_id,stage,source FROM votes")) {
+            String source=(String)row.get("source");
+            communityChoices.put(new ActiveChoice((String)row.get("visitor_id"),((Number)row.get("quest_id")).longValue(),(String)row.get("stage")),source);
+            counts.computeIfPresent(source,(name,count)->count+1);
+        }
+        communityCache=immutableSummary(counts);
+    }
+    private void committedChoice(String visitor,long questID,String source) {
+        // Called only under the writer monitor, after the SQLite commit succeeds.
+        String previous=communityChoices.put(new ActiveChoice(visitor,questID,"a"),source);
+        if(source.equals(previous)) return;
+        var counts=new LinkedHashMap<>(communityCache.counts());
+        if(previous!=null) counts.computeIfPresent(previous,(name,count)->count-1);
+        counts.computeIfPresent(source,(name,count)->count+1);
+        communityCache=immutableSummary(counts);
+    }
+    private Summary immutableSummary(Map<String,Long> counts) {
+        return new Summary(java.util.Collections.unmodifiableMap(counts),counts.values().stream().mapToLong(Long::longValue).sum());
+    }
     private Summary summarize(List<Map<String,Object>> totals) {
         Map<String, Long> counts = new LinkedHashMap<>();
         for (String name : List.of("WowVoice", "CatQuest", "Wayfarer")) counts.put(name, 0L);
         for(var row:totals)
             if(counts.containsKey(row.get("source"))) counts.put((String)row.get("source"),((Number)row.get("count")).longValue());
-        return new Summary(counts, counts.values().stream().mapToLong(Long::longValue).sum());
+        return immutableSummary(counts);
     }
     static String comparisonID(Catalogue.Quest quest, ObjectMapper mapper) {
         // Recording IDs encode file path, library and bytes. A release number
@@ -134,8 +201,19 @@ public class VoteStore implements AutoCloseable {
     public List<Priority> queue(String visitor, List<Catalogue.Quest> quests, java.util.Set<Long> pending) throws SQLException {
         var counts = new HashMap<String, Long>();
         var rated = new HashMap<String, Instant>();
-        for(var row:rows("SELECT comparison_id,COUNT(*) AS count FROM votes GROUP BY comparison_id"))
+        var speakers=AddonRanking.speakers(quests);
+        var votedGroups=new java.util.HashSet<AddonRanking.Key>();
+        // Group coverage includes retained old recordings, just like the ranking.
+        for(var row:rows("""
+            SELECT v.comparison_id,c.quest_id,c.stage,c.npc_id,c.race,c.sex,COUNT(*) AS count
+            FROM votes v JOIN comparisons c ON c.id=v.comparison_id
+            GROUP BY v.comparison_id,c.quest_id,c.stage,c.npc_id,c.race,c.sex
+            """)) {
             counts.put((String)row.get("comparison_id"),((Number)row.get("count")).longValue());
+            var group=AddonRanking.eligibleGroup(speakers.get(((Number)row.get("quest_id")).longValue()),
+                ((Number)row.get("npc_id")).longValue(),(String)row.get("race"),(String)row.get("sex"),(String)row.get("stage"));
+            if(group!=null) votedGroups.add(group);
+        }
         for(var row:rows("SELECT comparison_id,updated_at FROM votes WHERE visitor_id=?",visitor))
             rated.put((String)row.get("comparison_id"), Instant.parse((String)row.get("updated_at")));
         var cache=identities;
@@ -155,9 +233,10 @@ public class VoteStore implements AutoCloseable {
         for (var quest : quests) {
             String id = cache.ids().get(quest.questID());
             boolean accepted = pending.contains(quest.questID());
+            var group=AddonRanking.key(quest.npc());
             result.add(new ComparisonQueue.Candidate(
                 new Priority(quest.questID(), accepted || rated.containsKey(id), counts.getOrDefault(id, 0L)),
-                quest.npc(), accepted ? Instant.MAX : rated.get(id)));
+                quest.npc(), accepted ? Instant.MAX : rated.get(id),group!=null && !votedGroups.contains(group)));
         }
         return ComparisonQueue.order(result);
     }
@@ -165,6 +244,10 @@ public class VoteStore implements AutoCloseable {
         return save(visitor,quest,selectedId,null);
     }
     public synchronized Saved save(String visitor, Catalogue.Quest quest, String selectedId, String visitID) throws SQLException {
+        return save(visitor,quest,selectedId,visitID,nextVoteOrder());
+    }
+    public synchronized Saved save(String visitor, Catalogue.Quest quest, String selectedId, String visitID,long acceptedOrder) throws SQLException {
+        observeVoteOrder(acceptedOrder);
         var selected = quest.variants().stream().filter(v -> v.id().equals(selectedId)).findFirst().orElseThrow();
         var npc = quest.npc();
         String comparison = comparisonID(quest, mapper), now = Instant.now().toString();
@@ -174,14 +257,17 @@ public class VoteStore implements AutoCloseable {
         try {
             update("INSERT OR IGNORE INTO comparisons VALUES (?,?,?,?,?,?,?,?,?)", comparison, quest.questID(), "a",
                 npc.id(), npc.displayID(), npc.modelFileID(), npc.race(), npc.sex(), now);
-            update("""
-                INSERT INTO votes VALUES (?,?,?,?,?,?,?,?,?,?)
-                ON CONFLICT(visitor_id,comparison_id) DO UPDATE SET
+            int changed=update("""
+                INSERT INTO votes (visitor_id,comparison_id,selected_id,source,pack,sha256,library_version,candidates_json,created_at,updated_at,quest_id,stage,accepted_order)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+                ON CONFLICT(visitor_id,quest_id,stage) DO UPDATE SET
+                    comparison_id=excluded.comparison_id, accepted_order=excluded.accepted_order,
                     selected_id=excluded.selected_id, source=excluded.source, pack=excluded.pack,
                     sha256=excluded.sha256, library_version=excluded.library_version,
                     candidates_json=excluded.candidates_json, updated_at=excluded.updated_at
+                WHERE excluded.accepted_order > votes.accepted_order
                 """, visitor, comparison, selected.id(), selected.source(), selected.pack(), selected.sha256(),
-                selected.version(), candidates, now, now);
+                selected.version(), candidates, now, now,quest.questID(),"a",acceptedOrder);
             if (visitID!=null) {
                 update("INSERT OR IGNORE INTO visits VALUES (?,?,?, ?,?,?)",visitID,visitor,now,now,now,"direct");
                 if(!ownsVisit(visitor,visitID)) throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT,"Visit belongs to another visitor");
@@ -189,6 +275,8 @@ public class VoteStore implements AutoCloseable {
                 update("UPDATE visits SET last_seen=? WHERE id=?",now,visitID);
             }
             db.commit();
+            // Rejected, rolled-back and obsolete inbox deliveries leave the cache intact.
+            if(changed>0) committedChoice(visitor,quest.questID(),selected.source());
         } catch (Exception e) { db.rollback(); throw e; }
         finally { db.setAutoCommit(true); }
         var summary = summarize(rows(db,"SELECT source,COUNT(*) AS count FROM votes WHERE visitor_id=? GROUP BY source",visitor));

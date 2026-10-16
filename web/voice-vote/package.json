@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5174 --strictPort",
     "build": "vite build",
-    "test": "npm run test:unit && npm run test:layout && npm run test:portraits && npm run test:audio",
+    "test": "npm run test:unit && npm run test:layout && npm run test:portraits && npm run test:audio && npm run test:ranking && npm run test:community",
+    "test:community": "node tests/community-results-browser.mjs",
+    "test:ranking": "node tests/ranking-export-browser.mjs",
     "test:layout": "node tests/head-layout-browser.mjs",
     "test:audio": "node tests/audio-preload-browser.mjs",
     "test:unit": "node --test tests/*.test.mjs",

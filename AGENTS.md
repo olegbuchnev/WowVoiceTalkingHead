@@ -10,6 +10,9 @@
 Для обновления внешних библиотек, текстов квестов и NPC используй
 [update-libraries](.agents/skills/update-libraries/SKILL.md).
 Команды сборки и настройка локальных путей описаны в [BUILD.local.md](BUILD.local.md).
+Для классификации видов, пола и возраста NPC используй
+[classify-npcs](.agents/skills/classify-npcs/SKILL.md). Это обязательный этап
+обновления библиотек перед итоговой сборкой каталога сайта.
 
 # Озвучка
 

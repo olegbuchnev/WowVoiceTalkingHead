@@ -49,6 +49,16 @@ processes when overriding them.
 ## Data and API
 
 - `GET /api/votes/health`: application identifier.
+- `GET /api/votes/community`: aggregate active ballot counts and total across
+  all participants. No visitor cookie or identifiers; `Cache-Control: no-store`.
+  The single server instance loads active choices into memory during startup,
+  before accepting requests. Successful commits update the previous/new library
+  counters in memory, including inbox replay; failed or obsolete writes do not.
+  Requests read an immutable snapshot without SQL or the writer lock. A restart
+  rebuilds the snapshot from SQLite. External database edits require a restart;
+  this cache assumes one server process. A replacement ballot replaces its
+  previous contribution. These are
+  raw library choice counts, separate from the demographic Luce ranking.
 - `GET /api/votes/summary`: personal library counters; creates an anonymous
   `HttpOnly`, `SameSite=Lax` cookie with a random 256-bit token, valid for one year.
   Only its SHA-256 hash is stored in the database. No login or fingerprinting.
@@ -163,6 +173,9 @@ voting from multiple browsers. Personal counters count distinct comparisons.
 The UI chart counts local choices immediately since page load and resets on refresh;
 the persisted votes and cookie remain. The queue waits for server priorities
 before reserving its first two portraits and refreshes them before each batch.
+Among personally unseen comparisons, known groups without eligible saved votes
+come first. Retained votes on older recordings still count as group coverage.
+Weighted group diversity and current-file coverage apply within each tier.
 Already reserved portraits stay unchanged. A batch includes at most five unrated
 quests, without padding it with repeats. The next batch starts only on request;
 after exhaustion, replay batches require an explicit action. If priorities cannot be loaded at startup,

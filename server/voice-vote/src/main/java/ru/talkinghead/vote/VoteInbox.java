@@ -27,7 +27,6 @@ public class VoteInbox implements AutoCloseable {
     private final java.nio.channels.FileLock directoryLock;
     private final ConcurrentLinkedDeque<Job> jobs=new ConcurrentLinkedDeque<>();
     private final ScheduledExecutorService worker=Executors.newSingleThreadScheduledExecutor(r->{var t=new Thread(r,"vote-inbox");t.setDaemon(true);return t;});
-    private final AtomicLong sequence=new AtomicLong();
     private final AtomicLong processed=new AtomicLong(),failures=new AtomicLong();
     private final AtomicLong admissionFailures=new AtomicLong();
     private final AtomicLong quarantined=new AtomicLong();
@@ -50,7 +49,7 @@ public class VoteInbox implements AutoCloseable {
             for(var file:files.filter(p->p.getFileName().toString().endsWith(".json")).sorted().toList()) {
                 var job=mapper.readValue(Files.readString(file),Job.class);
                 if(!file.getFileName().toString().equals(job.id()+".json")) throw new IOException("Invalid inbox receipt");
-                jobs.add(job);sequence.set(Math.max(sequence.get(),Long.parseLong(job.id())));
+                jobs.add(job);store.observeVoteOrder(Long.parseLong(job.id()));
             }
         }
         worker.scheduleWithFixedDelay(this::drain,100,25,TimeUnit.MILLISECONDS);
@@ -60,7 +59,7 @@ public class VoteInbox implements AutoCloseable {
         store.validateVisit(visitor,visitID);
         if(visitID!=null && jobs.stream().anyMatch(j->visitID.equals(j.visitID()) && !visitor.equals(j.visitor())))
             throw new ResponseStatusException(HttpStatus.CONFLICT,"Visit belongs to another visitor.");
-        String id=String.format(Locale.ROOT,"%019d",sequence.updateAndGet(previous->Math.max(previous+1,System.currentTimeMillis())));
+        String id=String.format(Locale.ROOT,"%019d",store.nextVoteOrder());
         var job=new Job(id,visitor,quest,selected,visitID,Instant.now().toString());
         Path temporary=directory.resolve(id+".tmp"),target=directory.resolve(id+".json");
         byte[] bytes=mapper.writeValueAsBytes(job);
@@ -83,7 +82,7 @@ public class VoteInbox implements AutoCloseable {
             var job=jobs.peekFirst();if(job==null) return;
             try {
                 // Use the trusted snapshot accepted at submission, even after a library update.
-                store.save(job.visitor(),job.quest(),job.selected(),job.visitID());
+                store.save(job.visitor(),job.quest(),job.selected(),job.visitID(),Long.parseLong(job.id()));
                 Files.deleteIfExists(directory.resolve(job.id()+".json"));
                 syncDirectory();
                 synchronized(this) {jobs.removeFirst();}

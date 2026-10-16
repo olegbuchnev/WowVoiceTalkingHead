@@ -1,0 +1,150 @@
+[
+  {
+    "race": "ancient",
+    "sex": "male"
+  },
+  {
+    "race": "banshee",
+    "sex": "female"
+  },
+  {
+    "race": "bloodelf",
+    "sex": "female"
+  },
+  {
+    "race": "bloodelf",
+    "sex": "male"
+  },
+  {
+    "race": "child",
+    "sex": "female"
+  },
+  {
+    "race": "child",
+    "sex": "male"
+  },
+  {
+    "race": "dreadlord",
+    "sex": "male"
+  },
+  {
+    "race": "dwarf",
+    "sex": "female"
+  },
+  {
+    "race": "dwarf",
+    "sex": "male"
+  },
+  {
+    "race": "elemental_water",
+    "sex": "male"
+  },
+  {
+    "race": "furbolg",
+    "sex": "male"
+  },
+  {
+    "race": "gnome",
+    "sex": "female"
+  },
+  {
+    "race": "gnome",
+    "sex": "male"
+  },
+  {
+    "race": "goblin",
+    "sex": "female"
+  },
+  {
+    "race": "goblin",
+    "sex": "male"
+  },
+  {
+    "race": "human",
+    "sex": "female"
+  },
+  {
+    "race": "human",
+    "sex": "male"
+  },
+  {
+    "race": "human_child",
+    "sex": "female"
+  },
+  {
+    "race": "human_child",
+    "sex": "male"
+  },
+  {
+    "race": "imp",
+    "sex": "male"
+  },
+  {
+    "race": "nightelf",
+    "sex": "female"
+  },
+  {
+    "race": "nightelf",
+    "sex": "male"
+  },
+  {
+    "race": "orc",
+    "sex": "female"
+  },
+  {
+    "race": "orc",
+    "sex": "male"
+  },
+  {
+    "race": "orc_child",
+    "sex": "female"
+  },
+  {
+    "race": "orc_child",
+    "sex": "male"
+  },
+  {
+    "race": "quilboar",
+    "sex": "male"
+  },
+  {
+    "race": "scourge",
+    "sex": "female"
+  },
+  {
+    "race": "scourge",
+    "sex": "male"
+  },
+  {
+    "race": "skyborne",
+    "sex": "female"
+  },
+  {
+    "race": "skyborne",
+    "sex": "male"
+  },
+  {
+    "race": "stone_construct",
+    "sex": "male"
+  },
+  {
+    "race": "succubus",
+    "sex": "female"
+  },
+  {
+    "race": "tauren",
+    "sex": "female"
+  },
+  {
+    "race": "tauren",
+    "sex": "male"
+  },
+  {
+    "race": "troll",
+    "sex": "female"
+  },
+  {
+    "race": "troll",
+    "sex": "male"
+  }
+]

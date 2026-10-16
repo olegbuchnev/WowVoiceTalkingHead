@@ -9,11 +9,37 @@ import org.junit.jupiter.api.Test;
 class ComparisonQueueTest {
     ComparisonQueue.Candidate candidate(long id, String race, String sex, boolean rated, long votes, Instant last) {
         return new ComparisonQueue.Candidate(new VoteStore.Priority(id, rated, votes),
-            new Catalogue.Npc(id, 1, 1, race, sex), last);
+            new Catalogue.Npc(id, 1, 1, race, sex), last, false);
     }
     ComparisonQueue.Candidate narrator(long id) {
         return new ComparisonQueue.Candidate(new VoteStore.Priority(id, false, 0),
-            new Catalogue.Npc(0, 0, 0, null, null), null);
+            new Catalogue.Npc(0, 0, 0, null, null), null, false);
+    }
+
+    @Test void emptyGroupsPrecedeCoveredGroupsWithoutPullingForwardPersonalRepeats() {
+        var fresh=candidate(1,"dwarf","female",false,0,null);
+        var freshRepeat=candidate(2,"dwarf","female",true,0,Instant.now());
+        var candidates=List.of(candidate(3,"human","male",false,0,null),
+            new ComparisonQueue.Candidate(fresh.priority(),fresh.npc(),fresh.lastRated(),true),
+            new ComparisonQueue.Candidate(freshRepeat.priority(),freshRepeat.npc(),freshRepeat.lastRated(),true));
+        assertEquals(List.of(1L,3L,2L),ComparisonQueue.order(candidates,()->0.99)
+            .stream().map(VoteStore.Priority::questID).toList());
+    }
+
+    @Test void multipleEmptyGroupsKeepGroupDiversityAndAllQuests() {
+        var candidates=new ArrayList<ComparisonQueue.Candidate>();
+        for(long id=1;id<=20;id++) {
+            var c=candidate(id,"dwarf","male",false,0,null);
+            candidates.add(new ComparisonQueue.Candidate(c.priority(),c.npc(),null,true));
+        }
+        var c=candidate(21,"orc","female",false,0,null);
+        candidates.add(new ComparisonQueue.Candidate(c.priority(),c.npc(),null,true));
+        candidates.add(candidate(22,"human","female",false,0,null));
+        var ordered=ComparisonQueue.order(candidates,()->0.6);
+        assertTrue(ordered.subList(0,2).stream().anyMatch(p->p.questID()==21),
+            "Both empty groups should appear before repeating the larger group for this draw");
+        assertEquals(22,ordered.getLast().questID());
+        assertEquals(22,ordered.stream().map(VoteStore.Priority::questID).distinct().count());
     }
 
     @Test void groupChanceDoesNotScaleWithQuestCountOrCoverage() {

@@ -1,0 +1,15 @@
+.ranking-open{border:1px solid #d2ad6855;border-radius:5px;background:transparent;color:#ddc393;padding:10px 15px;font-size:16px}
+.ranking-dialog{width:min(680px,calc(100vw - 32px));max-height:85vh;border:1px solid #d2ad6866;border-radius:10px;padding:0;background:#202022;color:#dedbd5;box-shadow:0 20px 80px #0009;font-size:16px}
+.ranking-dialog::backdrop{background:#000a}
+.ranking-content{padding:24px;overflow-wrap:anywhere}
+.ranking-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ranking-heading h2{font-size:24px;margin:0}
+.ranking-dialog button{border:1px solid #d2ad6866;border-radius:5px;padding:9px 13px;background:#303032;color:#f0d8ad;font-size:16px}
+.ranking-heading button{font-size:24px;line-height:1}
+.ranking-dialog p{line-height:1.5}
+.ranking-note{color:#c5beb0}
+.ranking-actions{display:flex;gap:12px;flex-wrap:wrap;margin:20px 0}
+.ranking-dialog label{display:block;margin:12px 0 8px}
+.ranking-dialog textarea{width:100%;min-height:100px;resize:vertical;user-select:text;-webkit-user-select:text;background:#141416;color:#dedbd5;border:1px solid #ffffff30;padding:10px;font:12px monospace}
+.ranking-refresh{margin-top:16px}
+@media(max-width:650px){.ranking-open{order:3;width:100%}.ranking-content{padding:18px}}

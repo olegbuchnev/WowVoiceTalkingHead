@@ -60,7 +60,7 @@ public final class ResultsExporter {
             // A single read transaction includes committed WAL data and remains
             // consistent while the API continues accepting votes.
             try (var statement=db.createStatement(); var version=statement.executeQuery("PRAGMA user_version")) {
-                if (!version.next() || version.getInt(1)<1 || version.getInt(1)>2) throw new IllegalArgumentException("Unsupported voting database schema");
+                if (!version.next() || version.getInt(1)<1 || version.getInt(1)>3) throw new IllegalArgumentException("Unsupported voting database schema");
             }
             try (var statement=db.createStatement(); var rows=statement.executeQuery("""
                 SELECT c.id,c.quest_id,c.stage,c.npc_id,c.display_id,c.model_file_id,c.race,c.sex,

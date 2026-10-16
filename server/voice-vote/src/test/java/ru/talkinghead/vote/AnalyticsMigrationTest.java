@@ -24,6 +24,8 @@ class AnalyticsMigrationTest {
         }
         try(var db=DriverManager.getConnection("jdbc:sqlite:"+file);var sql=db.createStatement()) {
             for(String table:List.of("visit_votes","plays","visits","analytics_meta")) sql.execute("DROP TABLE "+table);
+            sql.execute("DROP INDEX votes_active_quest");
+            for(String column:List.of("quest_id","stage","accepted_order")) sql.execute("ALTER TABLE votes DROP COLUMN "+column);
             sql.execute("PRAGMA user_version=1");
         }
         try(var store=new VoteStore(file.toString(),mapper)) {

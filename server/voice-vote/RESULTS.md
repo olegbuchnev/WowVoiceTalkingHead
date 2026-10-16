@@ -29,7 +29,32 @@ Each invocation creates a new `results-<UTC timestamp>-<suffix>` directory.
 Files are prepared in a temporary directory and the completed directory is
 renamed into place; consumers must ignore dot-prefixed temporary directories.
 Previous exports are never overwritten. Export archives are independent of the
-three-revision audio-history window: historical votes remain available.
+three-revision audio-history window. SQLite schema 3 retains only the latest ballot
+per visitor, quest and stage; replaced historical ballots remain in pre-migration
+backups and previous exports, not in the current vote totals.
+
+## Ready-to-use addon ranking
+
+`export-addon-ranking` prints the public ranking JSON to stdout. It accepts
+`--database=path` and `--catalogue=path`, with the same database/catalogue environment
+defaults as this CLI. It reads the database without modifying or migrating it.
+`GET /api/votes/ranking` downloads JSON; `GET /api/votes/ranking/export` returns
+`{json, importString}` for the same snapshot, cached for ten seconds.
+Both endpoints are public and contain no individual ballots or visitor identifiers.
+The “Рейтинг для аддона” dialog is hidden from the public site until the user
+workflow is ready. Server export and the build task remain available.
+Addon string import is not implemented yet.
+
+The regularized Luce model fits whole winner/choice-set observations, with equal
+weight for all eligible latest ballots regardless of library version. JSON lists
+all three places, their vote/fallback basis and no-data/partial coverage. Known group keys and
+fallback quest speaker metadata are generated with `node tools/export-ranking-groups.js`
+from the shared speaker database before building the API image. The deployed
+catalogue takes precedence for quests still present in it; NPC-zero entries are
+excluded until an explicit narrator marker is available.
+See the [algorithm and exchange contract](../../docs/internal/addon-voice-ranking.md).
+
+## Aggregate results
 
 | File | Contents |
 | --- | --- |
@@ -49,16 +74,19 @@ Community-choice playback is planned per race/sex group, not per individual
 quest. Quest-level and recording-revision results remain the underlying evidence
 for that group recommendation. Sampling should therefore favor group diversity
 using weighted randomness and a soft recency penalty, not fixed group cycles.
-Narrators must have a distinct recommendation group; the current export's null
-demographics also include unknown NPCs, so they must not be blindly merged when
-the future recommendation importer is implemented (use `npcID=0` to distinguish
-explicit narrators in comparison records).
+Among personally unseen comparisons, known race/sex groups with no eligible
+retained ballots are served before covered or unknown groups. Group coverage
+includes eligible old recordings; current-file coverage still orders quests
+inside each group. Groups without available catalogue comparisons cannot be queued.
+Narrators need a distinct recommendation group. The current catalogue uses
+`npcID=0` for both unknown speakers and narrators, so that ID cannot distinguish
+them. The addon ranking excludes these ballots until an explicit marker exists.
 
-Before implementing addon voice selection, revisit the
-[planned revision-weighted ranking](../../docs/internal/audio-recording-history.md#задача-учитывать-прошлые-оценки-при-выборе-озвучки-в-аддоне).
-It proposes a capped, fading contribution from previous recordings (initial
-weight suggestion: 0.5). This is a future derived ranking, not a change to raw
-vote counts or the current export contract; thresholds are not finalized.
+The [implemented group ranking](../../docs/internal/addon-voice-ranking.md)
+uses the regularized Luce model and one latest ballot per visitor/quest/stage.
+Eligible old recordings retain full weight; the earlier proposal to fade or cap
+historical contributions is superseded. The recording-level aggregate export
+below remains separate from this ready-to-use group ranking.
 
 - `comparisonID` identifies quest description, speaker metadata and the sorted
   candidate recording IDs. `stage` is always `a`. Candidate IDs include library,
@@ -74,8 +102,9 @@ vote counts or the current export contract; thresholds are not finalized.
   exhaustive library release history. `sha256` is the recording identity.
 - Only comparisons with votes appear. An absent current quest/recording is
   unevaluated, not a zero-rated loser. Use the catalogue to enumerate all quests.
-- Repeated ballots from one visitor replace the previous selection for that
-  exact comparison. Exports count these retained choices, not click history.
+- Repeated ballots from one visitor replace the previous selection for the same
+  quest and stage, even across recording revisions. Exports count retained choices,
+  not click history. An unreplaced ballot on old recordings is still historical.
 
 ## Counts and interpretation
 

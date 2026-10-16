@@ -1,6 +1,18 @@
 {
   "schemaVersion": 1,
   "appearances": {
+    "1346": { "race": "quilboar", "modelFileID": 125497 },
+    "1918": { "race": "mountain_giant", "modelFileID": 124952 },
+    "6589": { "race": "stone_construct", "modelFileID": 126072 },
+    "221": { "race": "human_child", "modelFileID": 124495 },
+    "257": { "race": "human_child", "modelFileID": 124456 },
+    "262": { "race": "human_child", "modelFileID": 124495 },
+    "338": { "race": "human_child", "modelFileID": 124495 },
+    "10445": { "race": "human_child", "modelFileID": 124456 },
+    "14589": { "race": "orc_child", "modelFileID": 125367 },
+    "14616": { "race": "orc_child", "modelFileID": 125362 },
+    "8611": { "race": "dreadlord", "modelFileID": 123673 },
+    "11658": { "race": "dreadlord", "modelFileID": 123673 },
     "1010": { "race": "furbolg", "modelFileID": 124118 },
     "1012": { "race": "furbolg", "modelFileID": 124118 },
     "5851": { "race": "furbolg", "modelFileID": 124118 },
@@ -12,6 +24,46 @@
     "143127": { "race": "ancient", "modelFileID": 122895 }
   },
   "models": {
+    "125497": {
+      "race": "quilboar",
+      "file": "creature/quillboar/quillboar.m2",
+      "source": "https://github.com/wowdev/wow-listfile/releases/tag/202609242243"
+    },
+    "124952": {
+      "race": "mountain_giant",
+      "file": "creature/mountaingiant/mountaingiant.m2",
+      "source": "https://github.com/wowdev/wow-listfile/releases/tag/202609242243"
+    },
+    "126072": {
+      "race": "stone_construct",
+      "file": "creature/stonekeeper/stonekeeper.m2",
+      "source": "https://github.com/wowdev/wow-listfile/releases/tag/202609242243"
+    },
+    "124495": {
+      "race": "human_child",
+      "file": "creature/humanmalekid/humanmalekid.m2",
+      "source": "https://github.com/wowdev/wow-listfile/releases/tag/202609242243"
+    },
+    "124456": {
+      "race": "human_child",
+      "file": "creature/humanfemalekid/humanfemalekid.m2",
+      "source": "https://github.com/wowdev/wow-listfile/releases/tag/202609242243"
+    },
+    "125367": {
+      "race": "orc_child",
+      "file": "creature/orcmalekid/orcmalekid.m2",
+      "source": "https://github.com/wowdev/wow-listfile/releases/tag/202609242243"
+    },
+    "125362": {
+      "race": "orc_child",
+      "file": "creature/orcfemalekid/orcfemalekid.m2",
+      "source": "https://github.com/wowdev/wow-listfile/releases/tag/202609242243"
+    },
+    "123673": {
+      "race": "dreadlord",
+      "file": "creature/dreadlord/dreadlord.m2",
+      "source": "https://github.com/wowdev/wow-listfile/releases/tag/202609242243"
+    },
     "122893": {
       "race": "ancient",
       "file": "creature/ancientoflore/ancientoflore.m2",
@@ -29,6 +81,6 @@
     }
   },
   "appearanceSource": "https://wow.zamimg.com/modelviewer/classicplus/meta/npc/{displayID}.json",
-  "verifiedOn": "2026-10-13",
-  "evidence": "Each listed ClassicPlus appearance resolves to its stated model in the cached viewer metadata. Shared speaker statistics distinguish furbolgs and ancients from broad library voice categories. These two groups do not distinguish sex; the shared generator uses male as a canonical grouping value."
+  "verifiedOn": "2026-10-16",
+  "evidence": "Each listed ClassicPlus appearance resolves to its stated model in the cached viewer metadata. Furbolgs and ancients use one canonical male group. Dreadlord appearances 8611 and 11658 resolve to model 123673. Human child appearances 221/262/338 resolve to 124495, 257/10445 to 124456; orc child appearances 14589 and 14616 resolve to 125367 and 125362. Stonekeeper appearance 6589 resolves to model 126072; the user confirmed stone_construct for this appearance. Mountain giant appearance 1918 resolves to model 124952. Dreadlords, children, stone constructs and mountain giants preserve independently sourced NPC sex. Mangletooth (3430) appearance 1346 resolves to 125497, creature/quillboar/quillboar.m2; the existing male sex and quest links are preserved."
 }

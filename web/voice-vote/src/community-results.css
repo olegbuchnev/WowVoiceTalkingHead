@@ -1,0 +1,49 @@
+﻿.community-results{max-width:920px;margin:12px auto 32px;padding:32px 0}
+.community-results h2{margin:0;text-align:center;font-size:26px;font-weight:400;color:#e6dcc8}
+.community-subtitle{margin:10px 0 0;text-align:center;color:#aaa69f;font-size:22px;line-height:1.5}
+.community-body{position:relative;margin-top:24px;min-height:360px;display:flex;flex-direction:column;align-items:center}
+.community-pie{display:block;width:360px;max-width:100%;height:auto;flex-shrink:0;overflow:visible}
+.community-sector{cursor:default;outline:none}
+.community-sector-hit path,.community-sector-hit circle{fill:transparent;stroke:transparent;stroke-width:8;pointer-events:all}
+.community-sector-visual{pointer-events:none;transform-origin:180px 180px;transition:transform .24s ease,filter .24s ease}
+.community-sector-visual path,.community-sector-visual circle{fill:var(--library-color);stroke:#161617;stroke-width:2;stroke-linejoin:round}
+.community-sector.is-selected .community-sector-visual{transform:translate(var(--sector-x),var(--sector-y)) scale(1.045);filter:brightness(1.07) drop-shadow(0 6px 8px #0005)}
+.community-sector:focus-visible .community-sector-visual path,.community-sector:focus-visible .community-sector-visual circle{stroke:#fff0c4;stroke-width:3}
+.community-sector-label{fill:#17201e;font-size:18px;font-weight:600;paint-order:stroke;stroke:none}
+.community-detail-slot{position:absolute;left:calc(50% + 196px);top:50%;width:220px;transform:translate(8px,-50%);opacity:0;visibility:hidden;transition:opacity .18s ease,transform .18s ease,visibility .18s}
+.community-detail-slot.is-visible{opacity:1;visibility:visible;transform:translate(0,-50%)}
+.community-detail h3{font-size:25px;font-weight:400;color:var(--library-color);margin:0 0 12px}
+.community-share{font-size:40px;line-height:1.2;color:#eee6d8;margin:0;font-variant-numeric:tabular-nums;white-space:nowrap}
+.community-share-caption{color:#aaa69f;font-size:16px;margin:4px 0 22px}
+.community-selected-count{color:#e6dcc8;font-size:21px;margin:0 0 8px}
+.community-base{color:#aaa69f;font-size:15px;line-height:1.5;margin:0}
+.community-small-sectors{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin-top:12px}
+.community-small-sectors button{color:var(--library-color);font-size:16px;padding:4px 8px;border:0;border-bottom:1px solid currentColor;background:transparent}
+.community-message{min-height:180px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:16px;text-align:center;color:#aaa69f;line-height:1.6;font-size:18px}
+.community-message button{border:1px solid #ffffff30;border-radius:4px;padding:8px 14px;background:transparent;color:#e6dcc8;font-size:16px}
+@media(max-width:920px){.community-detail-slot{position:static;transform:translateY(8px);min-height:210px;margin-top:12px;text-align:center;width:100%}.community-detail-slot.is-visible{transform:none}.community-share-caption{margin-bottom:14px}}
+@media(max-width:640px){.community-results{margin-top:24px;padding:26px 0}.community-body{margin-top:16px}.community-pie{width:320px}.community-subtitle{font-size:20px}.community-results h2{font-size:24px}}
+@media(prefers-reduced-motion:reduce){.community-sector-visual,.community-detail-slot{transition:none}}
+/* Leave a real bottom gutter; short windows keep natural scrolling instead of clipping. */
+@media(min-width:921px){
+.app.is-welcome header{min-height:80px;padding-top:12px;padding-bottom:12px}
+.app.is-welcome main{min-height:calc(100svh - 104px);display:flex;flex-direction:column;justify-content:space-around;gap:24px;padding-top:12px;padding-bottom:28px}
+.app.is-welcome .welcome{width:100%;min-height:0;margin:0 auto;padding:8px 16px}
+.app.is-welcome .welcome-art{width:240px;margin-bottom:12px}
+.app.is-welcome .welcome h1{margin:0}
+.app.is-welcome .welcome p{margin-top:12px;line-height:1.45}
+.app.is-welcome .welcome-start{margin-top:16px;min-height:48px;padding:10px 24px}
+.app.is-welcome .community-results{--pie-size:clamp(320px,calc(12svh + 212px),380px);width:100%;margin:0 auto;padding:8px 0 0}
+.app.is-welcome .community-subtitle{margin:0}
+.app.is-welcome .community-body{margin-top:8px;min-height:0}
+.app.is-welcome .community-pie{width:var(--pie-size)}
+.app.is-welcome .community-detail-slot{left:calc(50% + var(--pie-size)/2 + 20px)}
+}
+@media(min-width:921px) and (max-height:1000px){
+.app.is-welcome .welcome{max-width:920px;display:grid;grid-template-columns:240px 1fr;column-gap:24px;justify-items:center}
+.app.is-welcome .welcome-art{grid-column:1;grid-row:1/3;margin:0}
+.app.is-welcome .welcome h1{grid-column:2;font-size:28px}
+.app.is-welcome .welcome p{grid-column:2;margin-top:10px;text-align:center}
+.app.is-welcome .welcome-start{grid-column:1/-1}
+.app.is-welcome .community-results{--pie-size:300px}
+}

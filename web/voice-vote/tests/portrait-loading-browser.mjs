@@ -113,4 +113,42 @@ try {
       console.log('PASS: unavailable portraits retain the exact catalogue race/sex in copyable debug JSON.');
     } finally {await context.close();}
   }
+  for(const persistent of [false,true]) {
+    const context=await browser.newContext();
+    try {
+      const page=await context.newPage(),reports=[];let mounts=0;
+      await page.clock.install();
+      await context.route('**/*',r=>new URL(r.request().url()).origin===base?r.continue():r.abort());
+      await page.route('**/api/catalogue',r=>r.fulfill({json:{quests:[{
+        questID:1426,text:'Texture recovery fixture',npc:{id:5593,displayID:3519,modelFileID:917116,name:'Kator',race:'orc',sex:'male'},
+        variants:[{id:'a',source:'WowVoice'},{id:'b',source:'CatQuest'}],
+      }]}}));
+      await page.route('**/api/votes/**',r=>r.fulfill({json:r.request().url().endsWith('/queue')?[]:{total:0}}));
+      await page.route('**/api/diagnostics/portrait',r=>{reports.push(r.request().postDataJSON());return r.fulfill({status:204});});
+      await page.route('**/test/model/*',r=>r.fulfill({body:Buffer.from([++mounts===1 || persistent?0:1])}));
+      await page.route('**/test/camera',r=>r.fulfill({json:{}}));
+      await page.goto(base);await page.locator('.welcome-start').click();
+      const portrait=page.locator('.portrait-slot.current .model');
+      await page.waitForFunction(()=>document.querySelector('.model')?.modelViewer?.failedTexture);
+      const progress=await page.locator('.batch-progress').textContent();
+      const initial=await portrait.getAttribute('data-load-id');
+      for(let attempt=0;attempt<(persistent?3:1);attempt++) {
+        await page.waitForFunction(()=>document.querySelector('.model')?.modelViewer?.failedTexture);
+        await page.clock.fastForward(121500);
+        if(!persistent) {
+          await page.waitForFunction(()=>document.querySelector('.portrait-slot.current .model')?.dataset.modelState==='ready');
+          assert.notEqual(await portrait.getAttribute('data-load-id'),initial);
+        } else if(attempt<2) {
+          for(let i=0;i<50 && mounts<attempt+2;i++) await page.waitForTimeout(20);
+          assert.equal(mounts,attempt+2);
+        }
+      }
+      assert.equal(mounts,persistent?3:2);
+      assert.equal(await portrait.getAttribute('data-model-state'),persistent?'error':'ready');
+      assert.equal(await page.locator('.batch-progress').textContent(),progress);
+      assert.equal(await page.locator('.welcome').count(),0);
+      assert(reports.some(r=>r.stage==='timeout' && r.status.pendingTextures===7 && r.status.pendingDownloads===0));
+      console.log(`PASS: ${persistent?'persistent texture failure stops after two retries':'stalled textures recover automatically'} without resetting the comparison.`);
+    } finally {await context.close();}
+  }
 } finally {await browser?.close();await server.close();}

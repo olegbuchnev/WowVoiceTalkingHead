@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-  [ValidateSet('Validate', 'Test', 'DeployAddon', 'PackageAddon', 'CheckSources')]
+  [ValidateSet('Validate', 'Test', 'DeployAddon', 'PackageAddon', 'CheckSources', 'BackupSiteDatabase', 'ExportAddonRanking')]
   [string]$Task = 'Validate',
   [ValidateSet('ForeverBeta')]
   [string]$Target = 'ForeverBeta',
@@ -344,6 +344,15 @@ function Invoke-Tests {
     & (Join-Path $RepoRoot 'tests\forever-pins-update.ps1')
   }
   finally { Pop-Location; $env:Path = $previousPath }
+}
+
+if ($Task -in @('BackupSiteDatabase', 'ExportAddonRanking')) {
+  $localEnvironment = Join-Path $RepoRoot 'config\build.env.local.ps1'
+  if (Test-Path -LiteralPath $localEnvironment -PathType Leaf) { . $localEnvironment }
+  $script = if ($Task -eq 'BackupSiteDatabase') { 'backup-site-database.py' } else { 'export-addon-ranking.py' }
+  & python (Join-Path $RepoRoot "tools\$script")
+  if ($LASTEXITCODE -ne 0) { throw "$Task failed; see the error above." }
+  return
 }
 
 if ($Task -eq 'CheckSources' -or (-not $SkipSourceCheck -and $Task -in @('Validate', 'DeployAddon', 'PackageAddon'))) {

@@ -8,7 +8,15 @@ assert.deepEqual(creatureVoiceMetadata([
   {npcID:4,voice:'ancient-male'},{npcID:4,voice:'skyborne-male'},
   {npcID:0,voice:'furbolg-male'},{voice:'ancient-male'},
   {npcID:5,voice:'creature/banshee'},
-]),{1:{voiceRace:'ancient'},2:{voiceRace:'furbolg'},5:{voiceRace:'banshee'}},'Exact creature labels normalize without guessing ambiguous speakers');
+  {npcID:6,voice:'elemental-water'},
+  {npcID:7,voice:'elemental-water'},{npcID:7,voice:'elemental-fire'},
+  {npcID:8,voice:'imp-male'},
+  {npcID:9,voice:'imp-male'},{npcID:9,voice:'goblin-male'},
+  {npcID:10,voice:'creature/dreadlord'},
+  {npcID:11,voice:'satyr-male'},
+  {npcID:12,voice:'creature/dreadlord'},{npcID:12,voice:'creature/satyr'},
+  {npcID:13,voice:'elemental-earth'},{npcID:14,voice:'ogre-male'},
+]),{1:{voiceRace:'ancient'},2:{voiceRace:'furbolg'},5:{voiceRace:'banshee'},6:{voiceRace:'elemental_water'},8:{voiceRace:'imp',voiceSex:'male'},10:{voiceRace:'dreadlord'}},'Exact creature labels normalize without guessing ambiguous speakers');
 const inputs = {
   classic:{First:{1:{q:1,i:10,n:'Имя',ei:20,en:'Получатель'}}, Item:{1:{q:2,i:99}},
     Priority:{1:{q:7,i:70,n:'Классическое имя'},2:{q:8,i:80},3:{q:9,i:90}},
@@ -39,6 +47,60 @@ assert.equal(merge(classifiedInputs).database.npcs[10].race,'tauren','A changed 
 classifiedInputs.raceClassifications.appearances[111].race='orc';
 assert.throws(()=>merge(classifiedInputs),/Invalid NPC race classification/,'Classification must match its model evidence');
 const db = result.database;
+const quilboarInputs=structuredClone(inputs);
+quilboarInputs.cat.tables.NpcData[10]={2:'male',3:1346};
+quilboarInputs.cat.tables.NpcData[20]={3:222};
+quilboarInputs.raceClassifications={schemaVersion:1,appearances:{1346:{race:'quilboar',modelFileID:125497}},
+  models:{125497:{race:'quilboar',file:'creature/quillboar/quillboar.m2',source:'https://example.org/listfile'}}};
+assert.equal(merge(quilboarInputs).database.npcs[10].race,'quilboar','Verified Mangletooth appearance supplies missing race');
+assert.equal(merge(quilboarInputs).database.npcs[10].sex,'male','Quilboar classification preserves known sex');
+assert.equal(merge(quilboarInputs).database.npcs[20].race,undefined,'Unverified appearances are not inferred from other NPCs');
+delete quilboarInputs.cat.tables.NpcData[10][2];
+assert.equal(merge(quilboarInputs).database.npcs[10].sex,undefined,'Quilboar appearance alone does not supply sex');
+const stoneInputs=structuredClone(inputs);
+stoneInputs.cat.tables.NpcData[10]={2:'male',3:6589};
+stoneInputs.cat.tables.NpcData[20]={3:222};
+stoneInputs.cat.tables.QuestGiver[60]=10;
+stoneInputs.cat.tables.QuestGiver[61]=20;
+stoneInputs.catAudio={entries:{'60a':{voice:'elemental-golem'},'61a':{voice:'elemental-golem'}}};
+stoneInputs.raceClassifications={schemaVersion:1,appearances:{6589:{race:'stone_construct',modelFileID:126072}},
+  models:{126072:{race:'stone_construct',file:'creature/stonekeeper/stonekeeper.m2',source:'https://example.org/listfile'}}};
+const stone=merge(stoneInputs);
+assert.equal(stone.database.npcs[10].race,'stone_construct','Verified stonekeeper appearance establishes the category');
+assert.equal(stone.database.npcs[10].sex,'male');
+assert.equal(stone.database.npcs[20].race,undefined,'Shared elemental-golem voice does not classify other creatures');
+delete stoneInputs.cat.tables.NpcData[10][2];
+assert.equal(merge(stoneInputs).database.npcs[10].sex,undefined,'Stone appearance does not invent NPC sex');
+const giantInputs=structuredClone(stoneInputs);
+giantInputs.cat.tables.NpcData[10]={1:'ogre',3:1918};
+giantInputs.catAudio.entries['60a'].voice='elemental-earth';
+giantInputs.catAudio.entries['61a'].voice='ogre-male';
+giantInputs.raceClassifications.appearances[1918]={race:'mountain_giant',modelFileID:124952};
+giantInputs.raceClassifications.models[124952]={race:'mountain_giant',file:'creature/mountaingiant/mountaingiant.m2',source:'https://example.org/listfile'};
+const giant=merge(giantInputs);
+assert.equal(giant.database.npcs[10].race,'mountain_giant','Verified giant appearance overrides broad ogre metadata');
+assert.equal(giant.database.npcs[10].sex,undefined);
+assert.equal(giant.database.npcs[20].race,undefined,'An ogre voice alone is not mountain giant evidence');
+const dreadlordInputs=structuredClone(inputs);
+dreadlordInputs.cat.tables.NpcData[10]={1:'scourge',2:'female',3:111};
+dreadlordInputs.cat.tables.NpcData[20]={2:'male',3:222};
+dreadlordInputs.cat.tables.NpcData[30]={};
+dreadlordInputs.cat.tables.QuestGiver[61]=10;
+dreadlordInputs.cat.tables.QuestGiver[62]=20;
+dreadlordInputs.cat.tables.QuestGiver[63]=30;
+dreadlordInputs.cat.tables.QuestGiver[64]=70;
+dreadlordInputs.catAudio={entries:{'61a':{voice:'creature/dreadlord'},'62a':{voice:'creature/banshee'},'63a':{voice:'creature/dreadlord'},'64a':{voice:'satyr-male'}}};
+dreadlordInputs.raceClassifications={schemaVersion:1,appearances:{222:{race:'dreadlord',modelFileID:123673}},
+  models:{123673:{race:'dreadlord',file:'creature/dreadlord/dreadlord.m2',source:'https://example.org/listfile'}}};
+const dreadlords=merge(dreadlordInputs);
+assert.equal(dreadlords.database.npcs[10].race,'dreadlord','Exact CatQuest voice alone establishes the category');
+assert.equal(dreadlords.database.npcs[10].sex,'female','Dreadlord label does not force male');
+assert.equal(dreadlords.origins.npcs[10].race,'catquest-voice');
+assert.equal(dreadlords.database.npcs[20].race,'dreadlord','Verified appearance overrides a different voice label');
+assert.equal(dreadlords.origins.npcs[20].race,'verified-appearance');
+assert.equal(dreadlords.database.npcs[30].race,'dreadlord');
+assert.equal(dreadlords.database.npcs[30].sex,undefined,'Unknown dreadlord sex is not guessed');
+assert.equal(dreadlords.database.npcs[70].race,undefined,'Generic satyr voice cannot classify a dreadlord');
 const creatureInputs=structuredClone(inputs);
 creatureInputs.cat.tables.QuestGiver[50]=500;
 creatureInputs.cat.tables.QuestFinisher[50]=501;
@@ -47,11 +109,21 @@ creatureInputs.cat.tables.QuestGiver[52]=504;
 creatureInputs.cat.tables.NpcData[504]={1:'troll',2:'female'};
 creatureInputs.catAudio={entries:{'50a':{voice:'creature/ancient'},'50c':{voice:'creature/furbolg'},'51a':{voice:'creature/ancient'}}};
 creatureInputs.catAudio.entries['52a']={voice:'creature/banshee'};
+creatureInputs.cat.tables.QuestGiver[53]=505;
+creatureInputs.catAudio.entries['53a']={voice:'elemental-water'};
+creatureInputs.wayfarer.npcs[506]={voiceRace:'elemental_water'};
 creatureInputs.wayfarer.givers[51]=502;
 creatureInputs.wayfarer.npcs[500]={voiceRace:'furbolg'};
 creatureInputs.wayfarer.npcs[503]={voiceRace:'ancient'};
 creatureInputs.wayfarer.npcs[504]={voiceRace:'furbolg'};
+creatureInputs.cat.tables.NpcData[507]={1:'goblin',2:'female'};
+creatureInputs.cat.tables.QuestGiver[54]=507;
+creatureInputs.catAudio.entries['54a']={voice:'goblin-male'};
+creatureInputs.wayfarer.npcs[507]={voiceRace:'imp',voiceSex:'male'};
 const creatures=merge(creatureInputs);
+assert.equal(creatures.database.npcs[507].race,'imp','Explicit Wayfarer imp beats broad CatQuest NPC and goblin voice');
+assert.equal(creatures.database.npcs[507].sex,'male','Exact imp-male label supplies speaker sex');
+assert.equal(creatures.origins.npcs[507].race,'wayfarer-voice');
 assert.equal(creatures.database.npcs[500].race,'ancient','CatQuest explicit creature label wins over broad NPC and Wayfarer categories');
 assert.equal(creatures.database.npcs[500].sex,'male','Ancients do not split by legacy NPC sex');
 assert.equal(creatures.database.npcs[501].race,'furbolg','Completion speaker has its own category');
@@ -59,6 +131,10 @@ assert.equal(creatures.database.npcs[502].race,undefined,'No voice transfer to a
 assert.equal(creatures.database.npcs[503].race,'ancient','Wayfarer explicit creature category is preserved');
 assert.equal(creatures.database.npcs[504].race,'banshee','CatQuest banshee label wins even over a conflicting Wayfarer creature category');
 assert.equal(creatures.database.npcs[504].sex,'female','Banshee does not use the unsexed male group');
+for(const id of [505,506]) {
+  assert.equal(creatures.database.npcs[id].race,'elemental_water','Both libraries supply the water elemental category');
+  assert.equal(creatures.database.npcs[id].sex,'male','Water elementals use one canonical group without a biological sex claim');
+}
 assert.deepEqual(POLICY.givers,['catquest','wayfarer','pins','classic']);
 assert.equal(db.givers[1].npcID,999,'CatQuest wins over Pins and Classic');
 assert.equal(db.npcs[10].displayID,111,'Model enriches the same NPC chosen by another source');
@@ -117,7 +193,7 @@ const children=merge({...inputs,cat:{tables:{
   wayfarer:{givers:{25:105},finishers:{},npcs:{100:{ageGroup:'child',sex:'male'},106:{ageGroup:'child',sex:'female'}}},
 }).database;
 assert.deepEqual(children.npcs[100],{ageGroup:'child',sex:'female'},'CatQuest child voice wins over Wayfarer fallback');
-assert.equal(children.npcs[101].race,'orc','Child voice is not proof of human race');
+assert.equal(children.npcs[101].race,'orc_child','Known orc race and child age form a separate group, not a human child');
 assert.equal(children.npcs[101].ageGroup,'child','Age is independent of the known orc race');
 assert.equal(children.npcs[100].race,undefined,'Unknown race stays unknown for a child voice');
 assert.equal(children.npcs[102].sex,'female','Explicit NPC sex wins over voice label');
@@ -138,8 +214,32 @@ assert.equal(narrated.database.givers[8].npcID,80,'Completion narration does not
 assert(!('undefined' in narrated.database.npcs));
 const {dataTable}=require('../tools/import-forever-audio');
 const current=dataTable(require('path').join(__dirname,'../src/Speakers.lua'),'TalkingHeadRuSpeakers');
+assert.equal(current.npcs[3430].race,'quilboar','Mangletooth classification survives regeneration');
+assert.equal(current.npcs[3430].sex,'male');
+for(const id of [878,879,906,5052]) assert.equal(current.givers[id].npcID,3430,'Existing quest links are preserved');
+assert.equal(current.npcs[14470].race,'imp','Impsy classification survives regeneration');
+assert.equal(current.npcs[14470].sex,'male');
+assert.equal(current.npcs[7918].race,'stone_construct');
+assert.equal(current.npcs[7918].sex,'male');
+assert.equal(current.npcs[7765].race,'mountain_giant','Rockbiter uses the verified mountain giant category');
+assert.equal(current.npcs[7765].sex,undefined,'An ogre-male voice cannot establish the mountain giant sex');
+for (const id of [15079,250929,7765])
+  assert.notEqual(current.npcs[id].race,'stone_construct','Robots, unverified golems and mountain giants remain separate');
+for (const id of [2425,9516]) {
+  assert.equal(current.npcs[id].race,'dreadlord','Confirmed dreadlords survive regeneration');
+  assert.equal(current.npcs[id].sex,'male');
+}
+for (const [id,race,sex] of [[14444,'orc_child','male'],[268684,'orc_child','female'],[14305,'human_child','male'],[249713,'human_child','female']]) {
+  assert.equal(current.npcs[id].race,race,'Verified child race survives regeneration');
+  assert.equal(current.npcs[id].sex,sex,'Child sex remains a separate demographic');
+  assert.equal(current.npcs[id].ageGroup,'child');
+}
+assert.equal(current.givers[5502].npcID,14444);
+assert.notEqual(current.npcs[14444].race,current.npcs[14305].race,'Orc and human boys must not share a voting group');
 assert.equal(current.npcs[4606].race,'banshee','A banshee voice category must not become a troll');
 assert.equal(current.npcs[4606].sex,'female','Banshee keeps the female speaker metadata');
+for (const id of [5895,11862,13278])
+  assert(current.npcs[id].race==='elemental_water' && current.npcs[id].sex==='male','Water elemental labels survive shared database regeneration');
 for (const id of [3897,8405,11554,11555,11556,11557,15395])
   assert(current.npcs[id].race==='furbolg' && current.npcs[id].sex==='male','Known furbolg NPCs have one shared category');
 for (const id of [1244,3616,9598,14524,14525,14526,270269])

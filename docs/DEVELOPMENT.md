@@ -848,6 +848,57 @@ not `tauren`. The file records the model identity and appearance metadata source
 it is a maintained build input, not a dependency on the local viewer cache.
 Classification never changes quest roles or portrait selection. The two
 unsexed categories use the same canonical group value regardless of source.
+Both CatQuest Voices and Wayfarer use `elemental-water` for water elementals,
+including Duke Hydraxis (NPC 13278). The shared import maps this exact label to
+`elemental_water`, with canonical `sex=male` for a single unsexed voting group.
+It does not derive the category from the general `elemental` camera profile.
+The water category remains distinct from other elemental types and unknown NPCs.
+
+Wayfarer's exact `imp-male` label maps to `voiceRace=imp`, `voiceSex=male`.
+It overrides broad CatQuest NPC demographics and the `goblin-male` voice label,
+while verified appearance classifications and explicit CatQuest creature labels
+retain priority. Impsy (14470, quest 8421) is the confirmed example. The importer
+requires an unambiguous speaker and consistent labels; it never infers imps from
+names or transfers the category to a different quest-stage speaker.
+
+Nathrezim use the separate `dreadlord` category. Either an exact CatQuest Voices
+`creature/dreadlord` label or a verified appearance can establish it; verified
+appearances override conflicting voice categories. Displays 11658 (Varimathras)
+and 8611 (Lord Banehollow) resolve to model 123673, `creature/dreadlord/dreadlord.m2`.
+The category and appearance do not assign sex: existing NPC sex is preserved,
+and unknown sex remains unknown. Generic `satyr-male`, `scourge` and personal
+`named/<ID>` labels are not evidence of a dreadlord. Corrected comparisons get
+new identities; old ballots remain historical and do not enter current group totals.
+
+Mangletooth (3430) uses `quilboar/male`: display 1346 resolves to model 125497,
+`creature/quillboar/quillboar.m2`. Existing giver links for quests 878, 879, 906
+and 5052 and the known male sex are preserved. These four descriptions have
+three library variants each. Appearance classifies the species; it does not
+establish quest links or infer sex. Unknown-race ballots do not transfer to
+the corrected group. Check unclassified quest givers before concluding that
+a known group has no available comparisons.
+
+Stone constructs use `stone_construct` for verified appearance 6589, model
+126072 (`creature/stonekeeper/stonekeeper.m2`): NPC 7918, quest 2954. Sex remains
+independent. CatQuest's `elemental-golem` voice is shared with Fishbot 5000
+(15079) and Broken Cyclonic Golem (250929), so it cannot classify stone constructs.
+Mountain giant Rockbiter (7765, quest 2844, display 1918, model 124952) uses the
+separate `mountain_giant` category through his verified appearance. His sex remains
+unknown; `elemental-earth` / `ogre-male` library voices are not species evidence.
+The `classify-npcs` skill owns category audit and manual review; `update-libraries`
+invokes it after import/appearance supplements and before final catalogue export.
+See `.agents/skills/classify-npcs/references/category-rules.md` for source labels
+and exceptions. Imports report new NPCs without race and existing NPCs that lose
+their category, retaining unresolved cases for manual review.
+
+Children use `human_child` and `orc_child` voting categories, with separate sex,
+instead of sharing the generic `child` category or their adult race category.
+An explicitly known human/orc race plus `ageGroup=child`, or a verified child
+appearance, establishes the group. A child voice label alone cannot establish
+race. Generic/unknown children remain unresolved until evidence is available.
+These categories are shared by the addon and both voting catalogues; the existing
+race/sex comparison identity keeps previous generic-child ballots historical.
+
 Missing child metadata can be filled from
 CatQuest or Wayfarer `child-male` / `child-female` voice labels tied to their own
 known stage speaker. Conflicting voices are not inferred; an unknown completion
@@ -1228,6 +1279,9 @@ CatQuest and CatQuest_Voices are by [Cathey](https://t.me/catheyco) (daniilcathe
 `LibraryIntegration.lua` temporarily suppresses upstream autoplay (quests, books,
 greetings/gossip), CatQuest lore indicators and Codex/story popups while TalkingHead Ru
 is enabled. Quest playback buttons are hidden separately, including late creation.
+CatQuest compatibility buttons on `DUIQuestFrame` and `ImmersionFrame.TalkBox`
+use the same exact-handler detection and reversible visibility suppression.
+DialogueUI's own controls and the manual reader on `DUIBookFrame` are unaffected.
 Manual book/lore playback remains available. CatQuest `loreAuto` and `loreMark`, and
 Wayfarer `zoneMode`, become user-owned after an explicit edit in upstream settings.
 `TalkingHeadRuDB.libraryPreferences` stores this exemption per setting, not a duplicate

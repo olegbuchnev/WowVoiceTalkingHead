@@ -46,10 +46,15 @@ try {
   pack('Wayfarer_Voices_B',{qg:{20:200,21:201},q:{
     20:{a:{v:'ancient-male'},c:{s:202,v:'furbolg-male'}},
     21:{a:{s:211,v:'ancient-male'}},
+    22:{a:{s:212,v:'elemental-water'}},
+    23:{a:{s:213,v:'imp-male'},c:{s:214,v:'goblin-male'}},
   }});
   const creatures=collect(directory);
   assert.equal(creatures.npcs[200].voiceRace,'ancient');
   assert.equal(creatures.npcs[202].voiceRace,'furbolg');
+  assert.equal(creatures.npcs[212].voiceRace,'elemental_water');
+  assert.deepEqual(creatures.npcs[213],{voiceRace:'imp',voiceSex:'male'});
+  assert.equal(creatures.npcs[214],undefined,'Imp classification is not transferred to the completion speaker');
   assert.equal(creatures.npcs[211],undefined,'Conflicting speaker identity cannot supply a creature category');
   // No audio files exist in this fixture; NPC import remains independent of playback.
   fs.appendFileSync(path.join(directory,'Wayfarer_Voices_A/Index.lua'),'\nWayfarer:RegisterPack({})');

@@ -82,6 +82,27 @@ lost or the tab closes. The endpoint validates and bounds fields and body size,
 and both Nginx and Node limit request volume. Client metrics are untrusted
 diagnostics, entirely separate from votes.
 
+## Stalled texture recovery (deployed 2026-10-16)
+
+Load `p-9969d1498a54` (quest 1426, NPC 5593, display 3519, model 917116)
+reported a timeout after 120,781 ms: actor loaded, 370 animations, no context
+loss, zero pending downloads, but seven of twelve textures not ready. The M2
+request succeeded. No matching HTTP failures were found in the surrounding
+server logs. The original network/decode failure remains undetermined; the
+viewer does not report XHR/decode errors or retry these textures itself.
+
+After the readiness timeout, a loaded actor with incomplete textures and zero
+tracked downloads now schedules a fresh portrait mount. It shares the two-retry
+budget with context loss; the current comparison, audio and votes remain mounted.
+Late readiness cancels a scheduled retry. Slow tracked downloads keep their
+existing late-completion behavior. A persistent fault stops after two retries.
+
+The real Kator viewer reproduced this state after seven texture requests were
+deliberately aborted, then recovered locally and on the public site. This proves
+recovery from that failure mode, not the cause of the original user incident.
+The React fixture also covers persistent failure, delayed completion and context
+loss. Evidence: `artifacts/review/portrait-1426-*`.
+
 ## Context-loss recovery (deployed 2026-10-13)
 
 Production load `p-f71b6e837d19` (quest 391, NPC 1719, display 1865) reached

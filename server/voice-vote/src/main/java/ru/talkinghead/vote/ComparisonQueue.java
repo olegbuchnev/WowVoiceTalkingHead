@@ -16,7 +16,7 @@ final class ComparisonQueue {
     private static final double RECENCY_DECAY = 0.8;
     private static final double RECENCY_PENALTY = 3;
     private static final int HISTORY_LIMIT = 20;
-    record Candidate(VoteStore.Priority priority, Catalogue.Npc npc, Instant lastRated) {}
+    record Candidate(VoteStore.Priority priority, Catalogue.Npc npc, Instant lastRated, boolean unratedGroup) {}
     private record Group(boolean narrator, String race, String sex) {
         static Group of(Catalogue.Npc npc) {
             // Explicit narrators have ID 0. Unknown NPC demographics remain separate.
@@ -41,9 +41,9 @@ final class ComparisonQueue {
         }
         var result = new ArrayList<VoteStore.Priority>();
         // Keep automatic batches free of repeats, even when a whole group is exhausted.
-        for (boolean rated : new boolean[]{false, true}) {
+        for (boolean rated : new boolean[]{false, true}) for (boolean unratedGroup : new boolean[]{true, false}) {
             var shuffled = new ArrayList<>(candidates.stream()
-                .filter(c -> c.priority().rated() == rated).toList());
+                .filter(c -> c.priority().rated() == rated && c.unratedGroup() == unratedGroup).toList());
             Collections.shuffle(shuffled);
             shuffled.sort(Comparator.comparingLong(c -> c.priority().votes()));
             var groups = new LinkedHashMap<Group, ArrayDeque<VoteStore.Priority>>();
@@ -52,7 +52,7 @@ final class ComparisonQueue {
                     .addLast(candidate.priority());
             while (!groups.isEmpty()) {
                 // Every group keeps a positive chance, including the previous group.
-                // Group size and quest vote counts do not influence this draw.
+                // Within the coverage tier, group size and quest votes do not affect this draw.
                 var weights = new LinkedHashMap<Group, Double>();
                 for (var group : groups.keySet())
                     weights.put(group, 1 / (1 + RECENCY_PENALTY * recency.getOrDefault(group, 0d)));

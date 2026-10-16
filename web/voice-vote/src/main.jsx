@@ -15,6 +15,7 @@ import {createAudioPreloader} from './audio-preload.js';
 import {observePortrait} from './portrait-diagnostics.js';
 import {readVolume,readPreviousVolume,saveVolume} from './volume-preference.js';
 import './style.css';
+import CommunityResults from './CommunityResults.jsx';
 
 // A reload starts a fresh, silent sample. Browser scroll restoration must not
 // restore an old position inside its asynchronously mounted quest text.
@@ -95,6 +96,11 @@ function Portrait({npc, questID, playing, current}) {
     element.current.dataset.loadId=diagnostics.loadID;
     const controller=new AbortController();
     const container=element.current;
+    const retry=()=>{
+      if(recoveryTimer || recovery.current.attempts>=2) return;
+      recovery.current.attempts++;
+      recoveryTimer=setTimeout(()=>{if(!cancelled) setCameraRevision(value=>value+1);},1000);
+    };
     const lost=event=>{
       if(cancelled || contextLost) return;
       event.preventDefault();
@@ -103,10 +109,7 @@ function Portrait({npc, questID, playing, current}) {
       setState('error');diagnostics.report('context-lost',portraitStatus(viewer.current));
       // Rebuild only the portrait; preserve audio, the comparison and votes.
       // A persistent GPU failure must not create an endless remount loop.
-      if(recovery.current.attempts<2) {
-        recovery.current.attempts++;
-        recoveryTimer=setTimeout(()=>{if(!cancelled) setCameraRevision(value=>value+1);},1000);
-      }
+      retry();
     };
     container.addEventListener('webglcontextlost',lost,true);
     setState('loading');
@@ -117,8 +120,18 @@ function Portrait({npc, questID, playing, current}) {
       // Wait for model data, not merely creation of the WebGL canvas.
       stopWatching=watchPortraitReadiness({
         isReady:()=>isPortraitLoaded(instance),
-        onError:error=>{setState('error');diagnostics.report(error ? 'assets-error' : 'timeout',portraitStatus(instance));},
+        onError:error=>{
+          setState('error');
+          const status=portraitStatus(instance);
+          diagnostics.report(error ? 'assets-error' : 'timeout',status);
+          // The viewer does not retry failed texture requests/decodes. Rebuild
+          // an idle textured actor after timeout, while leaving slow downloads
+          // eligible to finish. Share the bounded budget with context recovery.
+          if(!error && status.actorLoaded && !status.contextLost
+            && status.pendingDownloads===0 && status.pendingTextures>0) retry();
+        },
         onReady:()=>{
+          clearTimeout(recoveryTimer);recoveryTimer=undefined;
           diagnostics.mark('assetsReadyMs');
           framePortrait(instance,controller.signal).then(()=>{
             if(cancelled || contextLost) return;
@@ -364,7 +377,7 @@ function App() {
         {!nextBatchSize && comparisons.length>0 && <p>Вы оценили все доступные задания.</p>}
         <button className="welcome-start continue-batch" disabled={preparing || advancing} aria-busy={preparing || advancing} onClick={()=>beginBatch(nextBatchSize===0)}>{nextBatchSize ? `Сравнить ещё ${nextBatchSize}` : 'Сравнить повторно'}</button>
       </section>;
-  return <div className="app"><header><a className="brand" href="/" aria-label="TalkingHead Ru"><img className="brand-icon" src="/addon-icon-cutout.png" width="48" height="48" alt=""/><span className="brand-text"><span>TalkingHead <b>Ru</b></span><span className="brand-tagline">Озвучки на выбор</span></span></a><a className="curseforge-button" href="https://www.curseforge.com/wow/addons/talkinghead-ru" target="_blank" rel="noopener noreferrer"><span className="curseforge-button-label">Аддон на CurseForge</span><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="18" height="18"><path d="M6 18 18 6M6 6h12v12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="square"/></svg></a></header>
+  return <div className={`app${started ? "" : " is-welcome"}`}><header><a className="brand" href="/" aria-label="TalkingHead Ru"><img className="brand-icon" src="/addon-icon-cutout.png" width="48" height="48" alt=""/><span className="brand-text"><span>TalkingHead <b>Ru</b></span><span className="brand-tagline">Озвучки на выбор</span></span></a><a className="curseforge-button" href="https://www.curseforge.com/wow/addons/talkinghead-ru" target="_blank" rel="noopener noreferrer"><span className="curseforge-button-label">Аддон на CurseForge</span><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="18" height="18"><path d="M6 18 18 6M6 6h12v12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="square"/></svg></a></header>
     <main>
       {!started && <section className="welcome" aria-labelledby="welcome-title">
         <img className="welcome-art" src="/welcome-adventurers.png" width="346" height="290" alt="" draggable="false"/>
@@ -372,6 +385,7 @@ function App() {
         <p>Сравните озвучки заданий WoW Forever из библиотек <span className="library-name library-0">WowVoice</span>, <span className="library-name library-1">CatQuest</span> и <span className="library-name library-2">Wayfarer</span>. Мы собираем ваши оценки, чтобы выбрать самые популярные озвучки заданий и NPC для TalkingHead Ru.</p>
         <button className="welcome-start" onClick={()=>setStarted(true)}>Начать сравнение</button>
       </section>}
+      {!started && <CommunityResults/>}
       <div className={`comparison-view${started ? '' : ' is-preloading'}`} inert={!started} aria-hidden={!started ? true : undefined}>
       <div className="comparison-stage">
       {finished && !choice && completion}

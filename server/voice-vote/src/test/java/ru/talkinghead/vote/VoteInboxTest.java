@@ -28,9 +28,9 @@ class VoteInboxTest {
         String file=directory.resolve("votes.sqlite").toString();
         var failing=new AtomicBoolean(true);
         try(var store=new VoteStore(file,mapper) {
-            @Override public synchronized Saved save(String visitor,Catalogue.Quest quest,String selected,String visit) throws SQLException {
+            @Override public synchronized Saved save(String visitor,Catalogue.Quest quest,String selected,String visit,long order) throws SQLException {
                 if(failing.get()) throw new SQLException("Injected storage failure");
-                return super.save(visitor,quest,selected,visit);
+                return super.save(visitor,quest,selected,visit,order);
             }
         }) {
             var visitor=store.createVisitor();var quest=quest();String visit=UUID.randomUUID().toString();
@@ -40,6 +40,7 @@ class VoteInboxTest {
                 await(()->((Number)inbox.status().get("failures")).longValue()>0);
                 assertEquals(2,inbox.status().get("pending"));
                 assertEquals(0,store.summary(visitor.id()).total());
+                assertEquals(0,store.communitySummary().total());
                 assertTrue(inbox.pendingQuests(visitor.id(),List.of(quest)).contains(1479L));
             }
             failing.set(false);
@@ -47,6 +48,8 @@ class VoteInboxTest {
                 await(()->((Number)inbox.status().get("pending")).intValue()==0);
                 assertEquals(1,store.summary(visitor.id()).total());
                 assertEquals(1,store.summary(visitor.id()).counts().get("CatQuest"));
+                assertEquals(1,store.communitySummary().total());
+                assertEquals(1,store.communitySummary().counts().get("CatQuest"));
                 assertEquals(1,mapper.valueToTree(store.dashboard("")).get("traffic").get("pageViews").asInt());
             }
         }

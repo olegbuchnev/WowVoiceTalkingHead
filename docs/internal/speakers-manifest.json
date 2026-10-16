@@ -36,7 +36,12 @@
     ],
     "unsexedCreatureCategories": {
       "ancient": "male",
-      "furbolg": "male"
+      "furbolg": "male",
+      "elemental_water": "male"
+    },
+    "childCategories": {
+      "human": "human_child",
+      "orc": "orc_child"
     },
     "protectedExclusions": [
       "multiple-or-conflicting-starters"
@@ -44,8 +49,8 @@
   },
   "sources": {
     "pins": {
-      "commit": "d7dae88f3a5c94ca4d2fb6ec524ac11986d31c2f",
-      "attCommit": "f62d0552463cbfdf27d9f8a8910bd87f081ec65d"
+      "commit": "999243d962372f124d337495571176de19807552",
+      "attCommit": "10164719738bdc1e7baa23dd854bef4c7184a6ac"
     },
     "catquest": {
       "version": "0.7.0",
@@ -78,15 +83,15 @@
   },
   "inputHashes": {
     "classic": "f13f9d3b8ee7ba01de59ed02ef8a5b729ec532805e65e4b0ac23d7f67dd0e1e2",
-    "pins": "6ce152326f990b9d8db195ea43605d03a233c29a3580f9293c9ce3ad051caaa8",
+    "pins": "0df871d8833cdbe5668754398dec1b0bff31a41ec66381deacc12d68fdc33b78",
     "cat": "5b1e2f83b9cebdab832cb55078755684338ca1d732340d42c2894280165b5399",
-    "wayfarer": "8991da01983720686da3b2eeffa1e016a4734b974f7d7934b131cf56e65e2f53",
+    "wayfarer": "c5e3297e72469889a8447be77737d94a7e82232b48627e38ec55408025789fa1",
     "supplements": "0731d8abbf00f9c01111f601620b6deaea6ebbbc27887bf5807056d1c006ef49",
-    "raceClassifications": "2b05c10208e8730f9e7c083ce3129d187f4a58ef1f1b7acabb709c6a91b510bd",
+    "raceClassifications": "e1e15d3e20f15de5efbe511e5c361b3ac92f1dc8a1ee7aef48739c4da0e698a2",
     "catAudio": "1e34e23f8688a4e95a640db75ee4676499f2a1139b8eb36572b68f91dbd1ae6e"
   },
   "counts": {
-    "givers": 4973,
+    "givers": 4975,
     "finishers": 4753,
     "npcs": 2673
   },
@@ -4370,6 +4375,8 @@
       "91860": "catquest",
       "91861": "catquest",
       "91862": "catquest",
+      "91899": "pins",
+      "91900": "pins",
       "91905": "catquest",
       "91906": "catquest",
       "91920": "catquest",
@@ -4593,7 +4600,7 @@
       "94438": "catquest",
       "94440": "catquest",
       "94441": "catquest",
-      "94449": "catquest",
+      "94449": "pins",
       "94465": "catquest",
       "94466": "catquest",
       "94467": "catquest",
@@ -10021,6 +10028,7 @@
       "247": {
         "displayID": "catquest",
         "ageGroup": "catquest-voice",
+        "race": "verified-appearance",
         "name": "catquest"
       },
       "248": {
@@ -10254,6 +10262,8 @@
       },
       "395": {
         "displayID": "catquest",
+        "race": "verified-appearance",
+        "ageGroup": "verified-child-category",
         "name": "catquest"
       },
       "415": {
@@ -10533,30 +10543,44 @@
       },
       "794": {
         "displayID": "catquest",
+        "race": "verified-appearance",
+        "ageGroup": "verified-child-category",
         "name": "catquest"
       },
       "795": {
         "displayID": "catquest",
+        "race": "verified-appearance",
+        "ageGroup": "verified-child-category",
         "name": "catquest"
       },
       "796": {
         "displayID": "catquest",
+        "race": "verified-appearance",
+        "ageGroup": "verified-child-category",
         "name": "catquest"
       },
       "797": {
         "displayID": "catquest",
+        "race": "verified-appearance",
+        "ageGroup": "verified-child-category",
         "name": "catquest"
       },
       "804": {
         "displayID": "catquest",
+        "race": "verified-appearance",
+        "ageGroup": "verified-child-category",
         "name": "catquest"
       },
       "805": {
         "displayID": "catquest",
+        "race": "verified-appearance",
+        "ageGroup": "verified-child-category",
         "name": "catquest"
       },
       "806": {
         "displayID": "catquest",
+        "race": "verified-appearance",
+        "ageGroup": "verified-child-category",
         "name": "catquest"
       },
       "807": {
@@ -10569,10 +10593,14 @@
       },
       "810": {
         "displayID": "catquest",
+        "race": "verified-appearance",
+        "ageGroup": "verified-child-category",
         "name": "catquest"
       },
       "811": {
         "displayID": "catquest",
+        "race": "verified-appearance",
+        "ageGroup": "verified-child-category",
         "name": "catquest"
       },
       "820": {
@@ -11196,14 +11224,20 @@
       },
       "1368": {
         "displayID": "catquest",
+        "race": "verified-appearance",
+        "ageGroup": "verified-child-category",
         "name": "catquest"
       },
       "1370": {
         "displayID": "catquest",
+        "race": "verified-appearance",
+        "ageGroup": "verified-child-category",
         "name": "catquest"
       },
       "1371": {
         "displayID": "catquest",
+        "race": "verified-appearance",
+        "ageGroup": "verified-child-category",
         "name": "catquest"
       },
       "1373": {
@@ -11292,6 +11326,7 @@
       "1429": {
         "displayID": "catquest",
         "ageGroup": "catquest-voice",
+        "race": "verified-appearance",
         "name": "catquest"
       },
       "1430": {
@@ -12146,6 +12181,7 @@
       },
       "2425": {
         "displayID": "catquest",
+        "race": "verified-appearance",
         "name": "catquest"
       },
       "2429": {
@@ -12274,6 +12310,8 @@
       },
       "2533": {
         "displayID": "catquest",
+        "race": "verified-appearance",
+        "ageGroup": "verified-child-category",
         "name": "catquest"
       },
       "2542": {
@@ -13424,6 +13462,7 @@
       },
       "3430": {
         "displayID": "catquest",
+        "race": "verified-appearance",
         "name": "catquest"
       },
       "3432": {
@@ -13492,10 +13531,14 @@
       },
       "3504": {
         "displayID": "catquest",
+        "race": "verified-appearance",
+        "ageGroup": "verified-child-category",
         "name": "catquest"
       },
       "3505": {
         "displayID": "catquest",
+        "race": "verified-appearance",
+        "ageGroup": "verified-child-category",
         "name": "catquest"
       },
       "3507": {
@@ -13508,14 +13551,20 @@
       },
       "3509": {
         "displayID": "catquest",
+        "race": "verified-appearance",
+        "ageGroup": "verified-child-category",
         "name": "catquest"
       },
       "3510": {
         "displayID": "catquest",
+        "race": "verified-appearance",
+        "ageGroup": "verified-child-category",
         "name": "catquest"
       },
       "3511": {
         "displayID": "catquest",
+        "race": "verified-appearance",
+        "ageGroup": "verified-child-category",
         "name": "catquest"
       },
       "3512": {
@@ -14380,6 +14429,7 @@
       "4982": {
         "displayID": "catquest",
         "ageGroup": "catquest-voice",
+        "race": "verified-appearance",
         "name": "catquest"
       },
       "4983": {
@@ -14912,6 +14962,8 @@
       },
       "5895": {
         "displayID": "catquest",
+        "race": "catquest-voice",
+        "sex": "unsexed-creature-category",
         "name": "catquest"
       },
       "5899": {
@@ -15674,6 +15726,7 @@
       },
       "7765": {
         "displayID": "catquest",
+        "race": "verified-appearance",
         "name": "catquest"
       },
       "7766": {
@@ -15857,6 +15910,7 @@
       },
       "7918": {
         "displayID": "catquest",
+        "race": "verified-appearance",
         "name": "catquest"
       },
       "7937": {
@@ -16112,11 +16166,13 @@
       "8962": {
         "displayID": "catquest",
         "ageGroup": "catquest-voice",
+        "race": "verified-appearance",
         "name": "catquest"
       },
       "8965": {
         "displayID": "catquest",
         "ageGroup": "catquest-voice",
+        "race": "verified-appearance",
         "name": "catquest"
       },
       "8996": {
@@ -16256,6 +16312,7 @@
         "name": "catquest"
       },
       "9516": {
+        "race": "verified-appearance",
         "displayID": "wayfarer",
         "name": "catquest"
       },
@@ -16700,6 +16757,7 @@
       "10926": {
         "displayID": "catquest",
         "ageGroup": "catquest-voice",
+        "race": "verified-appearance",
         "name": "catquest"
       },
       "10927": {
@@ -17110,7 +17168,9 @@
         "name": "catquest"
       },
       "11862": {
+        "race": "catquest-voice",
         "displayID": "verified-supplement",
+        "sex": "unsexed-creature-category",
         "name": "catquest"
       },
       "11863": {
@@ -17419,6 +17479,8 @@
       },
       "13278": {
         "displayID": "catquest",
+        "race": "catquest-voice",
+        "sex": "unsexed-creature-category",
         "name": "catquest"
       },
       "13319": {
@@ -17597,6 +17659,7 @@
       "14305": {
         "displayID": "catquest",
         "ageGroup": "catquest-voice",
+        "race": "verified-appearance",
         "name": "catquest"
       },
       "14322": {
@@ -17694,6 +17757,7 @@
       "14444": {
         "displayID": "catquest",
         "ageGroup": "catquest-voice",
+        "race": "verified-appearance",
         "name": "catquest"
       },
       "14450": {
@@ -17714,6 +17778,8 @@
       },
       "14470": {
         "displayID": "wayfarer",
+        "race": "wayfarer-voice",
+        "sex": "wayfarer-voice",
         "name": "catquest"
       },
       "14494": {
@@ -17734,6 +17800,8 @@
       },
       "14499": {
         "displayID": "catquest",
+        "race": "verified-appearance",
+        "ageGroup": "verified-child-category",
         "name": "catquest"
       },
       "14504": {
@@ -18141,11 +18209,13 @@
       "15309": {
         "ageGroup": "catquest-voice",
         "displayID": "wayfarer",
+        "race": "verified-appearance",
         "name": "catquest"
       },
       "15310": {
         "displayID": "catquest",
         "ageGroup": "catquest-voice",
+        "race": "verified-appearance",
         "name": "catquest"
       },
       "15350": {
@@ -19140,6 +19210,7 @@
       "249713": {
         "displayID": "catquest",
         "ageGroup": "catquest-voice",
+        "race": "verified-appearance",
         "name": "catquest"
       },
       "250686": {
@@ -19988,11 +20059,13 @@
       "268682": {
         "displayID": "catquest",
         "ageGroup": "catquest-voice",
+        "race": "verified-appearance",
         "name": "catquest"
       },
       "268684": {
         "ageGroup": "catquest-voice",
         "displayID": "verified-supplement",
+        "race": "verified-appearance",
         "name": "catquest"
       },
       "268701": {
@@ -20529,11 +20602,19 @@
       "source": "pins",
       "reason": "multiple-or-conflicting-starters"
     },
+    "91899": {
+      "source": "pins",
+      "reason": "multiple-or-conflicting-starters"
+    },
     "92947": {
       "source": "pins",
       "reason": "multiple-or-conflicting-starters"
     },
     "93835": {
+      "source": "pins",
+      "reason": "multiple-or-conflicting-starters"
+    },
+    "94449": {
       "source": "pins",
       "reason": "multiple-or-conflicting-starters"
     },
@@ -20806,6 +20887,14 @@
       "selectedNPC": false,
       "rejected": "catquest",
       "rejectedNPC": 253590
+    },
+    {
+      "questId": 94449,
+      "role": "givers",
+      "selected": "pins",
+      "selectedNPC": false,
+      "rejected": "catquest",
+      "rejectedNPC": 258098
     },
     {
       "questId": 96825,
@@ -21262,6 +21351,14 @@
       "selectedNPC": false,
       "rejected": "wayfarer",
       "rejectedNPC": 253590
+    },
+    {
+      "questId": 94449,
+      "role": "givers",
+      "selected": "pins",
+      "selectedNPC": false,
+      "rejected": "wayfarer",
+      "rejectedNPC": 258098
     },
     {
       "questId": 94638,

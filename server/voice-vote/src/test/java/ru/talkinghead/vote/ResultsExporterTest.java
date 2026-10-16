@@ -72,13 +72,141 @@ class ResultsExporterTest {
             assertFalse(priority.rated());assertEquals(0,priority.votes());
             store.save(visitor.id(),corrected,b.id());
             var snapshot=ResultsExporter.read(database,catalogue);
-            assertEquals(3,snapshot.summary().votes());
+            assertEquals(2,snapshot.summary().votes());
             assertEquals(2,snapshot.summary().currentVotes());
-            assertEquals(1,snapshot.summary().historicalVotes());
+            assertEquals(0,snapshot.summary().historicalVotes());
             var furbolg=snapshot.raceSex().stream().filter(g->"furbolg".equals(g.race()) && g.source().equals("CatQuest")).findFirst().orElseThrow();
             assertEquals(1,furbolg.selectedVotes());assertEquals(1,furbolg.offeredVotes());
             var separateTauren=snapshot.raceSex().stream().filter(g->"tauren".equals(g.race()) && g.source().equals("WowVoice")).findFirst().orElseThrow();
             assertEquals(1,separateTauren.selectedVotes());assertEquals(1,separateTauren.offeredVotes());
+        }
+    }
+    @Test void waterElementalsDoNotInheritUnknownDemographicVotes() throws Exception {
+        Path database=directory.resolve("votes.sqlite"), catalogue=directory.resolve("catalogue.json");
+        var a=variant('a',"WowVoice","1"); var b=variant('b',"CatQuest","1");
+        var old=new Catalogue.Quest(7486,new Catalogue.Npc(13278,10849,126426,null,null),List.of(a,b));
+        var corrected=new Catalogue.Quest(7486,new Catalogue.Npc(13278,10849,126426,"elemental_water","male"),List.of(a,b));
+        Files.writeString(catalogue,mapper.writeValueAsString(new Catalogue.Snapshot(2,List.of(corrected))));
+        try(var store=new VoteStore(database.toString(),mapper)) {
+            var visitor=store.createVisitor();store.save(visitor.id(),old,a.id());
+            var priority=store.queue(visitor.id(),List.of(corrected)).getFirst();
+            assertFalse(priority.rated());assertEquals(0,priority.votes());
+            store.save(visitor.id(),corrected,b.id());
+            var snapshot=ResultsExporter.read(database,catalogue);
+            assertEquals(0,snapshot.summary().historicalVotes());
+            assertEquals(1,snapshot.summary().currentVotes());
+            assertTrue(snapshot.raceSex().stream().allMatch(g->"elemental_water".equals(g.race()) && "male".equals(g.sex())));
+            assertEquals(1,snapshot.raceSex().stream().filter(g->g.source().equals("CatQuest")).findFirst().orElseThrow().selectedVotes());
+        }
+    }
+    @Test void dreadlordsDoNotInheritUnknownOrScourgeVotes() throws Exception {
+        Path database=directory.resolve("votes.sqlite"), catalogue=directory.resolve("catalogue.json");
+        var a=variant('a',"WowVoice","1"); var b=variant('b',"CatQuest","1");
+        var oldVarimathras=new Catalogue.Quest(6145,new Catalogue.Npc(2425,11658,123673,null,"male"),List.of(a,b));
+        var oldBanehollow=new Catalogue.Quest(7624,new Catalogue.Npc(9516,8611,123673,"scourge","male"),List.of(a,b));
+        var varimathras=new Catalogue.Quest(6145,new Catalogue.Npc(2425,11658,123673,"dreadlord","male"),List.of(a,b));
+        var banehollow=new Catalogue.Quest(7624,new Catalogue.Npc(9516,8611,123673,"dreadlord","male"),List.of(a,b));
+        var current=List.of(varimathras,banehollow);
+        Files.writeString(catalogue,mapper.writeValueAsString(new Catalogue.Snapshot(2,current)));
+        try(var store=new VoteStore(database.toString(),mapper)) {
+            var visitor=store.createVisitor();
+            store.save(visitor.id(),oldVarimathras,a.id());store.save(visitor.id(),oldBanehollow,a.id());
+            assertTrue(store.queue(visitor.id(),current).stream().allMatch(q->!q.rated() && q.votes()==0));
+            store.save(visitor.id(),varimathras,b.id());store.save(visitor.id(),banehollow,b.id());
+            var snapshot=ResultsExporter.read(database,catalogue);
+            assertEquals(0,snapshot.summary().historicalVotes());
+            assertEquals(2,snapshot.summary().currentVotes());
+            assertTrue(snapshot.raceSex().stream().allMatch(g->"dreadlord".equals(g.race()) && "male".equals(g.sex())));
+            assertEquals(2,snapshot.raceSex().stream().filter(g->g.source().equals("CatQuest")).findFirst().orElseThrow().selectedVotes());
+            assertEquals(0,snapshot.raceSex().stream().filter(g->g.source().equals("WowVoice")).findFirst().orElseThrow().selectedVotes());
+        }
+    }
+    @Test void mangletoothQuilboarGroupStartsWithoutUnknownRaceVotes() throws Exception {
+        Path database=directory.resolve("votes.sqlite"),catalogue=directory.resolve("catalogue.json");
+        var a=variant('a',"WowVoice","1");var b=variant('b',"CatQuest","1");
+        var old=new Catalogue.Quest(878,new Catalogue.Npc(3430,1346,125497,null,"male"),List.of(a,b));
+        var corrected=new Catalogue.Quest(878,new Catalogue.Npc(3430,1346,125497,"quilboar","male"),List.of(a,b));
+        Files.writeString(catalogue,mapper.writeValueAsString(new Catalogue.Snapshot(2,List.of(corrected))));
+        try(var store=new VoteStore(database.toString(),mapper)) {
+            var visitor=store.createVisitor();store.save(visitor.id(),old,a.id());
+            var initial=ResultsExporter.read(database,catalogue);
+            assertEquals(1,initial.summary().historicalVotes());assertEquals(0,initial.summary().currentVotes());
+            assertTrue(AddonRanking.read(database,catalogue).groups().stream()
+                .anyMatch(g->g.race().equals("quilboar") && g.sex().equals("male") && g.status().equals("no_data")));
+            store.save(visitor.id(),corrected,b.id());
+            var updated=ResultsExporter.read(database,catalogue);
+            assertEquals(0,updated.summary().historicalVotes());assertEquals(1,updated.summary().currentVotes());
+            assertTrue(updated.raceSex().stream().allMatch(g->"quilboar".equals(g.race()) && "male".equals(g.sex())));
+        }
+    }
+    @Test void stoneConstructsDoNotInheritUnclassifiedVotes() throws Exception {
+        Path database=directory.resolve("votes.sqlite"), catalogue=directory.resolve("catalogue.json");
+        var a=variant('a',"WowVoice","1"); var b=variant('b',"CatQuest","1");
+        var old=new Catalogue.Quest(2954,new Catalogue.Npc(7918,6589,126072,null,"male"),List.of(a,b));
+        var corrected=new Catalogue.Quest(2954,new Catalogue.Npc(7918,6589,126072,"stone_construct","male"),List.of(a,b));
+        Files.writeString(catalogue,mapper.writeValueAsString(new Catalogue.Snapshot(2,List.of(corrected))));
+        try(var store=new VoteStore(database.toString(),mapper)) {
+            var visitor=store.createVisitor();store.save(visitor.id(),old,a.id());
+            var priority=store.queue(visitor.id(),List.of(corrected)).getFirst();
+            assertFalse(priority.rated());assertEquals(0,priority.votes());
+            store.save(visitor.id(),corrected,b.id());
+            var snapshot=ResultsExporter.read(database,catalogue);
+            assertEquals(0,snapshot.summary().historicalVotes());
+            assertEquals(1,snapshot.summary().currentVotes());
+            assertFalse(snapshot.raceSex().isEmpty());
+            assertTrue(snapshot.raceSex().stream().allMatch(g->"stone_construct".equals(g.race()) && "male".equals(g.sex())));
+            assertEquals(1,snapshot.raceSex().stream().filter(g->g.source().equals("CatQuest")).findFirst().orElseThrow().selectedVotes());
+        }
+    }
+    @Test void mountainGiantsKeepUnknownSexAndSeparateVotesFromConstructs() throws Exception {
+        Path database=directory.resolve("votes.sqlite"), catalogue=directory.resolve("catalogue.json");
+        var a=variant('a',"WowVoice","1"); var b=variant('b',"CatQuest","1");
+        var old=new Catalogue.Quest(2844,new Catalogue.Npc(7765,1918,124952,null,null),List.of(a,b));
+        var giant=new Catalogue.Quest(2844,new Catalogue.Npc(7765,1918,124952,"mountain_giant",null),List.of(a,b));
+        var stone=new Catalogue.Quest(2954,new Catalogue.Npc(7918,6589,126072,"stone_construct","male"),List.of(a,b));
+        Files.writeString(catalogue,mapper.writeValueAsString(new Catalogue.Snapshot(2,List.of(giant,stone))));
+        try(var store=new VoteStore(database.toString(),mapper)) {
+            var visitor=store.createVisitor();store.save(visitor.id(),old,a.id());
+            var priority=store.queue(visitor.id(),List.of(giant)).getFirst();
+            assertFalse(priority.rated());assertEquals(0,priority.votes());
+            store.save(visitor.id(),giant,b.id());store.save(visitor.id(),stone,a.id());
+            var snapshot=ResultsExporter.read(database,catalogue);
+            assertEquals(0,snapshot.summary().historicalVotes());assertEquals(2,snapshot.summary().currentVotes());
+            assertEquals(1,snapshot.summary().currentVotesWithoutDemographics());
+            var group=snapshot.raceSex().stream().filter(g->"mountain_giant".equals(g.race()) && "CatQuest".equals(g.source())).findFirst().orElseThrow();
+            assertNull(group.sex());assertEquals(1,group.selectedVotes());assertEquals(1,group.offeredVotes());
+            var construct=snapshot.raceSex().stream().filter(g->"stone_construct".equals(g.race()) && "WowVoice".equals(g.source())).findFirst().orElseThrow();
+            assertEquals("male",construct.sex());assertEquals(1,construct.selectedVotes());assertEquals(1,construct.offeredVotes());
+        }
+    }
+    @Test void childRaceAndSexGroupsRemainSeparateFromEachOtherAndAdults() throws Exception {
+        Path database=directory.resolve("votes.sqlite"), catalogue=directory.resolve("catalogue.json");
+        var a=variant('a',"WowVoice","1"); var b=variant('b',"CatQuest","1");
+        var variants=List.of(a,b);
+        var orcBoy=new Catalogue.Quest(5502,new Catalogue.Npc(14444,14589,125367,"orc_child","male"),variants);
+        var humanBoy=new Catalogue.Quest(1479,new Catalogue.Npc(14305,338,124495,"human_child","male"),variants);
+        var orcGirl=new Catalogue.Quest(97326,new Catalogue.Npc(268684,14616,125362,"orc_child","female"),variants);
+        var humanGirl=new Catalogue.Quest(92110,new Catalogue.Npc(249713,257,124456,"human_child","female"),variants);
+        var adult=new Catalogue.Quest(1,new Catalogue.Npc(1,2,3,"orc","male"),variants);
+        var current=List.of(orcBoy,humanBoy,orcGirl,humanGirl,adult);
+        Files.writeString(catalogue,mapper.writeValueAsString(new Catalogue.Snapshot(2,current)));
+        try(var store=new VoteStore(database.toString(),mapper)) {
+            var visitor=store.createVisitor();
+            for(var quest:List.of(orcBoy,humanBoy)) {
+                var npc=quest.npc();
+                var old=new Catalogue.Quest(quest.questID(),new Catalogue.Npc(npc.id(),npc.displayID(),npc.modelFileID(),"child","male"),variants);
+                assertNotEquals(VoteStore.comparisonID(old,mapper),VoteStore.comparisonID(quest,mapper));
+                store.save(visitor.id(),old,a.id());
+            }
+            assertTrue(store.queue(visitor.id(),current).stream().allMatch(q->!q.rated() && q.votes()==0));
+            for(var quest:current) store.save(visitor.id(),quest,b.id());
+            var snapshot=ResultsExporter.read(database,catalogue);
+            assertEquals(0,snapshot.summary().historicalVotes());assertEquals(5,snapshot.summary().currentVotes());
+            var selected=snapshot.raceSex().stream().filter(g->g.source().equals("CatQuest")).toList();
+            assertEquals(Set.of("orc_child/male","human_child/male","orc_child/female","human_child/female","orc/male"),
+                    selected.stream().map(g->g.race()+"/"+g.sex()).collect(java.util.stream.Collectors.toSet()));
+            assertTrue(selected.stream().allMatch(g->g.selectedVotes()==1 && g.offeredVotes()==1));
+            assertTrue(snapshot.raceSex().stream().noneMatch(g->"child".equals(g.race())));
         }
     }
     @Test void emptyDatabaseExportsAndMissingDatabaseIsNotCreated() throws Exception {

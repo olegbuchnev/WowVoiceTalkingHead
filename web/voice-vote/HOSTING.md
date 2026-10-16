@@ -1,5 +1,240 @@
 # Timeweb Cloud deployment
 
+## Local draft: welcome community results (2026-10-16; awaiting review)
+
+The welcome page has a borderless pie chart below the start button, using the
+existing library colors and names directly on sectors. Hover/focus enlarges and
+offsets the sector, revealing that library's counts and percentage beside it
+(below on mobile). Touch can pin the selection; mouse clicks do not pin or
+retain focus, and leaving a sector clears its hover details. Keyboard focus
+shows details while focused; Escape clears the selection. Small
+or zero shares have accessible text selectors instead of overlapping labels.
+Labels describe comparisons won, not unique participants. One participant can
+contribute wins on different quests; a replacement choice still replaces its
+previous contribution. Percentages use all active comparisons as denominator.
+`/api/votes/community` returns
+aggregate active choices without participant identifiers or a visitor cookie;
+replacement ballots replace their previous contribution. This is raw vote share,
+not the demographic Luce ranking. Empty/error states preserve the start action.
+The API eagerly loads active choices at startup and maintains the aggregate in
+memory after successful commits (including revotes and inbox recovery). Reads
+do not query SQLite; failed/obsolete writes do not change the cache. This assumes
+one API instance; external database edits require a restart. Responses and browser
+fetches use `no-store`; the page fetches on mount, reload and restoration from the
+back/forward cache. The optional development snapshot below still overrides the
+local API response when present.
+Prepared for local review only at http://127.0.0.1:5174/; NOT deployed.
+The preview uses an aggregate production snapshot (770 active comparisons,
+2026-10-16 15:15 UTC), stored in ignored `data/voice-vote/community-preview.json`.
+Only the Vite development server reads this optional file; removing it restores
+the local API counters. The production database and local ballots are unchanged.
+Sector labels follow each sector's area centroid instead of a fixed radius.
+The welcome-only layout targets a Full HD 16:9 screen with approximately 900 px
+of usable browser height, allowing for browser controls and bookmarks. The
+illustration retains its original 240 px desktop width. The main area distributes
+available viewport height between the welcome and chart blocks, avoiding a large
+empty lower third on tall windows. The chart grows from 320 to 380 px with height;
+windows up to 1000 px high place the illustration beside the description and use
+a 300 px chart. Text sizes are retained. Verified without scrolling at 1920x900,
+1920x1080, 2048x1024, 2560x1280 and 1600x780, including selected-sector details.
+Natural scrolling remains available when needed; voting layout is unaffected.
+All 48 backend tests and desktop/mobile rendering, empty/single-library results,
+retry and transition checks passed. Screenshots: `artifacts/review/community-*.png`.
+The interactive revision also passed hover/exit, keyboard and touch selection
+checks. Screenshots: `artifacts/review/community-interactive-*.png`.
+The memory-cache tests cover eager restart recovery, reads with the vote table
+unavailable, immutable snapshots, concurrent readers, recording updates, rollback
+and obsolete inbox deliveries. `npm run test:community` verifies fresh fetches on
+mount/reload, back/forward restoration and retry; the frontend build also passes.
+
+## Stalled texture retry (2026-10-16)
+
+Deployed frontend `talkinghead-vote-web:texture-retry-20261016`. Loaded actors
+with incomplete textures and no tracked downloads retry the portrait after
+the readiness timeout, sharing the two-attempt limit with context-loss recovery.
+Slow downloads retain late completion; the comparison and audio remain mounted.
+See [DIAGNOSTICS.md](DIAGNOSTICS.md) for the original Kator incident and limits
+of the evidence. The ranking button remains hidden.
+
+The Docker build passed layout, ranking fixture, audio, catalogue/model cache
+and portrait recovery checks. Seven deliberately aborted texture requests on
+Kator reproduced the failure and recovered both locally and on the public site.
+Public audio preload/volume checks passed; no production ballots were submitted.
+The API container and catalogue hashes were verified unchanged. Models and audio
+were not updated. Previous frontend: `:before-texture-retry-20261016`; image
+metadata backup: `/srv/talkinghead/backups/texture-retry-20261016-122816`.
+Rollback retags the previous image and recreates only `web` with `--no-deps`.
+Evidence: `artifacts/review/texture-retry-*`, `artifacts/review/portrait-1426-*`.
+
+## Unrated groups and missing categories (2026-10-16)
+
+Deployed API `talkinghead-vote-server:unrated-groups-20261016` and the reviewed
+catalogue. Within personally unseen comparisons, known race/sex groups with
+no eligible retained ballots now precede covered and unknown groups. Old
+recording ballots retain group coverage when speaker metadata still matches.
+Weighted group diversity and current-recording coverage remain in each tier.
+
+All seven previously missing groups now have 36 comparisons: dreadlord/male
+(6), human_child/male (11), human_child/female (6), orc_child/male (6),
+orc_child/female (2), quilboar/male (4), and stone_construct/male (1).
+Mangletooth (3430) was already linked to quests 878, 879, 906 and 5052;
+display 1346 / model 125497 establishes the missing quilboar category.
+In total, 38 comparison metadata entries changed, including Rockbiter's
+mountain_giant category (sex unknown) and the newly ambiguous Pins giver for
+quest 94449. Pins is current at `999243d962372f124d337495571176de19807552`.
+Shared metadata was also deployed to ForeverBeta.
+
+Backup: `/srv/talkinghead/backups/empty-groups-20261016-121349`.
+All 757 active ballots and 760 comparison rows were preserved field-for-field;
+SQLite integrity passed. Audio IDs/hashes (11,437 recordings), model assets,
+375 verified optimized packs, and the frontend image are unchanged. The ranking
+button remains hidden. Rollback uses the catalogue pair and previous API image
+`:before-empty-groups-20261016`, preserving the live database and pending inbox.
+
+Validation: server and addon suites passed. Full offline verification completed
+at 1,441/1,442 portraits with only the existing quest 97290 / display 146706
+missing-camera exception. The public queue returned 4,103 unique comparisons
+with the 36 uncovered comparisons first. One representative of each group
+rendered and played every available library recording in the browser; public
+audio preload/volume checks passed. No production ballots were submitted.
+ExportAddonRanking refreshed the local JSON with all 37 groups. The two generic
+child groups remain no_data fallbacks: their remaining NPCs have no quest links,
+and old generic-child ballots do not transfer to corrected human/orc categories.
+Evidence: `artifacts/review/empty-groups-*` and `artifacts/unrated-groups-api-build.log`.
+
+## Compact ranking entries (2026-10-16)
+
+Deployed API image `talkinghead-vote-server:ranking-compact-20261016`.
+Ranking entries now contain only `rank`, `source` and `basis`; the unused
+`tieGroup` field was removed from JSON and its encoded string. Sorting,
+scores and database schema are unchanged. Schema version 1 is still being
+prepared before release of the addon importer. The frontend container was
+verified unchanged; the ranking button remains hidden.
+
+The server verification suite and browser export fixture passed. Public JSON,
+string checksum and the real ExportAddonRanking task were verified with all
+37 groups. Previous API image: `:before-ranking-compact-20261016`; rollback
+requires only retagging and recreating the API, preserving the live database.
+Evidence: `artifacts/ranking-compact-*`.
+
+## Ranking button hidden (2026-10-16)
+
+At the user's request, restored the frontend image
+`talkinghead-vote-web:before-ranking-20261016` and removed the ranking dialog
+entry point from `src/main.jsx`. The public button stays hidden until the
+user workflow is ready. API, database and the ExportAddonRanking task are
+unchanged. The API container was verified unchanged during the web-only update.
+The ranking frontend image remains available for future development.
+
+## Addon community ranking (2026-10-16)
+
+Deployed `talkinghead-vote-server:ranking-20261016` and
+`talkinghead-vote-web:ranking-20261016`. The public “Рейтинг для аддона” dialog
+downloads JSON and copies the same snapshot as a THR1 string. The server fits
+regularized Luce choices per race/sex; library updates do not reduce old ballots.
+The addon importer remains future work. Local download:
+`.\build.cmd -Task ExportAddonRanking`, documented in [BUILD.local.md](../../BUILD.local.md).
+
+SQLite schema 3 enforces one latest ballot per visitor/quest/stage. Migration
+retained all 757 latest ballots from 764 stored rows; seven replaced versions
+remain in the backup. Each retained ballot was compared field-for-field with
+the pre-migration latest-row selection; integrity and uniqueness passed.
+Replay ordering prevents an older inbox delivery from replacing a newer choice.
+
+Pre-migration volume backup: `backups/ranking-20261016-111043` under the private
+application directory. A separate verified database/catalogue archive was
+downloaded to `backups/site-database/20261016-110805-database-snapshot-oum5izhc.tar.gz`.
+The API also created its own SQLite backup before schema conversion. Previous
+images remain tagged `:before-ranking-20261016`. The old API cannot read schema 3;
+rollback requires a compatible data migration or the saved snapshot, with care
+to preserve ballots accepted after deployment. Never restore over newer votes.
+
+Only application images changed in that deployment; catalogue hashes were unchanged.
+The category data below were still unpublished at that point. Bundled ranking metadata
+enumerates 37 known groups; current deployed quest metadata takes precedence.
+The verified export has 28 ranked groups, two partial groups and seven without
+votes, with all three library places present in every group.
+
+Validation: all 40 server tests, Docker frontend audio/layout/cache/ranking gates,
+the actual build download task, and public desktop/mobile ranking checks passed.
+Downloaded JSON exactly matched the decoded string and SHA-256. Public audio
+preloading, playback reuse and volume checks passed with mocked ballots/audio.
+No test ballots were submitted. Evidence: `artifacts/ranking-*`.
+
+## Categories prepared on 2026-10-15 (published 2026-10-16)
+
+The user deferred deployment on 2026-10-15, then requested publication to make
+the missing voting groups available on 2026-10-16. The deployment recorded above
+includes these changes in both the site and installed beta addon:
+
+- `dreadlord`: exact CatQuest Voices label or verified appearance, appearance
+  taking priority; NPC sex is independent. Varimathras (2425) and Lord Banehollow
+  (9516), six voting comparisons.
+- `human_child` / `orc_child`: verified child appearance or known race plus
+  child age, preserving male/female subdivisions. Shared data changed for 33
+  children; the voting catalogue has 17 human-child and eight orc-child comparisons.
+
+- `stone_construct`: verified display 6589 / model 126072, NPC 7918 (quest 2954),
+  preserving `sex=male`. Generic `elemental-golem` voices do not classify robots
+  or other golems.
+- `mountain_giant`: Rockbiter (7765, quest 2844), verified display 1918 / model
+  124952, separate from stone constructs and ogres. Sex remains unknown.
+  Combined local metadata: `artifacts/review/classify-npcs-catalogue/`.
+
+Previous prepared metadata: `artifacts/review/dreadlord-children-catalogue/`; comparison
+diff: `artifacts/review/dreadlord-children-changes.json`. Audio, text, model IDs
+and display IDs are unchanged. New category identities must not inherit old
+generic-child, unknown or scourge ballots. Server exporter regressions cover
+this separation; the completed publication gates are recorded above.
+
+## Imp category (2026-10-14)
+
+Imported Wayfarer's exact `imp-male` as `imp/male`, ahead of broad CatQuest
+NPC demographics and `goblin-male` voice labels. Only Impsy (14470) changed;
+affected comparisons: 7602, 7603, 8420, 8421, 8422. The rule is in the shared
+importer and generator, with regressions for priority, speaker identity and
+ambiguous labels. It is also installed in ForeverBeta. Quest Pins is current
+at `30106821e96e90df5f171c195ff15a68689b471b`.
+
+The addon suite, source checks, five exporter tests and audio preload tests
+passed. Full offline verification completed at 1,441/1,442 portraits, retaining
+only the known quest 97290 / display 146706 missing-camera exception. Existing
+375 optimized packs, models, audio paths and application images are unchanged.
+
+Backup: `/srv/talkinghead/backups/imp-20261014-193826`.
+Preserved all 708 existing vote/comparison records and the pending inbox;
+SQLite integrity passed. Old goblin-category ballots remain historical and
+do not contribute to current demographic results for these comparisons.
+Evidence: `artifacts/review/imp-*`. Rollback restores the catalogue pair from
+the backup and restarts services, retaining the live votes volume.
+Public quests 8421 and 7602 reached ready with `imp/male` and played successfully;
+the public audio preload and volume regression passed without production ballots.
+
+## Water elemental category (2026-10-14)
+
+Imported the explicit `elemental-water` label from CatQuest Voices and Wayfarer
+as `elemental_water`, with canonical `sex=male` for one unsexed group. Both
+libraries identify Duke Hydraxis (13278); CatQuest's NPC table had empty race/sex.
+The shared generator now classifies NPCs 5895, 11862 and 13278, whose three
+appearances resolve to water elemental model 126426. Updated 11 comparisons.
+Historical null/orc-category ballots remain historical and are not inherited.
+The new ResultsExporter regression verifies separate current/historical counts.
+
+Forever Quest Pins advanced to `30106821e96e90df5f171c195ff15a68689b471b`
+(3,982 source quests); merged quest-giver relationships did not change.
+Shared metadata passed import/check tests and the addon suite, and was deployed
+to ForeverBeta. Offline verification completed at 1,441/1,442 portraits with
+only the known quest 97290 / display 146706 missing-camera exception.
+Model assets, optimized derivatives and application images were unchanged.
+
+Backup: `/srv/talkinghead/backups/hydraxis-20261014-155025`.
+All 696 existing vote/comparison records and deployed audio paths were preserved;
+SQLite integrity passed. Public quests 7486, 96 and 6562 reached ready with
+`elemental_water/male` and played successfully. Public audio preloading and volume
+checks passed without test ballots. Evidence: `artifacts/review/hydraxis-*`.
+Rollback uses the two catalogue JSON files from the backup; preserve the live
+votes volume and restart services after restoring the catalogue pair.
+
 ## Weighted voice-group queue (2026-10-14)
 
 Deployed `talkinghead-vote-server:group-queue-20261014` from commit `fabaa5f`.
@@ -147,11 +382,12 @@ HTTPS and proxies the entire site to `127.0.0.1:8080`. Java has no public port.
 
 ## Current host
 
-- Server: `81.19.135.168`, Ubuntu 26.04, 1 vCPU, 2 GB RAM, 30 GB disk.
+- Server connection: private `config/build.env.local.ps1` (`TALKINGHEAD_SITE_SSH_HOST`).
+  Ubuntu 26.04, 1 vCPU, 2 GB RAM, 30 GB disk.
 - Site: https://talkingheadru.tw1.ru/ (free Timeweb technical domain).
 - Admin panel: https://talkingheadru.tw1.ru/admin/.
 - Application directory: `/srv/talkinghead`.
-- SSH key: `~/.ssh/talkinghead_timeweb_ed25519` on the administrator's computer.
+- SSH key: private `TALKINGHEAD_SITE_SSH_KEY` in the same local configuration.
 - Public firewall ports: SSH 22, HTTP 80 for ACME/redirect, HTTPS 443.
 - A 1 GB swap file provides emergency headroom; it is not a RAM replacement.
 
@@ -193,6 +429,8 @@ ID also use the placeholder. Keep this exception visible in cache audit reports.
 Do not run `docker compose down --volumes` on this deployment. Back up both
 SQLite and its pending inbox, following the [server backup instructions](../../server/voice-vote/DOCKER.md).
 Aggregate exports from the admin panel do not replace a database backup.
+Download a complete database snapshot with `build.cmd -Task BackupSiteDatabase`;
+see [local backup and recovery instructions](../../BUILD.local.md#backupsitedatabase--скачать-полную-резервную-копию-базы-сайта).
 
 ## Initial host check
 

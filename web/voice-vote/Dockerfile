@@ -11,11 +11,16 @@ COPY web/voice-vote/docker/vite.config.mjs docker/vite.config.mjs
 COPY web/voice-vote/tests/audio-preload.test.mjs web/voice-vote/tests/audio-preload-browser.mjs tests/
 COPY web/voice-vote/tests/portrait-pack.test.mjs tests/
 COPY web/voice-vote/tests/head-layout-browser.mjs tests/
+COPY web/voice-vote/tests/portrait-loading-browser.mjs tests/
+COPY web/voice-vote/tests/fixtures/delayed-portrait.js tests/fixtures/
+COPY web/voice-vote/tests/ranking-export-browser.mjs web/voice-vote/tests/ranking-export-fixture.html web/voice-vote/tests/ranking-export-fixture.jsx tests/
+COPY web/voice-vote/tests/community-results-browser.mjs web/voice-vote/tests/community-results-fixture.jsx tests/
 COPY web/voice-vote/tests/catalogue-cache-browser.mjs tests/
 COPY web/voice-vote/tests/model-cache-browser.mjs web/voice-vote/tests/model-versions.test.mjs tests/
 COPY web/voice-vote/model-versions.mjs ./
 COPY web/voice-vote/portrait-pack.mjs web/voice-vote/portrait-pack-store.mjs ./
-RUN node --test tests/audio-preload.test.mjs tests/portrait-pack.test.mjs tests/model-versions.test.mjs && npm run test:layout && npm run test:audio && node tests/catalogue-cache-browser.mjs && node tests/model-cache-browser.mjs
+RUN node --test tests/audio-preload.test.mjs tests/portrait-pack.test.mjs tests/model-versions.test.mjs && npm run test:layout && npm run test:ranking && npm run test:community && npm run test:audio && node tests/catalogue-cache-browser.mjs && node tests/model-cache-browser.mjs
+RUN npm run test:portraits
 RUN npm run build -- --config docker/vite.config.mjs
 
 FROM node:24-alpine AS runtime

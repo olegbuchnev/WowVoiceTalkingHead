@@ -34,6 +34,10 @@ public class VoteController {
         return store.visitor(token);
     }
     @GetMapping("/health") public Map<String,String> health() { return Map.of("app", "talkinghead-vote-server"); }
+    @GetMapping("/community") public VoteStore.Summary community(HttpServletResponse response) throws Exception {
+        response.setHeader("Cache-Control", "no-store");
+        return store.communitySummary();
+    }
     @GetMapping("/summary") public VoteStore.Summary summary(HttpServletRequest request, HttpServletResponse response) throws Exception {
         response.setHeader("Cache-Control", "no-store");
         String id = visitor(request);

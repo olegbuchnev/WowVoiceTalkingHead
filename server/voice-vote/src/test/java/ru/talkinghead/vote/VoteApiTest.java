@@ -42,8 +42,35 @@ class VoteApiTest {
         base="http://127.0.0.1:"+context.getEnvironment().getProperty("local.server.port");
     }
     @AfterEach void close() {if(context!=null)context.close();}
+    @Test void publicRankingExportsSameJsonAndImportStringWithoutVisitorCookie() throws Exception {
+        var response=browser.send(HttpRequest.newBuilder(URI.create(base+"/api/votes/ranking/export")).GET().build(),HttpResponse.BodyHandlers.ofString());
+        assertEquals(200,response.statusCode());assertEquals("no-store",response.headers().firstValue("cache-control").orElseThrow());
+        var data=mapper.readTree(response.body());String json=data.get("json").asString();
+        String encoded=data.get("importString").asString();var parts=encoded.substring(5).split("\\.");
+        byte[] bytes=Base64.getUrlDecoder().decode(parts[0]);
+        assertEquals(json,new String(bytes,java.nio.charset.StandardCharsets.UTF_8));assertEquals(Catalogue.hash(bytes),parts[1]);
+        var download=browser.send(HttpRequest.newBuilder(URI.create(base+"/api/votes/ranking")).GET().build(),HttpResponse.BodyHandlers.ofString());
+        assertEquals(json,download.body());assertTrue(download.headers().firstValue("content-disposition").orElseThrow().contains("addon-voice-ranking.json"));
+    }
     HttpResponse<String> summary() throws Exception {
         return browser.send(HttpRequest.newBuilder(URI.create(base+"/api/votes/summary")).GET().build(),HttpResponse.BodyHandlers.ofString());
+    }
+    @Test void communityCountsLatestChoicesAcrossVisitorsWithoutCreatingCookie() throws Exception {
+        var request=HttpRequest.newBuilder(URI.create(base+"/api/votes/community")).GET().build();
+        var anonymous=HttpClient.newHttpClient();
+        var initial=anonymous.send(request,HttpResponse.BodyHandlers.ofString());
+        assertEquals(0,total(initial));assertTrue(initial.headers().firstValue("set-cookie").isEmpty());
+        assertEquals("no-store",initial.headers().firstValue("cache-control").orElseThrow());
+        var store=context.getBean(VoteStore.class);
+        var one=store.createVisitor();var two=store.createVisitor();
+        store.save(one.id(),quest,first);store.save(two.id(),quest,first);
+        store.save(one.id(),quest,second);
+        var result=anonymous.send(request,HttpResponse.BodyHandlers.ofString());
+        assertEquals(2,total(result));
+        var counts=mapper.readTree(result.body()).get("counts");
+        assertEquals(1,counts.get("WowVoice").asLong());assertEquals(1,counts.get("CatQuest").asLong());
+        assertEquals(0,counts.get("Wayfarer").asLong());
+        assertTrue(result.headers().firstValue("set-cookie").isEmpty());
     }
     String ballot(String selected) {return mapper.writeValueAsString(new VoteController.Ballot(179,selected,List.of(first,second)));}
     HttpResponse<String> post(String body,String origin) throws Exception {
@@ -109,7 +136,7 @@ class VoteApiTest {
         var updated=variant("d".repeat(24),previous.source(),previous.pack(),"3","e".repeat(64));
         quest=new Catalogue.Quest(quest.questID(),quest.npc(),List.of(updated,quest.variants().get(1)));writeCatalogue();
         var body=mapper.writeValueAsString(new VoteController.Ballot(179,updated.id(),List.of(updated.id(),second)));
-        assertEquals(2,total(post(body,base)));
+        assertEquals(1,total(post(body,base)));
     }
 
     List<VoteStore.Priority> queue() throws Exception {
@@ -163,14 +190,13 @@ class VoteApiTest {
         var quests=List.of(quest,secondDwarf,orc,otherOrc);
         Files.writeString(catalogueFile,mapper.writeValueAsString(new Catalogue.Snapshot(2,quests)));
         var store=context.getBean(VoteStore.class);
-        // Coverage would put both dwarves first without group rotation.
+        // Groups without any eligible ballots must precede covered groups.
         store.save(store.createVisitor().id(),orc,first);
         store.save(store.createVisitor().id(),otherOrc,first);
         summary();
         var initialFirsts=new HashSet<Long>();
         for(int i=0;i<40;i++) initialFirsts.add(queue().getFirst().questID());
-        assertTrue(initialFirsts.stream().anyMatch(Set.of(8L,9L)::contains),"Controller must not re-sort groups by quest coverage");
-        assertTrue(initialFirsts.stream().anyMatch(Set.of(179L,7L)::contains));
+        assertTrue(Set.of(179L,7L).containsAll(initialFirsts),"Only the group without votes gets first priority");
         post(ballot(first),base);
         assertFalse(queue().getFirst().rated());
         restart();

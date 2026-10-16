@@ -18,7 +18,8 @@ const POLICY = {
   appearances:['catquest','wayfarer','verified-supplement'],
   raceClassification:'verified-appearance-before-library-voice-label',
   creatureCategories:['verified-appearance','catquest-voice','wayfarer-voice','catquest-npc'],
-  unsexedCreatureCategories:{ancient:'male',furbolg:'male'},
+  unsexedCreatureCategories:{ancient:'male',furbolg:'male',elemental_water:'male'},
+  childCategories:{human:'human_child',orc:'orc_child'},
   protectedExclusions:['multiple-or-conflicting-starters']
 };
 
@@ -105,6 +106,10 @@ function merge({ classic, pins, cat, catAudio = {entries:{}}, wayfarer = {givers
   for (const [id, metadata] of Object.entries(creatureVoices)) {
     (npcs[id] ||= {}).race = metadata.voiceRace;
     (origins.npcs[id] ||= {}).race = 'catquest-voice';
+    if (metadata.voiceSex) {
+      npcs[id].sex = metadata.voiceSex;
+      origins.npcs[id].sex = 'catquest-voice';
+    }
   }
   const appearanceConflicts = [];
   for (const [id,npc] of sorted(wayfarer.npcs)) {
@@ -118,9 +123,13 @@ function merge({ classic, pins, cat, catAudio = {entries:{}}, wayfarer = {givers
       origins.npcs[id] ||= {}; origins.npcs[id].displayID = 'wayfarer';
     }
     addName(Number(id),npc.name,'wayfarer');
-    if (!creatureVoices[id] && ['ancient','furbolg','banshee'].includes(npc.voiceRace)) {
+    if (!creatureVoices[id] && ['ancient','furbolg','banshee','dreadlord','elemental_water','imp'].includes(npc.voiceRace)) {
       existing.race = npc.voiceRace;
       (origins.npcs[id] ||= {}).race = 'wayfarer-voice';
+      if (npc.voiceRace === 'imp' && npc.voiceSex === 'male') {
+        existing.sex = npc.voiceSex;
+        origins.npcs[id].sex = 'wayfarer-voice';
+      }
     }
     if (npc.ageGroup === 'child' && ['male','female'].includes(npc.sex))
       fillChildMetadata(id,{ageGroup:npc.ageGroup,sex:npc.sex},'wayfarer-voice');
@@ -161,6 +170,14 @@ function merge({ classic, pins, cat, catAudio = {entries:{}}, wayfarer = {givers
     if (classification) {
       npc.race = classification.race;
       (origins.npcs[id] ||= {}).race = 'verified-appearance';
+    }
+    if (npc.ageGroup === 'child' && POLICY.childCategories[npc.race]) {
+      npc.race = POLICY.childCategories[npc.race];
+      (origins.npcs[id] ||= {}).race = 'known-race-and-child-age';
+    }
+    if (Object.values(POLICY.childCategories).includes(npc.race) && npc.ageGroup !== 'child') {
+      npc.ageGroup = 'child';
+      (origins.npcs[id] ||= {}).ageGroup = 'verified-child-category';
     }
     // These vote categories intentionally have no male/female subdivisions.
     // "male" is the schema's canonical grouping value, not a biological claim.

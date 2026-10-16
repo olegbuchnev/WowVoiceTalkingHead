@@ -6,6 +6,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class VoteApplication {
     public static void main(String[] args) throws Exception {
+        if(args.length>0 && args[0].equals("export-addon-ranking")) {
+            AddonRanking.main(java.util.Arrays.copyOfRange(args,1,args.length));return;
+        }
         if (args.length == 1 && args[0].equals("healthcheck")) {
             String port=System.getenv().getOrDefault("VOICE_VOTE_PORT","8081");
             try (var client=java.net.http.HttpClient.newBuilder().connectTimeout(java.time.Duration.ofSeconds(3)).build()) {
