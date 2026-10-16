@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "reason": "User decision 2026-10-16: the three OOX mechanical chickens are read by the narrator, regardless of the library voice label. Only their own quest roles are overridden; Oglethorpe Obnoticus retains his dialogue.",
+  "givers": {
+    "648": { "expectedNPC": 7784, "narrator": true },
+    "836": { "expectedNPC": 7806, "narrator": true },
+    "2767": { "expectedNPC": 7807, "narrator": true }
+  },
+  "finishers": {
+    "351": { "expectedNPC": 7784, "narrator": true },
+    "485": { "expectedNPC": 7806, "narrator": true },
+    "2766": { "expectedNPC": 7807, "narrator": true }
+  }
+}

@@ -45,7 +45,8 @@
     },
     "protectedExclusions": [
       "multiple-or-conflicting-starters"
-    ]
+    ],
+    "speakerOverrides": "explicit-quest-role-with-expected-NPC; preserve-protected-exclusions"
   },
   "sources": {
     "pins": {
@@ -85,9 +86,10 @@
     "classic": "f13f9d3b8ee7ba01de59ed02ef8a5b729ec532805e65e4b0ac23d7f67dd0e1e2",
     "pins": "0df871d8833cdbe5668754398dec1b0bff31a41ec66381deacc12d68fdc33b78",
     "cat": "5b1e2f83b9cebdab832cb55078755684338ca1d732340d42c2894280165b5399",
-    "wayfarer": "c5e3297e72469889a8447be77737d94a7e82232b48627e38ec55408025789fa1",
+    "wayfarer": "a81fa1b53f07fdc058973444c570c52c783706d926dedeebe0ff5b5137544ef5",
     "supplements": "0731d8abbf00f9c01111f601620b6deaea6ebbbc27887bf5807056d1c006ef49",
-    "raceClassifications": "e1e15d3e20f15de5efbe511e5c361b3ac92f1dc8a1ee7aef48739c4da0e698a2",
+    "raceClassifications": "d5244f57c8d7662edf54ba33a1f5f34beff5d372b8948c04674c84da84564cae",
+    "speakerOverrides": "80993d317bce9b3826b9e57f034ab5596da2d6fb15da9bae1ffe57e582a8032c",
     "catAudio": "1e34e23f8688a4e95a640db75ee4676499f2a1139b8eb36572b68f91dbd1ae6e"
   },
   "counts": {
@@ -707,7 +709,7 @@
       "645": "catquest",
       "646": "catquest",
       "647": "catquest",
-      "648": "catquest",
+      "648": "manual-narrator",
       "649": "catquest",
       "650": "catquest",
       "654": "catquest",
@@ -874,7 +876,7 @@
       "833": "catquest",
       "834": "catquest",
       "835": "catquest",
-      "836": "catquest",
+      "836": "manual-narrator",
       "837": "catquest",
       "838": "catquest",
       "840": "catquest",
@@ -1715,7 +1717,7 @@
       "2764": "catquest",
       "2765": "catquest",
       "2766": "catquest",
-      "2767": "catquest",
+      "2767": "manual-narrator",
       "2768": "catquest",
       "2769": "catquest",
       "2770": "catquest",
@@ -5380,7 +5382,7 @@
       "348": "catquest",
       "349": "catquest",
       "350": "catquest",
-      "351": "catquest",
+      "351": "manual-narrator",
       "353": "catquest",
       "354": "catquest",
       "355": "catquest",
@@ -5502,7 +5504,7 @@
       "482": "catquest",
       "483": "catquest",
       "484": "catquest",
-      "485": "catquest",
+      "485": "manual-narrator",
       "486": "catquest",
       "487": "catquest",
       "488": "catquest",
@@ -6628,7 +6630,7 @@
       "2763": "catquest",
       "2764": "catquest",
       "2765": "catquest",
-      "2766": "catquest",
+      "2766": "manual-narrator",
       "2767": "catquest",
       "2768": "catquest",
       "2769": "catquest",
@@ -14594,6 +14596,8 @@
       },
       "5398": {
         "displayID": "catquest",
+        "race": "verified-appearance",
+        "sex": "wayfarer-voice",
         "name": "catquest"
       },
       "5403": {
@@ -17271,6 +17275,8 @@
       },
       "12238": {
         "displayID": "wayfarer",
+        "race": "wayfarer-voice",
+        "sex": "wayfarer-voice",
         "name": "catquest"
       },
       "12277": {
@@ -17598,10 +17604,14 @@
       },
       "13716": {
         "displayID": "wayfarer",
+        "race": "wayfarer-voice",
+        "sex": "wayfarer-voice",
         "name": "catquest"
       },
       "13717": {
         "displayID": "catquest",
+        "race": "wayfarer-voice",
+        "sex": "wayfarer-voice",
         "name": "catquest"
       },
       "13776": {
@@ -22927,6 +22937,54 @@
       "selectedNPC": 13636,
       "rejected": "classic",
       "rejectedNPC": 13602
+    },
+    {
+      "questId": 648,
+      "role": "givers",
+      "selected": "manual-narrator",
+      "selectedNPC": false,
+      "rejected": "catquest",
+      "rejectedNPC": 7784
+    },
+    {
+      "questId": 836,
+      "role": "givers",
+      "selected": "manual-narrator",
+      "selectedNPC": false,
+      "rejected": "catquest",
+      "rejectedNPC": 7806
+    },
+    {
+      "questId": 2767,
+      "role": "givers",
+      "selected": "manual-narrator",
+      "selectedNPC": false,
+      "rejected": "catquest",
+      "rejectedNPC": 7807
+    },
+    {
+      "questId": 351,
+      "role": "finishers",
+      "selected": "manual-narrator",
+      "selectedNPC": false,
+      "rejected": "catquest",
+      "rejectedNPC": 7784
+    },
+    {
+      "questId": 485,
+      "role": "finishers",
+      "selected": "manual-narrator",
+      "selectedNPC": false,
+      "rejected": "catquest",
+      "rejectedNPC": 7806
+    },
+    {
+      "questId": 2766,
+      "role": "finishers",
+      "selected": "manual-narrator",
+      "selectedNPC": false,
+      "rejected": "catquest",
+      "rejectedNPC": 7807
     }
   ],
   "appearanceConflicts": []

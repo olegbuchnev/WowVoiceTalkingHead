@@ -10343,7 +10343,9 @@
     },
     "5398": {
       "displayID": 1258,
-      "name": "Варуг"
+      "name": "Варуг",
+      "voiceRace": "centaur",
+      "voiceSex": "male"
     },
     "5411": {
       "displayID": 7217,
@@ -12391,7 +12393,9 @@
     },
     "12238": {
       "displayID": 12369,
-      "name": "Дух Зейтара"
+      "name": "Дух Зейтара",
+      "voiceRace": "centaur",
+      "voiceSex": "male"
     },
     "12277": {
       "displayID": 12409,
@@ -12610,11 +12614,15 @@
     },
     "13716": {
       "displayID": 13715,
-      "name": "Селебрас Искупленный"
+      "name": "Селебрас Искупленный",
+      "voiceRace": "centaur",
+      "voiceSex": "male"
     },
     "13717": {
       "displayID": 9419,
-      "name": "Кентавр-пария"
+      "name": "Кентавр-пария",
+      "voiceRace": "centaur",
+      "voiceSex": "male"
     },
     "13776": {
       "displayID": 13851,

@@ -986,6 +986,15 @@ race/sex preference is inferred. The portrait becomes a scroll labelled Narrator
 All three TOCs load it. `Index.lua` still serves quest/audio recognition, but
 Portrait.lua no longer builds or searches a reverse Classic index.
 
+Reviewed narrator decisions are stored in `docs/internal/speaker-overrides.json`,
+by quest and role, with the expected NPC as a guard against changed source data.
+They take precedence over library labels but retain protected ambiguous mappings.
+The three OOX chickens use narration for descriptions 648/836/2767 and receiving
+roles 351/485/2766; Oglethorpe retains his own completion dialogue. Physical NPC
+records and captured client identities are unchanged by these static overrides.
+Wayfarer's exact `centaur-male` label supplies `centaur/male` for its own speakers;
+Varug's display 1258 independently confirms the centaur model 123170.
+
 Live/captured identity and appearance win on every client locale. An exact
 starter item found in bags also wins over static giver metadata. Otherwise,
 descriptions and journal replays use `givers`; progress/completion use only

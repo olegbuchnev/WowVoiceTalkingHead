@@ -32,6 +32,24 @@ const inputs = {
   }]))}
 };
 const result = merge(inputs);
+assert.deepEqual(creatureVoiceMetadata([
+  {npcID:1,voice:'centaur-male'},
+  {npcID:2,voice:'centaur-male'},{npcID:2,voice:'ogre-male'},
+  {npcID:3,voice:'named/5398'},
+]),{1:{voiceRace:'centaur',voiceSex:'male'}},'Only an unambiguous centaur label supplies race and sex');
+const centaurInputs=structuredClone(inputs);
+centaurInputs.cat.tables.NpcData[10]={2:'male',3:1258};
+centaurInputs.wayfarer.npcs[20]={voiceRace:'centaur',voiceSex:'male'};
+centaurInputs.raceClassifications={schemaVersion:1,appearances:{1258:{race:'centaur',modelFileID:123170}},
+  models:{123170:{race:'centaur',file:'creature/centaur/centaur.m2',source:'https://example.org/listfile'}}};
+let centaurs=merge(centaurInputs).database.npcs;
+assert.equal(centaurs[10].race,'centaur','Verified Varug appearance supplies the missing race');
+assert.equal(centaurs[10].sex,'male');
+assert.equal(centaurs[20].race,'centaur','Explicit Wayfarer voice supplies the category independently of the appearance');
+assert.equal(centaurs[20].sex,'male');
+assert.equal(centaurs[30].race,undefined,'An unverified NPC does not inherit another appearance classification');
+delete centaurInputs.cat.tables.NpcData[10][2];
+assert.equal(merge(centaurInputs).database.npcs[10].sex,undefined,'Appearance alone does not assign centaur sex');
 const classifiedInputs=structuredClone(inputs);
 classifiedInputs.cat.tables.NpcData[10]={1:'tauren',2:'female',3:111};
 classifiedInputs.cat.tables.NpcData[20]={1:'tauren',2:'male',3:222};
@@ -212,9 +230,36 @@ assert.deepEqual(narrated.database.givers[12],{narrator:true},'Wayfarer narrator
 assert.equal(narrated.database.finishers[12].npcID,121,'Description narration keeps the receiving NPC');
 assert.equal(narrated.database.givers[8].npcID,80,'Completion narration does not change the description speaker');
 assert(!('undefined' in narrated.database.npcs));
+const overrides={schemaVersion:1,reason:'Reviewed narration',
+  givers:{7:{expectedNPC:70,narrator:true},2:{expectedNPC:99,narrator:true}},
+  finishers:{1:{expectedNPC:20,narrator:true}}};
+const manual=merge({...inputs,speakerOverrides:overrides});
+assert.deepEqual(manual.database.givers[7],{narrator:true},'Explicit narration overrides the library speaker');
+assert.equal(manual.origins.givers[7],'manual-narrator');
+assert.deepEqual(manual.database.finishers[1],{narrator:true},'Narration applies to the reviewed receiving role');
+assert.equal(manual.database.givers[1].npcID,999,'Receiving narration never changes the quest giver');
+assert.equal(manual.database.givers[2],false,'Manual narration cannot undo a protected exclusion');
+assert.equal(manual.database.givers[8].npcID,80,'Unreviewed quests stay untouched');
+assert.deepEqual(manual.database.npcs,result.database.npcs,'Narration never rewrites NPC identities or appearances');
+assert.throws(()=>merge({...inputs,speakerOverrides:{...overrides,givers:{7:{expectedNPC:999,narrator:true}}}}),/no longer matches/);
+assert.deepEqual(merge({...inputs,catAudio:{entries:{'7a':{voice:'narrator'}}},speakerOverrides:overrides}).database.givers[7],
+  {narrator:true},'A later library narrator label remains compatible with the manual decision');
 const {dataTable}=require('../tools/import-forever-audio');
 const current=dataTable(require('path').join(__dirname,'../src/Speakers.lua'),'TalkingHeadRuSpeakers');
+for (const [rescue,find,npcID] of [[648,351,7784],[836,485,7806],[2767,2766,7807]]) {
+  assert.deepEqual(current.givers[rescue],{narrator:true},'OOX descriptions use the reviewed narrator policy');
+  assert.deepEqual(current.finishers[find],{narrator:true},'Reading at the robot uses the narrator');
+  assert.equal(current.finishers[rescue].npcID,7406,'Oglethorpe retains his own completion dialogue');
+  assert.equal(current.npcs[npcID].displayID,6909,'The physical robot is preserved in the NPC database');
+  assert.equal(current.npcs[npcID].race,undefined,'Narrator policy does not make a robot a gnome');
+}
+assert.equal(current.finishers[3721].npcID,7406,'The mechanical chicken reward quest still belongs to Oglethorpe');
 assert.equal(current.npcs[3430].race,'quilboar','Mangletooth classification survives regeneration');
+for(const id of [5398,12238,13716,13717]) {
+  assert.equal(current.npcs[id].race,'centaur','Exact centaur metadata survives regeneration');
+  assert.equal(current.npcs[id].sex,'male');
+}
+assert.equal(current.givers[1381].npcID,5398);
 assert.equal(current.npcs[3430].sex,'male');
 for(const id of [878,879,906,5052]) assert.equal(current.givers[id].npcID,3430,'Existing quest links are preserved');
 assert.equal(current.npcs[14470].race,'imp','Impsy classification survives regeneration');

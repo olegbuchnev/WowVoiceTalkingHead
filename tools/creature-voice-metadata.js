@@ -6,6 +6,7 @@ const labels = new Map([
   ['creature/dreadlord','dreadlord'],
   ['elemental-water','elemental_water'],
   ['imp-male','imp'],
+  ['centaur-male','centaur'],
 ]);
 function creatureVoiceMetadata(observations) {
   const byNPC = new Map();
@@ -18,7 +19,7 @@ function creatureVoiceMetadata(observations) {
   for (const [id,races] of byNPC) if (races.size===1 && !races.has(null)) {
     const race = [...races][0];
     result[id] = {voiceRace:race};
-    if (race === 'imp') result[id].voiceSex = 'male';
+    if (race === 'imp' || race === 'centaur') result[id].voiceSex = 'male';
   }
   return result;
 }

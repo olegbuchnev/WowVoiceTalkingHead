@@ -16,6 +16,10 @@
     "sex": "male"
   },
   {
+    "race": "centaur",
+    "sex": "male"
+  },
+  {
     "race": "child",
     "sex": "female"
   },

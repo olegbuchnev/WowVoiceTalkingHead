@@ -20,10 +20,11 @@ const POLICY = {
   creatureCategories:['verified-appearance','catquest-voice','wayfarer-voice','catquest-npc'],
   unsexedCreatureCategories:{ancient:'male',furbolg:'male',elemental_water:'male'},
   childCategories:{human:'human_child',orc:'orc_child'},
-  protectedExclusions:['multiple-or-conflicting-starters']
+  protectedExclusions:['multiple-or-conflicting-starters'],
+  speakerOverrides:'explicit-quest-role-with-expected-NPC; preserve-protected-exclusions'
 };
 
-function merge({ classic, pins, cat, catAudio = {entries:{}}, wayfarer = {givers:{},finishers:{},npcs:{}}, supplements = {schemaVersion:1,npcs:{}}, raceClassifications = {schemaVersion:1,appearances:{},models:{}} }) {
+function merge({ classic, pins, cat, catAudio = {entries:{}}, wayfarer = {givers:{},finishers:{},npcs:{}}, supplements = {schemaVersion:1,npcs:{}}, raceClassifications = {schemaVersion:1,appearances:{},models:{}}, speakerOverrides = {schemaVersion:1,givers:{},finishers:{}} }) {
   const givers = {}, finishers = {}, npcs = {}, origins = {givers:{}, finishers:{}, npcs:{}}, conflicts = [];
   const names = new Map();
   function addName(id, name, source) {
@@ -76,6 +77,23 @@ function merge({ classic, pins, cat, catAudio = {entries:{}}, wayfarer = {givers
   for (const source of POLICY.finishers) for (const [id, entry] of sorted(finisherSources[source])) {
     if (entry !== null) set('finishers', id, entry, source);
   }
+  // Reviewed narration is a quest-role decision, not an NPC race or a voice label.
+  if (speakerOverrides.schemaVersion !== 1 || !speakerOverrides.givers || !speakerOverrides.finishers)
+    throw Error('Invalid speaker overrides');
+  for (const [role,target] of [['givers',givers],['finishers',finishers]]) {
+    for (const [id,entry] of Object.entries(speakerOverrides[role])) {
+      if (!positive(Number(id)) || !positive(entry.expectedNPC) || entry.narrator !== true || !speakerOverrides.reason?.trim())
+        throw Error('Invalid narrator override: '+role+'/'+id);
+      const previous=target[id];
+      if (previous === false) continue; // Explicit ambiguous identities remain blocked.
+      if (!previous || (!previous.narrator && previous.npcID !== entry.expectedNPC))
+        throw Error('Narrator override no longer matches its NPC: '+role+'/'+id);
+      if (!previous.narrator) conflicts.push({questId:Number(id),role,selected:'manual-narrator',selectedNPC:false,
+        rejected:origins[role][id],rejectedNPC:previous.npcID});
+      target[id]={narrator:true};
+      origins[role][id]='manual-narrator';
+    }
+  }
   for (const [id, npc] of sorted(cat.tables.NpcData)) {
     if (!positive(Number(id)) || (npc[3] != null && !positive(npc[3]))) throw Error('Invalid NPC/model ID');
     npcs[id] = {};
@@ -123,10 +141,10 @@ function merge({ classic, pins, cat, catAudio = {entries:{}}, wayfarer = {givers
       origins.npcs[id] ||= {}; origins.npcs[id].displayID = 'wayfarer';
     }
     addName(Number(id),npc.name,'wayfarer');
-    if (!creatureVoices[id] && ['ancient','furbolg','banshee','dreadlord','elemental_water','imp'].includes(npc.voiceRace)) {
+    if (!creatureVoices[id] && ['ancient','furbolg','banshee','dreadlord','elemental_water','imp','centaur'].includes(npc.voiceRace)) {
       existing.race = npc.voiceRace;
       (origins.npcs[id] ||= {}).race = 'wayfarer-voice';
-      if (npc.voiceRace === 'imp' && npc.voiceSex === 'male') {
+      if (['imp','centaur'].includes(npc.voiceRace) && npc.voiceSex === 'male') {
         existing.sex = npc.voiceSex;
         origins.npcs[id].sex = 'wayfarer-voice';
       }
@@ -219,8 +237,8 @@ function render(database) {
 function generate(check = false) {
   const files = {classic:'src/Index.lua',
     pins:'docs/internal/forever-pins-speakers-source.json', cat:'docs/internal/catquest-speakers-source.json', wayfarer:'docs/internal/wayfarer-speakers-source.json',
-    supplements:'docs/internal/npc-appearance-supplements.json',raceClassifications:'docs/internal/npc-race-classifications.json',catAudio:'src/CatQuestAudio.lua'};
-  const inputs = {classic:dataTable(path.join(root,files.classic)), pins:read(files.pins), cat:read(files.cat), wayfarer:read(files.wayfarer), supplements:read(files.supplements),raceClassifications:read(files.raceClassifications),catAudio:dataTable(path.join(root,files.catAudio))};
+    supplements:'docs/internal/npc-appearance-supplements.json',raceClassifications:'docs/internal/npc-race-classifications.json',speakerOverrides:'docs/internal/speaker-overrides.json',catAudio:'src/CatQuestAudio.lua'};
+  const inputs = {classic:dataTable(path.join(root,files.classic)), pins:read(files.pins), cat:read(files.cat), wayfarer:read(files.wayfarer), supplements:read(files.supplements),raceClassifications:read(files.raceClassifications),speakerOverrides:read(files.speakerOverrides),catAudio:dataTable(path.join(root,files.catAudio))};
   const result = merge(inputs);
   const report = {schemaVersion:1, policy:POLICY, sources:{
     pins:{commit:inputs.pins.commit, attCommit:inputs.pins.attCommit},

@@ -139,6 +139,23 @@ class ResultsExporterTest {
             assertTrue(updated.raceSex().stream().allMatch(g->"quilboar".equals(g.race()) && "male".equals(g.sex())));
         }
     }
+    @Test void centaursDoNotInheritUnknownRaceVotes() throws Exception {
+        Path database=directory.resolve("votes.sqlite"),catalogue=directory.resolve("catalogue.json");
+        var a=variant('a',"WowVoice","1");var b=variant('b',"CatQuest","1");
+        var old=new Catalogue.Quest(1381,new Catalogue.Npc(5398,1258,123170,null,"male"),List.of(a,b));
+        var corrected=new Catalogue.Quest(1381,new Catalogue.Npc(5398,1258,123170,"centaur","male"),List.of(a,b));
+        Files.writeString(catalogue,mapper.writeValueAsString(new Catalogue.Snapshot(2,List.of(corrected))));
+        try(var store=new VoteStore(database.toString(),mapper)) {
+            var visitor=store.createVisitor();store.save(visitor.id(),old,a.id());
+            assertEquals(1,ResultsExporter.read(database,catalogue).summary().historicalVotes());
+            assertTrue(AddonRanking.read(database,catalogue).groups().stream()
+                .anyMatch(g->g.race().equals("centaur") && g.sex().equals("male") && g.status().equals("no_data")));
+            store.save(visitor.id(),corrected,b.id());
+            var updated=ResultsExporter.read(database,catalogue);
+            assertEquals(0,updated.summary().historicalVotes());assertEquals(1,updated.summary().currentVotes());
+            assertTrue(updated.raceSex().stream().allMatch(g->"centaur".equals(g.race()) && "male".equals(g.sex())));
+        }
+    }
     @Test void stoneConstructsDoNotInheritUnclassifiedVotes() throws Exception {
         Path database=directory.resolve("votes.sqlite"), catalogue=directory.resolve("catalogue.json");
         var a=variant('a',"WowVoice","1"); var b=variant('b',"CatQuest","1");

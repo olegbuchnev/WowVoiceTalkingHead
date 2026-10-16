@@ -1,6 +1,7 @@
 {
   "schemaVersion": 1,
   "appearances": {
+    "1258": { "race": "centaur", "modelFileID": 123170 },
     "1346": { "race": "quilboar", "modelFileID": 125497 },
     "1918": { "race": "mountain_giant", "modelFileID": 124952 },
     "6589": { "race": "stone_construct", "modelFileID": 126072 },
@@ -24,6 +25,11 @@
     "143127": { "race": "ancient", "modelFileID": 122895 }
   },
   "models": {
+    "123170": {
+      "race": "centaur",
+      "file": "creature/centaur/centaur.m2",
+      "source": "https://github.com/wowdev/wow-listfile/releases/tag/202609242243"
+    },
     "125497": {
       "race": "quilboar",
       "file": "creature/quillboar/quillboar.m2",
