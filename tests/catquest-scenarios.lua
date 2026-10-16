@@ -94,20 +94,32 @@ local journal = readButton(QuestMapFrame.DetailsFrame, CatQuest_ReadQuestLog)
 QuestMapFrame.DetailsFrame.catQuestButton = journal
 local hidden = readButton(QuestLogFrame, CatQuest_ReadQuestLog, false)
 QuestLogFrame.catQuestButton = hidden
+DUIQuestFrame, DUIBookFrame = surface(), surface()
+ImmersionFrame = {TalkBox=surface()}
+local dialogue = readButton(DUIQuestFrame, CatQuest_Toggle)
+local immersion = readButton(ImmersionFrame.TalkBox, CatQuest_Toggle)
+local dialogueBook = readButton(DUIBookFrame, CatQuest_Toggle)
+local dialogueOther = readButton(DUIQuestFrame, function() end)
 command('on')
 assert(not quest.visible and not gossip.visible and not journal.visible and not hidden.visible)
+assert(not dialogue.visible and not immersion.visible, 'CatQuest compatibility buttons stay hidden on replacement quest panels')
+assert(dialogueBook.visible and dialogueOther.visible, 'DialogueUI books and native controls remain intact')
 assert(book.visible and other.visible and otherGossip.visible, 'books and unrelated read buttons stay intact')
 assert(quest.scripts.OnClick == CatQuest_Toggle and journal.scripts.OnClick == CatQuest_ReadQuestLog)
 quest:Show(); journal:Show(); gossip:Show()
+dialogue:Show(); immersion:Show()
+assert(not dialogue.visible and not immersion.visible, 'compatibility button updates cannot defeat suppression')
 assert(not quest.visible and not gossip.visible and not journal.visible, 'a native Show must not defeat suppression')
 WV:UpdateCatQuestIntegration() -- must retain the original visibility snapshot
 command('off')
 assert(quest.visible and gossip.visible and journal.visible and not hidden.visible, 'restore exactly the prior shown state')
+assert(dialogue.visible and immersion.visible, 'restore compatibility buttons when TalkingHead Ru is disabled')
 journal:Hide(); journal:Show()
 assert(journal.visible, 'installed visibility hooks must be inactive after /thead off')
 command('on')
 event('PLAYER_LOGOUT')
 assert(quest.visible and gossip.visible and journal.visible and not hidden.visible)
+assert(dialogue.visible and immersion.visible, 'restore compatibility buttons at logout')
 
 -- CatQuest can create buttons after our login/addon listener has run.
 QuestFrame, GossipFrame, QuestMapFrame, QuestLogFrame = surface(), surface(), nil, nil
@@ -129,6 +141,21 @@ deferred()
 assert(not lateJournal.visible, 'deferred journal load refresh finds its button')
 command('off')
 assert(lateQuest.visible and lateGossip.visible and lateJournal.visible)
+
+-- CatQuest Compat.lua can create replacement-panel buttons after our login hook.
+DUIQuestFrame, ImmersionFrame = surface(), {TalkBox=surface()}
+command('on')
+event('PLAYER_LOGIN')
+local lateDialogue = readButton(DUIQuestFrame, CatQuest_Toggle)
+local lateImmersion = readButton(ImmersionFrame.TalkBox, CatQuest_Toggle)
+deferred()
+assert(not lateDialogue.visible and not lateImmersion.visible, 'deferred login covers CatQuest Compat.lua creation order')
+local onOpen = readButton(DUIQuestFrame, CatQuest_Toggle)
+DUIQuestFrame:Hide(); DUIQuestFrame:Show()
+assert(not onOpen.visible, 'opening DialogueUI discovers an additional CatQuest button')
+command('off')
+assert(lateDialogue.visible and lateImmersion.visible and onOpen.visible)
+DUIQuestFrame, ImmersionFrame = nil, nil
 
 -- Missing optional APIs/frames must be harmless with CatQuest absent.
 CatQuestDB = nil

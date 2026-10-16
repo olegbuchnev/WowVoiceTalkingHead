@@ -136,11 +136,13 @@ local function updateCatQuestButtons(active)
             and click ~= _G.CatQuest_Toggle) then return end
         suppressCatQuestButton(button)
     end
-    -- Quest and NPC dialogue surfaces; ItemTextFrame keeps its book reader.
+    -- Quest and NPC dialogue surfaces, including CatQuest's Compat.lua buttons.
+    -- ItemTextFrame and DUIBookFrame keep their manual book readers.
     -- CatQuest exposes the journal button; dialogue buttons are anonymous.
     for _, parent in pairs({_G.QuestFrame, _G.GossipFrame,
         _G.QuestMapFrame and _G.QuestMapFrame.DetailsFrame,
-        _G.QuestLogDetailFrame, _G.QuestLogFrame}) do
+        _G.QuestLogDetailFrame, _G.QuestLogFrame, _G.DUIQuestFrame,
+        _G.ImmersionFrame and _G.ImmersionFrame.TalkBox}) do
         if not catQuestParentHooks[parent] and parent.HookScript then
             catQuestParentHooks[parent] = true
             parent:HookScript("OnShow", function()
