@@ -1,5 +1,35 @@
 # Timeweb Cloud deployment
 
+## Dragon categories and cameras (deployed 2026-10-17)
+
+Deployed the website changes in `b13cf49` using
+`talkinghead-vote-server:dragons-20261017` and
+`talkinghead-vote-web:dragons-20261017`. Both services are healthy. Five NPCs now
+belong to `dragon/male`, affecting 16 catalogue comparisons. Itharius, Jeziba
+and Haleh retain their verified blood elf appearances. The export contains
+39 populated groups, including `dragon/male`; there is no empty `dragon/female`.
+Emberstrife uses distance 2.8, y -0.12, z -0.24; Awbee uses 1.5, -0.04, 0.
+
+The stopped SQLite/inbox/catalogue backup is
+`/srv/talkinghead/backups/dragons-20261017-090041`. All 781 active ballots and
+788 comparison rows were preserved, including historical weights. Only their
+current-layer classification can change when the speaker metadata changes.
+SQLite integrity, volume mounts and unchanged audio/model manifests passed.
+Rollback images are tagged `before-dragons-20261017`; restore the previous
+catalogues and image tags together, retaining the live schema-4 database.
+
+The full offline pass completed with 1440 of 1441 portraits ready. The existing
+fallback for display 146706 (quest 97290, model without a portrait camera)
+remains; there were no new failures. Docker build gates and the complete tests
+from an isolated checkout of the committed sources passed. Public browser checks
+verified portraits and every available voice for five dragons and the three
+blood elf exceptions without submitting production ballots. The import dialog
+passed five viewport checks, stable copy geometry and checksum verification;
+the actual addon Lua decoder and validator accepted its 39-group THR1 string.
+Evidence: `artifacts/review/dragon-release/deployment.json`,
+`artifacts/review/dragons-public-check.json`, and logs under
+`artifacts/review/dragons/`.
+
 ## Stable import dialog (deployed 2026-10-17)
 
 Deployed `talkinghead-vote-web:import-dialog-20261017`; the API was not restarted.
