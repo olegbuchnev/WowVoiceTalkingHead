@@ -20,7 +20,9 @@
 
 * **Retail-style talking head.** Adjust the panel’s position and scale to fit your interface.
 * **Three voice libraries.** Use WowVoice, CatQuest, and Wayfarer in any combination. Coverage varies: not every quest stage or line is voiced.
-* **Configurable voice priority.** Arrange the library cards in settings. If a recording is unavailable in the first library, TalkingHead Ru checks the next one.
+* **Voice selection by race and sex.** Community rankings choose the library by default. Set a personal order for individual groups or use one order for all voices. If a recording is unavailable, TalkingHead Ru checks the next library.
+* **Updated community rankings.** Import a ranking string from the voting site. Personal group orders are preserved by default.
+* **Voice library label.** Optionally show the source library on the talking head; disabled by default.
 * **Configurable automatic playback.** Enable or disable voiceovers separately for quest acceptance and turn-in.
 * **Replay quest descriptions.** Use the ▶ buttons in the quest log, the standard quest tracker, or Questie Tracker.
 * **Quest progress reminders.** A highlighted replay button reminds you of a description you have not listened to.
@@ -51,7 +53,7 @@ For Wayfarer, enable the main addon and its quest voice modules. **Installing al
 
 The Narrator module is not required for quest voiceovers. If some quest modules are missing, a warning on the Wayfarer card lists them.
 
-Set the library priority in settings. TalkingHead Ru selects each recording from the first available library in that order. Unavailable libraries are skipped without changing your saved priority. Lines without an available recording are skipped.
+Use community rankings by race and sex, set personal group orders, or choose one global library order in settings. Ties and groups without ratings use your global order. Unavailable libraries are skipped without changing your saved priority. Lines without an available recording are skipped.
 
 ## Compatibility
 
@@ -102,7 +104,9 @@ On English clients, player controls use English; settings and the voice catalogu
 
 * **Панель в стиле Retail.** Положение и масштаб говорящей головы можно изменить под свой интерфейс.
 * **Три библиотеки озвучки.** Подключайте WowVoice, CatQuest и Wayfarer в любом сочетании. Набор записей зависит от задания: озвучены не все этапы и реплики.
-* **Настраиваемый приоритет озвучки.** Расставьте карточки библиотек в настройках. Если записи нет в первой библиотеке, TalkingHead Ru проверит следующую.
+* **Выбор озвучки по расе и полу.** По умолчанию библиотека выбирается по рейтингу сообщества. Можно настроить личный порядок для отдельных сочетаний или один порядок для всех. Если записи нет, TalkingHead Ru проверит следующую библиотеку.
+* **Обновление рейтинга сообщества.** Импортируйте строку с сайта голосования. Личные порядки по умолчанию сохраняются.
+* **Название библиотеки на говорящей голове.** Отображение источника озвучки включается в настройках; по умолчанию выключено.
 * **Настраиваемый автозапуск.** Озвучку при получении и сдаче задания можно включать и отключать независимо друг от друга.
 * **Повторное прослушивание.** Кнопки ▶ в журнале, стандартном трекере и Questie Tracker позволяют включить описание без возвращения к квестодателю.
 * **Напоминание при прогрессе задания.** Подсветка кнопки напоминает о непрослушанном описании.
@@ -133,7 +137,7 @@ On English clients, player controls use English; settings and the voice catalogu
 
 Модуль Narrator для квестовой озвучки не нужен. Если часть квестовых модулей отсутствует, предупреждение на карточке Wayfarer перечислит их.
 
-Задайте приоритет библиотек в настройках. Для каждой записи TalkingHead Ru выбирает первую доступную библиотеку в указанном порядке. Недоступные библиотеки пропускаются без изменения сохранённого приоритета. Реплики без доступной записи пропускаются.
+Используйте рейтинг сообщества по расе и полу, задайте личный порядок для отдельных сочетаний или один общий порядок библиотек в настройках. При равных оценках или их отсутствии используется ваш общий порядок. Недоступные библиотеки пропускаются без изменения сохранённого приоритета. Реплики без доступной записи пропускаются.
 
 ## Совместимость
 

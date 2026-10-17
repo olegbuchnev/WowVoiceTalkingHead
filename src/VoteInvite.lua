@@ -2,7 +2,7 @@
 local WV, L = WowVoice, WowVoiceLocale
 local URL = "https://talkingheadru.tw1.ru/"
 local FONT = "Interface\\AddOns\\TalkingHeadRu\\Media\\Fonts\\frizqt___cyr.ttf"
-local WIDTH, HEIGHT = 540, 540
+local WIDTH, HEIGHT = 540, 636
 local SCALE = 2 / 3
 local panel
 
@@ -74,20 +74,40 @@ local function createPanel()
     link:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
     frame.Link = link
     label(frame, L["Нажмите на ссылку, затем Ctrl+C"], 14, 448, 20, 0.65, 0.65, 0.65)
+    -- A single inline glyph shares the paragraph's wrapping and 16px line
+    -- height. Separate regions would indent continuation lines or drift apart.
+    frame.VoiceSettingsHint = label(frame,
+        "|TInterface\\AddOns\\TalkingHeadRu\\Media\\NewBadge.tga:16:64:0:-2|t "
+            .. L["В настройках «Выбор озвучки» можно прослушать примеры и задать свой порядок библиотек — общий или отдельно для каждой расы и пола."],
+        16, 480, 88, 0.87, 0.86, 0.84)
+    frame.VoiceSettingsHint:SetJustifyH("LEFT")
+    -- Match the visible edges of the centered description above.
+    frame.VoiceSettingsHint:SetWidth(WIDTH - 68)
 
-    local close = CreateFrame("Button", nil, frame, "BackdropTemplate")
-    close:SetSize(160, 32)
-    close:SetPoint("BOTTOM", frame, "BOTTOM", 0, 20)
-    flatFrame(close, 0.13, 0.13, 0.14)
-    local caption = close:CreateFontString(nil, "OVERLAY")
-    caption:SetFont(FONT, 16, "")
-    caption:SetAllPoints(close)
-    caption:SetTextColor(0.87, 0.86, 0.84)
-    caption:SetText(L["Закрыть"])
-    close:SetScript("OnEnter", function(self) self:SetBackdropBorderColor(0.86, 0.65, 0.50, 1) end)
-    close:SetScript("OnLeave", function(self) self:SetBackdropBorderColor(0.22, 0.22, 0.22, 1) end)
-    close:SetScript("OnClick", function() frame:Hide() end)
-    frame.Close = close
+    local function footerButton(text, x, callback)
+        local button = CreateFrame("Button", nil, frame, "BackdropTemplate")
+        button:SetSize(160, 32)
+        button:SetPoint("BOTTOM", frame, "BOTTOM", x, 20)
+        flatFrame(button, 0.13, 0.13, 0.14)
+        local caption = button:CreateFontString(nil, "OVERLAY")
+        caption:SetFont(FONT, 16, "")
+        caption:SetAllPoints(button)
+        caption:SetTextColor(0.87, 0.86, 0.84)
+        caption:SetText(text)
+        button:SetScript("OnEnter", function(self) self:SetBackdropBorderColor(0.86, 0.65, 0.50, 1) end)
+        button:SetScript("OnLeave", function(self) self:SetBackdropBorderColor(0.22, 0.22, 0.22, 1) end)
+        button:SetScript("OnClick", callback)
+        return button
+    end
+    frame.Options = footerButton(L["Опции"], -86, function()
+        frame:Hide()
+        if WV.CloseVoiceComparison then WV:CloseVoiceComparison() end
+        if WV.CloseVoiceRanking then WV:CloseVoiceRanking() end
+        WV:OpenOptions()
+        local options = _G.WowVoiceOptionsPanel
+        if options and options.Scroll then options.Scroll:SetVerticalScroll(0) end
+    end)
+    frame.Close = footerButton(L["Закрыть"], 86, function() frame:Hide() end)
     frame:SetScript("OnHide", function() link:ClearFocus(); frame:StopMovingOrSizing() end)
     UISpecialFrames = UISpecialFrames or {}
     table.insert(UISpecialFrames, "TalkingHeadRuVoteInvite")

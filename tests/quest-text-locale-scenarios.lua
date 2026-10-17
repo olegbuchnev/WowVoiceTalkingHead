@@ -1,4 +1,5 @@
 local WV, Q, S = WowVoice, WowVoice.questQueue, WowVoiceAudioSources
+assert(WV:SetVoiceSelectionMode('manual'))
 local english = WowVoiceLocale.isEnglish
 assert(WowVoiceLocale.isRussian == (GetLocale() == 'ruRU'))
 local texts = TalkingHeadRuQuestTexts.entries

@@ -55,6 +55,11 @@ end
 local SECTION = { a = L["Описание задания"], p = L["Выполнение задания"], c = L["Завершение задания"] }
 local FALLBACK_ICON = "Interface\\Icons\\INV_Misc_Note_01"
 local DEFAULT_WIDTH, DEFAULT_HEIGHT = 570, 155
+local sourceLabels = {
+    wowvoice = {"WowVoice", 0.25, 0.7, 1},
+    catquest = {"CatQuest", 1, 0.55, 0.2},
+    wayfarer = {"Wayfarer", 0.4, 0.85, 0.45},
+}
 local PANEL_LEFT, PANEL_RIGHT = 15, 13
 local PANEL_TOP, PANEL_BOTTOM = 15, 13
 -- Retail TalkingHeadUI.xml fallback; managed layouts place it above action bars.
@@ -361,9 +366,7 @@ local function warmPortraits()
         coroutine.yield(0.25)
     end
 end
-local function scanQuestPortraits()
-    local log = C_QuestLog or {}
-    local revision = warmRevision
+function WV:BuildReplaySpeakerSnapshot(checkpoint)
     local snapshot = { items = {}, displays = {} }
     local quests = characterQuests() or {}
     -- One incremental inventory pass for the entire journal, not one per quest.
@@ -378,8 +381,7 @@ local function scanQuestPortraits()
                         snapshot.items[quest.questID] = item
                     end
                 end
-                coroutine.yield()
-                if revision ~= warmRevision then return end
+                if checkpoint and checkpoint() == false then return end
             end
         end
     end
@@ -390,9 +392,19 @@ local function scanQuestPortraits()
             if old == nil then snapshot.displays[speaker.npcID] = speaker.displayID
             elseif old ~= speaker.displayID then snapshot.displays[speaker.npcID] = false end
         end
-        coroutine.yield()
-        if revision ~= warmRevision then return end
+        if checkpoint and checkpoint() == false then return end
     end
+    return snapshot
+end
+local function scanQuestPortraits()
+    local log = C_QuestLog or {}
+    local revision = warmRevision
+    local quests = characterQuests() or {}
+    local snapshot = WV:BuildReplaySpeakerSnapshot(function()
+        coroutine.yield()
+        return revision == warmRevision
+    end)
+    if not snapshot or revision ~= warmRevision then return end
     local wanted = {}
     local count = log.GetNumQuestLogEntries and log.GetInfo and log.GetNumQuestLogEntries() or 0
     for index = 1, count do
@@ -534,9 +546,9 @@ function WV:CaptureQuestSpeaker(questId, section, title, text)
     return { questId = questId, section = section, title = title, text = text, speaker = speaker }
 end
 
-function WV:GetReplaySpeaker(questId)
+function WV:GetReplaySpeaker(questId, snapshot)
     local quests = characterQuests()
-    local record = replaySpeaker(questId, quests and quests[questId], quests)
+    local record = replaySpeaker(questId, quests and quests[questId], quests, snapshot)
     local title = record and record.title
     if not title and C_QuestLog and C_QuestLog.GetTitleForQuestID then
         title = C_QuestLog.GetTitleForQuestID(questId)
@@ -857,7 +869,7 @@ end
 local function refreshHeadTextFonts()
     -- Return to native glyph rendering at the final effective scale, preserving
     -- the client's font files, logical sizes and outline flags.
-    for _, text in ipairs({ head.Name, head.Body, head.TextMeasure }) do
+    for _, text in ipairs({ head.Name, head.Body, head.TextMeasure, head.Source }) do
         text:SetFont(text:GetFont())
     end
 end
@@ -870,6 +882,15 @@ local function layoutHead()
     if head.EditBorder then WV:UpdateFrameEditBorder(head.EditBorder) end
     refreshHeadTextFonts()
     local textLeft, textRight = 152, 42
+    local source = active and not active.preview and sourceLabels[active.context.audioSourceID]
+    if TalkingHeadRuDB and TalkingHeadRuDB.showVoiceSource and source then
+        head.Source:SetText(source[1])
+        head.Source:SetTextColor(source[2], source[3], source[4])
+        head.Source:Show()
+    else
+        head.Source:SetText("")
+        head.Source:Hide()
+    end
     -- Retail composition: portrait on the left, name above
     -- the text on the right, and space reserved for the close button.
     head.Name:SetWidth(math.max(1, width - textLeft - textRight))
@@ -901,6 +922,7 @@ local function layoutHead()
     head.PortraitOverlay:ClearAllPoints()
     head.PortraitOverlay:SetPoint("CENTER", model, "CENTER")
     head.PortraitOverlay:SetSize(size * 145 / 115, size * 145 / 115)
+    head.Source:SetWidth(math.max(1, size - 8))
     if resized and model.portraitReady then updatePortraitCamera(model) end
     head.Icon:ClearAllPoints()
     head.Icon:SetPoint("CENTER", head.Model, "CENTER")
@@ -933,6 +955,14 @@ local function layoutHead()
     updatePlaybackText()
 end
 
+function WV:SetShowVoiceSource(enabled)
+    if not TalkingHeadRuDB then return end
+    TalkingHeadRuDB.showVoiceSource = enabled == true
+    self:EndHeadScalePreview(true)
+    if head and active then layoutHead() end
+    if self.RefreshHeadOptions then self:RefreshHeadOptions() end
+end
+
 -- Keep model ancestors opaque: PlayerModel's rendered geometry needs its own
 -- opacity, rather than relying on a parent frame fade. Apply the same value to
 -- every visible component, without multiplying it again through its parents.
@@ -946,6 +976,7 @@ local function setHeadOpacity(alpha)
     head.PortraitOverlay:SetAlpha(alpha)
     head.Icon:SetAlpha(alpha)
     head.Name:SetAlpha(alpha)
+    head.Source:SetAlpha(alpha)
     head.TextScroll:SetAlpha(alpha)
     head.Progress:SetAlpha(alpha)
     head.Close:SetAlpha(alpha)
@@ -1100,6 +1131,21 @@ local function createHead()
     head.Name:SetJustifyH("LEFT")
     head.Name:SetJustifyV("TOP")
     head.Name:SetWordWrap(true)
+    -- Above the model and its ornament, but outside their fading parents so
+    -- the source label receives the head's fade only once.
+    head.SourceLayer = CreateFrame("Frame", nil, head)
+    head.SourceLayer:SetAllPoints(head.PortraitOverlay)
+    head.SourceLayer:SetFrameLevel(head.PortraitOverlay:GetFrameLevel() + 1)
+    head.SourceLayer:EnableMouse(false)
+    head.Source = head.SourceLayer:CreateFontString(nil, "OVERLAY", "QuestFont")
+    head.Source:SetShadowColor(0, 0, 0, 1)
+    head.Source:SetShadowOffset(1, -1)
+    head.Source:SetPoint("BOTTOM", head.Model, "BOTTOM", 0, -8)
+    head.Source:SetSize(78, select(2, head.Source:GetFont()) + 2)
+    head.Source:SetJustifyH("CENTER")
+    head.Source:SetJustifyV("MIDDLE")
+    head.Source:SetWordWrap(false)
+    head.Source:Hide()
     -- Hide auxiliary labels so they do not consume quest text space.
     head.Title = label("GameFontHighlight", -42, 32)
     head.Section = label("GameFontDisableSmall", -202, 16)

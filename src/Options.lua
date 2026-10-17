@@ -17,6 +17,21 @@ local unavailableVoiceHints = {
 local function hidePriorityTooltip(row)
     if GameTooltip and GameTooltip:IsOwned(row) then GameTooltip:Hide() end
 end
+local function styleRadio(dot, diameter)
+    -- Same antialiased 128px mask for anchor points and compact mode choices.
+    local function circle(size, layer, r, g, b, alpha)
+        local texture = dot:CreateTexture(nil, layer)
+        texture:SetPoint("CENTER", dot, "CENTER", 0, 0)
+        texture:SetSize(size, size)
+        texture:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask")
+        texture:SetVertexColor(r, g, b, alpha or 1)
+        return texture
+    end
+    dot.Border = circle(diameter, "BACKGROUND", 0.6, 0.6, 0.6)
+    circle(diameter * 24 / 28, "BORDER", 0.06, 0.06, 0.06)
+    dot:SetCheckedTexture(circle(diameter * 12 / 28, "ARTWORK", 1, 0.82, 0.25))
+    dot:SetHighlightTexture(circle(diameter, "HIGHLIGHT", 1, 0.82, 0.25, 0.18), "ADD")
+end
 local function refreshVoicePreference()
     if not panel.VoicePriorityRows then return end
     if panel.CancelVoicePriorityDrag then panel.CancelVoicePriorityDrag() end
@@ -35,8 +50,23 @@ local function refreshVoicePreference()
         L.SetOptionsText(row.Label, index .. ". " .. voiceNames[id])
         row.Label:SetAlpha(row.available and 1 or 0.45)
     end
-    panel.SharedVoiceTooltip.message = "Перетаскивайте карточки, чтобы изменить приоритет слева направо. "
+    panel.SharedVoiceTooltip.message = "«Мой порядок» — один порядок библиотек для всех реплик.\n\n"
+        .. "«По расе и полу» — рейтинг сообщества и ваши настройки отдельных сочетаний. "
+        .. "Карточки ниже определяют порядок при равных оценках или если оценок нет.\n\n"
         .. "Если записи нет, используется следующая библиотека."
+    if panel.VoiceModes then
+        local ranked = WV:GetVoiceSelectionMode() == "ranking"
+        panel.VoiceModes.manual:SetChecked(not ranked)
+        panel.VoiceModes.ranking:SetChecked(ranked)
+        for mode, control in pairs(panel.VoiceModes) do
+            if (mode == "ranking") == ranked then control.Border:SetVertexColor(1, 0.82, 0.25)
+            else control.Border:SetVertexColor(0.6, 0.6, 0.6) end
+        end
+        if panel.Buttons.voiceRanking then panel.Buttons.voiceRanking:SetEnabled(ranked) end
+        L.SetOptionsText(panel.SharedVoiceCaption, ranked
+            and "При равных оценках или без оценок действует порядок ниже.\nПеретащите карточки, чтобы изменить его."
+            or "Приоритет слева направо: нет записи — используется следующая озвучка.\nПеретащите карточки, чтобы изменить порядок.")
+    end
 end
 
 local function priorityCard(parent)
@@ -302,6 +332,7 @@ end
 
 function WV:RefreshAudioSourceOptions()
     if panel and panel:IsShown() then refreshVersions() end
+    if self.RefreshVoiceRankingView then self:RefreshVoiceRankingView() end
 end
 
 local function refreshScale()
@@ -359,6 +390,7 @@ end
 function WV:RefreshHeadOptions()
     if not panel or not panel:IsShown() then return end
     self:RefreshFrameLockOption()
+    panel.ShowVoiceSource:SetChecked(TalkingHeadRuDB.showVoiceSource == true)
     refreshScale()
     local selected = WV:GetHeadAnchor()
     for point, dot in pairs(panel.AnchorPoints) do
@@ -410,8 +442,7 @@ local function createPanel()
     scroll:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -28, 0)
     local content = CreateFrame("Frame", nil, scroll)
     local queueOptions = WV.questQueue and WV.questQueue.enabled
-    local lowerOffset = 40 + (queueOptions and 424 or 0)
-    content:SetSize(584, 818 + lowerOffset)
+    content:SetSize(584, 934 + (queueOptions and 424 or 0))
     scroll:SetScrollChild(content)
     scroll:SetScript("OnSizeChanged", function(self, width)
         content:SetWidth(math.max(584, width))
@@ -488,8 +519,15 @@ local function createPanel()
         line:SetPoint("TOPLEFT", content, "TOPLEFT", 20, y - 24)
         return heading, line
     end
-    section("Говорящая голова", -94)
-    section("Воспроизведение", -460)
+    section("Говорящая голова", -292)
+    panel.ShowVoiceSource = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
+    panel.ShowVoiceSource:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -326)
+    panel.ShowVoiceSource:SetSize(26, 26)
+    panel.ShowVoiceSource.Label = label("Показать источник озвучки на говорящей голове", "GameFontHighlight", 48, -333, 506, 22)
+    panel.ShowVoiceSource:SetScript("OnClick", function(self)
+        WV:SetShowVoiceSource(self:GetChecked() == true)
+    end)
+    section("Воспроизведение", -694)
 
     local function discardPosition()
         panel.editingPosition = nil
@@ -503,7 +541,7 @@ local function createPanel()
     local function button(key, text, x, width, callback, y)
         local b = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
         b:SetSize(width, 26)
-        b:SetPoint("TOPLEFT", content, "TOPLEFT", x, y or -128)
+        b:SetPoint("TOPLEFT", content, "TOPLEFT", x, y or -362)
         L.SetOptionsText(b, text)
         b:SetScript("OnClick", callback)
         panel.Buttons[key] = b
@@ -534,10 +572,10 @@ local function createPanel()
         WV:ResetHeadPosition()
         status("Положение сброшено: автоматическая привязка снизу над панелью действий.")
     end)
-    label("Масштаб панели", "GameFontNormal", 20, -327, 280, 20)
+    label("Масштаб панели", "GameFontNormal", 20, -561, 280, 20)
     local slider = CreateFrame("Slider", "WowVoiceHeadScaleSlider", content, "OptionsSliderTemplate")
     panel.ScaleSlider = slider
-    slider:SetPoint("TOPLEFT", content, "TOPLEFT", 24, -356)
+    slider:SetPoint("TOPLEFT", content, "TOPLEFT", 24, -590)
     slider:SetSize(260, 17)
     slider:SetMinMaxValues(50, 150)
     slider:SetValueStep(1)
@@ -546,14 +584,14 @@ local function createPanel()
         local text = slider[suffix] or _G["WowVoiceHeadScaleSlider" .. suffix]
         if text then text:Hide() end
     end
-    label("50%", "GameFontHighlightSmall", 20, -379, 60, 16)
-    local high = label("150%", "GameFontHighlightSmall", 228, -379, 60, 16)
+    label("50%", "GameFontHighlightSmall", 20, -613, 60, 16)
+    local high = label("150%", "GameFontHighlightSmall", 228, -613, 60, 16)
     high:SetJustifyH("RIGHT")
-    local input = numericField(48, 308, -354)
+    local input = numericField(48, 308, -588)
     panel.ScaleInput = input
     input:SetNumeric(true)
     input:SetMaxLetters(3)
-    label("%", "GameFontHighlight", 362, -357, 18, 20)
+    label("%", "GameFontHighlight", 362, -591, 18, 20)
     local function applyScale(percent)
         discardPosition()
         if percent ~= math.floor(WV:GetHeadScale() * 100 + 0.5) then
@@ -631,34 +669,21 @@ local function createPanel()
         discardPosition()
         local ok, reason = WV:SetHeadScale(1)
         status(ok and "Масштаб панели сброшен: 100%." or reason)
-    end, -351)
-    label("Точка привязки и масштабирования", "GameFontNormal", 20, -169, 540, 20)
+    end, -585)
+    label("Точка привязки и масштабирования", "GameFontNormal", 20, -403, 540, 20)
     local diagram = CreateFrame("Frame", nil, content, "BackdropTemplate")
-    diagram:SetPoint("TOPLEFT", content, "TOPLEFT", 36, -211)
+    diagram:SetPoint("TOPLEFT", content, "TOPLEFT", 36, -445)
     diagram:SetSize(180, 72)
     diagram:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
     diagram:SetBackdropColor(0.08, 0.08, 0.08, 0.8)
     diagram:SetBackdropBorderColor(0.55, 0.49, 0.32, 1)
     panel.AnchorPoints, panel.AnchorDiagram = {}, diagram
-    label("Координаты точки привязки", "GameFontNormal", 254, -218, 310, 20)
+    label("Координаты точки привязки", "GameFontNormal", 254, -452, 310, 20)
     for _, point in ipairs({ "TOPLEFT", "TOP", "TOPRIGHT", "LEFT", "CENTER", "RIGHT", "BOTTOMLEFT", "BOTTOM", "BOTTOMRIGHT" }) do
         local dot = CreateFrame("CheckButton", nil, diagram)
         dot:SetSize(32, 32)
         dot:SetPoint("CENTER", diagram, point, 0, 0)
-        -- The old radio sheet contains tiny 16px states. Layer the client's
-        -- antialiased 128px circle instead, retaining a generous click target.
-        local function circle(size, layer, r, g, b, alpha)
-            local t = dot:CreateTexture(nil, layer)
-            t:SetPoint("CENTER", dot, "CENTER", 0, 0)
-            t:SetSize(size, size)
-            t:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask")
-            t:SetVertexColor(r, g, b, alpha or 1)
-            return t
-        end
-        dot.Border = circle(28, "BACKGROUND", 0.6, 0.6, 0.6)
-        circle(24, "BORDER", 0.06, 0.06, 0.06)
-        dot:SetCheckedTexture(circle(12, "ARTWORK", 1, 0.82, 0.25))
-        dot:SetHighlightTexture(circle(28, "HIGHLIGHT", 1, 0.82, 0.25, 0.18), "ADD")
+        styleRadio(dot, 28)
         dot:SetScript("OnClick", function()
             finishScaleDrag()
             input:ClearFocus()
@@ -687,8 +712,8 @@ local function createPanel()
         status(ok and "" or reason)
     end
     local function positionInput(key, caption, x)
-        label(caption, "GameFontHighlightSmall", x, -252, 20, 20)
-        local field = numericField(78, x + 24, -248)
+        label(caption, "GameFontHighlightSmall", x, -486, 20, 20)
+        local field = numericField(78, x + 24, -482)
         field:SetMaxLetters(12)
         field:SetScript("OnEditFocusGained", function() panel.editingPosition = true end)
         field:SetScript("OnEnterPressed", applyPosition)
@@ -699,39 +724,39 @@ local function createPanel()
     positionInput("PositionY", "Y", 364)
     panel.PositionX:SetScript("OnTabPressed", function(self) self:ClearFocus(); panel.PositionY:SetFocus() end)
     panel.PositionY:SetScript("OnTabPressed", function(self) self:ClearFocus(); panel.PositionX:SetFocus() end)
-    button("applyPosition", "Задать", 478, 86, applyPosition, -245)
-    panel.Status = label("", "GameFontHighlightSmall", 20, -408, 540, 36)
+    button("applyPosition", "Задать", 478, 86, applyPosition, -479)
+    panel.Status = label("", "GameFontHighlightSmall", 20, -642, 540, 36)
     panel.AutoPlay = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
-    panel.AutoPlay:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -496)
+    panel.AutoPlay:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -730)
     panel.AutoPlay:SetSize(26, 26)
-    label("Автозапуск озвучки", "GameFontHighlight", 48, -503, 506, 22)
+    label("Автозапуск озвучки", "GameFontHighlight", 48, -737, 506, 22)
     panel.AutoPlay:SetScript("OnClick", function(self) WV:SetAutoPlayEnabled(self:GetChecked() == true) end)
     panel.AutoPlayAccept = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
-    panel.AutoPlayAccept:SetPoint("TOPLEFT", content, "TOPLEFT", 42, -536)
+    panel.AutoPlayAccept:SetPoint("TOPLEFT", content, "TOPLEFT", 42, -770)
     panel.AutoPlayAccept:SetSize(26, 26)
-    panel.AutoPlayAccept.Label = label("При получении задания", "GameFontHighlight", 74, -543, 480, 22)
+    panel.AutoPlayAccept.Label = label("При получении задания", "GameFontHighlight", 74, -777, 480, 22)
     panel.AutoPlayAccept:SetScript("OnClick", function(self)
         WV:SetAutoPlayAcceptEnabled(self:GetChecked() == true)
     end)
     panel.AutoPlayAccept.Description = label("Если выключено, запускайте описание кнопкой в журнале или списке заданий.",
-        "GameFontHighlightSmall", 74, -571, 480, 32)
+        "GameFontHighlightSmall", 74, -805, 480, 32)
     panel.AutoPlayTurnIn = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
-    panel.AutoPlayTurnIn:SetPoint("TOPLEFT", content, "TOPLEFT", 42, -620)
+    panel.AutoPlayTurnIn:SetPoint("TOPLEFT", content, "TOPLEFT", 42, -854)
     panel.AutoPlayTurnIn:SetSize(26, 26)
-    panel.AutoPlayTurnIn.Label = label("При сдаче задания", "GameFontHighlight", 74, -627, 480, 22)
+    panel.AutoPlayTurnIn.Label = label("При сдаче задания", "GameFontHighlight", 74, -861, 480, 22)
     panel.AutoPlayTurnIn:SetScript("OnClick", function(self)
         WV:SetAutoPlayTurnInEnabled(self:GetChecked() == true)
     end)
     panel.AutoPlayTurnIn.Description = label("Управляет всеми репликами сдачи: промежуточными и завершающей.",
-        "GameFontHighlightSmall", 74, -655, 480, 32)
+        "GameFontHighlightSmall", 74, -889, 480, 32)
     if queueOptions then
-        panel.QueueHeading, panel.QueueDivider = section("Очередь озвучки", -700)
+        panel.QueueHeading, panel.QueueDivider = section("Очередь озвучки", -934)
         panel.QueueDescriptionsOnly = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
-        panel.QueueDescriptionsOnly:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -736)
+        panel.QueueDescriptionsOnly:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -970)
         panel.QueueDescriptionsOnly:SetSize(26, 26)
-        panel.QueueDescriptionsOnly.Label = label("Только описания заданий", "GameFontHighlight", 48, -743, 506, 22)
+        panel.QueueDescriptionsOnly.Label = label("Только описания заданий", "GameFontHighlight", 48, -977, 506, 22)
         panel.QueueDescriptionsOnly.Description = label("Не добавлять реплики выполнения и завершения заданий в очередь воспроизведения.",
-            "GameFontHighlightSmall", 48, -771, 506, 28)
+            "GameFontHighlightSmall", 48, -1005, 506, 28)
         panel.QueueDescriptionsOnly:SetScript("OnClick", function(self)
             WV:SetQueueDescriptionsOnly(self:GetChecked() == true)
         end)
@@ -740,11 +765,11 @@ local function createPanel()
             WV:EnsureQuestQueuePreview(); WV:FinishAutoQuestQueuePreview(2)
             WV:RefreshQuestQueuePositionOptions(true)
             WV:RefreshHeadOptions()
-        end, -808)
-        local heightCaption = label("Максимальная высота", "GameFontNormal", 20, -850, 280, 20)
+        end, -1042)
+        local heightCaption = label("Максимальная высота", "GameFontNormal", 20, -1084, 280, 20)
         panel.QueueHeight = CreateFrame("Slider", "WowVoiceQueueHeightSlider", content, "OptionsSliderTemplate")
         local heightSlider = panel.QueueHeight
-        heightSlider:SetPoint("TOPLEFT", content, "TOPLEFT", 24, -880)
+        heightSlider:SetPoint("TOPLEFT", content, "TOPLEFT", 24, -1114)
         heightSlider:SetSize(260, 17)
         heightSlider:SetMinMaxValues(280, 600)
         heightSlider:SetValueStep(1)
@@ -753,12 +778,12 @@ local function createPanel()
             local fs = heightSlider[suffix] or _G["WowVoiceQueueHeightSlider" .. suffix]
             if fs then fs:Hide() end
         end
-        local low = label("280", "GameFontHighlightSmall", 20, -903, 60, 16)
-        local high = label("600", "GameFontHighlightSmall", 228, -903, 60, 16)
+        local low = label("280", "GameFontHighlightSmall", 20, -1137, 60, 16)
+        local high = label("600", "GameFontHighlightSmall", 228, -1137, 60, 16)
         high:SetJustifyH("RIGHT")
         panel.QueueLabels = { panel.QueueHeading, panel.QueueDivider, panel.QueueDescriptionsOnly.Label,
             panel.QueueDescriptionsOnly.Description, heightCaption, low, high }
-        panel.QueueHeightInput = numericField(58, 308, -878)
+        panel.QueueHeightInput = numericField(58, 308, -1112)
         local heightInput = panel.QueueHeightInput
         heightInput:SetNumeric(true)
         heightInput:SetMaxLetters(3)
@@ -777,10 +802,10 @@ local function createPanel()
         end)
         heightInput:SetScript("OnEscapePressed", function(self) self:ClearFocus(); WV:RefreshHeadOptions(); status() end)
         heightInput:SetScript("OnEditFocusLost", function() WV:RefreshHeadOptions() end)
-        local scaleCaption = label("Масштаб очереди", "GameFontNormal", 20, -942, 280, 20)
+        local scaleCaption = label("Масштаб очереди", "GameFontNormal", 20, -1176, 280, 20)
         panel.QueueScale = CreateFrame("Slider", "WowVoiceQueueScaleSlider", content, "OptionsSliderTemplate")
         local scaleSlider = panel.QueueScale
-        scaleSlider:SetPoint("TOPLEFT", content, "TOPLEFT", 24, -972)
+        scaleSlider:SetPoint("TOPLEFT", content, "TOPLEFT", 24, -1206)
         scaleSlider:SetSize(260, 17)
         scaleSlider:SetMinMaxValues(80, 120)
         scaleSlider:SetValueStep(1)
@@ -789,14 +814,14 @@ local function createPanel()
             local fs = scaleSlider[suffix] or _G["WowVoiceQueueScaleSlider" .. suffix]
             if fs then fs:Hide() end
         end
-        local scaleLow = label("80%", "GameFontHighlightSmall", 20, -995, 60, 16)
-        local scaleHigh = label("120%", "GameFontHighlightSmall", 228, -995, 60, 16)
+        local scaleLow = label("80%", "GameFontHighlightSmall", 20, -1229, 60, 16)
+        local scaleHigh = label("120%", "GameFontHighlightSmall", 228, -1229, 60, 16)
         scaleHigh:SetJustifyH("RIGHT")
-        local percentLabel = label("%", "GameFontHighlight", 374, -973, 20, 20)
+        local percentLabel = label("%", "GameFontHighlight", 374, -1207, 20, 20)
         for _, fs in ipairs({ scaleCaption, scaleLow, scaleHigh, percentLabel }) do
             panel.QueueLabels[#panel.QueueLabels + 1] = fs
         end
-        panel.QueueScaleInput = numericField(58, 308, -970)
+        panel.QueueScaleInput = numericField(58, 308, -1204)
         local scaleInput = panel.QueueScaleInput
         scaleInput:SetNumeric(true)
         scaleInput:SetMaxLetters(3)
@@ -829,7 +854,7 @@ local function createPanel()
         end)
         scaleInput:SetScript("OnEscapePressed", function(self) self:ClearFocus(); WV:RefreshHeadOptions(); status() end)
         scaleInput:SetScript("OnEditFocusLost", function() WV:RefreshHeadOptions() end)
-        panel.QueueLabels[#panel.QueueLabels + 1] = label("Координаты верхнего левого угла", "GameFontNormal", 20, -1030, 540, 20)
+        panel.QueueLabels[#panel.QueueLabels + 1] = label("Координаты верхнего левого угла", "GameFontNormal", 20, -1264, 540, 20)
         local function applyQueuePosition()
             if TalkingHeadRuDB.autoPlay == false then return end
             local function number(text)
@@ -844,8 +869,8 @@ local function createPanel()
             WV:RefreshHeadOptions()
         end
         local function positionField(key, caption, x)
-            panel.QueueLabels[#panel.QueueLabels + 1] = label(caption, "GameFontHighlightSmall", x, -1064, 20, 20)
-            local field = numericField(78, x + 24, -1060)
+            panel.QueueLabels[#panel.QueueLabels + 1] = label(caption, "GameFontHighlightSmall", x, -1298, 20, 20)
+            local field = numericField(78, x + 24, -1294)
             field:SetMaxLetters(12)
             field:SetScript("OnEditFocusGained", function() panel.editingQueuePosition = true end)
             field:SetScript("OnEnterPressed", applyQueuePosition)
@@ -856,18 +881,32 @@ local function createPanel()
         positionField("QueuePositionY", "Y", 130)
         panel.QueuePositionX:SetScript("OnTabPressed", function(self) self:ClearFocus(); panel.QueuePositionY:SetFocus() end)
         panel.QueuePositionY:SetScript("OnTabPressed", function(self) self:ClearFocus(); panel.QueuePositionX:SetFocus() end)
-        button("applyQueuePosition", "Задать", 244, 86, applyQueuePosition, -1057)
+        button("applyQueuePosition", "Задать", 244, 86, applyQueuePosition, -1291)
     end
-    local voiceHeading = section("Выбор озвучки", -660 - lowerOffset)
+    local voiceHeading = section("Выбор озвучки", -94)
     -- Let the font string size itself at the current UI scale. Measuring it
     -- while the settings panel is hidden can leave the title truncated.
     voiceHeading:SetWordWrap(false)
     voiceHeading:SetSize(0, 0)
-    panel.SharedVoiceCaption = label("Приоритет слева направо: нет записи — используется следующая озвучка.\nПеретащите карточки, чтобы изменить порядок.", "GameFontHighlight", 20, -688 - lowerOffset, 540, 38)
+    panel.VoiceModes = {}
+    for index, entry in ipairs({{"manual", "Мой порядок"}, {"ranking", "По расе и полу"}}) do
+        local mode = CreateFrame("CheckButton", nil, content)
+        mode:SetPoint("TOPLEFT", content, "TOPLEFT", 20 + (index-1)*220, -128)
+        mode:SetSize(20,20)
+        styleRadio(mode, 16)
+        mode.Label = label(entry[2], "GameFontHighlight", 46 + (index-1)*220, -129, 192, 24)
+        mode.Label:ClearAllPoints()
+        mode.Label:SetPoint("LEFT", mode, "RIGHT", 6, 0)
+        mode.Label:SetHeight(20); mode.Label:SetJustifyV("MIDDLE")
+        local id = entry[1]
+        mode:SetScript("OnClick", function() WV:SetVoiceSelectionMode(id) end)
+        panel.VoiceModes[id] = mode
+    end
+    panel.SharedVoiceCaption = label("", "GameFontHighlight", 20, -162, 540, 38)
     panel.VoicePriorityRows = {}
     for index = 1, 3 do
         local row = priorityCard(content)
-        row:SetPoint("TOPLEFT", content, "TOPLEFT", 20 + (index - 1) * 180, -726 - lowerOffset)
+        row:SetPoint("TOPLEFT", content, "TOPLEFT", 20 + (index - 1) * 180, -200)
         panel.VoicePriorityRows[index] = row
     end
     attachVoicePriorityDrag(content)
@@ -901,7 +940,21 @@ local function createPanel()
     hint:SetScript("OnLeave", hideVoiceTooltip)
     hint:SetScript("OnHide", hideVoiceTooltip)
     panel.SharedVoiceTooltip = hint
-    button("compareVoices", "Послушать озвучку", 20, 180, function() WV:OpenVoiceComparison() end, -766 - lowerOffset)
+    button("compareVoices", "Послушать озвучку", 20, 180, function() WV:OpenVoiceComparison() end, -240)
+    button("voiceRanking", "Озвучка по расе и полу", 212, 240, function()
+        if WV:GetVoiceSelectionMode() == "ranking" then WV:OpenVoiceRanking() end
+    end, -240)
+    local function fitVoiceButtons()
+        local listen = panel.Buttons.compareVoices
+        local ranking = panel.Buttons.voiceRanking
+        local listenText = listen.GetFontString and listen:GetFontString()
+        local rankingText = ranking.GetFontString and ranking:GetFontString()
+        if listenText and rankingText then
+            local padding = math.max(0, listen:GetWidth() - listenText:GetStringWidth())
+            ranking:SetWidth(math.ceil(rankingText:GetStringWidth() + padding))
+        end
+    end
+    fitVoiceButtons()
     panel.VoiceComparisonButton = panel.Buttons.compareVoices
     refreshVoicePreference()
     panel:SetScript("OnShow", function()
@@ -910,6 +963,7 @@ local function createPanel()
         refreshVersions()
         WV:RefreshHeadOptions()
         for _, b in pairs(panel.Buttons) do if WV.StyleButton then WV.StyleButton(b) end end
+        fitVoiceButtons()
         status()
     end)
     panel:SetScript("OnHide", function()

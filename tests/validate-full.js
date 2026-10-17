@@ -7,6 +7,7 @@ scenarios.push('wayfarer-scenarios.lua');
 scenarios.push('wayfarer-version-scenarios.lua');
 scenarios.push('wayfarer-modules-scenarios.lua');
 scenarios.push('voice-priority-scenarios.lua');
+scenarios.push('head-source-scenarios.lua');
 scenarios.push('silent-playback-scenarios.lua');
 scenarios.push('music-stop-scenarios.lua');
 scenarios.push('release-commands-scenarios.lua', 'dev-commands-scenarios.lua');
@@ -30,6 +31,11 @@ for (const entry of scenarios) {
         if(s!==lua.LUA_OK) throw Error(to_jsstring(lua.lua_tostring(L,-1)));
     }
     for (const file of ['mock.lua','journal-mock.lua','portrait-mock.lua']) run(path.join(__dirname,file));
+    // Playback fixtures assert specific source files/timings. Keep their saved
+    // chosen global order after migration; first-install/upgrade defaults are
+    // covered by validate-ranking.js.
+    const modeStatus = lauxlib.luaL_dostring(L, to_luastring("TalkingHeadRuDB = {voiceSelectionMode='manual',voiceRankingDefaultApplied=true}"));
+    if (modeStatus !== lua.LUA_OK) throw Error(to_jsstring(lua.lua_tostring(L,-1)));
     if (scenario === 'wayfarer-modules-scenarios.lua') run(path.join(__dirname, 'local-debug-mock.lua'));
     if (entry.locale) {
         const status = lauxlib.luaL_dostring(L, to_luastring(`function GetLocale() return '${entry.locale}' end`));

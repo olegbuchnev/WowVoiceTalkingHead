@@ -136,7 +136,7 @@ function W.Text(id, section)
     end
     return #parts > 0 and table.concat(parts, " ") or nil
 end
-function W.QuestIDs(offline, descriptionsOnly)
+function W.QuestIDs(offline, descriptionsOnly, checkpoint)
     local ids, loaded = {}, loadedPacks()
     for _, pack in pairs(loaded) do
         for id, quest in pairs(pack.q) do
@@ -145,6 +145,7 @@ function W.QuestIDs(offline, descriptionsOnly)
                     if type(quest[section]) == "table" and selected(quest[section]) then ids[id] = true end
                 end
             end
+            if checkpoint then checkpoint() end
         end
     end
     if offline then
@@ -155,6 +156,7 @@ function W.QuestIDs(offline, descriptionsOnly)
                 for key in pairs(pack.entries or {}) do
                     local id = tonumber(key:match(descriptionsOnly and "^(%d+)a$" or "^(%d+)[apc]$"))
                     if id then ids[id] = true end
+                    if checkpoint then checkpoint() end
                 end
             end
         end

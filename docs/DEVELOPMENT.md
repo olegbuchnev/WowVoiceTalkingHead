@@ -15,8 +15,17 @@ Optional, separately installed CatQuest_Voices and Wayfarer voice packs supply
 additional quests and alternate recordings. Their audio is read in place.
 TalkingHeadRu owns source selection, playback and the queue; Wayfarer's core
 is used to load its pack registry, not to play recordings. Shared recordings use
-the source selected in options (WowVoice by default).
+the selection mode configured in options (community race/sex ranking on new installs
+and once on the first upgrade to the release introducing this default).
 This build targets **WoW Forever Beta, Interface 16001**.
+
+The optional `TalkingHeadRuDB.showVoiceSource` setting defaults to `false`.
+Its checkbox is in «Говорящая голова». When enabled, the head shows the actual
+playing library on the lower portrait frame in that library's color, leaving
+the NPC name its full width. Playback attaches `audioSourceID` to a copy of its
+context for all sources, including WowVoice, without changing saved queue data.
+The label follows fallback and comparison playback, fades with the head and
+stays hidden in silent previews or when the source is unknown.
 
 Updated beta clients can return secret NPC GUIDs, names and model display IDs.
 `WowVoice.PublicValue` drops restricted values before identity parsing, debug
@@ -1155,8 +1164,43 @@ The public voice catalogue ships in every build through `src/Comparison.lua` and
 heading/divider, three numbered draggable source cards with a highlighted drop target,
 and a dedicated Blizzard help-i tooltip target. `TalkingHeadRuDB.voicePriority`
 stores the full order; the former `sharedQuestVoice` migrates to its first position.
-Disabled libraries retain their rank. Normal playback checks each stage in this
-order; explicit catalogue buttons remain independent. No tooltip overlays the controls.
+Disabled libraries retain their rank. Normal playback checks each stage in the
+selected mode; explicit catalogue buttons remain independent. No tooltip overlays the controls.
+The section offers «Мой порядок» and «По расе и полу». New installs and existing
+installs without `voiceRankingDefaultApplied` switch once to «По расе и полу».
+The persistent migration marker preserves later mode choices across reloads and
+future releases. Global/private library orders and imported snapshots are retained.
+The latter mode
+uses per-group overrides, otherwise the newest valid imported/builtin snapshot
+by `generatedAt` (import wins equal dates), by the speaker's verified race/sex.
+Explicit score ties and groups without ratings use the global draggable card order.
+Missing groups or snapshots use that order too; per-group overrides take precedence.
+The help icon explains both modes without changing its text on selection.
+The group-settings button is disabled in manual mode. Mode radios reuse the
+anchor selector's antialiased circle mask at a 16px visible diameter and align
+their labels vertically; the two action buttons use matching text padding.
+`VoiceRanking.lua` resolves the captured speaker or the appropriate static
+giver/finisher; unknown speakers use the user's global order. `RankingCodec.lua`
+validates bounded Base64url, SHA-256 and data-only JSON; imports replace saved
+data atomically and older snapshots are rejected. `RankingView.lua` shows the
+effective order with origin labels and links to `VoiceGroupView.lua`. Group
+cards edit `voiceGroupOrders[groupKey]`; group/global reset deletes overrides
+only, with confirmation for global reset. Imported snapshots can be updated,
+but there is no deletion action.
+`VoiceGroupExamples.lua` selects playable description samples with matching
+speakers, prefers three sources initially, and uses a random bag for the dice.
+With one installed source it allows single-source listening; with two or more
+each candidate must have at least two recordings. Preview ownership prevents
+navigation from stopping unrelated playback. Views are mutually exclusive and
+preserve the main options scroll position. See `docs/internal/addon-voice-ranking.md`.
+Opening a group queues `voice-group-examples` in the shared 1ms `WV.Work`
+budget and immediately shows the page with a spinner in the listening section.
+Index enumeration and merge sorting yield bounded chunks; speaker lookup and
+each source resolution yield separately. `BuildReplaySpeakerSnapshot` shares
+one incremental bag/display scan with the portrait warmup implementation.
+Leaving cancels the task; failures end the spinner with a retry hint.
+`RefreshAudioSources(true)` refreshes preferences without incrementing
+`audioCatalogRevision`, so editing an order does not rescan available samples.
 The catalogue replaces the settings content inside the same category.
 The page has an «Озвучка заданий» heading, the quest ID field
 with the ID range alongside and a Back button

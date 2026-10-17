@@ -82,6 +82,7 @@ assert((head.Body:GetFont() ~= L.cyrillicFont) == english)
 Q:Clear()
 
 -- The source still supplies Russian text and the same sound file on an English client.
+assert(WV:SetVoiceSelectionMode('manual'))
 assert(WV:SetSharedQuestVoice('catquest'))
 assert(WV:ReplayQuest(179))
 assert(plays[#plays].file:find('CatQuest_Voices', 1, true))

@@ -256,6 +256,7 @@ function generate(check = false) {
     if (check) { if (fs.readFileSync(path.join(root,file),'utf8').replace(/\r\n/g,'\n') !== content) throw Error('Stale speaker data: '+file); }
     else fs.writeFileSync(path.join(root,file),content);
   }
+  require('./generate-voice-group-portraits').generate(result.database,check);
   return report;
 }
 module.exports = {merge,render,generate,sha256,POLICY};

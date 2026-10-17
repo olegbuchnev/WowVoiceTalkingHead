@@ -31,7 +31,7 @@ export function RankingExport() {
         {error && <p role="alert">{error}</p>}
         {bundle && <>
           <p>Снимок: <time dateTime={bundle.snapshot.generatedAt}>{new Date(bundle.snapshot.generatedAt).toLocaleString('ru-RU')}</time> · Групп: {bundle.snapshot.groups.length}</p>
-          <p>С оценками: {bundle.snapshot.groups.filter(g=>g.status!=='no_data').length}. Для групп без оценок используется фиксированный порядок: WowVoice, CatQuest, Wayfarer.</p>
+          <p>С оценками: {bundle.snapshot.groups.filter(g=>g.status!=='no_data').length}. Для групп без оценок используется ваш порядок библиотек из настроек аддона.</p>
           <div className="ranking-actions"><button className="ranking-copy" onClick={copy} aria-live="polite">
             <span style={{visibility:copied?'hidden':'visible'}} aria-hidden={copied}>Скопировать строку</span>
             <span style={{visibility:copied?'visible':'hidden'}} aria-hidden={!copied}>Скопировано</span>

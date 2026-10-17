@@ -1,5 +1,20 @@
 # Timeweb Cloud deployment
 
+## Unrated group import hint (deployed 2026-10-17)
+
+Deployed `talkinghead-vote-web:ranking-help-20261017`. The import dialog now
+explains that groups without ratings use the user's library order from addon
+settings. The API container was not restarted; volume mounts are unchanged.
+The new web container is healthy.
+
+Docker build checks passed on retry after a transient portrait retry timing
+assertion. Public browser checks verified the exact hint at five viewport sizes,
+THR1 checksum, clipboard and stable dialog geometry after copying, without
+submitting ballots. Evidence: `artifacts/review/ranking-help-release/deployment.json`,
+`ranking-help-image-retry.log` and `ranking-help-public-*.png`.
+Rollback: retag `talkinghead-vote-web:before-ranking-help-20261017` as the
+configured web image and recreate only `web`.
+
 ## Dragon categories and cameras (deployed 2026-10-17)
 
 Deployed the website changes in `b13cf49` using

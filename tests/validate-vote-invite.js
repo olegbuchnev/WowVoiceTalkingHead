@@ -18,7 +18,7 @@ for (const locale of ['ruRU','enUS','enGB']) {
     if (status !== lua.LUA_OK) throw Error(`${locale}: ${to_jsstring(lua.lua_tostring(state,-1))}`);
   }
   function file(name) {run(fs.readFileSync(name,'utf8'));}
-  for (const name of ['mock.lua','journal-mock.lua','portrait-mock.lua']) file(path.join(__dirname,name));
+  for (const name of ['mock.lua','journal-mock.lua','portrait-mock.lua','local-debug-mock.lua']) file(path.join(__dirname,name));
   run(`
     function GetLocale() return '${locale}' end
     nativeWordWrap=true
@@ -43,6 +43,7 @@ for (const locale of ['ruRU','enUS','enGB']) {
   for (const name of fs.readFileSync(path.join(source,'TalkingHeadRu.toc'),'utf8').split(/\r?\n/).filter(x=>x.endsWith('.lua'))) file(path.join(source,name));
   run(`
     event('ADDON_LOADED')
+    assert(WowVoice:GetVoiceSelectionMode()=='ranking', 'fresh install uses community ranking')
     function login()
       local f=frames.TalkingHeadRuVoteInviteEvents
       f.scripts.OnEvent(f,'PLAYER_ENTERING_WORLD')
@@ -56,6 +57,7 @@ for (const locale of ['ruRU','enUS','enGB']) {
     assert(not EllesmereUI, 'standalone styling requires no upstream addon')
     assert(popup.Title:GetStringWidth()<=popup.Title:GetWidth(), 'heading fits')
     assert(popup.Description:GetStringHeight()<=popup.Description.height, 'body fits')
+    assert(popup.VoiceSettingsHint:GetStringHeight()<=popup.VoiceSettingsHint.height, 'voice settings hint fits')
     assert(popup.Link:GetText()=='https://talkingheadru.tw1.ru/' and not popup.Link.focus)
     popup.Link.scripts.OnMouseUp(popup.Link)
     assert(popup.Link.focus and popup.Link.selected)
@@ -70,6 +72,19 @@ for (const locale of ['ruRU','enUS','enGB']) {
     assert(popup:IsShown(), 'manual command reopens a seen invitation')
     popup.Link.scripts.OnEscapePressed()
     assert(not popup:IsShown())
+    WowVoice:OpenOptions()
+    local options=frames.WowVoiceOptionsPanel
+    options:SetSize(720,800)
+    WowVoice:OpenVoiceRanking()
+    options.Scroll:SetVerticalScroll(300)
+    command('vote')
+    popup.Link.scripts.OnMouseUp(popup.Link)
+    popup.Options.scripts.OnClick()
+    assert(not popup:IsShown() and not popup.Link.focus, 'options button dismisses invitation and copy focus')
+    assert(options:IsShown() and options.Scroll:IsShown(), 'options button returns to main options')
+    assert(not frames.TalkingHeadRuRankingView:IsShown(), 'options button closes nested ranking view')
+    assert(options.Scroll:GetVerticalScroll()==0, 'options button starts at voice selection')
+    options:Hide()
   `);
   // New Lua module state models a reload/another character with account-wide saves.
   file(path.join(source,'VoteInvite.lua'));

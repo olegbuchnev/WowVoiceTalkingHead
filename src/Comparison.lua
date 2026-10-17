@@ -48,13 +48,14 @@ function Comparison.Resolve(id, source)
     text = Sources.Text(id, "a")
     return { path = path, duration = seconds, text = text, sourceID = source, verified = verified, packName = packName }
 end
-function Comparison.QuestIDs()
+function Comparison.QuestIDs(checkpoint)
     local candidates, result = {}, {}
     local function add(index)
         for key in pairs(index or {}) do
             local id = type(key) == "number" and key
                 or (type(key) == "string" and tonumber(key:match("^(%d+)a$")))
             if id and id > 0 and id % 1 == 0 then candidates[id] = true end
+            if checkpoint then checkpoint() end
         end
     end
     add(WowVoiceDur)
@@ -65,20 +66,24 @@ function Comparison.QuestIDs()
     end
     for id in pairs(candidates) do
         if Comparison.Known(id, "wowvoice") or Comparison.Known(id, "catquest") then result[id] = true end
+        if checkpoint then checkpoint() end
     end
     if WowVoiceWayfarerSource then
-        for id in pairs(WowVoiceWayfarerSource.QuestIDs(true, true)) do result[id] = true end
+        for id in pairs(WowVoiceWayfarerSource.QuestIDs(true, true, checkpoint)) do
+            result[id] = true
+            if checkpoint then checkpoint() end
+        end
     end
     return result
 end
-function Comparison.Play(id, source)
+function Comparison.Play(id, source, owner)
     local recording = Comparison.Resolve(id, source)
     if not recording then return false end
     if not (TalkingHeadRuDB and TalkingHeadRuDB.enabled) then
         DEFAULT_CHAT_FRAME:AddMessage(L["TalkingHead Ru: озвучка выключена. Включить: /thead on"])
         return false
     end
-    local ok = WV:PreviewQuestAudio(id, recording.path, recording.duration, recording.text, recording.sourceID, recording.verified)
+    local ok = WV:PreviewQuestAudio(id, recording.path, recording.duration, recording.text, recording.sourceID, recording.verified, owner)
     if not ok then failed[recording.path] = true end
     return ok
 end

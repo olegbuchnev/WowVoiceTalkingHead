@@ -25,6 +25,7 @@ local SECTION = { accept = "a", progress = "p", complete = "c" }
 
 local defaults = {
     enabled  = true,
+    showVoiceSource = false, -- Optional library label on the talking head.
     autoPlay = true, -- Master switch; manual replay stays available
     queueDescriptionsOnly = false,
     queueAutoPlay = true, -- Remember continuous playback; fill only when absent.
@@ -413,6 +414,7 @@ do
     end
 
     function Playback:Stop(reason)
+        self.previewOwner = nil
         stopAt = nil
         if not restoreAt then ticker:Hide() end
         if not playing then
@@ -461,9 +463,10 @@ do
     -- duration: voice line length, or nil if unknown
     function Playback:Play(path, duration, context, sourceID, verified)
         if not path then return false end
-        if context and (sourceID == "catquest" or sourceID == "wayfarer") then
+        self.previewOwner = nil
+        if context then
             -- Queue/speaker contexts can be reused for a different source later.
-            -- Keep source-specific text fallbacks out of SavedVariables.
+            -- Record the actual resolved source without modifying saved contexts.
             local copy = {}
             for key, value in pairs(context) do copy[key] = value end
             copy.audioSourceID = sourceID
@@ -613,8 +616,9 @@ local function foreverAudio(questId, section)
 end
 
 -- Returns path, duration, source version, source ID, verified timing.
-function WV:SoundPath(questId, section)
-    for _, id in ipairs(self:GetVoicePriority()) do
+function WV:SoundPath(questId, section, context)
+    local order = self.GetQuestVoicePriority and self:GetQuestVoicePriority(questId, section, context) or self:GetVoicePriority()
+    for _, id in ipairs(order) do
         if id == "wowvoice" then
             local path, duration, version, sourceID, verified = self:ClassicSoundPath(questId, section)
             if path then return path, duration, version, sourceID, verified end
@@ -657,7 +661,7 @@ function WV:SetVoicePriority(order)
     end
     TalkingHeadRuDB.voicePriority = {order[1], order[2], order[3]}
     TalkingHeadRuDB.sharedQuestVoice = order[1]
-    self:RefreshAudioSources()
+    self:RefreshAudioSources(true)
     return true
 end
 
@@ -689,7 +693,7 @@ function WV:ClassicSoundPath(questId, section)
     -- invent a filename for a missing stage or an unknown Forever quest.
     if not duration then return nil end
     local ext = (TalkingHeadRuDB and TalkingHeadRuDB.ext) or "ogg"
-    return "Interface\\AddOns\\" .. SOUND_ADDON .. "\\" .. key .. "." .. ext, duration, nil, nil, ext == "ogg"
+    return "Interface\\AddOns\\" .. SOUND_ADDON .. "\\" .. key .. "." .. ext, duration, nil, "wowvoice", ext == "ogg"
 end
 
 --------------------------------------------------------------------- Logic
@@ -750,7 +754,7 @@ function WV:Speak(section, title, text, event)
     end
 
     local key = questId .. section
-    local path, dur, _, sourceID, verified = self:SoundPath(questId, section)
+    local path, dur, _, sourceID, verified = self:SoundPath(questId, section, context)
     if not path then
         dbg("нет доступной записи: questID=%s section=%s", tostring(questId), section)
         return
@@ -801,7 +805,7 @@ function WV:PlayQueuedQuest(record)
     local context = record.context
     if not (TalkingHeadRuDB and TalkingHeadRuDB.enabled) then return false end
     -- Per-type autoplay preferences gate new entries, not already queued lines.
-    local path, duration, _, sourceID, verified = self:SoundPath(context.questId, context.section)
+    local path, duration, _, sourceID, verified = self:SoundPath(context.questId, context.section, context)
     dbg("очередь: questID=%s section=%s title=%s WowVoiceDur=%s path=%s", tostring(context.questId),
         tostring(context.section), tostring(context.title), tostring(_G.WowVoiceDur ~= nil
             and _G.WowVoiceDur[context.questId .. context.section] ~= nil), tostring(path))
@@ -833,10 +837,11 @@ local function availabilityKey(questId)
     return tostring(questId) .. ":" .. tostring(path) .. ":" .. tostring(duration) .. ":" .. tostring(version)
 end
 
-function WV:RefreshAudioSources()
+function WV:RefreshAudioSources(preferencesOnly)
     self:GetSharedQuestVoice()
     unavailableQuestAudio = {}
     self.audioRevision = (self.audioRevision or 0) + 1
+    if not preferencesOnly then self.audioCatalogRevision = (self.audioCatalogRevision or 0) + 1 end
     self.lastKey = nil
     if self.RefreshAudioSourceOptions then self:RefreshAudioSourceOptions() end
     if self.RefreshAudioSourceDebug then self:RefreshAudioSourceDebug() end
@@ -882,9 +887,9 @@ function WV:ReplayQuest(questId)
     -- without counting it as a real manual listen. Capture before playback
     -- changes other preview state.
     local isReminderTest = self.IsQuestReminderTest and self:IsQuestReminderTest(questId)
-    local path, duration, _, sourceID, verified = self:SoundPath(questId, "a")
-    dbg("журнал: повтор questID=%s key=%s path=%s", tostring(questId), key, tostring(path))
     local context = self.GetReplaySpeaker and self:GetReplaySpeaker(questId)
+    local path, duration, _, sourceID, verified = self:SoundPath(questId, "a", context)
+    dbg("журнал: повтор questID=%s key=%s path=%s", tostring(questId), key, tostring(path))
     local ok = Playback:Play(path, duration, context, sourceID, verified)
     -- Real descriptions, automatic or manual, share the reminder cooldown.
     if ok then
@@ -901,11 +906,13 @@ end
 
 -- Shared transport for local A/B listening. It uses our portrait/timer but
 -- does not change the normal source policy, reminder cooldowns or failure cache.
-function WV:PreviewQuestAudio(questId, path, duration, text, sourceID, verified)
+function WV:PreviewQuestAudio(questId, path, duration, text, sourceID, verified, owner)
     if not (TalkingHeadRuDB and TalkingHeadRuDB.enabled) then return false end
     local context = self.GetReplaySpeaker and self:GetReplaySpeaker(questId)
     if context and text and (not context.text or not context.text:find("%S")) then context.text = text end
-    return Playback:Play(path, duration, context, sourceID, verified)
+    local ok = Playback:Play(path, duration, context, sourceID, verified)
+    if ok then Playback.previewOwner = owner end
+    return ok
 end
 
 local f = CreateFrame("Frame", "WowVoiceFrame")
@@ -933,6 +940,12 @@ f:SetScript("OnEvent", function(self, event, arg1)
             return
         end
         TalkingHeadRuDB = TalkingHeadRuDB or {}
+        -- Enable the new default once, including upgrades from older builds.
+        -- The persistent marker preserves later user choices across releases.
+        if not TalkingHeadRuDB.voiceRankingDefaultApplied then
+            TalkingHeadRuDB.voiceSelectionMode = "ranking"
+            TalkingHeadRuDB.voiceRankingDefaultApplied = true
+        end
         -- The talking head always uses Retail. Preserve its saved geometry.
         TalkingHeadRuDB.headEnabled, TalkingHeadRuDB.headPreset = nil, nil
         TalkingHeadRuDB.button, TalkingHeadRuDB.buttonPos = nil, nil

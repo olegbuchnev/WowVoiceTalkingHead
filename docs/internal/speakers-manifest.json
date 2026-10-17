@@ -54,7 +54,7 @@
       "attCommit": "10164719738bdc1e7baa23dd854bef4c7184a6ac"
     },
     "catquest": {
-      "version": "0.7.0",
+      "version": "0.7.1",
       "voicesVersion": "0.7.0"
     },
     "wayfarer": {
@@ -85,7 +85,7 @@
   "inputHashes": {
     "classic": "f13f9d3b8ee7ba01de59ed02ef8a5b729ec532805e65e4b0ac23d7f67dd0e1e2",
     "pins": "0df871d8833cdbe5668754398dec1b0bff31a41ec66381deacc12d68fdc33b78",
-    "cat": "5b1e2f83b9cebdab832cb55078755684338ca1d732340d42c2894280165b5399",
+    "cat": "4959c9a5a514abca729744756b752e01a2b89ae190ba0ac1e0b8f1212551e10a",
     "wayfarer": "d464a30ea932d6dd99a741d4871bc10434b093a4c330c4687d7a4928356a1c24",
     "supplements": "0731d8abbf00f9c01111f601620b6deaea6ebbbc27887bf5807056d1c006ef49",
     "raceClassifications": "bafed7e2a09c337717540ff79bee6e5b7a855c3ca1ec122c18540c92175f3048",

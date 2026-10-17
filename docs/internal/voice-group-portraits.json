@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 1,
+  "groups": {
+    "ancient/male": {
+      "npcID": 3616,
+      "name": "Ону",
+      "displayID": 1455
+    },
+    "banshee/female": {
+      "npcID": 2278,
+      "name": "Мелизара",
+      "displayID": 10994
+    },
+    "bloodelf/female": {
+      "npcID": 7506,
+      "name": "Волшебница крови Линора",
+      "displayID": 6631
+    },
+    "bloodelf/male": {
+      "npcID": 2888,
+      "name": "Гарек",
+      "displayID": 9752
+    },
+    "centaur/male": {
+      "npcID": 13716,
+      "name": "Селебрас Искупленный",
+      "displayID": 13715
+    },
+    "child/female": {
+      "npcID": 807,
+      "name": "Лиза",
+      "displayID": 252
+    },
+    "child/male": {
+      "npcID": 3508,
+      "name": "Мики",
+      "displayID": 251
+    },
+    "dragon/male": {
+      "npcID": 15192,
+      "name": "Анахронос",
+      "displayID": 2719
+    },
+    "dreadlord/male": {
+      "npcID": 2425,
+      "name": "Вариматрас",
+      "displayID": 11658
+    },
+    "dwarf/female": {
+      "npcID": 15183,
+      "name": "Геолог Ехидная",
+      "displayID": 15316
+    },
+    "dwarf/male": {
+      "npcID": 658,
+      "name": "Стен Крепкорук",
+      "displayID": 1362
+    },
+    "elemental_water/male": {
+      "npcID": 13278,
+      "name": "Герцог Гидраксис",
+      "displayID": 10849
+    },
+    "furbolg/male": {
+      "npcID": 8405,
+      "name": "Огтинк",
+      "displayID": 1012
+    },
+    "gnome/female": {
+      "npcID": 10667,
+      "name": "Хроми",
+      "displayID": 10008
+    },
+    "gnome/male": {
+      "npcID": 16033,
+      "name": "Бодли",
+      "displayID": 15994
+    },
+    "goblin/female": {
+      "npcID": 10267,
+      "name": "Тинки Кипеллер",
+      "displayID": 9791
+    },
+    "goblin/male": {
+      "npcID": 3494,
+      "name": "Оловень",
+      "displayID": 7073
+    },
+    "human_child/female": {
+      "npcID": 10926,
+      "name": "Памела Редпат",
+      "displayID": 10445
+    },
+    "human_child/male": {
+      "npcID": 14305,
+      "name": "Ребенок-сирота",
+      "displayID": 338
+    },
+    "human/female": {
+      "npcID": 16013,
+      "name": "Делиана",
+      "displayID": 15965
+    },
+    "human/male": {
+      "npcID": 16016,
+      "name": "Антион Хармон",
+      "displayID": 15968
+    },
+    "imp/male": {
+      "npcID": 14470,
+      "name": "Бесенок",
+      "displayID": 4449
+    },
+    "nightelf/female": {
+      "npcID": 265811,
+      "name": "Лирина Клинок Сумерек",
+      "displayID": 144650
+    },
+    "nightelf/male": {
+      "npcID": 11802,
+      "name": "Дендрит Блеск Звезд",
+      "displayID": 11769
+    },
+    "orc_child/female": {
+      "npcID": 15309,
+      "name": "Малец",
+      "displayID": 14616
+    },
+    "orc_child/male": {
+      "npcID": 14444,
+      "name": "Орк-сирота",
+      "displayID": 14589
+    },
+    "orc/female": {
+      "npcID": 3338,
+      "name": "Сергра Черный Шип",
+      "displayID": 3850
+    },
+    "orc/male": {
+      "npcID": 265809,
+      "name": "Бракк",
+      "displayID": 144648
+    },
+    "quilboar/male": {
+      "npcID": 3430,
+      "name": "Кривозуб",
+      "displayID": 1346
+    },
+    "scourge/female": {
+      "npcID": 11055,
+      "name": "Жрица Тьмы Вандис",
+      "displayID": 10550
+    },
+    "scourge/male": {
+      "npcID": 11878,
+      "name": "Натанос Гнилостень",
+      "displayID": 11814
+    },
+    "skyborne/female": {
+      "npcID": 251968,
+      "name": "Айесса Певица Рассвета",
+      "displayID": 137633
+    },
+    "skyborne/male": {
+      "npcID": 263664,
+      "name": "Раан Дикий Ветер",
+      "displayID": 143798
+    },
+    "stone_construct/male": {
+      "npcID": 7918,
+      "name": "Каменный дозорный Нограннона",
+      "displayID": 6589
+    },
+    "succubus/female": {
+      "npcID": 9500,
+      "name": "Госпожа Нагмара",
+      "displayID": 2834
+    },
+    "tauren/female": {
+      "npcID": 4046,
+      "name": "Магата Зловещий Тотем",
+      "displayID": 4510
+    },
+    "tauren/male": {
+      "npcID": 7854,
+      "name": "Джангор Быстрый Странник",
+      "displayID": 6893
+    },
+    "troll/female": {
+      "npcID": 14904,
+      "name": "Майвики Зулдазарская",
+      "displayID": 14996
+    },
+    "troll/male": {
+      "npcID": 8115,
+      "name": "Знахарь Узер'и",
+      "displayID": 7328
+    }
+  }
+}

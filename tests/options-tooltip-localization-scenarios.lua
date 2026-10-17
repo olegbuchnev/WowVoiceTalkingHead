@@ -92,7 +92,8 @@ WV:RefreshAudioSourceOptions()
 checkShown(options.SharedVoiceTooltip)
 assert(not tooltip.lines[2]:find('→',1,true), 'avoid unsupported arrow glyphs')
 assert(not tooltip.lines[2]:find('Недоступны:',1,true), 'availability belongs on individual cards')
-assert(#tooltip.lines[2] < 300, 'keep the general hint short')
+assert(tooltip.lines[2]:find('Мой порядок',1,true) and tooltip.lines[2]:find('По расе и полу',1,true),
+    'the shared hint must explain both selection modes')
 checkHidden(options.SharedVoiceTooltip)
 
 local oldLoaded = C_AddOns.IsAddOnLoaded

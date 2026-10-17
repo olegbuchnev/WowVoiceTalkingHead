@@ -395,9 +395,13 @@ local function showDebug(options, value)
 end
 
 function WV:OpenVoiceComparison(value)
+    if self.CloseVoiceRanking then self:CloseVoiceRanking() end
     self:OpenOptions()
     local options = _G.WowVoiceOptionsPanel
     if options and options:IsShown() then showDebug(options, strtrim(value or "")) end
+end
+function WV:CloseVoiceComparison()
+    if panel and panel:IsShown() then showOptions() end
 end
 SLASH_WOWVOICELOCALDEBUG1 = "/wvvoices"
 SlashCmdList.WOWVOICELOCALDEBUG = function(value) WV:OpenVoiceComparison(value) end
