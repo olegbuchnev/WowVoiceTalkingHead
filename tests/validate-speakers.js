@@ -33,6 +33,31 @@ const inputs = {
 };
 const result = merge(inputs);
 assert.deepEqual(creatureVoiceMetadata([
+  {npcID:1,voice:'dragon-male'},{npcID:1,voice:'creature/dragon'},
+  {npcID:2,voice:'dragon-female'}, {npcID:3,voice:'creature/dragon'},
+  {npcID:4,voice:'dragon-male'},{npcID:4,voice:'dragon-female'},
+  {npcID:5,voice:'dragon-male'},{npcID:5,voice:'bloodelf-male'},
+]),{1:{voiceRace:'dragon',voiceSex:'male'},2:{voiceRace:'dragon',voiceSex:'female'},3:{voiceRace:'dragon'}},
+  'Dragon labels retain sex and reject conflicting or generic observations');
+const dragonInputs=structuredClone(inputs);
+dragonInputs.cat.tables.NpcData[10]={1:'skyborne',3:6374};
+dragonInputs.cat.tables.NpcData[20]={1:'bloodelf',2:'male',3:10199};
+dragonInputs.cat.tables.QuestGiver[60]=10;
+dragonInputs.cat.tables.QuestFinisher[60]=20;
+dragonInputs.catAudio={entries:{'60a':{voice:'creature/dragon'}}};
+dragonInputs.wayfarer.npcs[10]={voiceRace:'dragon',voiceSex:'male'};
+dragonInputs.wayfarer.npcs[20]={voiceRace:'dragon',voiceSex:'female'};
+const dragons=merge(dragonInputs);
+assert.equal(dragons.database.npcs[10].race,'dragon');
+assert.equal(dragons.database.npcs[10].sex,'male','Wayfarer supplies sex for the matching sexless CatQuest category');
+assert.equal(dragons.origins.npcs[10].race,'catquest-voice');
+assert.equal(dragons.database.npcs[20].race,'dragon');
+assert.equal(dragons.database.npcs[20].sex,'female','Female dragons must not inherit a generic NPC male label');
+assert.equal(dragons.database.npcs[20].displayID,10199,'Voice category never replaces the actual portrait');
+assert.equal(dragons.database.finishers[60].npcID,20,'Receiving speaker retains independent identity');
+delete dragonInputs.wayfarer.npcs[10];
+assert.equal(merge(dragonInputs).database.npcs[10].sex,undefined,'Sexless dragon label does not invent male sex');
+assert.deepEqual(creatureVoiceMetadata([
   {npcID:1,voice:'centaur-male'},
   {npcID:2,voice:'centaur-male'},{npcID:2,voice:'ogre-male'},
   {npcID:3,voice:'named/5398'},
@@ -246,6 +271,20 @@ assert.deepEqual(merge({...inputs,catAudio:{entries:{'7a':{voice:'narrator'}}},s
   {narrator:true},'A later library narrator label remains compatible with the manual decision');
 const {dataTable}=require('../tools/import-forever-audio');
 const current=dataTable(require('path').join(__dirname,'../src/Speakers.lua'),'TalkingHeadRuSpeakers');
+for (const id of [10321,9459,10740,15192,13020]) {
+  assert.equal(current.npcs[id].race,'dragon','Reviewed dragon voice categories survive regeneration');
+  assert.equal(current.npcs[id].sex,'male');
+}
+for (const id of [5353,10976,10929]) assert.equal(current.npcs[id].race,'bloodelf','Verified elf appearances override dragon voices');
+assert.equal(current.npcs[10929].sex,'female');
+assert.equal(current.npcs[10929].displayID,10199,'Haleh retains her elf appearance');
+assert.equal(current.npcs[253285].race,'skyborne','Actual Skyborne remain separate from dragons');
+const rankingGroups=require('../server/voice-vote/src/main/resources/ranking-groups.json');
+const populatedGroups=[...new Set(Object.values(current.npcs)
+  .filter(npc=>npc.race && ['male','female'].includes(npc.sex)).map(npc=>npc.race+'/'+npc.sex))].sort();
+assert.deepEqual(rankingGroups.map(group=>group.race+'/'+group.sex).sort(),populatedGroups,
+  'Server ranking registry must contain every populated group and no empty categories');
+assert(!rankingGroups.some(group=>group.race==='dragon' && group.sex==='female'));
 for (const [rescue,find,npcID] of [[648,351,7784],[836,485,7806],[2767,2766,7807]]) {
   assert.deepEqual(current.givers[rescue],{narrator:true},'OOX descriptions use the reviewed narrator policy');
   assert.deepEqual(current.finishers[find],{narrator:true},'Reading at the robot uses the narrator');

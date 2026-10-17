@@ -7,6 +7,19 @@ Last updated: 2026-10-13.
 
 ## Confirmed in game
 
+- [x] Emberstrife / Огнебор — quest `6582`, NPC `10321`, display `6374`,
+  model `123636` (`creature/drake/drake.m2`). User accepted on 2026-10-17:
+  distance `2.8`, lateral `-0.12`, vertical `-0.24`. The wider, lower framing
+  leaves room for the raised Talk pose; the final shift moves it down and left.
+
+- [x] Awbee / Ауби — quest `5160`, NPC `10740`, display `6293`, model `123610`.
+  User confirmed the leftward shift on 2026-10-17: distance `1.5`, lateral
+  `-0.04`, vertical `0`; zoom and height unchanged.
+
+- [x] Large dragons — Anachronos (`8305`, display `2719`) and Vaelastrasz
+  (`8730`, display `13992`), model `123459`. User confirmed existing `dragon`
+  framing on 2026-10-17: distance `1.5`, lateral `0`, vertical `0`.
+
 Checked entries reflect user confirmation, not automated tests. Approval applies
 to the tested models; it does not automatically cover every model variant using
 the same profile.

@@ -20,27 +20,24 @@ export function RankingExport() {
     try {await navigator.clipboard.writeText(bundle.importString);setCopied(true);}
     catch {field.current.focus();field.current.select();setError('Строка выделена. Скопируйте её вручную: Ctrl+C или меню копирования.');}
   }
-  function download() {
-    const url=URL.createObjectURL(new Blob([bundle.json],{type:'application/json;charset=utf-8'}));
-    const link=document.createElement('a');link.href=url;link.download='addon-voice-ranking.json';link.click();
-    setTimeout(()=>URL.revokeObjectURL(url),1000);
-  }
   return <>
-    <button className="ranking-open" onClick={open}>Рейтинг для аддона</button>
+    <button className="ranking-open" onClick={open}>Импорт в аддон</button>
     <dialog className="ranking-dialog" ref={dialog} aria-labelledby="ranking-heading" onClick={event=>{if(event.target===dialog.current)dialog.current.close();}}>
       <div className="ranking-content">
-        <div className="ranking-heading"><h2 id="ranking-heading">Рейтинг сообщества</h2><button aria-label="Закрыть рейтинг" onClick={()=>dialog.current.close()}>×</button></div>
-        <p>Готовый порядок библиотек для каждой группы раса–пол. Если первой озвучки нет, аддон сможет выбрать следующую.</p>
-        <p className="ranking-note">Импорт строки появится в будущей версии аддона. Сейчас можно сохранить результаты.</p>
+        <div className="ranking-heading"><h2 id="ranking-heading">Импорт рейтинга в аддон</h2><button aria-label="Закрыть рейтинг" onClick={()=>dialog.current.close()}>×</button></div>
+        <p>Скопируйте строку и вставьте её в аддоне: Опции → Выбор озвучки → Озвучка по расе и полу → Импортировать строку.</p>
+        <p className="ranking-note">Нужна версия аддона с импортом рейтинга. Личный порядок для отдельных сочетаний сохранится. При равных оценках используется ваш порядок библиотек.</p>
         {busy && <p role="status">Рассчитываем рейтинг…</p>}
         {error && <p role="alert">{error}</p>}
         {bundle && <>
           <p>Снимок: <time dateTime={bundle.snapshot.generatedAt}>{new Date(bundle.snapshot.generatedAt).toLocaleString('ru-RU')}</time> · Групп: {bundle.snapshot.groups.length}</p>
           <p>С оценками: {bundle.snapshot.groups.filter(g=>g.status!=='no_data').length}. Для групп без оценок используется фиксированный порядок: WowVoice, CatQuest, Wayfarer.</p>
-          <div className="ranking-actions"><button onClick={copy}>{copied?'Скопировано':'Скопировать строку'}</button><button onClick={download}>Скачать JSON</button></div>
+          <div className="ranking-actions"><button className="ranking-copy" onClick={copy} aria-live="polite">
+            <span style={{visibility:copied?'hidden':'visible'}} aria-hidden={copied}>Скопировать строку</span>
+            <span style={{visibility:copied?'visible':'hidden'}} aria-hidden={!copied}>Скопировано</span>
+          </button></div>
           <label htmlFor="ranking-string">Строка рейтинга</label>
           <textarea id="ranking-string" ref={field} readOnly value={bundle.importString} spellCheck={false}/>
-          {copied && <p role="status">Строка скопирована.</p>}
         </>}
         <button className="ranking-refresh" onClick={load} disabled={busy}>Обновить данные</button>
       </div>

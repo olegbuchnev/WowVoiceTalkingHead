@@ -9,13 +9,15 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/votes/ranking")
 public class AddonRankingController {
     private final Path database,catalogue;
+    private final VoteStore store;
     private AddonRanking.Export cached;
     private long expires;
-    public AddonRankingController(@Value("${voice-vote.database}") String database,@Value("${voice-vote.catalogue}") String catalogue) {
+    public AddonRankingController(@Value("${voice-vote.database}") String database,@Value("${voice-vote.catalogue}") String catalogue,VoteStore store) {
         this.database=Path.of(database);this.catalogue=Path.of(catalogue);
+        this.store=store;
     }
     private synchronized AddonRanking.Export snapshot() throws Exception {
-        if(cached==null || System.nanoTime()>=expires) {cached=AddonRanking.export(database,catalogue);expires=System.nanoTime()+10_000_000_000L;}
+        if(cached==null || System.nanoTime()>=expires) {store.synchronizeRanking();cached=AddonRanking.export(database,catalogue);expires=System.nanoTime()+10_000_000_000L;}
         return cached;
     }
     @GetMapping(produces="application/json") public ResponseEntity<String> json() throws Exception {

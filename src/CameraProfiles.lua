@@ -105,6 +105,11 @@ WV.PortraitCameraOverrides = {
     -- Live /thead diag: Mebok Mizzyrix, NPC 3446, quest 1069, SD models.
     -- Reuse the male goblin family framing for this unlisted Forever model.
     [8125066] = profiles.goblin_male,
+    -- Emberstrife's drake model: leave room for the head's wide Talk movement.
+    -- Preserve the wider framing; shift slightly down and left after review.
+    [123636] = { distance = 2.8, y = -0.12, z = -0.24 },
+    -- Awbee (quest 5160): preserve zoom and height, shift the whelp left.
+    [123610] = { distance = 1.5, y = -0.04, z = 0 },
 }
 
 function WV:GetPortraitCameraProfile(model)

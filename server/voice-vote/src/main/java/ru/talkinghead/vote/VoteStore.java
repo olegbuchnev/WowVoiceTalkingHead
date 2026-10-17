@@ -34,7 +34,17 @@ public class VoteStore implements AutoCloseable {
     private final Map<ActiveChoice,String> communityChoices=new HashMap<>();
     private record IdentityCache(List<Catalogue.Quest> quests, Map<Long,String> ids) {}
     private final ObjectMapper mapper;
+    private final RankingHistory rankingHistory;
+    private Catalogue catalogue;
+    private List<Catalogue.Quest> rankingCatalogue;
     private final java.util.concurrent.atomic.AtomicLong voteOrder = new java.util.concurrent.atomic.AtomicLong();
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public VoteStore(@Value("${voice-vote.database}") String file, ObjectMapper mapper, Catalogue catalogue) throws Exception {
+        this(file,mapper);
+        this.catalogue=catalogue;
+        synchronizeRanking();
+    }
 
     public VoteStore(@Value("${voice-vote.database}") String file, ObjectMapper mapper) throws Exception {
         this.mapper = mapper;
@@ -44,7 +54,7 @@ public class VoteStore implements AutoCloseable {
         db = DriverManager.getConnection(databaseUrl);
         execute("PRAGMA foreign_keys=ON"); execute("PRAGMA busy_timeout=5000"); execute("PRAGMA journal_mode=WAL");
         try (var statement = db.createStatement(); var row = statement.executeQuery("PRAGMA user_version")) {
-            if (row.next() && row.getInt(1) > 3) throw new SQLException("Unsupported voting schema version");
+            if (row.next() && row.getInt(1) > 4) throw new SQLException("Unsupported voting schema version");
         }
         execute("CREATE TABLE IF NOT EXISTS visitors (id TEXT PRIMARY KEY, created_at TEXT NOT NULL) STRICT");
         execute("""
@@ -93,6 +103,8 @@ public class VoteStore implements AutoCloseable {
         execute("CREATE INDEX IF NOT EXISTS votes_visitor_updated ON votes(visitor_id,updated_at)");
         execute("CREATE INDEX IF NOT EXISTS visits_visitor_seen ON visits(visitor_id,last_seen)");
         migrateActiveVotes(path);
+        rankingHistory=new RankingHistory(db,mapper);
+        rankingHistory.migrate(path);
         try (var statement=db.createStatement();var rows=statement.executeQuery("SELECT COALESCE(MAX(accepted_order),0) FROM votes")) {
             rows.next();voteOrder.set(Math.max(System.currentTimeMillis(),rows.getLong(1)));
         }
@@ -101,7 +113,7 @@ public class VoteStore implements AutoCloseable {
     }
     private void migrateActiveVotes(Path path) throws Exception {
         try(var statement=db.createStatement();var rows=statement.executeQuery("PRAGMA user_version")) {
-            if(rows.next() && rows.getInt(1)==3) return;
+            if(rows.next() && rows.getInt(1)>=3) return;
         }
         long count;
         try(var statement=db.createStatement();var rows=statement.executeQuery("SELECT COUNT(*) FROM votes")) {rows.next();count=rows.getLong(1);}
@@ -128,6 +140,17 @@ public class VoteStore implements AutoCloseable {
             execute("PRAGMA user_version=3");
             db.commit();
         } catch(Exception error) {db.rollback();throw error;}
+        finally {db.setAutoCommit(true);}
+    }
+    public synchronized void synchronizeRanking() throws SQLException {
+        if(catalogue==null) return;
+        final List<Catalogue.Quest> quests;
+        try {quests=catalogue.quests();}
+        catch(java.io.IOException error) {throw new SQLException("Cannot synchronize ranking catalogue",error);}
+        if(quests==rankingCatalogue) return;
+        db.setAutoCommit(false);
+        try {rankingHistory.synchronize(quests);db.commit();rankingCatalogue=quests;}
+        catch(Exception error) {db.rollback();throw error;}
         finally {db.setAutoCommit(true);}
     }
     long nextVoteOrder() {return voteOrder.updateAndGet(previous->Math.max(previous+1,System.currentTimeMillis()));}
@@ -247,6 +270,7 @@ public class VoteStore implements AutoCloseable {
         return save(visitor,quest,selectedId,visitID,nextVoteOrder());
     }
     public synchronized Saved save(String visitor, Catalogue.Quest quest, String selectedId, String visitID,long acceptedOrder) throws SQLException {
+        synchronizeRanking();
         observeVoteOrder(acceptedOrder);
         var selected = quest.variants().stream().filter(v -> v.id().equals(selectedId)).findFirst().orElseThrow();
         var npc = quest.npc();
@@ -255,6 +279,14 @@ public class VoteStore implements AutoCloseable {
             "id", v.id(), "source", v.source(), "pack", v.pack(), "version", v.version(), "sha256", v.sha256())).toList());
         db.setAutoCommit(false);
         try {
+            var previous=rankingHistory.previous(visitor,quest.questID());
+            boolean newer=previous==null || acceptedOrder>previous.order();
+            if(newer) {
+                // Standalone stores used by tools/tests have no catalogue provider.
+                if(catalogue==null) rankingHistory.activate(quest);
+                previous=rankingHistory.previous(visitor,quest.questID());
+                rankingHistory.beforeVote(visitor,quest,previous);
+            }
             update("INSERT OR IGNORE INTO comparisons VALUES (?,?,?,?,?,?,?,?,?)", comparison, quest.questID(), "a",
                 npc.id(), npc.displayID(), npc.modelFileID(), npc.race(), npc.sex(), now);
             int changed=update("""
@@ -268,6 +300,7 @@ public class VoteStore implements AutoCloseable {
                 WHERE excluded.accepted_order > votes.accepted_order
                 """, visitor, comparison, selected.id(), selected.source(), selected.pack(), selected.sha256(),
                 selected.version(), candidates, now, now,quest.questID(),"a",acceptedOrder);
+            if(changed>0) rankingHistory.afterVote(visitor,quest);
             if (visitID!=null) {
                 update("INSERT OR IGNORE INTO visits VALUES (?,?,?, ?,?,?)",visitID,visitor,now,now,now,"direct");
                 if(!ownsVisit(visitor,visitID)) throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT,"Visit belongs to another visitor");

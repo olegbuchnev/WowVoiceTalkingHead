@@ -86,9 +86,9 @@
     "classic": "f13f9d3b8ee7ba01de59ed02ef8a5b729ec532805e65e4b0ac23d7f67dd0e1e2",
     "pins": "0df871d8833cdbe5668754398dec1b0bff31a41ec66381deacc12d68fdc33b78",
     "cat": "5b1e2f83b9cebdab832cb55078755684338ca1d732340d42c2894280165b5399",
-    "wayfarer": "a81fa1b53f07fdc058973444c570c52c783706d926dedeebe0ff5b5137544ef5",
+    "wayfarer": "d464a30ea932d6dd99a741d4871bc10434b093a4c330c4687d7a4928356a1c24",
     "supplements": "0731d8abbf00f9c01111f601620b6deaea6ebbbc27887bf5807056d1c006ef49",
-    "raceClassifications": "d5244f57c8d7662edf54ba33a1f5f34beff5d372b8948c04674c84da84564cae",
+    "raceClassifications": "bafed7e2a09c337717540ff79bee6e5b7a855c3ca1ec122c18540c92175f3048",
     "speakerOverrides": "80993d317bce9b3826b9e57f034ab5596da2d6fb15da9bae1ffe57e582a8032c",
     "catAudio": "1e34e23f8688a4e95a640db75ee4676499f2a1139b8eb36572b68f91dbd1ae6e"
   },
@@ -14548,6 +14548,8 @@
       },
       "5353": {
         "displayID": "catquest",
+        "race": "verified-appearance",
+        "sex": "wayfarer-voice",
         "name": "catquest"
       },
       "5384": {
@@ -16304,6 +16306,8 @@
         "name": "catquest"
       },
       "9459": {
+        "race": "verified-appearance",
+        "sex": "wayfarer-voice",
         "displayID": "verified-supplement",
         "name": "catquest"
       },
@@ -16559,6 +16563,8 @@
         "name": "catquest"
       },
       "10321": {
+        "race": "verified-appearance",
+        "sex": "wayfarer-voice",
         "displayID": "verified-supplement",
         "name": "catquest"
       },
@@ -16665,6 +16671,8 @@
       },
       "10740": {
         "ageGroup": "catquest-voice",
+        "race": "verified-appearance",
+        "sex": "wayfarer-voice",
         "displayID": "verified-supplement",
         "name": "catquest"
       },
@@ -16770,6 +16778,8 @@
       },
       "10929": {
         "displayID": "catquest",
+        "race": "verified-appearance",
+        "sex": "wayfarer-voice",
         "name": "catquest"
       },
       "10941": {
@@ -16778,6 +16788,8 @@
       },
       "10976": {
         "displayID": "catquest",
+        "race": "verified-appearance",
+        "sex": "wayfarer-voice",
         "name": "catquest"
       },
       "11016": {
@@ -17434,6 +17446,7 @@
         "name": "catquest"
       },
       "13020": {
+        "race": "verified-appearance",
         "displayID": "verified-supplement",
         "name": "catquest"
       },
@@ -18189,6 +18202,8 @@
         "name": "catquest"
       },
       "15192": {
+        "race": "verified-appearance",
+        "sex": "wayfarer-voice",
         "displayID": "verified-supplement",
         "name": "catquest"
       },

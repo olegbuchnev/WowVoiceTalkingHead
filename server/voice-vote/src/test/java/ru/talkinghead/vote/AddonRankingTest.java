@@ -26,27 +26,46 @@ class AddonRankingTest {
         return snapshot.groups().stream().filter(g->g.race().equals("dwarf") && g.sex().equals("male")).findFirst().orElseThrow();
     }
     @Test void luceUsesWholeChoiceSetsAndHasFiniteSymmetricEstimates() {
-        long[][] counts=new long[8][3];counts[7][1]=50;
+        double[][] counts=new double[8][3];counts[7][1]=50;
         var scores=AddonRanking.fit(counts);
         assertEquals(scores[0],scores[2],1e-10);assertTrue(scores[1]>scores[0]);
         var group=AddonRanking.group(new AddonRanking.Key("dwarf","male"),counts);
         assertEquals("CatQuest",group.ranking().getFirst().source());
         assertEquals(List.of("CatQuest","WowVoice","Wayfarer"),group.ranking().stream().map(AddonRanking.Place::source).toList());
+        assertNull(group.ranking().getFirst().tieGroup());
+        assertEquals(2,group.ranking().get(1).tieGroup());
+        assertEquals(2,group.ranking().get(2).tieGroup());
         var gradient=new double[3];var hessian=new double[3][3];
         AddonRanking.objective(scores,counts,gradient,hessian);
         for(double value:gradient) assertEquals(0,value,1e-8);
         counts[7][0]=50;counts[7][2]=50;
         for(double value:AddonRanking.fit(counts)) assertEquals(0,value,1e-8);
+        assertEquals(List.of(1,1,1),AddonRanking.group(new AddonRanking.Key("dwarf","male"),counts)
+            .ranking().stream().map(AddonRanking.Place::tieGroup).toList());
+    }
+    @Test void tiesDoNotIncludeFallbacksOrUnequalScores() {
+        var key=new AddonRanking.Key("dwarf","male");var counts=new double[8][3];
+        assertTrue(AddonRanking.group(key,counts).ranking().stream().allMatch(p->p.tieGroup()==null));
+        counts[3][0]=10;counts[3][1]=10;
+        var partial=AddonRanking.group(key,counts);
+        assertEquals(1,partial.ranking().get(0).tieGroup());assertEquals(1,partial.ranking().get(1).tieGroup());
+        assertNull(partial.ranking().get(2).tieGroup());assertEquals("fallback",partial.ranking().get(2).basis());
+        counts=new double[8][3];counts[7][0]=20;counts[7][1]=20;counts[7][2]=5;
+        var topTie=AddonRanking.group(key,counts);
+        assertEquals(1,topTie.ranking().get(0).tieGroup());assertEquals(1,topTie.ranking().get(1).tieGroup());
+        assertNull(topTie.ranking().get(2).tieGroup());
+        counts[7][0]=21;
+        assertTrue(AddonRanking.group(key,counts).ranking().stream().allMatch(p->p.tieGroup()==null));
     }
     @Test void sparseAndLargeSamplesConvergeAndUnseenSourcesRemainFallbacks() {
         var random=new Random(72);
         for(int test=0;test<50;test++) {
-            var counts=new long[8][3];
+            var counts=new double[8][3];
             for(int mask:new int[]{3,5,6,7}) for(int source=0;source<3;source++)
                 if((mask&(1<<source))!=0) counts[mask][source]=random.nextInt(10000);
             for(double value:AddonRanking.fit(counts)) assertTrue(Double.isFinite(value));
         }
-        var counts=new long[8][3];counts[3][1]=1;
+        var counts=new double[8][3];counts[3][1]=1;
         var group=AddonRanking.group(new AddonRanking.Key("dwarf","male"),counts);
         assertEquals("partial",group.status());assertEquals("Wayfarer",group.ranking().getLast().source());
         assertEquals("fallback",group.ranking().getLast().basis());
@@ -64,11 +83,14 @@ class AddonRankingTest {
             byte[] decoded=Base64.getUrlDecoder().decode(parts[0]);
             assertEquals(export.json(),new String(decoded,StandardCharsets.UTF_8));
             assertEquals(Catalogue.hash(decoded),parts[1]);
-            assertFalse(export.json().contains("tieGroup"));
+            var exportedDwarf=dwarf(mapper.readValue(export.json(),AddonRanking.Snapshot.class));
+            assertNull(exportedDwarf.ranking().getFirst().tieGroup());
+            assertEquals(2,exportedDwarf.ranking().get(1).tieGroup());
+            assertEquals(2,exportedDwarf.ranking().get(2).tieGroup());
             for(var group:mapper.readTree(export.json()).required("groups")) {
                 int rank=1;
                 for(var place:group.required("ranking")) {
-                    assertEquals(3,place.size());
+                    assertEquals(4,place.size());assertTrue(place.has("tieGroup"));
                     assertEquals(rank++,place.required("rank").asInt());
                     assertTrue(place.has("source"));assertTrue(place.has("basis"));
                 }

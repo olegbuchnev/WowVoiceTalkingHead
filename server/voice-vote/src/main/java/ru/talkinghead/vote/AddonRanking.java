@@ -11,7 +11,7 @@ import tools.jackson.databind.ObjectMapper;
 /** Regularized Luce top-1 estimates from the latest ballot per visitor and quest. */
 public final class AddonRanking {
     static final List<String> SOURCES=List.of("WowVoice","CatQuest","Wayfarer");
-    public record Place(int rank,String source,String basis) {}
+    public record Place(int rank,String source,String basis,Integer tieGroup) {}
     public record Group(String speakerType,String race,String sex,String status,List<Place> ranking) {}
     public record Snapshot(int schemaVersion,String generatedAt,List<Group> groups) {}
     public record Export(String json,String importString) {}
@@ -45,11 +45,11 @@ public final class AddonRanking {
         var group=key(quest.npc());
         return group!=null && quest.npc().id()==npcID && group.race().equals(race) && group.sex().equals(sex)?group:null;
     }
-    static double objective(double[] s,long[][] counts,double[] gradient,double[][] hessian) {
+    static double objective(double[] s,double[][] counts,double[] gradient,double[][] hessian) {
         double value=0;
         for(int i=0;i<3;i++) {value+=s[i]*s[i]/2;if(gradient!=null) {gradient[i]=s[i];Arrays.fill(hessian[i],0);hessian[i][i]=1;}}
         for(int mask:new int[]{3,5,6,7}) {
-            long total=Arrays.stream(counts[mask]).sum();if(total==0) continue;
+            double total=Arrays.stream(counts[mask]).sum();if(total==0) continue;
             double max=-Double.MAX_VALUE,sum=0;double[] p=new double[3];
             for(int i=0;i<3;i++) if((mask&(1<<i))!=0) max=Math.max(max,s[i]);
             for(int i=0;i<3;i++) if((mask&(1<<i))!=0) {p[i]=Math.exp(s[i]-max);sum+=p[i];}
@@ -62,7 +62,7 @@ public final class AddonRanking {
         }
         return value;
     }
-    static double[] fit(long[][] counts) {
+    static double[] fit(double[][] counts) {
         double[] s=new double[3],gradient=new double[3];double[][] hessian=new double[3][3];
         for(int iteration=0;iteration<100;iteration++) {
             double value=objective(s,counts,gradient,hessian);
@@ -84,7 +84,7 @@ public final class AddonRanking {
         }
         throw new IllegalStateException("Luce optimization did not converge");
     }
-    static Group group(Key key,long[][] counts) {
+    static Group group(Key key,double[][] counts) {
         double[] scores=fit(counts);boolean[] observed=new boolean[3];
         for(int mask:new int[]{3,5,6,7}) if(Arrays.stream(counts[mask]).sum()>0)
             for(int i=0;i<3;i++) if((mask&(1<<i))!=0) observed[i]=true;
@@ -92,9 +92,16 @@ public final class AddonRanking {
         var order=new ArrayList<>(List.of(0,1,2));
         order.sort(Comparator.<Integer>comparingInt(i->observed[i]?0:1)
             .thenComparing(Comparator.<Integer>comparingLong(i->observed[i]?rounded[i]:0).reversed()).thenComparingInt(i->i));
+        // A tie ID is its first rank, scoped to this speaker group. Unobserved sources are not ties.
+        var ties=new HashMap<Long,Integer>();
+        for(int position=0;position<order.size();position++) {
+            int i=order.get(position);
+            if(observed[i] && order.stream().filter(j->observed[j] && rounded[j]==rounded[i]).count()>1)
+                ties.putIfAbsent(rounded[i],position+1);
+        }
         var places=new ArrayList<Place>();int seen=0;
         for(int i:order) {
-            places.add(new Place(places.size()+1,SOURCES.get(i),observed[i]?"votes":"fallback"));
+            places.add(new Place(places.size()+1,SOURCES.get(i),observed[i]?"votes":"fallback",observed[i]?ties.get(rounded[i]):null));
             if(observed[i]) seen++;
         }
         return new Group("npc",key.race(),key.sex(),seen==0?"no_data":seen==3?"ranked":"partial",List.copyOf(places));
@@ -103,19 +110,33 @@ public final class AddonRanking {
         if(!Files.isRegularFile(database)) throw new IllegalArgumentException("Voting database does not exist");
         var mapper=new ObjectMapper();byte[] bytes=Files.readAllBytes(catalogueFile);
         var catalogue=Catalogue.parseSnapshot(new String(bytes,StandardCharsets.UTF_8),mapper);
-        var quests=speakers(catalogue.quests());var groups=new TreeMap<Key,long[][]>();
+        var quests=speakers(catalogue.quests());var groups=new TreeMap<Key,double[][]>();
         try(var resource=AddonRanking.class.getResourceAsStream("/ranking-groups.json")) {
             if(resource!=null) for(var node:mapper.readTree(resource))
-                groups.put(new Key(node.required("race").asString(),node.required("sex").asString()),new long[8][3]);
+                groups.put(new Key(node.required("race").asString(),node.required("sex").asString()),new double[8][3]);
         }
-        for(var quest:catalogue.quests()) {quests.put(quest.questID(),quest);var key=key(quest.npc());if(key!=null) groups.computeIfAbsent(key,k->new long[8][3]);}
+        for(var quest:catalogue.quests()) {quests.put(quest.questID(),quest);var key=key(quest.npc());if(key!=null) groups.computeIfAbsent(key,k->new double[8][3]);}
         var config=new SQLiteConfig();config.setReadOnly(true);config.setBusyTimeout(5000);
         try(var db=DriverManager.getConnection("jdbc:sqlite:"+database.toAbsolutePath(),config.toProperties())) {
             db.setAutoCommit(false);
+            int version;
             try(var statement=db.createStatement();var schema=statement.executeQuery("PRAGMA user_version")) {
-                if(!schema.next() || schema.getInt(1)<1 || schema.getInt(1)>3) throw new IllegalArgumentException("Unsupported voting schema");
+                if(!schema.next() || schema.getInt(1)<1 || schema.getInt(1)>4) throw new IllegalArgumentException("Unsupported voting schema");
+                version=schema.getInt(1);
             }
-            try(var statement=db.createStatement();var rows=statement.executeQuery("""
+            if(version==4) {
+                try(var statement=db.createStatement();var rows=statement.executeQuery("SELECT * FROM ranking_layers ORDER BY pool,source")) {
+                    while(rows.next()) {
+                        var key=eligibleGroup(quests.get(rows.getLong("quest_id")),rows.getLong("npc_id"),rows.getString("race"),rows.getString("sex"),rows.getString("stage"));
+                        if(key==null) continue;
+                        int mask=rows.getInt("mask"),winner=SOURCES.indexOf(rows.getString("source"));
+                        double weight=rows.getDouble("historical")+rows.getDouble("current");
+                        if(!Set.of(3,5,6,7).contains(mask) || winner<0 || (mask&(1<<winner))==0 || !Double.isFinite(weight) || weight<0)
+                            throw new IllegalArgumentException("Invalid ranking aggregate");
+                        groups.computeIfAbsent(key,k->new double[8][3])[mask][winner]+=weight;
+                    }
+                }
+            } else try(var statement=db.createStatement();var rows=statement.executeQuery("""
                 SELECT * FROM (
                   SELECT c.quest_id,c.stage,c.npc_id,c.race,c.sex,v.selected_id,v.candidates_json,
                     ROW_NUMBER() OVER (PARTITION BY v.visitor_id,c.quest_id,c.stage ORDER BY julianday(v.updated_at) DESC,c.id DESC) AS position
@@ -137,7 +158,7 @@ public final class AddonRanking {
                         mask|=1<<source;if(id.equals(rows.getString("selected_id"))) winner=source;
                     }
                     if(winner<0) throw new IllegalArgumentException("Selected candidate is missing");
-                    groups.get(key)[mask][winner]++;
+                    groups.computeIfAbsent(key,k->new double[8][3])[mask][winner]++;
                 }
             }
             db.commit();

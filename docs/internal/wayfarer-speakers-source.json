@@ -10299,7 +10299,9 @@
       "name": "Аптекарь Зинг"
     },
     "5353": {
-      "name": "Итар"
+      "name": "Итар",
+      "voiceRace": "dragon",
+      "voiceSex": "male"
     },
     "5384": {
       "displayID": 5079,
@@ -11616,7 +11618,9 @@
       "name": "Рилли Грязегоб"
     },
     "9459": {
-      "name": "Цирус Раскаиватель"
+      "name": "Цирус Раскаиватель",
+      "voiceRace": "dragon",
+      "voiceSex": "male"
     },
     "9500": {
       "displayID": 2834,
@@ -11814,7 +11818,9 @@
       "name": "Знахарь Мау'ари"
     },
     "10321": {
-      "name": "Огнебор"
+      "name": "Огнебор",
+      "voiceRace": "dragon",
+      "voiceSex": "male"
     },
     "10377": {
       "displayID": 9901,
@@ -11889,7 +11895,9 @@
       "name": "Мулгрис Глубокая Река"
     },
     "10740": {
-      "name": "Ауби"
+      "name": "Ауби",
+      "voiceRace": "dragon",
+      "voiceSex": "male"
     },
     "10776": {
       "displayID": 10089,
@@ -11990,14 +11998,18 @@
       "name": "Марлен Редпат"
     },
     "10929": {
-      "name": "Халех"
+      "name": "Халех",
+      "voiceRace": "dragon",
+      "voiceSex": "female"
     },
     "10941": {
       "displayID": 10981,
       "name": "Визло Фингалет"
     },
     "10976": {
-      "name": "Джезиба"
+      "name": "Джезиба",
+      "voiceRace": "dragon",
+      "voiceSex": "male"
     },
     "11016": {
       "displayID": 10407,
@@ -13032,7 +13044,9 @@
       "name": "Призывательница ветров Гордый Рог"
     },
     "15192": {
-      "name": "Анахронос"
+      "name": "Анахронос",
+      "voiceRace": "dragon",
+      "voiceSex": "male"
     },
     "15194": {
       "displayID": 15326,

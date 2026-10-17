@@ -141,12 +141,16 @@ function merge({ classic, pins, cat, catAudio = {entries:{}}, wayfarer = {givers
       origins.npcs[id] ||= {}; origins.npcs[id].displayID = 'wayfarer';
     }
     addName(Number(id),npc.name,'wayfarer');
-    if (!creatureVoices[id] && ['ancient','furbolg','banshee','dreadlord','elemental_water','imp','centaur'].includes(npc.voiceRace)) {
-      existing.race = npc.voiceRace;
-      (origins.npcs[id] ||= {}).race = 'wayfarer-voice';
-      if (['imp','centaur'].includes(npc.voiceRace) && npc.voiceSex === 'male') {
+    if ((!creatureVoices[id] || creatureVoices[id].voiceRace === npc.voiceRace)
+        && ['ancient','furbolg','banshee','dreadlord','elemental_water','imp','centaur','dragon'].includes(npc.voiceRace)) {
+      if (!creatureVoices[id]) {
+        existing.race = npc.voiceRace;
+        (origins.npcs[id] ||= {}).race = 'wayfarer-voice';
+      }
+      if (!creatureVoices[id]?.voiceSex && ((['imp','centaur'].includes(npc.voiceRace) && npc.voiceSex === 'male')
+          || (npc.voiceRace === 'dragon' && ['male','female'].includes(npc.voiceSex)))) {
         existing.sex = npc.voiceSex;
-        origins.npcs[id].sex = 'wayfarer-voice';
+        (origins.npcs[id] ||= {}).sex = 'wayfarer-voice';
       }
     }
     if (npc.ageGroup === 'child' && ['male','female'].includes(npc.sex))

@@ -9,7 +9,7 @@ for id, key in pairs(WV.CameraModelProfiles) do
     local profile, actual, fileID=WV:GetPortraitCameraProfile(model)
     local expectedKey = WV.PortraitCameraOverrides[id] and 'model:' .. id or key
     assert(fileID==id and actual==expectedKey, 'every generated model mapping must resolve to its family or model override')
-    assert(profile.distance>=1.1 and profile.distance<=1.5)
+    assert(profile.distance>=1.1 and profile.distance<3)
     assert(type(profile.y)=='number' and type(profile.z)=='number')
     count=count+1; families[key]=true
     if key=='orc' or key=='tauren' then

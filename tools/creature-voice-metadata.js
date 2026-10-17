@@ -7,19 +7,26 @@ const labels = new Map([
   ['elemental-water','elemental_water'],
   ['imp-male','imp'],
   ['centaur-male','centaur'],
+  ['dragon-male','dragon'], ['dragon-female','dragon'], ['creature/dragon','dragon'],
 ]);
 function creatureVoiceMetadata(observations) {
-  const byNPC = new Map();
+  const byNPC = new Map(), dragonSex = new Map();
   for (const {npcID,voice} of observations) {
     if (!Number.isSafeInteger(npcID) || npcID<=0 || typeof voice!=='string') continue;
     if (!byNPC.has(npcID)) byNPC.set(npcID,new Set());
     byNPC.get(npcID).add(labels.get(voice) || null);
+    if (voice === 'dragon-male' || voice === 'dragon-female') {
+      if (!dragonSex.has(npcID)) dragonSex.set(npcID,new Set());
+      dragonSex.get(npcID).add(voice.slice('dragon-'.length));
+    }
   }
   const result = {};
   for (const [id,races] of byNPC) if (races.size===1 && !races.has(null)) {
     const race = [...races][0];
+    if (race === 'dragon' && dragonSex.get(id)?.size > 1) continue;
     result[id] = {voiceRace:race};
     if (race === 'imp' || race === 'centaur') result[id].voiceSex = 'male';
+    if (race === 'dragon' && dragonSex.get(id)?.size === 1) result[id].voiceSex = [...dragonSex.get(id)][0];
   }
   return result;
 }

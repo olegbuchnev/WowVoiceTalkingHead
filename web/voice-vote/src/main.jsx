@@ -16,6 +16,7 @@ import {observePortrait} from './portrait-diagnostics.js';
 import {readVolume,readPreviousVolume,saveVolume} from './volume-preference.js';
 import './style.css';
 import CommunityResults from './CommunityResults.jsx';
+import {RankingExport} from './RankingExport.jsx';
 
 // A reload starts a fresh, silent sample. Browser scroll restoration must not
 // restore an old position inside its asynchronously mounted quest text.
@@ -377,7 +378,7 @@ function App() {
         {!nextBatchSize && comparisons.length>0 && <p>Вы оценили все доступные задания.</p>}
         <button className="welcome-start continue-batch" disabled={preparing || advancing} aria-busy={preparing || advancing} onClick={()=>beginBatch(nextBatchSize===0)}>{nextBatchSize ? `Сравнить ещё ${nextBatchSize}` : 'Сравнить повторно'}</button>
       </section>;
-  return <div className={`app${started ? "" : " is-welcome"}`}><header><a className="brand" href="/" aria-label="TalkingHead Ru"><img className="brand-icon" src="/addon-icon-cutout.png" width="48" height="48" alt=""/><span className="brand-text"><span>TalkingHead <b>Ru</b></span><span className="brand-tagline">Озвучки на выбор</span></span></a><a className="curseforge-button" href="https://www.curseforge.com/wow/addons/talkinghead-ru" target="_blank" rel="noopener noreferrer"><span className="curseforge-button-label">Аддон на CurseForge</span><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="18" height="18"><path d="M6 18 18 6M6 6h12v12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="square"/></svg></a></header>
+  return <div className={`app${started ? "" : " is-welcome"}`}><header><a className="brand" href="/" aria-label="TalkingHead Ru"><img className="brand-icon" src="/addon-icon-cutout.png" width="48" height="48" alt=""/><span className="brand-text"><span>TalkingHead <b>Ru</b></span><span className="brand-tagline">Озвучки на выбор</span></span></a><div className="site-actions"><RankingExport/><a className="curseforge-button" href="https://www.curseforge.com/wow/addons/talkinghead-ru" target="_blank" rel="noopener noreferrer"><span className="curseforge-button-label">Аддон на CurseForge</span><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="18" height="18"><path d="M6 18 18 6M6 6h12v12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="square"/></svg></a></div></header>
     <main>
       {!started && <section className="welcome" aria-labelledby="welcome-title">
         <img className="welcome-art" src="/welcome-adventurers.png" width="346" height="290" alt="" draggable="false"/>

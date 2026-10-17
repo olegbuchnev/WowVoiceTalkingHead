@@ -1,5 +1,90 @@
 # Timeweb Cloud deployment
 
+## Stable import dialog (deployed 2026-10-17)
+
+Deployed `talkinghead-vote-web:import-dialog-20261017`; the API was not restarted.
+The header action is now “Импорт в аддон”, and the dialog title is
+“Импорт рейтинга в аддон”. Copy confirmation changes the button label without
+adding a paragraph. Both labels share one grid cell so the button keeps its
+intrinsic width and height. The label change is announced through `aria-live`.
+
+Desktop/mobile regression checks verify unchanged dialog, button and textarea
+bounds after copying. Docker build checks and the public five-viewport check
+passed, including THR1 checksum and clipboard verification; no ballots were sent.
+Evidence: `artifacts/review/import-dialog-release/deployment.json`,
+`import-dialog-image.log` and `import-dialog-public-*.png`.
+Rollback: retag `talkinghead-vote-web:before-import-dialog-20261017` as the
+configured web image and recreate only `web`; keep the schema-4 API and database.
+
+## Two ranking layers and public addon export (deployed 2026-10-17)
+
+Deployed `talkinghead-vote-server:ranking-layers-20261017` and
+`talkinghead-vote-web:ranking-layers-20261017`. Both services are healthy.
+SQLite schema 4 keeps one latest ballot per visitor/quest/stage, its effective
+weight and generation, one current revision per quest, and historical/current
+aggregate columns per choice-set pool and winner. A first fresh ballot in the
+current generation multiplies the remaining corresponding historical evidence
+by 0.98. Revoting removes the previous effective contribution; toggling the same
+generation or replaying an inbox receipt does not decay history again. Releases
+without changed file hashes and updates without new ballots do not reduce weight.
+The Luce export now consumes fractional aggregate evidence. The welcome pie
+chart continues to show raw active comparison wins, not weighted ranking scores.
+
+The header's “Рейтинг для аддона” action exports the existing THR1 encoding
+(base64url payload plus SHA-256). The dialog provides copy/import instructions;
+the JSON download button was removed from it. JSON remains available through the
+API and `ExportAddonRanking`. No addon codec change is required.
+
+An isolated rehearsal on a production SQLite backup preserved all 781 ballots
+and all 38 ranking groups. The production migration preserved those same ballots
+and 788 comparison rows, retaining unit weights: historical 337, current 444,
+769 aggregate rows. The group rankings matched before/after migration exactly.
+Catalogue, audio/model manifests, portrait verification and mounts were unchanged.
+The stopped database/inbox backup is
+`/srv/talkinghead/backups/ranking-layers-20261017-074102`; SQLite integrity passed.
+
+Validation: 57 Java tests, 54 frontend unit tests, Docker browser/build checks,
+five public viewport checks, clipboard and THR1 checksum verification, plus
+decoding the actual public string with `src/RankingCodec.lua` (38 groups).
+Desktop header placement does not add page height; short viewports retain the
+existing natural scrolling. No production test ballots were submitted.
+The actual `ExportAddonRanking` task also passed. Evidence is under
+`artifacts/review/ranking-layers-release/`, `ranking-layers-*-image.log`, and
+`ranking-layers-public-*.png`; the Lua check is `ranking-layers-addon.cjs`.
+
+Old images are tagged `before-ranking-layers-20261017`. **Do not retag an old
+API image against schema 4.** A rollback before reopening admission can restore
+the stopped database/inbox backup and old images together. After new votes are
+accepted, retain schema 4 and deploy a forward fix or prepare a reverse migration
+that preserves those votes; restoring the old backup would discard them.
+
+## Ranking ties (deployed 2026-10-17)
+
+Deployed `talkinghead-vote-server:ranking-ties-20261017` and the verified
+`talkinghead-vote-web:ranking-ties-20261017` build. Both containers are healthy.
+Ranking JSON and the THR1 import string now include `tieGroup`: equal observed
+scores share the first rank in their tie; unique scores and fallback sources
+have `null`. Existing ranks and schema version 1 are preserved. The future addon
+importer can use the user's library order within explicit ties only. The export
+button remains hidden, and the public frontend image contents are unchanged
+because the unused export component is excluded from the production bundle.
+
+The stopped database/inbox backup is
+`/srv/talkinghead/backups/ranking-ties-20261017-031512`. All 781 active ballots and
+788 comparison rows matched before and after API startup; SQLite integrity
+passed. Catalogue, audio/model manifests, portrait verification and volume mounts
+are unchanged. Old images remain tagged `before-ranking-ties-20261017`;
+rollback retags them and recreates the services while preserving the live database.
+
+All 50 Java tests and Docker build checks passed. Public export verification
+confirmed identical JSON/download/import-string payloads and a valid checksum:
+38 groups, including 10 with ties. The real `ExportAddonRanking` task refreshed
+`artifacts/voice-ranking/addon-voice-ranking.json`. Public browser checks passed
+for reload/no-store, layout, chart hover/exit, keyboard and touch selection.
+Evidence: `artifacts/review/ranking-ties-release/deployment.json`,
+`artifacts/review/ranking-ties-public.json` and `ranking-ties-*-image.log` under
+`artifacts/review/`.
+
 ## NPC classification and welcome spacing (deployed 2026-10-16)
 
 Deployed `talkinghead-vote-server:npc-layout-20261016` and

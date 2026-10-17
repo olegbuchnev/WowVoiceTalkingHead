@@ -1,4 +1,5 @@
 .ranking-open{border:1px solid #d2ad6855;border-radius:5px;background:transparent;color:#ddc393;padding:10px 15px;font-size:16px}
+.site-actions{display:flex;align-items:center;gap:12px}
 .ranking-dialog{width:min(680px,calc(100vw - 32px));max-height:85vh;border:1px solid #d2ad6866;border-radius:10px;padding:0;background:#202022;color:#dedbd5;box-shadow:0 20px 80px #0009;font-size:16px}
 .ranking-dialog::backdrop{background:#000a}
 .ranking-content{padding:24px;overflow-wrap:anywhere}
@@ -9,7 +10,9 @@
 .ranking-dialog p{line-height:1.5}
 .ranking-note{color:#c5beb0}
 .ranking-actions{display:flex;gap:12px;flex-wrap:wrap;margin:20px 0}
+.ranking-copy{display:grid}
+.ranking-copy span{grid-area:1/1}
 .ranking-dialog label{display:block;margin:12px 0 8px}
 .ranking-dialog textarea{width:100%;min-height:100px;resize:vertical;user-select:text;-webkit-user-select:text;background:#141416;color:#dedbd5;border:1px solid #ffffff30;padding:10px;font:12px monospace}
 .ranking-refresh{margin-top:16px}
-@media(max-width:650px){.ranking-open{order:3;width:100%}.ranking-content{padding:18px}}
+@media(max-width:650px){.site-actions{width:100%;flex-wrap:wrap}.ranking-open{width:100%}.ranking-content{padding:18px}}

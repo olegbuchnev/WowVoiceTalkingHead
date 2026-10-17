@@ -1,6 +1,14 @@
 {
   "schemaVersion": 1,
   "appearances": {
+    "4494": { "race": "bloodelf", "modelFileID": 1100087 },
+    "11394": { "race": "bloodelf", "modelFileID": 1100087 },
+    "10199": { "race": "bloodelf", "modelFileID": 1100258 },
+    "6374": {"race": "dragon", "modelFileID": 123636},
+    "2552": {"race": "dragon", "modelFileID": 123543},
+    "6293": {"race": "dragon", "modelFileID": 123610},
+    "2719": {"race": "dragon", "modelFileID": 123459},
+    "13992": {"race": "dragon", "modelFileID": 123459},
     "1258": { "race": "centaur", "modelFileID": 123170 },
     "1346": { "race": "quilboar", "modelFileID": 125497 },
     "1918": { "race": "mountain_giant", "modelFileID": 124952 },
@@ -25,6 +33,36 @@
     "143127": { "race": "ancient", "modelFileID": 122895 }
   },
   "models": {
+    "1100087": {
+      "race": "bloodelf",
+      "file": "character/bloodelf/male/bloodelfmale_hd.m2",
+      "source": "https://github.com/wowdev/wow-listfile/releases/tag/202609242243"
+    },
+    "1100258": {
+      "race": "bloodelf",
+      "file": "character/bloodelf/female/bloodelffemale_hd.m2",
+      "source": "https://github.com/wowdev/wow-listfile/releases/tag/202609242243"
+    },
+    "123636": {
+      "race": "dragon",
+      "file": "creature/drake/drake.m2",
+      "source": "https://github.com/wowdev/wow-listfile/releases/tag/202609242243"
+    },
+    "123543": {
+      "race": "dragon",
+      "file": "creature/dragonspawn/dragonspawn.m2",
+      "source": "https://github.com/wowdev/wow-listfile/releases/tag/202609242243"
+    },
+    "123610": {
+      "race": "dragon",
+      "file": "creature/dragonwhelp/dragonwhelp.m2",
+      "source": "https://github.com/wowdev/wow-listfile/releases/tag/202609242243"
+    },
+    "123459": {
+      "race": "dragon",
+      "file": "creature/dragon/dragon.m2",
+      "source": "https://github.com/wowdev/wow-listfile/releases/tag/202609242243"
+    },
     "123170": {
       "race": "centaur",
       "file": "creature/centaur/centaur.m2",
@@ -87,6 +125,6 @@
     }
   },
   "appearanceSource": "https://wow.zamimg.com/modelviewer/classicplus/meta/npc/{displayID}.json",
-  "verifiedOn": "2026-10-16",
+  "verifiedOn": "2026-10-17",
   "evidence": "Each listed ClassicPlus appearance resolves to its stated model in the cached viewer metadata. Furbolgs and ancients use one canonical male group. Dreadlord appearances 8611 and 11658 resolve to model 123673. Human child appearances 221/262/338 resolve to 124495, 257/10445 to 124456; orc child appearances 14589 and 14616 resolve to 125367 and 125362. Stonekeeper appearance 6589 resolves to model 126072; the user confirmed stone_construct for this appearance. Mountain giant appearance 1918 resolves to model 124952. Dreadlords, children, stone constructs and mountain giants preserve independently sourced NPC sex. Mangletooth (3430) appearance 1346 resolves to 125497, creature/quillboar/quillboar.m2; the existing male sex and quest links are preserved."
 }
