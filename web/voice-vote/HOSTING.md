@@ -1,5 +1,38 @@
 # Timeweb Cloud deployment
 
+## CatQuest Voices 0.7.1 and populated ranking groups (deployed 2026-10-18)
+
+Published 4,103 comparisons and 11,437 recordings, with 1,125 changed audio
+identities and 150 updated texts. New recordings were streamed directly from
+installed libraries into hash-specific paths; unchanged IDs retain their paths.
+NPC metadata and comparison coverage are unchanged. The API image is
+`talkinghead-vote-server:catquest-071-20261018`; the web image is unchanged.
+The bundled ranking registry now includes only NPC groups with giver or finisher
+roles: 37 groups, excluding unused generic child/male and child/female groups.
+All four human/orc child groups remain available.
+
+The stopped SQLite/inbox/catalogue/model-manifest backup is
+`/srv/talkinghead/backups/catquest-0.7.1-20261018-010921`. All 793 prior ballots
+and 800 comparison rows were preserved. Both services are healthy; SQLite
+integrity, schema 4 and mounts were verified. Original and packed model assets
+are unchanged. The full offline pass completed with 1,440 of 1,441 portraits
+ready; the existing display 146706 / quest 97290 camera fallback remains.
+All 375 existing verified portrait packs were reused, with no unsupported packs.
+
+Public checks verified the complete catalogue, every voice and ready portraits
+for quests 25, 5149 and 97326, audio hashes, preload/volume behavior and optimized
+M2/SKEL hashes with immutable caching. No production test ballots were submitted.
+The addon ranking was exported afterward at `2026-10-18T01:09:57.793155205Z`
+and bundled into the beta addon (37 groups).
+
+Evidence: `artifacts/voice-vote-deploy/updates/catquest-0.7.1/deployment.log`,
+`artifacts/review/catquest-0.7.1-*`, and
+`artifacts/voice-vote-model-cache/verify-report.json`.
+Rollback: stop web/API, restore the backed-up catalogue and model manifests,
+retag `talkinghead-vote-server:before-catquest-071-20261018` to the configured
+API image and restart. Retain the live votes volume and additional audio files;
+do not restore the old database over votes accepted since the backup.
+
 ## Unrated group import hint (deployed 2026-10-17)
 
 Deployed `talkinghead-vote-web:ranking-help-20261017`. The import dialog now

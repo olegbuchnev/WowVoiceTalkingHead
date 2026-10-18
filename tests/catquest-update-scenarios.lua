@@ -12,9 +12,9 @@ WV:OpenOptions()
 local panel = frames.WowVoiceOptionsPanel
 assert(WV:SetSharedQuestVoice('catquest'))
 local snapshot = WowVoiceCatQuestAudio.sourceVersion
-assert(snapshot == '0.7.0' and not S.Status().updated and not panel.AudioSourceWarning:IsShown())
+assert(snapshot == '0.7.1' and not S.Status().updated and not panel.AudioSourceWarning:IsShown())
 assert(TalkingHeadRuQuestTexts.sourceVersion == snapshot and TalkingHeadRuSpeakers.schemaVersion == 1)
--- Audited recordings retained in 0.7.0: independently measured recordings and live metadata.
+-- Audited recordings retained in 0.7.1: independently measured recordings and live metadata.
 -- These live fields come from the external index, independently of the snapshot.
 local previousFive, previousTwentySeven = quests[5], quests[27]
 quests[5] = {d=19.8,v='human-male'}
@@ -35,7 +35,7 @@ for _, playerSex in ipairs({2,3}) do
 end
 quests[5], quests[27], sex = previousFive, previousTwentySeven, 2
 assert(S.Text(251, 'a'):find('Отнесите записку Шире Фон-Инди.', 1, true), 'imported wording must match the audited source')
-print('PASS: 0.7.0 recordings use measured timings, current texts and NPC snapshot')
+print('PASS: 0.7.1 recordings use measured timings, current texts and NPC snapshot')
 -- Replaced description, turn-in-only quest with new subtitles, and sex variants.
 assert(S.Resolve(10, 'a').verified and S.Resolve(10, 'a').duration == 32.32)
 assert(S.Text(10, 'a'):find('младшего геодезиста Холстомера', 1, true))
@@ -44,7 +44,7 @@ assert(not S.Resolve(16, 'a') and S.Text(16, 'c'):find('Благодарю!', 1,
 assert(S.Resolve(99080, 'a').verified and S.Text(99080, 'c'))
 assert(S.Resolve(2, 'a').verified and S.Resolve(2, 'a').duration == 17.52)
 assert(S.Resolve(251, 'a').verified and S.Resolve(251, 'a').duration == 10.24)
-for _, variant in ipairs({{2, 'm', 34.88, 26.32}, {3, 'f', 34, 26.56}}) do
+for _, variant in ipairs({{2, 'm', 34.72, 26.32}, {3, 'f', 35.28, 26.56}}) do
     sex = variant[1]
     local added = S.Resolve(25, 'a')
     assert(added.verified and added.duration == variant[3])
@@ -54,9 +54,9 @@ for _, variant in ipairs({{2, 'm', 34.88, 26.32}, {3, 'f', 34, 26.56}}) do
     assert(completion.path:find('\\25_t_' .. variant[2] .. '.ogg', 1, true))
 end
 sex = 2
-print('PASS: real 0.7.0 quest variants and replaced audio use freshly measured durations and imported texts')
+print('PASS: real 0.7.1 quest variants and replaced audio use freshly measured durations and imported texts')
 version = '0.8.0'; WV:RefreshAudioSources()
-assert(snapshot == '0.7.0' and S.Status().updated and S.Status().version == '0.8.0')
+assert(snapshot == '0.7.1' and S.Status().updated and S.Status().version == '0.8.0')
 assert(WV:GetSharedQuestVoice() == 'catquest' and panel.VoicePriorityRows[1].sourceID == 'catquest' and panel.VoicePriorityRows[1].available)
 -- Changed durations must use the live index, independently for each section.
 local original = quests[179]

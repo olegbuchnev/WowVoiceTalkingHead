@@ -82,25 +82,28 @@ function WV:CreateVoiceGroupView(parent,label,button)
         GameTooltip:SetOwner(self,'ANCHOR_TOP'); GameTooltip:SetText('Другое случайное задание'); GameTooltip:Show(); L.OptionsTooltip(GameTooltip)
     end)
     frame.Dice:SetScript('OnLeave',function() GameTooltip:Hide() end)
-    frame.Quest=label(frame,'',34,-164,430,26,'GameFontNormalLarge')
+    frame.Quest=label(frame,'',20,-164,430,26,'GameFontNormalLarge')
+    frame.Quest:SetJustifyV('MIDDLE')
     frame.QuestIcon=frame:CreateTexture(nil,'ARTWORK')
-    frame.QuestIcon:SetPoint('TOPLEFT',frame,'TOPLEFT',0,-163); frame.QuestIcon:SetSize(26,26)
+    -- Offset the texture's transparent inset so the visible mark aligns with the cards.
+    frame.QuestIcon:SetPoint('RIGHT',frame.Quest,'LEFT',-2,0); frame.QuestIcon:SetSize(26,26)
     if frame.QuestIcon.SetAtlas and C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo('QuestNormal') then
         frame.QuestIcon:SetAtlas('QuestNormal')
     else frame.QuestIcon:SetTexture('Interface\\GossipFrame\\AvailableQuestIcon') end
     frame.Dice:SetPoint('LEFT',frame.Quest,'RIGHT',10,0)
-    frame.NPC=label(frame,'',34,-194,498,26,'GameFontHighlightLarge')
+    frame.NPC=label(frame,'',20,-194,512,26,'GameFontHighlightLarge')
     frame.NPC:SetTextColor(0.85,0.8,0.68)
     frame.Hint=label(frame,'',0,-260,532,36)
     frame.Loading=CreateFrame('Frame',nil,frame)
     frame.Loading:SetPoint('TOPLEFT',frame,'TOPLEFT',0,-164); frame.Loading:SetSize(470,48)
-    label(frame.Loading,'Подбираем задания для сравнения…',30,0,500,30,'GameFontHighlight')
+    frame.Loading.Text=label(frame.Loading,'Подбираем задания для сравнения…',20,0,430,26,'GameFontHighlight')
+    frame.Loading.Text:SetJustifyV('MIDDLE')
     local dots={}
     for i=1,8 do
         local dot=frame.Loading:CreateTexture(nil,'ARTWORK')
         dot:SetColorTexture(1,0.82,0.35,1); dot:SetSize(3,3)
         local angle=(i-1)*math.pi/4
-        dot:SetPoint('CENTER',frame.Loading,'TOPLEFT',10+math.cos(angle)*8,-10+math.sin(angle)*8)
+        dot:SetPoint('CENTER',frame.Loading.Text,'LEFT',-10+math.cos(angle)*8,math.sin(angle)*8)
         dots[i]=dot
     end
     frame.Loading:SetScript('OnUpdate',function(self,elapsed)
@@ -146,9 +149,9 @@ function WV:CreateVoiceGroupView(parent,label,button)
         local height=math.max(26,frame.Quest:GetStringHeight()+2)
         frame.Quest:SetHeight(height)
         local npcTop=164+height+4
-        frame.NPC:ClearAllPoints(); frame.NPC:SetPoint('TOPLEFT',frame,'TOPLEFT',34,-npcTop)
-        frame.Hint:ClearAllPoints(); frame.Hint:SetPoint('TOPLEFT',frame,'TOPLEFT',34,-npcTop-34)
-        frame.Hint:SetWidth(498)
+        frame.NPC:ClearAllPoints(); frame.NPC:SetPoint('TOPLEFT',frame,'TOPLEFT',20,-npcTop)
+        frame.Hint:ClearAllPoints(); frame.Hint:SetPoint('TOPLEFT',frame,'TOPLEFT',20,-npcTop-34)
+        frame.Hint:SetWidth(512)
         local playTop=npcTop+46+(frame.Hint:GetText()~='' and 36 or 0)
         for i,source in ipairs({'wowvoice','catquest','wayfarer'}) do
             local play=frame.Players[source]

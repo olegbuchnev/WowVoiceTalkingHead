@@ -107,8 +107,13 @@ function WV:RefreshVoiceRankingView()
     if not panel then return end
     local snapshot,_,origin=Ranking.Current()
     local known,groups={},{}
-    for _,npc in pairs(TalkingHeadRuSpeakers and TalkingHeadRuSpeakers.npcs or {}) do
-        if npc.race and npc.sex then known[npc.race..':'..npc.sex]=true end
+    local database=TalkingHeadRuSpeakers or {}
+    for _,roles in ipairs({database.givers or {},database.finishers or {}}) do
+        for _,role in pairs(roles) do
+            local npc=type(role)=='table' and not (role.narrator or role.itemID or role.objectID)
+                and database.npcs and database.npcs[role.npcID]
+            if npc and npc.race and npc.sex then known[npc.race..':'..npc.sex]=true end
+        end
     end
     for _,group in ipairs(snapshot and snapshot.groups or {}) do
         if group.speakerType=='narrator' or known[group.race..':'..group.sex] then groups[#groups+1]=group end

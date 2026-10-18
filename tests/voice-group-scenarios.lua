@@ -93,6 +93,16 @@ local titled=E.Build(key)
 assert(titled[1].context.title=='Тролли Пера','Missing client title did not fall back to bundled index')
 WV.GetReplaySpeaker=function() return {questId=8422,speaker={npcID=11},title='Название из журнала'} end
 assert(E.Build(key)[1].context.title=='Название из журнала','Index replaced a known current title')
+local oldLocale=GetLocale
+for _,locale in ipairs({'enUS','enGB','ruRU'}) do
+    GetLocale=function() return locale end
+    WV.GetReplaySpeaker=function() return {questId=8422,speaker={npcID=11},title='Voodoo Feathers'} end
+    assert(E.Build(key)[1].context.title=='Тролли Пера','English client title hid a bundled Russian title')
+end
+GetLocale=oldLocale
+C.QuestIDs=function() return {[987654]=true} end
+WV.GetReplaySpeaker=function() return {questId=987654,speaker={npcID=11},title='Untranslated Forever Quest'} end
+assert(E.Build(key)[1].context.title=='Untranslated Forever Quest','Missing Russian translation must retain the English title')
 C.QuestIDs,WV.GetReplaySpeaker,C.Resolve=titleIDs,titleSpeaker,titleResolve
 
 -- Navigate, play, reorder and reset through the actual view.

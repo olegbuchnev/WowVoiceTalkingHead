@@ -144,6 +144,15 @@ WV:RefreshVoiceRankingView()
 assert(view.Summary:GetText():find('Групп: 0',1,true),'Unknown imported group was counted in the table')
 for _,row in ipairs(view.Rows) do assert(not row:IsShown(),'Group without NPCs remained visible') end
 assert(R.Current().groups[1].race=='future_race','Filtering the view must not rewrite the imported snapshot')
+-- A known ambient NPC alone cannot create a useful quest ranking category.
+TalkingHeadRuSpeakers.npcs[987654]={race='future_race',sex='male'}
+WV:RefreshVoiceRankingView()
+assert(view.Summary:GetText():find('Групп: 0',1,true),'NPC without quest roles created an empty category')
+TalkingHeadRuSpeakers.finishers[987654]={npcID=987654}
+WV:RefreshVoiceRankingView()
+assert(view.Summary:GetText():find('Групп: 1',1,true),'Completion-only group must remain configurable')
+TalkingHeadRuSpeakers.npcs[987654]=nil
+TalkingHeadRuSpeakers.finishers[987654]=nil
 assert(R.Import(rankingFixture_valid))
 WV:RefreshVoiceRankingView()
 -- The table shows actual playback order, including global manual mode.

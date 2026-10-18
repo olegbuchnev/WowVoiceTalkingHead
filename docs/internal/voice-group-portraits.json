@@ -47,9 +47,9 @@
       "displayID": 11658
     },
     "dwarf/female": {
-      "npcID": 15183,
-      "name": "Геолог Ехидная",
-      "displayID": 15316
+      "npcID": 8929,
+      "name": "Принцесса Мойра Бронзобород",
+      "displayID": 8705
     },
     "dwarf/male": {
       "npcID": 658,
@@ -67,14 +67,14 @@
       "displayID": 1012
     },
     "gnome/female": {
-      "npcID": 10667,
-      "name": "Хроми",
-      "displayID": 10008
+      "npcID": 5144,
+      "name": "Бинк",
+      "displayID": 3108
     },
     "gnome/male": {
-      "npcID": 16033,
-      "name": "Бодли",
-      "displayID": 15994
+      "npcID": 2920,
+      "name": "Люсьен Подай-Ключ",
+      "displayID": 4895
     },
     "goblin/female": {
       "npcID": 10267,
@@ -152,9 +152,9 @@
       "displayID": 10550
     },
     "scourge/male": {
-      "npcID": 11878,
-      "name": "Натанос Гнилостень",
-      "displayID": 11814
+      "npcID": 2216,
+      "name": "Аптекарь Лидон",
+      "displayID": 1660
     },
     "skyborne/female": {
       "npcID": 251968,
@@ -162,9 +162,9 @@
       "displayID": 137633
     },
     "skyborne/male": {
-      "npcID": 263664,
-      "name": "Раан Дикий Ветер",
-      "displayID": 143798
+      "npcID": 252475,
+      "name": "Элаадрин Вечерняя Буря",
+      "displayID": 138152
     },
     "stone_construct/male": {
       "npcID": 7918,
@@ -177,9 +177,9 @@
       "displayID": 2834
     },
     "tauren/female": {
-      "npcID": 4046,
-      "name": "Магата Зловещий Тотем",
-      "displayID": 4510
+      "npcID": 15477,
+      "name": "Травница Красивое Перо",
+      "displayID": 15472
     },
     "tauren/male": {
       "npcID": 7854,
@@ -187,9 +187,9 @@
       "displayID": 6893
     },
     "troll/female": {
-      "npcID": 14904,
-      "name": "Майвики Зулдазарская",
-      "displayID": 14996
+      "npcID": 3706,
+      "name": "Тай'джин",
+      "displayID": 1897
     },
     "troll/male": {
       "npcID": 8115,

@@ -50,12 +50,12 @@
   },
   "sources": {
     "pins": {
-      "commit": "999243d962372f124d337495571176de19807552",
-      "attCommit": "10164719738bdc1e7baa23dd854bef4c7184a6ac"
+      "commit": "fca9a90b0cb5bafd19d9f2e5f020f0ef0b479297",
+      "attCommit": "0a90b7fea6e277c7feb27aba02e15ca0c0b958b6"
     },
     "catquest": {
       "version": "0.7.1",
-      "voicesVersion": "0.7.0"
+      "voicesVersion": "0.7.1"
     },
     "wayfarer": {
       "packs": {
@@ -84,13 +84,13 @@
   },
   "inputHashes": {
     "classic": "f13f9d3b8ee7ba01de59ed02ef8a5b729ec532805e65e4b0ac23d7f67dd0e1e2",
-    "pins": "0df871d8833cdbe5668754398dec1b0bff31a41ec66381deacc12d68fdc33b78",
+    "pins": "7f478cffbb2e920782783b69e9adebbff87ec2ed6b507d0b801078ca9cf83f4c",
     "cat": "4959c9a5a514abca729744756b752e01a2b89ae190ba0ac1e0b8f1212551e10a",
     "wayfarer": "d464a30ea932d6dd99a741d4871bc10434b093a4c330c4687d7a4928356a1c24",
     "supplements": "0731d8abbf00f9c01111f601620b6deaea6ebbbc27887bf5807056d1c006ef49",
     "raceClassifications": "bafed7e2a09c337717540ff79bee6e5b7a855c3ca1ec122c18540c92175f3048",
     "speakerOverrides": "80993d317bce9b3826b9e57f034ab5596da2d6fb15da9bae1ffe57e582a8032c",
-    "catAudio": "1e34e23f8688a4e95a640db75ee4676499f2a1139b8eb36572b68f91dbd1ae6e"
+    "catAudio": "1336554da4d6269292f247eebd3412e580610593b5257e3a5c6fd4679458efc7"
   },
   "counts": {
     "givers": 4975,
@@ -17184,7 +17184,7 @@
         "name": "catquest"
       },
       "11862": {
-        "race": "catquest-voice",
+        "race": "wayfarer-voice",
         "displayID": "verified-supplement",
         "sex": "unsexed-creature-category",
         "name": "catquest"
@@ -17498,7 +17498,7 @@
       },
       "13278": {
         "displayID": "catquest",
-        "race": "catquest-voice",
+        "race": "wayfarer-voice",
         "sex": "unsexed-creature-category",
         "name": "catquest"
       },

@@ -280,11 +280,15 @@ assert.equal(current.npcs[10929].sex,'female');
 assert.equal(current.npcs[10929].displayID,10199,'Haleh retains her elf appearance');
 assert.equal(current.npcs[253285].race,'skyborne','Actual Skyborne remain separate from dragons');
 const rankingGroups=require('../server/voice-vote/src/main/resources/ranking-groups.json');
-const populatedGroups=[...new Set(Object.values(current.npcs)
-  .filter(npc=>npc.race && ['male','female'].includes(npc.sex)).map(npc=>npc.race+'/'+npc.sex))].sort();
+const populatedGroups=[...new Set([...Object.values(current.givers),...Object.values(current.finishers)]
+  .filter(role=>!role.narrator && !role.itemID && !role.objectID).map(role=>current.npcs[role.npcID])
+  .filter(npc=>npc?.race && ['male','female'].includes(npc.sex)).map(npc=>npc.race+'/'+npc.sex))].sort();
 assert.deepEqual(rankingGroups.map(group=>group.race+'/'+group.sex).sort(),populatedGroups,
   'Server ranking registry must contain every populated group and no empty categories');
 assert(!rankingGroups.some(group=>group.race==='dragon' && group.sex==='female'));
+assert(!rankingGroups.some(group=>group.race==='child'),'Unrelated ambient children must not create quest ranking groups');
+for(const race of ['human_child','orc_child']) for(const sex of ['male','female'])
+  assert(rankingGroups.some(group=>group.race===race && group.sex===sex),'Children with quest roles retain their race/sex group');
 for (const [rescue,find,npcID] of [[648,351,7784],[836,485,7806],[2767,2766,7807]]) {
   assert.deepEqual(current.givers[rescue],{narrator:true},'OOX descriptions use the reviewed narrator policy');
   assert.deepEqual(current.finishers[find],{narrator:true},'Reading at the robot uses the narrator');

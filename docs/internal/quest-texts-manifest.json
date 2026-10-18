@@ -6,7 +6,7 @@
     "wayfarer"
   ],
   "versions": {
-    "catquest": "0.7.0",
+    "catquest": "0.7.1",
     "Wayfarer_Voices_Alliance": "3.2.0",
     "Wayfarer_Voices_Horde": "3.2.0",
     "Wayfarer_Voices_Narrator": "3.2.0",
@@ -23,13 +23,13 @@
       "variants": 0
     },
     "catquest": {
-      "quests": 5097,
+      "quests": 4967,
       "sections": {
-        "a": 4473,
+        "a": 4343,
         "p": 0,
-        "c": 4627
+        "c": 4619
       },
-      "variants": 11974
+      "variants": 11835
     },
     "wayfarer": {
       "quests": 4058,
@@ -42,18 +42,18 @@
     }
   },
   "merged": {
-    "quests": 5136,
+    "quests": 5007,
     "sections": {
-      "a": 4474,
+      "a": 4344,
       "p": 19,
-      "c": 4738
+      "c": 4731
     },
-    "variants": 12116
+    "variants": 11978
   },
   "selectedSections": {
     "wowvoice": 0,
-    "catquest": 9100,
-    "wayfarer": 131
+    "catquest": 8962,
+    "wayfarer": 132
   },
   "retainedCatQuestTexts": [],
   "provenance": {
@@ -10102,7 +10102,8 @@
       "common": "catquest"
     },
     "2381c": {
-      "common": "catquest"
+      "male": "catquest",
+      "female": "catquest"
     },
     "2382a": {
       "male": "catquest",
@@ -14912,9 +14913,6 @@
     "5098c": {
       "male": "catquest",
       "female": "catquest"
-    },
-    "5101a": {
-      "common": "catquest"
     },
     "5102a": {
       "common": "catquest"
@@ -25328,11 +25326,8 @@
     "79008c": {
       "common": "catquest"
     },
-    "79090a": {
-      "common": "catquest"
-    },
     "79090c": {
-      "common": "catquest"
+      "common": "wayfarer"
     },
     "79091c": {
       "common": "catquest"
@@ -26971,9 +26966,6 @@
       "male": "catquest",
       "female": "catquest"
     },
-    "94004a": {
-      "common": "catquest"
-    },
     "94006a": {
       "male": "catquest",
       "female": "catquest"
@@ -27004,275 +26996,6 @@
     "94050c": {
       "male": "catquest",
       "female": "catquest"
-    },
-    "94212a": {
-      "common": "catquest"
-    },
-    "94212c": {
-      "male": "catquest",
-      "female": "catquest"
-    },
-    "94213a": {
-      "common": "catquest"
-    },
-    "94213c": {
-      "common": "catquest"
-    },
-    "94214a": {
-      "common": "catquest"
-    },
-    "94215a": {
-      "common": "catquest"
-    },
-    "94215c": {
-      "common": "catquest"
-    },
-    "94216a": {
-      "common": "catquest"
-    },
-    "94216c": {
-      "common": "catquest"
-    },
-    "94217a": {
-      "common": "catquest"
-    },
-    "94217c": {
-      "common": "catquest"
-    },
-    "94218a": {
-      "common": "catquest"
-    },
-    "94219a": {
-      "common": "catquest"
-    },
-    "94220a": {
-      "common": "catquest"
-    },
-    "94221a": {
-      "common": "catquest"
-    },
-    "94222a": {
-      "common": "catquest"
-    },
-    "94223a": {
-      "common": "catquest"
-    },
-    "94224a": {
-      "common": "catquest"
-    },
-    "94225a": {
-      "common": "catquest"
-    },
-    "94226a": {
-      "common": "catquest"
-    },
-    "94227a": {
-      "common": "catquest"
-    },
-    "94228a": {
-      "common": "catquest"
-    },
-    "94229a": {
-      "common": "catquest"
-    },
-    "94230a": {
-      "common": "catquest"
-    },
-    "94231a": {
-      "common": "catquest"
-    },
-    "94232a": {
-      "common": "catquest"
-    },
-    "94233a": {
-      "common": "catquest"
-    },
-    "94233c": {
-      "common": "catquest"
-    },
-    "94234a": {
-      "common": "catquest"
-    },
-    "94235a": {
-      "common": "catquest"
-    },
-    "94236a": {
-      "common": "catquest"
-    },
-    "94237a": {
-      "common": "catquest"
-    },
-    "94238a": {
-      "common": "catquest"
-    },
-    "94239a": {
-      "common": "catquest"
-    },
-    "94240a": {
-      "common": "catquest"
-    },
-    "94241a": {
-      "common": "catquest"
-    },
-    "94241c": {
-      "male": "catquest",
-      "female": "catquest"
-    },
-    "94242a": {
-      "common": "catquest"
-    },
-    "94243a": {
-      "common": "catquest"
-    },
-    "94244a": {
-      "common": "catquest"
-    },
-    "94245a": {
-      "common": "catquest"
-    },
-    "94246a": {
-      "common": "catquest"
-    },
-    "94247a": {
-      "common": "catquest"
-    },
-    "94248a": {
-      "common": "catquest"
-    },
-    "94249a": {
-      "common": "catquest"
-    },
-    "94250a": {
-      "common": "catquest"
-    },
-    "94251a": {
-      "common": "catquest"
-    },
-    "94252a": {
-      "common": "catquest"
-    },
-    "94253a": {
-      "common": "catquest"
-    },
-    "94254a": {
-      "common": "catquest"
-    },
-    "94255a": {
-      "common": "catquest"
-    },
-    "94256a": {
-      "common": "catquest"
-    },
-    "94257a": {
-      "common": "catquest"
-    },
-    "94258a": {
-      "common": "catquest"
-    },
-    "94259a": {
-      "common": "catquest"
-    },
-    "94260a": {
-      "common": "catquest"
-    },
-    "94261a": {
-      "common": "catquest"
-    },
-    "94262a": {
-      "common": "catquest"
-    },
-    "94263a": {
-      "common": "catquest"
-    },
-    "94264a": {
-      "common": "catquest"
-    },
-    "94265a": {
-      "common": "catquest"
-    },
-    "94266a": {
-      "common": "catquest"
-    },
-    "94267a": {
-      "common": "catquest"
-    },
-    "94268a": {
-      "common": "catquest"
-    },
-    "94269a": {
-      "common": "catquest"
-    },
-    "94270a": {
-      "common": "catquest"
-    },
-    "94271a": {
-      "common": "catquest"
-    },
-    "94272a": {
-      "common": "catquest"
-    },
-    "94273a": {
-      "common": "catquest"
-    },
-    "94274a": {
-      "common": "catquest"
-    },
-    "94275a": {
-      "common": "catquest"
-    },
-    "94276a": {
-      "common": "catquest"
-    },
-    "94277a": {
-      "common": "catquest"
-    },
-    "94278a": {
-      "common": "catquest"
-    },
-    "94279a": {
-      "common": "catquest"
-    },
-    "94280a": {
-      "common": "catquest"
-    },
-    "94281a": {
-      "common": "catquest"
-    },
-    "94282a": {
-      "common": "catquest"
-    },
-    "94283a": {
-      "common": "catquest"
-    },
-    "94284a": {
-      "common": "catquest"
-    },
-    "94285a": {
-      "common": "catquest"
-    },
-    "94286a": {
-      "common": "catquest"
-    },
-    "94287a": {
-      "common": "catquest"
-    },
-    "94288a": {
-      "common": "catquest"
-    },
-    "94289a": {
-      "common": "catquest"
-    },
-    "94290a": {
-      "common": "catquest"
-    },
-    "94291a": {
-      "common": "catquest"
-    },
-    "94292a": {
-      "common": "catquest"
-    },
-    "94293a": {
-      "common": "catquest"
     },
     "94294a": {
       "common": "catquest"
@@ -27338,141 +27061,6 @@
       "common": "catquest"
     },
     "94315a": {
-      "common": "catquest"
-    },
-    "94316a": {
-      "common": "catquest"
-    },
-    "94317a": {
-      "common": "catquest"
-    },
-    "94318a": {
-      "common": "catquest"
-    },
-    "94319a": {
-      "common": "catquest"
-    },
-    "94320a": {
-      "common": "catquest"
-    },
-    "94321a": {
-      "common": "catquest"
-    },
-    "94322a": {
-      "common": "catquest"
-    },
-    "94323a": {
-      "common": "catquest"
-    },
-    "94324a": {
-      "common": "catquest"
-    },
-    "94325a": {
-      "common": "catquest"
-    },
-    "94326a": {
-      "common": "catquest"
-    },
-    "94327a": {
-      "common": "catquest"
-    },
-    "94328a": {
-      "common": "catquest"
-    },
-    "94329a": {
-      "common": "catquest"
-    },
-    "94330a": {
-      "common": "catquest"
-    },
-    "94331a": {
-      "common": "catquest"
-    },
-    "94332a": {
-      "common": "catquest"
-    },
-    "94333a": {
-      "common": "catquest"
-    },
-    "94334a": {
-      "common": "catquest"
-    },
-    "94335a": {
-      "common": "catquest"
-    },
-    "94336a": {
-      "common": "catquest"
-    },
-    "94337a": {
-      "common": "catquest"
-    },
-    "94338a": {
-      "common": "catquest"
-    },
-    "94339a": {
-      "common": "catquest"
-    },
-    "94340a": {
-      "common": "catquest"
-    },
-    "94341a": {
-      "common": "catquest"
-    },
-    "94342a": {
-      "common": "catquest"
-    },
-    "94343a": {
-      "common": "catquest"
-    },
-    "94344a": {
-      "common": "catquest"
-    },
-    "94345a": {
-      "common": "catquest"
-    },
-    "94346a": {
-      "common": "catquest"
-    },
-    "94347a": {
-      "common": "catquest"
-    },
-    "94348a": {
-      "common": "catquest"
-    },
-    "94349a": {
-      "common": "catquest"
-    },
-    "94350a": {
-      "common": "catquest"
-    },
-    "94351a": {
-      "common": "catquest"
-    },
-    "94352a": {
-      "common": "catquest"
-    },
-    "94353a": {
-      "common": "catquest"
-    },
-    "94354a": {
-      "common": "catquest"
-    },
-    "94355a": {
-      "common": "catquest"
-    },
-    "94356a": {
-      "common": "catquest"
-    },
-    "94357a": {
-      "common": "catquest"
-    },
-    "94358a": {
-      "common": "catquest"
-    },
-    "94359a": {
-      "common": "catquest"
-    },
-    "94360a": {
       "common": "catquest"
     },
     "94369a": {

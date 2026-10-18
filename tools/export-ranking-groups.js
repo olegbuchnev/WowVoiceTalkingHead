@@ -5,8 +5,10 @@ const {dataTable}=require('./import-forever-audio.js');
 const root=path.resolve(__dirname,'..');
 const speakers=dataTable(path.join(root,'src/Speakers.lua'));
 const groups=new Map();
-for(const npc of Object.values(speakers.npcs)) {
-  if(npc.race && ['male','female'].includes(npc.sex)) groups.set(`${npc.race}/${npc.sex}`,{race:npc.race,sex:npc.sex});
+// Ambient NPCs without quest roles must not create empty ranking categories.
+for(const role of [...Object.values(speakers.givers),...Object.values(speakers.finishers)]) {
+  const npc=role.narrator || role.itemID || role.objectID ? null : speakers.npcs[role.npcID];
+  if(npc?.race && ['male','female'].includes(npc.sex)) groups.set(`${npc.race}/${npc.sex}`,{race:npc.race,sex:npc.sex});
 }
 const result=[...groups.entries()].sort(([a],[b])=>a<b?-1:a>b?1:0).map(([,group])=>group);
 fs.writeFileSync(path.join(root,'server/voice-vote/src/main/resources/ranking-groups.json'),JSON.stringify(result,null,2)+'\n');

@@ -4,6 +4,9 @@ local Examples={}
 TalkingHeadRuVoiceGroupExamples=Examples
 local sources={'wowvoice','catquest','wayfarer'}
 local function noop() end
+local function russian(value)
+    return type(value)=='string' and value:find('[\208\209][\128-\191]')~=nil
+end
 local titleSource,titleIndex
 local function questTitles(checkpoint)
     local index=WowVoiceIndex
@@ -11,7 +14,9 @@ local function questTitles(checkpoint)
     local titles,steps={},0
     for title,entries in pairs(index or {}) do
         for _,entry in ipairs(entries) do
-            if type(entry.q)=='number' and (not titles[entry.q] or title<titles[entry.q]) then titles[entry.q]=title end
+            local previous=titles[entry.q]
+            if type(entry.q)=='number' and (not previous or (russian(title) and not russian(previous))
+                or (russian(title)==russian(previous) and title<previous)) then titles[entry.q]=title end
             steps=steps+1
             if steps%32==0 then checkpoint() end
         end
@@ -58,7 +63,13 @@ function Examples.Build(key,checkpoint)
     checkpoint()
     for id in pairs(ids) do
         local context=WV.GetReplaySpeaker and WV:GetReplaySpeaker(id,snapshot)
-        if context and (type(context.title)~='string' or not context.title:find('%S')) then context.title=titles[id] end
+        if context then
+            -- The settings catalogue prefers Russian on every client; keep an
+            -- English title when no Russian translation is available.
+            local title=context.title
+            if type(title)~='string' or not title:find('%S')
+                or (not russian(title) and russian(titles[id])) then context.title=titles[id] end
+        end
         checkpoint()
         if R.GroupKey(id,'a',context)==key then
             local count=0

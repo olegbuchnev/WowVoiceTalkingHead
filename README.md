@@ -6,7 +6,7 @@
 На английском клиенте кнопки плеера отображаются на английском, настройки — на русском.
 Говорящая голова использует шрифты заданий Blizzard, включая их кириллические варианты.
 
-**[Скачать аддон](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.4.0-forever/TalkingHeadRu-1.4.0-forever.zip)** ·
+**[Скачать аддон](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.4.1-forever/TalkingHeadRu-1.4.1-forever.zip)** ·
 [Инструкция](USER_README.md) ·
 [Сообщить об ошибке](https://github.com/olegbuchnev/WowVoiceTalkingHead/issues)
 
@@ -74,7 +74,7 @@
 
 ### CatQuest
 
-Альтернативная озвучка классических заданий и дополнительные квесты Forever — 4 473 основных описания.
+Альтернативная озвучка классических заданий и дополнительные квесты Forever — 4 343 основных описания (Voices 0.7.1).
 
 **Что установить:** [CatQuest](https://www.curseforge.com/wow/addons/catquest/files/all?page=1&pageSize=20&gameVersionTypeId=88568&showAlphaFiles=hide)
 и [CatQuest Voices](https://www.curseforge.com/wow/addons/catquest-voices/files/all?page=1&pageSize=20&gameVersionTypeId=88568&showAlphaFiles=hide).
@@ -106,7 +106,7 @@
 
 ## Установка
 
-1. **[Скачайте аддон](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.4.0-forever/TalkingHeadRu-1.4.0-forever.zip)**.
+1. **[Скачайте аддон](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.4.1-forever/TalkingHeadRu-1.4.1-forever.zip)**.
    Закройте игру и скопируйте папку `TalkingHeadRu` из архива
    в `_classic_beta_/Interface/AddOns/`.
 2. **Установите одну или несколько библиотек для Forever:**
@@ -169,6 +169,17 @@ TalkingHead показывает ссылки на авторов загруже
 Поддержать авторов и связаться с ними можно по ссылкам выше.
 
 ## Что нового
+
+<details name="releases">
+<summary><strong>Версия 1.4.1-forever</strong> · <time datetime="2026-10-18">18 октября 2026</time></summary>
+
+- Обновлены данные для CatQuest Voices 0.7.1: тексты заданий, список доступных записей и их длительности.
+- Обновлён встроенный снимок рейтинга озвучки сообщества.
+- В меню «Озвучка по расе и полу» скрыты категории, у которых нет связанных заданий.
+- Названия заданий в примерах теперь предпочитают русский перевод независимо от языка клиента. Если перевода нет, отображается английское название.
+- Исправлено автоматическое отключение старого WowVoiceTalkingHead. Если отключение не удалось, появляется подсказка.
+
+</details>
 
 <details name="releases">
 <summary><strong>Версия 1.4.0-forever</strong> · <time datetime="2026-10-17">17 октября 2026</time></summary>
