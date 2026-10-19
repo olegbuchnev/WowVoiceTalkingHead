@@ -57,7 +57,7 @@ C.Resolve=function(id,source)
         return {path=source..id,duration=5,sourceID=source,text='Текст'}
     end
 end
-TalkingHeadRuSpeakers={schemaVersion=1,givers={},finishers={},npcs={
+TalkingHeadRuSpeakers={schemaVersion=1,givers={[101]={npcID=11}},finishers={},npcs={
     [11]={race='dwarf',sex='male',name='Дворф'},[12]={race='human',sex='male',name='Человек'}}}
 WV.GetReplaySpeaker=function(_,id) return {questId=id,section='a',title='Задание '..id,speaker={npcID=id==105 and 12 or 11}} end
 local candidates,count=E.Build(key)
@@ -109,6 +109,7 @@ C.QuestIDs,WV.GetReplaySpeaker,C.Resolve=titleIDs,titleSpeaker,titleResolve
 WV:SetVoiceSelectionMode('ranking'); WV:OpenVoiceRanking()
 frames.WowVoiceOptionsPanel:SetPoint('CENTER',UIParent,'CENTER',0,0)
 local view=frames.TalkingHeadRuRankingView
+assert(view.Rows[1]:IsShown() and view.Rows[1].group.race=='dwarf','Example tests must open a visible quest speaker group')
 local function drainExamples()
     for i=1,20000 do
         if not WV.Work.jobs['voice-group-examples'] then return end

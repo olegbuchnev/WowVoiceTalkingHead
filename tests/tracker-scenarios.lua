@@ -111,6 +111,7 @@ GameTooltip:Hide()
 WV:Silence()
 print('PASS: tracker has no tooltips, retains highlight/playback and leaves unrelated tooltips alone')
 
+WV:SetSharedQuestVoice('catquest') -- Also present in current WowVoice; select the source under test.
 local supplemental = block(90902)
 tracker:Update()
 local supplementalPlay = assert(playFor(supplemental))

@@ -39,6 +39,9 @@
       "furbolg": "male",
       "elemental_water": "male"
     },
+    "defaultCreatureSex": {
+      "elemental_fire": "male"
+    },
     "childCategories": {
       "human": "human_child",
       "orc": "orc_child"
@@ -46,12 +49,13 @@
     "protectedExclusions": [
       "multiple-or-conflicting-starters"
     ],
-    "speakerOverrides": "explicit-quest-role-with-expected-NPC; preserve-protected-exclusions"
+    "speakerOverrides": "explicit-quest-role-with-expected-NPC; preserve-protected-exclusions",
+    "npcOverrides": "explicit-user-decision-by-NPC-ID-after-all-source-and-appearance-rules"
   },
   "sources": {
     "pins": {
-      "commit": "fca9a90b0cb5bafd19d9f2e5f020f0ef0b479297",
-      "attCommit": "0a90b7fea6e277c7feb27aba02e15ca0c0b958b6"
+      "commit": "bd6572984dbeb27f2bd319c1c2644f88c7d3f623",
+      "attCommit": "8a1d2ce546c75abc48eaf3666e5f8419be23b895"
     },
     "catquest": {
       "version": "0.7.1",
@@ -84,12 +88,12 @@
   },
   "inputHashes": {
     "classic": "f13f9d3b8ee7ba01de59ed02ef8a5b729ec532805e65e4b0ac23d7f67dd0e1e2",
-    "pins": "7f478cffbb2e920782783b69e9adebbff87ec2ed6b507d0b801078ca9cf83f4c",
+    "pins": "179cebf403270f0f8ef0cac54864673ca86b7077ca38f4664de13b6366fd233c",
     "cat": "4959c9a5a514abca729744756b752e01a2b89ae190ba0ac1e0b8f1212551e10a",
     "wayfarer": "d464a30ea932d6dd99a741d4871bc10434b093a4c330c4687d7a4928356a1c24",
     "supplements": "0731d8abbf00f9c01111f601620b6deaea6ebbbc27887bf5807056d1c006ef49",
-    "raceClassifications": "bafed7e2a09c337717540ff79bee6e5b7a855c3ca1ec122c18540c92175f3048",
-    "speakerOverrides": "80993d317bce9b3826b9e57f034ab5596da2d6fb15da9bae1ffe57e582a8032c",
+    "raceClassifications": "c48a74ab7bff04289a16bb4a3ceebf3e9c34878afa3b5933feab563f42fc9783",
+    "speakerOverrides": "3ddedbb8812d6f1f5d305f50a19a603ed92b473b2bdf7246436a606a291964e7",
     "catAudio": "1336554da4d6269292f247eebd3412e580610593b5257e3a5c6fd4679458efc7"
   },
   "counts": {
@@ -16488,7 +16492,9 @@
       },
       "10181": {
         "displayID": "catquest",
-        "name": "catquest"
+        "name": "catquest",
+        "race": "manual-npc-category",
+        "sex": "manual-npc-category"
       },
       "10182": {
         "displayID": "catquest",
@@ -19471,6 +19477,7 @@
       },
       "253066": {
         "displayID": "catquest",
+        "race": "verified-appearance",
         "name": "catquest"
       },
       "253092": {
@@ -20177,6 +20184,8 @@
       },
       "271481": {
         "displayID": "catquest",
+        "race": "catquest-voice",
+        "sex": "default-creature-sex",
         "name": "catquest"
       },
       "271546": {

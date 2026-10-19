@@ -11,6 +11,11 @@ end
 local sex = 2
 UnitSex = function() return sex end
 local prefix = 'Interface\\AddOns\\CatQuest_Voices\\Sounds\\q\\'
+-- This scenario exercises CatQuest-only fixtures. New WowVoice releases also
+-- cover these quests, so explicitly keep other-source audio out of the fixture.
+for _, id in ipairs({99162, 98430, 99080}) do
+    for _, section in ipairs({'a','p','c'}) do WowVoiceDur[id .. section] = nil end
+end
 -- Stale manually installed CatVoices and preferences must never affect selection.
 WowVoiceCatVoicePack = {schemaVersion=1,sourceVersion='0.2.2',entries={['99162a']={file='99162.ogg',duration=1}}}
 TalkingHeadRuDB.audioSource = 'bundled'
@@ -209,3 +214,12 @@ WV:RefreshAudioSourceOptions()
 assert(TalkingHeadRuDB.sharedQuestVoice == 'catquest' and (panel.VoicePriorityRows[1].sourceID == 'catquest'))
 loaded.CatQuest_Voices = true; WV:RefreshAudioSources()
 print('PASS: external-only supplement, stale CatVoices ignored, absent audio skipped, Classic independent, exact timings, text, compatibility and late loading')
+-- Title/NPC lookup entries cannot resurrect an absent recording; new IDs can
+-- play through their measured coverage even without a historical title entry.
+WowVoiceIndex['Removed recording fixture'] = {{q=999998,a=100}}
+assert(WV:ClassicSoundPath(999998, 'a') == nil)
+WowVoiceDur['999997a'] = 2.5
+local addedPath, addedDuration = WV:ClassicSoundPath(999997, 'a')
+assert(addedPath:find('999997a.ogg',1,true) and addedDuration == 2.5)
+assert(WV:ClassicSoundPath(999997, 'c') == nil)
+WowVoiceDur['999997a'], WowVoiceIndex['Removed recording fixture'] = nil, nil

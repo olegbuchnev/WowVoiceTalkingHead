@@ -104,6 +104,10 @@ assert(options.Scroll:IsShown(),'Disabled group settings opened in manual mode')
 assert(options.SharedVoiceTooltip.message==sharedHelp,'Help changed with the selected mode')
 options.VoiceModes.ranking.scripts.OnClick()
 assert(options.Buttons.voiceRanking:IsEnabled() and options.SharedVoiceTooltip.message==sharedHelp)
+-- Keep the table fixture independent of newly imported production categories.
+local menuDatabase=TalkingHeadRuSpeakers
+TalkingHeadRuSpeakers={schemaVersion=1,givers={[179]={npcID=11}},finishers={},
+    npcs={[11]={race='dwarf',sex='male'}}}
 options.Buttons.voiceRanking.scripts.OnClick()
 local view=frames.TalkingHeadRuRankingView
 assert(view and view:IsShown() and not options.Scroll:IsShown())
@@ -141,18 +145,43 @@ assert(portraitCalls==1,'Reopening the table must reuse the portrait')
 SetPortraitTextureFromCreatureDisplayID=originalPortrait
 assert(R.Import(rankingFixture_unknownRace))
 WV:RefreshVoiceRankingView()
-assert(view.Summary:GetText():find('Групп: 0',1,true),'Unknown imported group was counted in the table')
-for _,row in ipairs(view.Rows) do assert(not row:IsShown(),'Group without NPCs remained visible') end
+assert(view.Summary:GetText():find('Групп: 1',1,true),'Known local group disappeared when absent from the snapshot')
+for _,row in ipairs(view.Rows) do
+    assert(not row:IsShown() or row.group.race=='dwarf','Group without NPCs remained visible')
+end
 assert(R.Current().groups[1].race=='future_race','Filtering the view must not rewrite the imported snapshot')
 -- A known ambient NPC alone cannot create a useful quest ranking category.
 TalkingHeadRuSpeakers.npcs[987654]={race='future_race',sex='male'}
 WV:RefreshVoiceRankingView()
-assert(view.Summary:GetText():find('Групп: 0',1,true),'NPC without quest roles created an empty category')
+assert(view.Summary:GetText():find('Групп: 1',1,true),'NPC without quest roles created an empty category')
 TalkingHeadRuSpeakers.finishers[987654]={npcID=987654}
 WV:RefreshVoiceRankingView()
-assert(view.Summary:GetText():find('Групп: 1',1,true),'Completion-only group must remain configurable')
+assert(view.Summary:GetText():find('Групп: 2',1,true),'Completion-only group must remain configurable')
 TalkingHeadRuSpeakers.npcs[987654]=nil
 TalkingHeadRuSpeakers.finishers[987654]=nil
+TalkingHeadRuSpeakers.npcs[271481]={race='elemental_fire',sex='male',displayID=1070}
+TalkingHeadRuSpeakers.givers[87491]={npcID=271481}
+WV:RefreshVoiceRankingView()
+local fireRow
+for _,row in ipairs(view.Rows) do
+    if row:IsShown() and row.group.race=='elemental_fire' then fireRow=row end
+end
+assert(fireRow and fireRow.Title:GetText()=='Элементаль огня','New fire category was hidden by an old snapshot')
+assert(fireRow.Detail:GetText():find('Нет оценок',1,true),'Local category must not claim community votes')
+assert(R.Current().groups[1].race=='future_race' and #R.Current().groups==1,'Local rows rewrote the imported snapshot')
+local fireExamples=TalkingHeadRuVoiceGroupExamples.Build('npc:elemental_fire:male')
+local fireSample
+for _,sample in ipairs(fireExamples) do if sample.id==87491 then fireSample=sample end end
+assert(fireSample and fireSample.count==2,'Quest 87491 must offer WowVoice and CatQuest in the fire category')
+assert(R.SetOverride('npc:elemental_fire:male',{'catquest','wowvoice','wayfarer'}))
+assert(order(WV:GetQuestVoicePriority(87491,'a'))=='catquest,wowvoice,wayfarer','New local category cannot be configured')
+R.Reset('npc:elemental_fire:male')
+local savedBuiltin,savedImported=TalkingHeadRuBuiltinRanking,TalkingHeadRuDB.voiceRanking
+TalkingHeadRuBuiltinRanking,TalkingHeadRuDB.voiceRanking=nil,nil
+WV:RefreshVoiceRankingView()
+assert(view.Summary:GetText():find('Групп: 2',1,true),'Local categories disappeared without any ranking snapshot')
+TalkingHeadRuBuiltinRanking,TalkingHeadRuDB.voiceRanking=savedBuiltin,savedImported
+TalkingHeadRuSpeakers.npcs[271481]=nil; TalkingHeadRuSpeakers.givers[87491]=nil
 assert(R.Import(rankingFixture_valid))
 WV:RefreshVoiceRankingView()
 -- The table shows actual playback order, including global manual mode.
@@ -231,3 +260,4 @@ assert(R.Current().generatedAt==builtin.generatedAt and WV:GetVoiceSelectionMode
 assert(order(WV:GetVoicePriority())==order(manual))
 assert(WV:SetVoiceSelectionMode('manual'))
 assert(R.Import(rankingFixture_valid))
+TalkingHeadRuSpeakers=menuDatabase

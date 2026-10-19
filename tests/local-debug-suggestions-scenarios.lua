@@ -136,13 +136,19 @@ assert(popup.Rows[1].questID == sorted[#sorted], 'Supplemental upper boundary mi
 assert(search('9999999999') == 0 and popup:IsShown())
 assert(popup:GetHeight() + 136 == panel:GetHeight(), 'Empty results must retain list size')
 assert(search('') == #sorted, 'Empty input must show the full catalogue')
-assert(WowVoiceDur['247c'] and not WowVoiceDur['247a'], '247 must exercise completion-only audio')
+local completionOnly
+for key in pairs(WowVoiceDur) do
+    local id = tonumber(key:match('^(%d+)c$'))
+    if id and not WowVoiceDur[id .. 'a'] and not WowVoiceCatQuestAudio.entries[id .. 'a']
+        and not WowVoiceComparison.Known(id, 'wayfarer') then completionOnly = id; break end
+end
+assert(completionOnly, 'Current coverage must include a completion-only test candidate')
 for _, id in ipairs(popup.matches) do
-    assert(id ~= 247 and (WowVoiceDur[id .. 'a'] or WowVoiceCatQuestAudio.entries[id .. 'a'] or WowVoiceComparison.Known(id, 'wayfarer')),
+    assert(id ~= completionOnly and (WowVoiceDur[id .. 'a'] or WowVoiceCatQuestAudio.entries[id .. 'a'] or WowVoiceComparison.Known(id, 'wayfarer')),
         'Every listed quest must have a known introduction')
 end
-search('247')
-for _, id in ipairs(popup.matches) do assert(id ~= 247, 'Completion-only quest must not appear in filtered results') end
+search(tostring(completionOnly))
+for _, id in ipairs(popup.matches) do assert(id ~= completionOnly, 'Completion-only quest must not appear in filtered results') end
 for _, value in ipairs({'x', '-1', '1.5'}) do
     input:SetText(value)
     assert(popup:IsShown() and popup.matchCount == 0, 'Invalid input must clear rows without collapsing the list')

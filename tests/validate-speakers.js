@@ -32,6 +32,48 @@ const inputs = {
   }]))}
 };
 const result = merge(inputs);
+const manualInputs=structuredClone(inputs);
+manualInputs.cat.tables.NpcData[10181]={1:'skyborne',2:'female',3:11657,4:'Sylvanas'};
+manualInputs.speakerOverrides={schemaVersion:1,givers:{},finishers:{},npcs:{10181:{
+  race:'scourge',sex:'female',reason:'User-approved exact NPC category'}}};
+const manualCategory=merge(manualInputs);
+assert.equal(manualCategory.database.npcs[10181].race,'scourge');
+assert.equal(manualCategory.database.npcs[10181].sex,'female');
+assert.equal(manualCategory.origins.npcs[10181].race,'manual-npc-category');
+assert.deepEqual(manualCategory.database.npcs[10],result.database.npcs[10],'Manual category must not affect other NPCs');
+// Simulate an upstream update changing both the raw label and the appearance.
+manualInputs.cat.tables.NpcData[10181]={1:'bloodelf',2:'male',3:1258,4:'Sylvanas'};
+manualInputs.raceClassifications={schemaVersion:1,appearances:{1258:{race:'centaur',modelFileID:123170}},
+  models:{123170:{race:'centaur',file:'creature/centaur/centaur.m2',source:'https://example.test/model'}}};
+const updatedManual=merge(manualInputs);
+assert.equal(updatedManual.database.npcs[10181].race,'scourge','User category survives source and appearance updates');
+assert.equal(updatedManual.database.npcs[10181].sex,'female');
+assert.equal(updatedManual.database.npcs[10181].displayID,1258,'Manual category does not freeze the portrait');
+assert.equal(updatedManual.origins.npcs[10181].sex,'manual-npc-category');
+manualInputs.speakerOverrides.npcs[999999]={race:'scourge',sex:'female',reason:'Missing NPC'};
+assert.throws(()=>merge(manualInputs),/Invalid NPC category override/,'Stale NPC IDs must not silently create phantom speakers');
+const fireInputs=structuredClone(inputs);
+fireInputs.cat.tables.NpcData[271481]={3:1070};
+fireInputs.cat.tables.NpcData[1072]={1:'dwarf',2:'male'};
+fireInputs.cat.tables.QuestGiver[87491]=271481;
+fireInputs.cat.tables.QuestFinisher[87491]=1072;
+fireInputs.catAudio={entries:{'87491a':{voice:'elemental-fire'},'87491c':{voice:'dwarf-male'}}};
+const fire=merge(fireInputs);
+assert.equal(fire.database.npcs[271481].race,'elemental_fire','Exact CatQuest label establishes the fire elemental category');
+assert.equal(fire.database.npcs[271481].sex,'male','Fire elementals use the user-approved default sex');
+assert.equal(fire.origins.npcs[271481].sex,'default-creature-sex');
+assert.equal(fire.origins.npcs[271481].race,'catquest-voice');
+assert.equal(fire.database.npcs[1072].race,'dwarf','Completion keeps its own NPC category');
+assert.equal(fire.database.npcs[1072].sex,'male');
+fireInputs.cat.tables.NpcData[271481][2]='female';
+assert.equal(merge(fireInputs).database.npcs[271481].sex,'female','An explicit counterexample is retained for reviewing the default');
+delete fireInputs.cat.tables.NpcData[271481][2];
+fireInputs.cat.tables.QuestGiver[87492]=271481;
+fireInputs.catAudio.entries['87492a']={voice:'elemental-water'};
+assert.equal(merge(fireInputs).database.npcs[271481].race,undefined,'Conflicting elemental labels remain unclassified');
+fireInputs.catAudio.entries['87491a'].voice='fire-elemental';
+delete fireInputs.catAudio.entries['87492a'];
+assert.equal(merge(fireInputs).database.npcs[271481].race,undefined,'An unverified spelling is not an exact CatQuest label');
 assert.deepEqual(creatureVoiceMetadata([
   {npcID:1,voice:'dragon-male'},{npcID:1,voice:'creature/dragon'},
   {npcID:2,voice:'dragon-female'}, {npcID:3,voice:'creature/dragon'},
@@ -298,7 +340,7 @@ for (const [rescue,find,npcID] of [[648,351,7784],[836,485,7806],[2767,2766,7807
 }
 assert.equal(current.finishers[3721].npcID,7406,'The mechanical chicken reward quest still belongs to Oglethorpe');
 assert.equal(current.npcs[3430].race,'quilboar','Mangletooth classification survives regeneration');
-for(const id of [5398,12238,13716,13717]) {
+for(const id of [5398,12238,13716,13717,253066]) {
   assert.equal(current.npcs[id].race,'centaur','Exact centaur metadata survives regeneration');
   assert.equal(current.npcs[id].sex,'male');
 }
@@ -326,6 +368,11 @@ assert.equal(current.givers[5502].npcID,14444);
 assert.notEqual(current.npcs[14444].race,current.npcs[14305].race,'Orc and human boys must not share a voting group');
 assert.equal(current.npcs[4606].race,'banshee','A banshee voice category must not become a troll');
 assert.equal(current.npcs[4606].sex,'female','Banshee keeps the female speaker metadata');
+assert.equal(current.givers[87491].npcID,271481);
+assert.equal(current.npcs[271481].race,'elemental_fire','CatQuest fire elemental label survives regeneration');
+assert.equal(current.npcs[271481].sex,'male','Fire elemental default survives regeneration');
+assert.equal(current.finishers[87491].npcID,1072);
+assert.equal(current.npcs[1072].race,'dwarf','Fire classification does not leak to the receiving dwarf');
 for (const id of [5895,11862,13278])
   assert(current.npcs[id].race==='elemental_water' && current.npcs[id].sex==='male','Water elemental labels survive shared database regeneration');
 for (const id of [3897,8405,11554,11555,11556,11557,15395])
@@ -333,6 +380,11 @@ for (const id of [3897,8405,11554,11555,11556,11557,15395])
 for (const id of [1244,3616,9598,14524,14525,14526,270269])
   assert(current.npcs[id].race==='ancient' && current.npcs[id].sex==='male','Ancients form one category independent of elf and tauren voices');
 assert.equal(current.givers[940].npcID,3519,'Quest 940 uses Arynia from maintained sources');
+assert.equal(current.npcs[10181].race,'scourge','Sylvanas retains the user-approved broad undead category');
+assert.equal(current.npcs[10181].sex,'female');
+assert.equal(current.npcs[10181].displayID,11657);
+assert.equal(current.givers[5961].npcID,10181);
+assert.equal(current.finishers[95803].npcID,10181);
 assert(current.npcs[3519].displayID>0,'Arynia has a portrait');
 assert.equal(current.givers[99260].npcID,253285,'Fillion quest keeps its distinct NPC ID');
 assert.equal(current.npcs[253285].displayID,137707,'Fillion portrait is confirmed by its exact Wowhead page');

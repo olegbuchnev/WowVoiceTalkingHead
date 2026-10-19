@@ -1,5 +1,41 @@
 # Timeweb Cloud deployment
 
+## WowVoice current library and NPC categories (deployed 2026-10-19)
+
+Published 4,040 comparisons and 11,867 recordings from the current external
+libraries. WowVoiceSounds still displays version `0.1.0` (player `1.1.0`):
+the October 19 release changed 7,655 recording hashes without adding or removing
+files relative to the October 18 import. Active coverage is 9,917 recordings
+for 4,307 quests; historical recordings are not used as an availability fallback.
+This deployment also includes the previously unpublished October 18 import and
+the fire elemental, centaur and exact-NPC Sylvanas classification changes.
+Sylvanas is pinned to `scourge/female`; fire elementals default to `male`.
+
+Transferred and hash-verified 4,269 recordings directly from installed libraries,
+retaining published paths for unchanged recording IDs. API image:
+`talkinghead-vote-server:wowvoice-20261019`; the web image is unchanged.
+The stopped SQLite/inbox/catalogue/model-manifest backup is
+`/srv/talkinghead/backups/wowvoice-20261019-20261019-053921`.
+All 805 existing ballots and 811 comparison rows were preserved; SQLite
+integrity, schema 4, mounts and service health were verified.
+
+All 382 portrait packs passed verification, with no unsupported packs.
+The complete offline pass verified 1,446 of 1,447 portraits; the previously
+known display 146706 / quest 97290 camera fallback remains. Public checks
+confirmed the exact catalogue, every audio variant hash and ready portraits
+for quests 5961, 92844, 87491 and 96222, including Sylvanas and fire elemental
+categories. No production test ballots were submitted.
+The addon ranking was exported at `2026-10-19T05:40:04.317966388Z` (38 groups),
+validated and installed in the beta addon; all 46 runtime files match `src`.
+
+Evidence: `artifacts/review/wowvoice-20261019/`,
+`artifacts/review/wowvoice-20261019-public.json`, and
+`artifacts/voice-vote-deploy/updates/wowvoice-20261019/`.
+Rollback: stop web/API, restore the backed-up catalogue and model manifests,
+retag `talkinghead-vote-server:before-wowvoice-20261019` to the configured
+API image and restart. Keep the live votes volume and additional audio files;
+never overwrite votes accepted after deployment with the backup database.
+
 ## CatQuest Voices 0.7.1 and populated ranking groups (deployed 2026-10-18)
 
 Published 4,103 comparisons and 11,437 recordings, with 1,125 changed audio

@@ -10,11 +10,16 @@ try {
   fs.mkdirSync(source);
   const silence = fs.readFileSync(path.join(project, 'src/Media/silence.ogg'));
   fs.writeFileSync(path.join(root, 'src/Media/silence.ogg'), silence);
-  // No upstream player, index or duration table is present in the external pack.
+  const player = path.join(fixture, 'WowVoice');
+  fs.mkdirSync(player);
+  fs.writeFileSync(path.join(player, 'WowVoice.toc'), '## Version: 1.1.0\n');
+  const upstreamIndex = path.join(player, 'Durations.lua');
+  const upstreamText = 'WowVoiceDur = {["1a"]=50,["1p"]=20,["2c"]=30}';
+  fs.writeFileSync(upstreamIndex, upstreamText);
   fs.writeFileSync(path.join(source, 'WowVoiceSounds.toc'), '## Version: 0.1.0\n');
-  fs.writeFileSync(path.join(source, 'WowVoiceSounds_Vanilla.toc'), '## Version: 1.0.1\n');
+  fs.writeFileSync(path.join(source, 'WowVoiceSounds_Camelot.toc'), '## Version: 0.1.1\n');
   const index = path.join(root, 'src/Index.lua');
-  fs.writeFileSync(index, 'WowVoiceIndex = { ["Quest"]={{q=1,a=50,p=20},{q=2,c=30},{q=1,a=50}} }');
+  fs.writeFileSync(index, 'WowVoiceIndex = { ["Old quest"]={{q=999,a=50}} }');
   const files = ['1a.ogg', '1p.ogg', '2c.ogg'];
   for (const name of files) fs.writeFileSync(path.join(source, name), silence);
   // The official pack's stop sound is independent of our own service sound.
@@ -24,8 +29,9 @@ try {
   // Deliberately stale timer keys must not select which files are measured.
   fs.writeFileSync(output, 'WowVoiceDur = {["999a"]=99}');
   const manifest = generate(source, root);
-  assert.equal(manifest.version, '1.0.1');
-  assert.equal(manifest.sourceToc, 'WowVoiceSounds_Vanilla.toc');
+  assert.equal(manifest.version, '0.1.1');
+  assert.equal(manifest.sourceToc, 'WowVoiceSounds_Camelot.toc');
+  assert.equal(manifest.index.version, '1.1.0');
   assert.equal(manifest.quests, 2);
   assert.deepEqual(manifest.sections, { a: 1, p: 1, c: 1 });
   assert.deepEqual(manifest.files.map(entry => entry.file), files);
@@ -86,11 +92,29 @@ try {
   fs.writeFileSync(extra, silence);
   rejected(() => generate(source, root), /unexpected 1/);
   fs.unlinkSync(extra);
-  fs.writeFileSync(path.join(source, 'WowVoiceSounds_Vanilla.toc'), '## Version: 1.0.2\n');
+  fs.writeFileSync(path.join(source, 'WowVoiceSounds_Camelot.toc'), '## Version: 0.1.2\n');
   rejected(() => check(source, root), /manifest\/pack metadata mismatch/);
-  fs.writeFileSync(index, 'WowVoiceIndex = { ["Bad"]={{q=1,a=-1}} }');
-  rejected(() => generate(source, root), /Invalid Classic index section/);
-  console.log('PASS: Classic measurement generation, source-only pack, all sections, repeatability, stale timers/hash/version rejection and validation before writes');
+  fs.writeFileSync(path.join(source, 'WowVoiceSounds_Camelot.toc'), '## Version: 0.1.1\n');
+  for (const invalid of ['["1a"]=-1','["0a"]=1','["01a"]=1','["1x"]=1','["1a"]=os.execute("bad")']) {
+    fs.writeFileSync(upstreamIndex, `WowVoiceDur = {${invalid}}`);
+    rejected(() => generate(source, root), /Invalid WowVoice|Unsupported Lua data expression/);
+  }
+  fs.writeFileSync(upstreamIndex, 'WowVoiceDur = {}');
+  rejected(() => generate(source, root), /Empty WowVoice/);
+  fs.unlinkSync(upstreamIndex);
+  rejected(() => generate(source, root), /ENOENT/);
+  // A complete replacement at the same pack version removes old keys, accepts
+  // new quest IDs absent from the title index, and retains only hash history.
+  fs.writeFileSync(upstreamIndex, 'WowVoiceDur = {["3a"]=5,["2c"]=30}');
+  fs.unlinkSync(path.join(source, '1a.ogg'));
+  fs.unlinkSync(path.join(source, '1p.ogg'));
+  fs.writeFileSync(extra, silence);
+  const updated = generate(source, root);
+  assert.deepEqual(updated.files.map(f => f.file), ['2c.ogg','3a.ogg']);
+  assert.deepEqual(dataTable(output), {'2c':0.1,'3a':0.1,silence:0.1});
+  assert.deepEqual(check(source, root), updated);
+  assert.equal(fs.readFileSync(upstreamIndex,'utf8'), 'WowVoiceDur = {["3a"]=5,["2c"]=30}');
+  console.log('PASS: current WowVoice coverage, measured timing, no legacy fallback, replacements at the same version, reproducibility and validation before writes');
 } finally {
   assert(path.dirname(fixture) === os.tmpdir() && path.basename(fixture).startsWith('wowvoice-classic-metadata-'));
   fs.rmSync(fixture, { recursive: true, force: true });

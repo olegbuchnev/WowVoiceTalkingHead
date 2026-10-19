@@ -1,5 +1,7 @@
 event('ADDON_LOADED')
 local WV=WowVoice
+-- Keep 3911 as the supplemental-only fixture despite current WowVoice overlap.
+for _, section in ipairs({'a','p','c'}) do WowVoiceDur['3911' .. section] = nil end
 assert(TalkingHeadRuDB.autoPlayTurnIn==true, 'turn-in autoplay defaults on')
 command('options')
 local panel=frames.WowVoiceOptionsPanel

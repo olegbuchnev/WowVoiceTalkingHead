@@ -56,6 +56,11 @@
       "name": "Стен Крепкорук",
       "displayID": 1362
     },
+    "elemental_fire/male": {
+      "npcID": 271481,
+      "name": "Плененный огненный элементаль",
+      "displayID": 1070
+    },
     "elemental_water/male": {
       "npcID": 13278,
       "name": "Герцог Гидраксис",

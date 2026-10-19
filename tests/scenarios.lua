@@ -51,7 +51,7 @@ event('QUEST_COMPLETE')
 local count=#stops
 tick(now+2)
 assert(#stops==count and cvars.Sound_EnableDialog=='0','Classic 861c incorrectly stopped at Midnight duration')
-tick(now+22)
+tick(now + WowVoiceDur['861c'] - 2 + TalkingHeadRuDB.tail + 0.01)
 assert(#stops==count+1)
 restored('1','0.37')
 print('PASS: Classic 861c remains active after 2 seconds and stops at Classic duration')

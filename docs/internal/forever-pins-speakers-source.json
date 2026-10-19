@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "source": "https://github.com/TylerAkins/forever-quest-markers",
-  "commit": "fca9a90b0cb5bafd19d9f2e5f020f0ef0b479297",
-  "attCommit": "0a90b7fea6e277c7feb27aba02e15ca0c0b958b6",
-  "sha256": "791baab748cd1123ed545d6e07bb413c1fdf440190597870fdfa05adffb31d4e",
+  "commit": "bd6572984dbeb27f2bd319c1c2644f88c7d3f623",
+  "attCommit": "8a1d2ce546c75abc48eaf3666e5f8419be23b895",
+  "sha256": "be04c7d4f350a5d5bae8cfd821bb545a0d02ad818466ba04d4cea2a01f7a1f22",
   "questCount": 4060,
   "givers": {
     "5": 288,

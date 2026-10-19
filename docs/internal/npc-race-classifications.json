@@ -10,6 +10,7 @@
     "2719": {"race": "dragon", "modelFileID": 123459},
     "13992": {"race": "dragon", "modelFileID": 123459},
     "1258": { "race": "centaur", "modelFileID": 123170 },
+    "9445": { "race": "centaur", "modelFileID": 123170, "source": "https://wow.zamimg.com/modelviewer/classicplus/meta/npc/9445.json", "verifiedOn": "2026-10-18" },
     "1346": { "race": "quilboar", "modelFileID": 125497 },
     "1918": { "race": "mountain_giant", "modelFileID": 124952 },
     "6589": { "race": "stone_construct", "modelFileID": 126072 },

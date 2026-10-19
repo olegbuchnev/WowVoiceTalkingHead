@@ -4,6 +4,9 @@ local loadedAPI, metadataAPI, sexAPI = C_AddOns.IsAddOnLoaded, C_AddOns.GetAddOn
 local loaded = {WowVoiceSounds=true, CatVoices=true, CatQuest_Voices=true}
 local auditedVersion = WowVoiceCatQuestAudio.sourceVersion
 local version = auditedVersion
+-- This fixture specifically needs a CatQuest-only description, including when
+-- CatQuest is disabled. Current WowVoice also covers this ID in production.
+WowVoiceDur['98246a'] = nil
 C_AddOns.IsAddOnLoaded = function(name) return loaded[name] == true end
 C_AddOns.GetAddOnMetadata = function(name, field)
     if name == 'CatQuest_Voices' and field == 'Version' then return version end

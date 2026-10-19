@@ -10,9 +10,12 @@ for (const name of fs.readdirSync(path.join(root, 'src')).filter(name => name.en
     'Detach upstream before replacing its globals');
 }
 const { duration } = require('../tools/import-forever-audio');
-const { indexedFiles, renderDurations } = require('../tools/generate-classic-metadata');
+const { recordingFiles, renderDurations } = require('../tools/generate-classic-metadata');
+const { dataTable } = require('../tools/import-forever-audio');
 const classicManifest = JSON.parse(fs.readFileSync(path.join(root, 'docs/internal/classic-audio-manifest.json'), 'utf8'));
-assert.deepStrictEqual(classicManifest.files.map(entry => entry.file), indexedFiles(root));
+assert.deepStrictEqual(classicManifest.files.map(entry => entry.file), recordingFiles(dataTable(path.join(root,'src/Durations.lua'))));
+assert.equal(classicManifest.index.source, 'WowVoice/Durations.lua');
+assert(/^[a-f0-9]{64}$/.test(classicManifest.index.sha256));
 assert.equal(fs.readFileSync(path.join(root, 'src/Durations.lua'), 'utf8').replace(/\r\n/g, '\n'), renderDurations(classicManifest));
 for (const entry of classicManifest.files) {
   assert(Number.isFinite(entry.duration) && entry.duration > 0, `Bad Classic duration: ${entry.file}`);

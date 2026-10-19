@@ -36,6 +36,10 @@
     "sex": "male"
   },
   {
+    "race": "elemental_fire",
+    "sex": "male"
+  },
+  {
     "race": "elemental_water",
     "sex": "male"
   },

@@ -75,7 +75,8 @@ function stats(entries) {
   return {quests:quests.size, sections, variants};
 }
 function collect(addons, options = {}) {
-  // Current WowVoice Index.lua has text hashes, titles and NPCs, no transcripts.
+  // Forever WowVoice supplies duration keys, no transcripts. The retained
+  // Classic title/NPC lookup is not an upstream transcript source either.
   // Keep its reserved first position explicit in the shared merge algorithm.
   const sources = {wowvoice:{}, catquest:{}, wayfarer:{}}, versions = {};
   const historyPath = path.join(options.textHistoryRoot || path.resolve(__dirname,'..'), 'docs/internal/catquest-text-history.json');

@@ -1,4 +1,6 @@
 -- Exercise creature loading when the unified database has no known appearance.
+-- Keep the missing-model fixture playable independently of upstream removals.
+WowVoiceDur['1127a'] = 60
 TalkingHeadRuSpeakers.npcs[658].displayID = nil
 TalkingHeadRuSpeakers.npcs[3052].displayID = nil
 TalkingHeadRuSpeakers.npcs[1378].displayID = nil

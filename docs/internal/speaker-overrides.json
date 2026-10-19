@@ -6,6 +6,13 @@
     "836": { "expectedNPC": 7806, "narrator": true },
     "2767": { "expectedNPC": 7807, "narrator": true }
   },
+  "npcs": {
+    "10181": {
+      "race": "scourge",
+      "sex": "female",
+      "reason": "User decision 2026-10-19: Sylvanas belongs to scourge/female without voice-style subdivisions. Preserve this exact-NPC classification across library and appearance updates."
+    }
+  },
   "finishers": {
     "351": { "expectedNPC": 7784, "narrator": true },
     "485": { "expectedNPC": 7806, "narrator": true },

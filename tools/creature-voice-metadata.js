@@ -5,6 +5,7 @@ const labels = new Map([
   ['creature/banshee','banshee'],
   ['creature/dreadlord','dreadlord'],
   ['elemental-water','elemental_water'],
+  ['elemental-fire','elemental_fire'],
   ['imp-male','imp'],
   ['centaur-male','centaur'],
   ['dragon-male','dragon'], ['dragon-female','dragon'], ['creature/dragon','dragon'],

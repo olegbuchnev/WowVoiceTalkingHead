@@ -19,9 +19,11 @@ const POLICY = {
   raceClassification:'verified-appearance-before-library-voice-label',
   creatureCategories:['verified-appearance','catquest-voice','wayfarer-voice','catquest-npc'],
   unsexedCreatureCategories:{ancient:'male',furbolg:'male',elemental_water:'male'},
+  defaultCreatureSex:{elemental_fire:'male'},
   childCategories:{human:'human_child',orc:'orc_child'},
   protectedExclusions:['multiple-or-conflicting-starters'],
-  speakerOverrides:'explicit-quest-role-with-expected-NPC; preserve-protected-exclusions'
+  speakerOverrides:'explicit-quest-role-with-expected-NPC; preserve-protected-exclusions',
+  npcOverrides:'explicit-user-decision-by-NPC-ID-after-all-source-and-appearance-rules'
 };
 
 function merge({ classic, pins, cat, catAudio = {entries:{}}, wayfarer = {givers:{},finishers:{},npcs:{}}, supplements = {schemaVersion:1,npcs:{}}, raceClassifications = {schemaVersion:1,appearances:{},models:{}}, speakerOverrides = {schemaVersion:1,givers:{},finishers:{}} }) {
@@ -207,6 +209,12 @@ function merge({ classic, pins, cat, catAudio = {entries:{}}, wayfarer = {givers
       npc.sex = POLICY.unsexedCreatureCategories[npc.race];
       (origins.npcs[id] ||= {}).sex = 'unsexed-creature-category';
     }
+    // User-approved default for fire elementals; explicit sex remains evidence
+    // for revisiting that default when a counterexample appears.
+    if (!npc.sex && POLICY.defaultCreatureSex[npc.race]) {
+      npc.sex = POLICY.defaultCreatureSex[npc.race];
+      (origins.npcs[id] ||= {}).sex = 'default-creature-sex';
+    }
   }
   for (const [id, candidates] of names) {
     // Language preference is independent of the identity/source priority.
@@ -219,6 +227,15 @@ function merge({ classic, pins, cat, catAudio = {entries:{}}, wayfarer = {givers
     npcs[record.npcID] ||= {};
     const name = npcs[record.npcID].name;
     if (name) record.name = name;
+  }
+  // Deliberate per-NPC grouping decisions survive upstream labels and model changes.
+  // Keep the original source snapshots intact; record the override's provenance.
+  for (const [id,entry] of Object.entries(speakerOverrides.npcs || {})) {
+    if (!positive(Number(id)) || !npcs[id] || !/^[a-z][a-z0-9_]*$/.test(entry.race || '')
+        || !['male','female'].includes(entry.sex) || !entry.reason?.trim())
+      throw Error('Invalid NPC category override: '+id);
+    Object.assign(npcs[id],{race:entry.race,sex:entry.sex});
+    Object.assign(origins.npcs[id] ||= {},{race:'manual-npc-category',sex:'manual-npc-category'});
   }
   return {database:{schemaVersion:1, givers, finishers, npcs}, origins, conflicts, exclusions, appearanceConflicts};
 }

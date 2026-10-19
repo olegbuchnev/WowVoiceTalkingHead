@@ -129,6 +129,9 @@ GameTooltip:Hide()
 assert(frames.WowVoiceStopButton==nil)
 print('PASS: no tooltip option or tooltips, preserved hover, obsolete setting cleanup, unrelated tooltips untouched')
 
+-- This quest is now also covered by WowVoice; explicitly select CatQuest for
+-- the supplemental-source controls exercised below.
+WV:SetSharedQuestVoice('catquest')
 first.questID = 90902
 QuestLogQuests_Update()
 assert(play.alpha == 0.7)

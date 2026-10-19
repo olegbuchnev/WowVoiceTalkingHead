@@ -1,5 +1,6 @@
--- Account-wide invitation, once per installed version.
-local WV, L = WowVoice, WowVoiceLocale
+-- Account-wide invitation, once per installed version unless this release opts out.
+local WV = WowVoice
+-- This invitation follows the Russian settings/catalogue language on every client.
 local URL = "https://talkingheadru.tw1.ru/"
 local FONT = "Interface\\AddOns\\TalkingHeadRu\\Media\\Fonts\\frizqt___cyr.ttf"
 local WIDTH, HEIGHT = 540, 636
@@ -48,9 +49,9 @@ local function createPanel()
     art:SetTexCoord(0, 346 / 512, 0, 290 / 512)
     art:SetPoint("TOP", frame, "TOP", 0, -56)
     frame.Art = art
-    frame.Title = label(frame, L["Голосуйте за лучшую озвучку"], 26, 279, 32, 0.95, 0.93, 0.91)
+    frame.Title = label(frame, "Голосуйте за лучшую озвучку", 26, 279, 32, 0.95, 0.93, 0.91)
     frame.Description = label(frame,
-        (L["Сравните голоса из WowVoice, CatQuest и Wayfarer. Ваш выбор поможет подобрать озвучку для заданий и персонажей WoW Forever."]
+        (("Сравните голоса из WowVoice, CatQuest и Wayfarer. Ваш выбор поможет подобрать озвучку для заданий и персонажей WoW Forever.")
             :gsub("WowVoice", "|cff40b3ffWowVoice|r")
             :gsub("CatQuest", "|cffff8c33CatQuest|r")
             :gsub("Wayfarer", "|cff66d973Wayfarer|r")),
@@ -73,12 +74,12 @@ local function createPanel()
     link:SetScript("OnEscapePressed", function() frame:Hide() end)
     link:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
     frame.Link = link
-    label(frame, L["Нажмите на ссылку, затем Ctrl+C"], 14, 448, 20, 0.65, 0.65, 0.65)
+    frame.CopyHint = label(frame, "Нажмите на ссылку, затем Ctrl+C", 14, 448, 20, 0.65, 0.65, 0.65)
     -- A single inline glyph shares the paragraph's wrapping and 16px line
     -- height. Separate regions would indent continuation lines or drift apart.
     frame.VoiceSettingsHint = label(frame,
         "|TInterface\\AddOns\\TalkingHeadRu\\Media\\NewBadge.tga:16:64:0:-2|t "
-            .. L["В настройках «Выбор озвучки» можно прослушать примеры и задать свой порядок библиотек — общий или отдельно для каждой расы и пола."],
+            .. "В настройках «Выбор озвучки» можно прослушать примеры и задать свой порядок библиотек — общий или отдельно для каждой расы и пола.",
         16, 480, 88, 0.87, 0.86, 0.84)
     frame.VoiceSettingsHint:SetJustifyH("LEFT")
     -- Match the visible edges of the centered description above.
@@ -94,12 +95,13 @@ local function createPanel()
         caption:SetAllPoints(button)
         caption:SetTextColor(0.87, 0.86, 0.84)
         caption:SetText(text)
+        button.Text = caption
         button:SetScript("OnEnter", function(self) self:SetBackdropBorderColor(0.86, 0.65, 0.50, 1) end)
         button:SetScript("OnLeave", function(self) self:SetBackdropBorderColor(0.22, 0.22, 0.22, 1) end)
         button:SetScript("OnClick", callback)
         return button
     end
-    frame.Options = footerButton(L["Опции"], -86, function()
+    frame.Options = footerButton("Опции", -86, function()
         frame:Hide()
         if WV.CloseVoiceComparison then WV:CloseVoiceComparison() end
         if WV.CloseVoiceRanking then WV:CloseVoiceRanking() end
@@ -107,7 +109,7 @@ local function createPanel()
         local options = _G.WowVoiceOptionsPanel
         if options and options.Scroll then options.Scroll:SetVerticalScroll(0) end
     end)
-    frame.Close = footerButton(L["Закрыть"], 86, function() frame:Hide() end)
+    frame.Close = footerButton("Закрыть", 86, function() frame:Hide() end)
     frame:SetScript("OnHide", function() link:ClearFocus(); frame:StopMovingOrSizing() end)
     UISpecialFrames = UISpecialFrames or {}
     table.insert(UISpecialFrames, "TalkingHeadRuVoteInvite")
@@ -120,10 +122,15 @@ local function version()
     return type(value) == "string" and value:find("%S") and value or nil
 end
 
+local function automaticEnabled()
+    local metadata = C_AddOns and C_AddOns.GetAddOnMetadata or GetAddOnMetadata
+    return not metadata or metadata("TalkingHeadRu", "X-Vote-Invite") ~= "disabled"
+end
+
 function WV:ShowVoteInvite(manual)
     local db, current = TalkingHeadRuDB, version()
     if not db then return false end
-    if not manual and (db.enabled == false or not current
+    if not manual and (not automaticEnabled() or db.enabled == false or not current
         or db.voteInviteSeenVersions and db.voteInviteSeenVersions[current]) then return false end
     if InCombatLockdown and InCombatLockdown() then return false end
     panel = panel or createPanel()
@@ -142,6 +149,7 @@ events:RegisterEvent("PLAYER_ENTERING_WORLD")
 local scheduled, pending
 events:SetScript("OnEvent", function(self, event)
     if event == "PLAYER_ENTERING_WORLD" then
+        if not automaticEnabled() then return end
         if scheduled then return end
         scheduled = true
         local function show()

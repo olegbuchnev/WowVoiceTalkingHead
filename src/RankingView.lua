@@ -2,7 +2,7 @@ local WV, Ranking, L = WowVoice, TalkingHeadRuVoiceRanking, WowVoiceLocale
 local panel
 local races = {
     ancient='Древень',banshee='Банши',bloodelf='Эльф крови',centaur='Кентавр',child='Ребёнок',
-    dragon='Дракон',dreadlord='Повелитель ужаса',dwarf='Дворф',elemental_water='Элементаль воды',furbolg='Фурболг',
+    dragon='Дракон',dreadlord='Повелитель ужаса',dwarf='Дворф',elemental_water='Элементаль воды',elemental_fire='Элементаль огня',furbolg='Фурболг',
     gnome='Гном',goblin='Гоблин',human='Человек',human_child='Человек (ребёнок)',imp='Бес',
     nightelf='Ночной эльф',orc='Орк',orc_child='Орк (ребёнок)',quilboar='Свинобраз',scourge='Нежить',
     skyborne='Небеснорождённый',stone_construct='Каменное создание',succubus='Суккуб',tauren='Таурен',troll='Тролль',
@@ -112,15 +112,23 @@ function WV:RefreshVoiceRankingView()
         for _,role in pairs(roles) do
             local npc=type(role)=='table' and not (role.narrator or role.itemID or role.objectID)
                 and database.npcs and database.npcs[role.npcID]
-            if npc and npc.race and npc.sex then known[npc.race..':'..npc.sex]=true end
+            if npc and type(npc.race)=='string' and (npc.sex=='male' or npc.sex=='female') then
+                known[npc.race..':'..npc.sex]={speakerType='npc',race=npc.race,sex=npc.sex,status='no_data',ranking={}}
+            end
         end
     end
     for _,group in ipairs(snapshot and snapshot.groups or {}) do
-        if group.speakerType=='narrator' or known[group.race..':'..group.sex] then groups[#groups+1]=group end
+        if group.speakerType=='narrator' then groups[#groups+1]=group
+        elseif known[group.race..':'..group.sex] then
+            groups[#groups+1]=group; known[group.race..':'..group.sex]=nil
+        end
     end
+    -- New quest speakers remain configurable before the next community export.
+    -- These local rows use the normal fallback order without changing the snapshot.
+    for _,group in pairs(known) do groups[#groups+1]=group end
     local snapshotTime=snapshot and Ranking.FormatSnapshotTime(snapshot.generatedAt) or 'нет данных'
     L.SetOptionsText(panel.Summary,(origin=='imported' and 'Ваш снимок: ' or 'Встроенный снимок: ')..snapshotTime
-        ..(snapshot and ('  |  Групп: '..#groups) or ''))
+        ..'  |  Групп: '..#groups)
     L.SetOptionsText(panel.Mode,self:GetVoiceSelectionMode()=='ranking' and ''
         or 'Сейчас для всех используется общий порядок.')
     if self:GetVoiceSelectionMode()~='ranking' and not panel.Import:IsShown() then panel.Activate:Show() else panel.Activate:Hide() end

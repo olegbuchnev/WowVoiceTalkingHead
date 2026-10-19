@@ -137,19 +137,23 @@ node tools/generate-classic-metadata.js <WowVoiceSounds-directory>
 node tools/generate-classic-metadata.js <WowVoiceSounds-directory> --check
 ```
 
-The first command reads the external sound folder and our shipped `Index.lua`,
+The first command reads the external sound folder and the installed sibling
+`WowVoice/Durations.lua` as data,
 then replaces `src/Durations.lua` and `docs/internal/classic-audio-manifest.json`.
 It neither copies nor modifies external recordings, TOCs or player files.
-Only the `WowVoiceSounds` folder is required; the original `WowVoice` addon,
-its duration table and its executable code are not inputs. Our existing quest
-index supplies availability and section mapping (`a`, `p`, `c`), independently
-of previous timer values. All indexed recordings must exist; unexpected OGGs,
-invalid index values and incomplete/unsupported OGG streams abort generation
-before either output is replaced. Updating coverage requires reviewing the index first.
+Both installed folders are required for import; the original player is not
+required at runtime and its code is never executed. Its positive quest-stage
+timer keys supply availability (`a`, `p`, `c`); actual durations are measured
+from the corresponding OGGs. All indexed recordings must exist; unexpected OGGs,
+invalid keys/timers and incomplete/unsupported OGG streams abort generation
+before either output is replaced. A new import replaces active coverage entirely,
+including removals at an unchanged package version. Historical `src/Index.lua`
+title/NPC data and recording history never restore old audio availability.
 An optional upstream `silence.ogg` is excluded from quest coverage; our service
 sound is measured separately from `src/Media/silence.ogg`.
 
-The manifest records the source TOC/version, quest and section counts, and each
+The manifest records both source TOC/versions, the upstream duration-table hash,
+quest and section counts, and each
 file's size, measured duration and SHA-256. Measurements use the final Vorbis
 granule divided by sample rate, rounded to six decimal places, without playback
 padding. The bundled service silence is measured and recorded separately.
@@ -1397,9 +1401,9 @@ Scope confirmed on 2026-10-02: separating playback and UI logic from the source
 addons is complete. CatQuest_Voices remains an externally installed pack with
 its own required CatQuest dependency; removing that dependency is not a task.
 Live metadata fallback for upstream updates is currently required only for
-CatQuest. The Classic WowVoice source keeps the bundled index and durations.
-If an official WowVoice release for Forever becomes available, adapting it is
-a separate future task. Neither condition is unfinished work in the current scope.
+CatQuest. Forever WowVoice 1.1.0 is imported offline from its current timer-key
+index and matching external OGGs. Runtime uses the resulting measured coverage;
+historical title/NPC lookup entries cannot restore recordings from older packs.
 
 The importer generates src/CatQuestAudio.lua for the audited external 0.6.1
 release, including per-file durations and JSON-only recovery. The installed
@@ -1452,8 +1456,13 @@ database in the addon package, including Classic overlaps.
 The fixed merge order is **WowVoice > CatQuest > Wayfarer**, separately for each
 quest stage and player gender. A higher-priority common transcript wins over
 lower-priority gendered text; missing variants can come from the next source.
-Current WowVoice contains hashes, titles and NPC data but no full transcripts,
-so its input is empty. The merge algorithm reserves its first position.
+The retained Classic `src/Index.lua` contains hashes, titles and NPC data but
+no full transcripts. The installed Forever WowVoice 1.1.0 audited on 2026-10-18
+instead supplies only a quest-stage duration table (9,917 recordings); it has
+no quest index, NPC database or transcripts. WowVoiceSounds 0.1.0 has only a
+comment-only Lua stub and OGGs whose Vorbis comments contain the encoder field.
+The WowVoice text input is empty; the merge algorithm reserves its first
+position but does not yet implement an upstream WowVoice transcript reader.
 `docs/internal/quest-texts-manifest.json` records input versions, source coverage
 and the selected source of each imported variant. Within Wayfarer, v4 precedes
 other models, then pack names provide a deterministic tie-break.

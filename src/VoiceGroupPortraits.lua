@@ -11,6 +11,7 @@ TalkingHeadRuVoiceGroupPortraits = {
     ["npc:dreadlord:male"] = { npcID = 2425, displayID = 11658 },
     ["npc:dwarf:female"] = { npcID = 8929, displayID = 8705 },
     ["npc:dwarf:male"] = { npcID = 658, displayID = 1362 },
+    ["npc:elemental_fire:male"] = { npcID = 271481, displayID = 1070 },
     ["npc:elemental_water:male"] = { npcID = 13278, displayID = 10849 },
     ["npc:furbolg:male"] = { npcID = 8405, displayID = 1012 },
     ["npc:gnome:female"] = { npcID = 5144, displayID = 3108 },

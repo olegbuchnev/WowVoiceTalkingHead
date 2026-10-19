@@ -8,24 +8,31 @@ const defaultRoot = path.resolve(__dirname, '..');
 const manifestPath = 'docs/internal/classic-audio-manifest.json';
 const hash = buffer => crypto.createHash('sha256').update(buffer).digest('hex');
 
-function indexedFiles(root) {
-  // Availability comes from the shipped quest index, never the previous timers.
-  const index = dataTable(path.join(root, 'src/Index.lua'));
-  const names = new Set();
-  for (const entries of Object.values(index)) {
-    for (const entry of Object.values(entries)) {
-      if (!Number.isSafeInteger(entry.q) || entry.q <= 0) throw Error('Invalid Classic quest ID');
-      for (const section of ['a', 'p', 'c']) {
-        if (entry[section] == null) continue;
-        if (!Number.isFinite(entry[section]) || entry[section] <= 0) {
-          throw Error(`Invalid Classic index section: ${entry.q}${section}`);
-        }
-        names.add(`${entry.q}${section}.ogg`);
-      }
+function recordingFiles(timers) {
+  const names = [];
+  for (const [key, seconds] of Object.entries(timers)) {
+    if (key === 'silence') continue;
+    const match = /^([1-9]\d*)[apc]$/.exec(key);
+    if (!match || !Number.isSafeInteger(Number(match[1]))
+        || !Number.isFinite(seconds) || seconds <= 0) {
+      throw Error(`Invalid WowVoice duration entry: ${key}`);
     }
+    names.push(`${key}.ogg`);
   }
-  if (!names.size) throw Error('Empty Classic quest index');
-  return [...names].sort();
+  if (!names.length) throw Error('Empty WowVoice recording index');
+  return names.sort();
+}
+
+function readRecordingIndex(source) {
+  // Forever's upstream timer keys own coverage. Historical title/NPC metadata
+  // and our previous measured timers must never restore removed recordings.
+  const player = path.join(path.dirname(path.resolve(source)), 'WowVoice');
+  const provenance = readSourceVersion(player, ['WowVoice_Camelot.toc', 'WowVoice.toc']);
+  const file = path.join(player, 'Durations.lua');
+  return { names: recordingFiles(dataTable(file, 'WowVoiceDur')), provenance: {
+    source: 'WowVoice/Durations.lua', version: provenance.version, sourceToc: provenance.toc,
+    sha256: hash(fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n')),
+  } };
 }
 
 function measure(file, directory) {
@@ -37,8 +44,8 @@ function measure(file, directory) {
 }
 
 function collect(source, root = defaultRoot) {
-  const provenance = readSourceVersion(source, ['WowVoiceSounds_Vanilla.toc', 'WowVoiceSounds.toc']);
-  const names = indexedFiles(root);
+  const provenance = readSourceVersion(source, ['WowVoiceSounds_Camelot.toc', 'WowVoiceSounds.toc']);
+  const index = readRecordingIndex(source), names = index.names;
   // Official packs may include their own stop sound; playback uses our service asset.
   const actual = fs.readdirSync(source).filter(name => /\.ogg$/i.test(name) && name.toLowerCase() !== 'silence.ogg').sort();
   const expectedSet = new Set(names), actualSet = new Set(actual);
@@ -57,7 +64,8 @@ function collect(source, root = defaultRoot) {
   if (serviceAudio.duration !== 0.1) throw Error('Expected the bundled 100 ms service silence');
   return {
     schemaVersion: 1, source: 'WowVoiceSounds', version: provenance.version, sourceToc: provenance.toc,
-    selection: 'All a/p/c sections in the shipped Classic quest index; audio files are not modified',
+    index: index.provenance,
+    selection: 'Exact a/p/c keys of installed WowVoice/Durations.lua matched against current WowVoiceSounds OGGs; no legacy recording fallback',
     measurement: 'Vorbis final granule / sample rate, rounded to 6 decimal places; no playback padding',
     quests: quests.size, sections, files, serviceAudio,
   };
@@ -101,7 +109,7 @@ function check(source, root = defaultRoot) {
   return measured;
 }
 
-module.exports = { generate, check, collect, indexedFiles, renderDurations };
+module.exports = { generate, check, collect, recordingFiles, readRecordingIndex, renderDurations };
 if (require.main === module) {
   const [source, option, ...extra] = process.argv.slice(2);
   if (!source || (option && option !== '--check') || extra.length) {

@@ -689,8 +689,8 @@ function WV:ClassicSoundPath(questId, section)
     if not WowVoiceAudioSources.Loaded(SOUND_ADDON) then return nil end
     local key = tostring(questId) .. section
     local duration = _G.WowVoiceDur and _G.WowVoiceDur[key]
-    -- Only measured recordings exist in the supported Classic pack. Never
-    -- invent a filename for a missing stage or an unknown Forever quest.
+    -- Only the current imported pack's measured recordings are available.
+    -- Historical title/NPC entries cannot restore a removed quest or stage.
     if not duration then return nil end
     local ext = (TalkingHeadRuDB and TalkingHeadRuDB.ext) or "ogg"
     return "Interface\\AddOns\\" .. SOUND_ADDON .. "\\" .. key .. "." .. ext, duration, nil, "wowvoice", ext == "ogg"

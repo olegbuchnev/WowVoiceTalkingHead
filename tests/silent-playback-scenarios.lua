@@ -1,5 +1,8 @@
 event('ADDON_LOADED')
 local WV, Q = WowVoice, WowVoice.questQueue
+-- The source-loss regression needs 86576 to be CatQuest-only; current WowVoice
+-- also supplies its description, so remove that overlap in this fixture.
+WowVoiceDur['86576a'] = nil
 local loaded = {}
 C_AddOns.IsAddOnLoaded = function(name) return loaded[name] == true end
 event('PLAYER_LOGIN')
