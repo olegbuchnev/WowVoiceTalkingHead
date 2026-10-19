@@ -134,12 +134,20 @@ try {
       const initial=await portrait.getAttribute('data-load-id');
       for(let attempt=0;attempt<(persistent?3:1);attempt++) {
         await page.waitForFunction(()=>document.querySelector('.model')?.modelViewer?.failedTexture);
-        await page.clock.fastForward(121500);
+        const previousID=await portrait.getAttribute('data-load-id');
+        // fastForward fires an interval once at the end of the jump. Advance
+        // the retry delay separately, after that interval schedules recovery.
+        await page.clock.fastForward(120500);
+        await page.waitForFunction(()=>document.querySelector('.portrait-slot.current .model')?.dataset.modelState==='error');
+        await page.clock.fastForward(1500);
         if(!persistent) {
           await page.waitForFunction(()=>document.querySelector('.portrait-slot.current .model')?.dataset.modelState==='ready');
           assert.notEqual(await portrait.getAttribute('data-load-id'),initial);
         } else if(attempt<2) {
-          for(let i=0;i<50 && mounts<attempt+2;i++) await page.waitForTimeout(20);
+          await page.waitForFunction(previous=>{
+            const model=document.querySelector('.portrait-slot.current .model');
+            return model?.dataset.loadId!==previous && model?.modelViewer?.failedTexture;
+          },previousID);
           assert.equal(mounts,attempt+2);
         }
       }
