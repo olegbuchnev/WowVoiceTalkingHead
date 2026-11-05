@@ -6,7 +6,7 @@ description: Audit and classify TalkingHead Ru NPC species, sex and child metada
 # Классификация NPC TalkingHead Ru
 
 Работай из корня репозитория. Пути к установленным библиотекам получай из
-`config/build.env.local.ps1` / `WOWVOICE_FOREVER_BETA_ADDONS`, как в `BUILD.local.md`.
+`config/build.env.local.ps1` / `WOWVOICE_FOREVER_ADDONS`, как в `BUILD.local.md`.
 Прочитай [правила категорий](references/category-rules.md) для затронутых типов.
 Это этап [update-libraries](../update-libraries/SKILL.md), который также можно
 запускать отдельно по ID квеста/NPC или JSON из `portrait-debug`.

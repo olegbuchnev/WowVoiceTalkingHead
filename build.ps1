@@ -2,8 +2,8 @@
 param(
   [ValidateSet('Validate', 'Test', 'DeployAddon', 'PackageAddon', 'CheckSources', 'BackupSiteDatabase', 'ExportAddonRanking')]
   [string]$Task = 'Validate',
-  [ValidateSet('ForeverBeta')]
-  [string]$Target = 'ForeverBeta',
+  [ValidateSet('Forever')]
+  [string]$Target = 'Forever',
   [string]$ConfigPath,
   [switch]$LocalDebug, # Backward-compatible no-op: the voice catalogue now ships to everyone.
   [switch]$QueueLab, # Development-only simulated quest queue, never packaged.
@@ -138,9 +138,9 @@ function Resolve-AddOnsDirectory {
     if (Test-Path -LiteralPath $localEnvironment -PathType Leaf) {
       . $localEnvironment
     }
-    $configured = $env:WOWVOICE_FOREVER_BETA_ADDONS
+    $configured = $env:WOWVOICE_FOREVER_ADDONS
     if ([string]::IsNullOrWhiteSpace($configured)) {
-      throw 'Set WOWVOICE_FOREVER_BETA_ADDONS. Copy config\build.env.example.ps1 to config\build.env.local.ps1 and edit the path.'
+      throw 'Set WOWVOICE_FOREVER_ADDONS. Copy config\build.env.example.ps1 to config\build.env.local.ps1 and edit the path.'
     }
   }
   if (-not $configured -or -not (Test-Path -LiteralPath $configured -PathType Container)) {
@@ -152,8 +152,8 @@ function Resolve-AddOnsDirectory {
   $client = [IO.Path]::GetDirectoryName($interface)
   if (-not (Test-PathEquals ([IO.Path]::GetFileName($resolved)) 'AddOns') -or
       -not (Test-PathEquals ([IO.Path]::GetFileName($interface)) 'Interface') -or
-      -not (Test-PathEquals ([IO.Path]::GetFileName($client)) '_classic_beta_')) {
-    throw "ForeverBeta destination must end in _classic_beta_\Interface\AddOns: $resolved"
+      -not (Test-PathEquals ([IO.Path]::GetFileName($client)) '_forever_')) {
+    throw "Forever destination must end in _forever_\Interface\AddOns: $resolved"
   }
   return $resolved
 }

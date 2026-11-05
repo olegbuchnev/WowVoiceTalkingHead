@@ -34,7 +34,14 @@ class VoteApiTest {
         writeCatalogue(); restart();
         browser=HttpClient.newBuilder().cookieHandler(new CookieManager(null,CookiePolicy.ACCEPT_ALL)).build();
     }
-    void writeCatalogue() throws Exception {Files.writeString(catalogueFile,mapper.writeValueAsString(new Catalogue.Snapshot(2,List.of(quest))));}
+    void writeCatalogue() throws Exception {
+        // Match deployment: replace the file, including for equal-length updates
+        // on filesystems whose timestamp resolution cannot distinguish two writes.
+        var incoming=Files.createTempFile(directory,"catalogue-",".json");
+        Files.writeString(incoming,mapper.writeValueAsString(new Catalogue.Snapshot(2,List.of(quest))));
+        Files.move(incoming,catalogueFile,java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+            java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+    }
     void restart() {
         if(context!=null) context.close();
         context=SpringApplication.run(VoteApplication.class,"--server.port=0","--voice-vote.database="+database,

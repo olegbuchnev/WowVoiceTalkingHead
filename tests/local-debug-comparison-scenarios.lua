@@ -177,7 +177,7 @@ assert(row.PlayButtons.wowvoice:IsShown() and not row.PlayButtons.catquest:IsSho
     'Absent CatQuest recording must leave the right side empty')
 loaded.CatVoices = false
 loaded.CatQuest_Voices = true
-version = '0.8.0'
+version = '99.0.0'
 row = tile(179)
 assert(row.PlayButtons.catquest:IsEnabled(), 'An updated pack keeps compatible comparison recordings')
 version = auditedVersion

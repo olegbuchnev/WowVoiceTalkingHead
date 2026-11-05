@@ -1,11 +1,11 @@
-# TalkingHead Ru для WoW Forever Beta
+# TalkingHead Ru для WoW Forever
 
 Русская озвучка классических и дополнительных квестов Forever с портретами и текстом реплик.
 
 ## Установка — 3 шага
 
 1. **Закройте игру и установите TalkingHead Ru.** Скопируйте папку
-   `TalkingHeadRu` из нового архива в `_classic_beta_/Interface/AddOns/`
+   `TalkingHeadRu` из нового архива в `_forever_/Interface/AddOns/`
    с заменой файлов.
 2. **Установите одну или несколько библиотек для Forever:**
    [WowVoice](https://www.curseforge.com/wow/addons/wowvoice-classic/files/all?page=1&pageSize=20&gameVersionTypeId=88568&showAlphaFiles=hide)
@@ -359,7 +359,7 @@ WowVoice → Wayfarer → CatQuest квест без записи WowVoice бу�
 - **Сообщить об ошибке:** укажите версию аддона и язык клиента, подключённые
   аудиопаки и шаги воспроизведения проблемы. При необходимости приложите снимок экрана.
 
-Аддон предназначен для **WoW Forever Beta** и использует подключаемые библиотеки озвучки.
+Аддон предназначен для **WoW Forever** и использует подключаемые библиотеки озвучки.
 
 ## Авторы озвучки
 

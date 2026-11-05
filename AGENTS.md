@@ -14,6 +14,9 @@
 [classify-npcs](.agents/skills/classify-npcs/SKILL.md). Это обязательный этап
 обновления библиотек перед итоговой сборкой каталога сайта.
 
+Для подготовки ZIP и двуязычного ченджлога релиза для CurseForge используй
+[prepare-curseforge-release](.agents/skills/prepare-curseforge-release/SKILL.md).
+
 # Озвучка
 
 Все записи озвучки читаются напрямую из установленных внешних библиотек

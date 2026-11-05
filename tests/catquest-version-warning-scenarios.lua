@@ -2,8 +2,8 @@ local WV, S = WowVoice, WowVoiceAudioSources
 local mode = catquestWarningTestMode
 local older = mode == 'old-login' or mode == 'old-late'
 local loaded = mode ~= 'absent' and mode ~= 'old-late'
-local version = older and '0.2.2' or mode == 'newer' and '0.8.0'
-    or mode == 'double-digit' and '0.10.0' or mode == 'unknown' and 'nightly' or WowVoiceCatQuestAudio.sourceVersion
+local version = older and '0.2.2' or mode == 'newer' and '99.0.0'
+    or mode == 'double-digit' and '10.0.0' or mode == 'unknown' and 'nightly' or WowVoiceCatQuestAudio.sourceVersion
 if mode == 'missing' then version = nil end
 local metadata, isLoaded = C_AddOns.GetAddOnMetadata, C_AddOns.IsAddOnLoaded
 C_AddOns.GetAddOnMetadata = function(name, field)

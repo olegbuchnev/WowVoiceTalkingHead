@@ -1,6 +1,6 @@
 ---
 name: update-libraries
-description: Update and audit the WowVoice, CatQuest and Wayfarer voice libraries and shared quest text/NPC metadata for TalkingHead Ru, including Forever Quest Pins; deploy verified changes to the beta client and update the voting site when affected. Use when these libraries change or the user asks to refresh their imported data.
+description: Update and audit the WowVoice, CatQuest and Wayfarer voice libraries and shared quest text/NPC metadata for TalkingHead Ru, including Forever Quest Pins; deploy verified changes to the Forever client and update the voting site when affected. Use when these libraries change or the user asks to refresh their imported data.
 ---
 
 # Обновление библиотек TalkingHead Ru
@@ -10,7 +10,7 @@ description: Update and audit the WowVoice, CatQuest and Wayfarer voice librarie
 Прочитай его `BUILD.local.md` и соответствующие разделы `docs/DEVELOPMENT.md`.
 Для Wayfarer смотри также `docs/internal/wayfarer-integration.md`.
 Команды ниже выполняются из корня проекта. Пути к установленным аддонам берутся
-из `config/build.env.local.ps1`, переменная `WOWVOICE_FOREVER_BETA_ADDONS`.
+из `config/build.env.local.ps1`, переменная `WOWVOICE_FOREVER_ADDONS`.
 
 ## Определить изменения
 
@@ -39,6 +39,17 @@ description: Update and audit the WowVoice, CatQuest and Wayfarer voice librarie
   сторонние аддоны, их TOC, индексы и звуковые файлы.
 - Источники разбираются как данные: не исполняй сторонний Lua. Не подменяй
   проверку файлов одним обновлением поля версии.
+
+Проверка 04.11.2026: CatQuest / Voices 1.0.0 сохраняют форматы `NpcData.lua`,
+`CatQuestVoicePack.quests` и пути `Sounds/q`; существующие импортёры совместимы.
+Клиент переехал в `_forever_`: используются `WOWVOICE_FOREVER_ADDONS` и таргет
+`Forever`. Закрытый бета-клиент больше не является целью установки.
+
+Forever Quest Pins на коммите `55f08ef95dbfef7efbf983023a83e8afb089288b` сменил
+источник на `QuestieDB-Forever`, contractVersion 4. Текущий импортёр принимает
+только ATT и намеренно отклоняет этот формат. До отдельной проверки семантики
+новой базы сохраняй прежний снимок; не ослабляй проверку источника и не выдавай
+`changed` за `current`. Это не блокирует независимое обновление CatQuest.
 
 ## Импортировать затронутые данные
 
@@ -350,12 +361,12 @@ Wayfarer (`zoneMode`) имеет приоритет и сохраняется п
 исторические отчёты прошлых миграций. Отдельно укажи, что проверено автоматически
 и что проверено в игре.
 
-## Завершить обновление: сайт, рейтинг и бета
+## Завершить обновление: сайт, рейтинг и Forever
 
 Перед публикацией проверь актуальные ограничения в `BUILD.local.md`.
 
 По инструкции пользователя от 12.10.2026 обычное обновление библиотек включает
-установку проверенного TalkingHead Ru на бету и обновление сайта голосования,
+установку проверенного TalkingHead Ru в Forever и обновление сайта голосования,
 если затронуты его данные. Дополнительное подтверждение этих шагов не нужно.
 Явные ограничения текущего запроса («только аудит», «локально», «не публиковать»)
 имеют приоритет. Это не включает выпуск нового релиза, тега или публикацию на
@@ -390,7 +401,7 @@ CurseForge/GitHub Pages.
   и поступившие голоса. Не повторяй неудачный деплой без устранения причины.
 - Обнови актуальные показатели в README и `docs/CURSEFORGE_DESCRIPTION.md`,
   не меняя исторические релиз-ноты. В итоге перечисли, что импортировано,
-  установлено на бету и опубликовано на сайте, а что требует проверки в игре.
+  установлено в Forever и опубликовано на сайте, а что требует проверки в игре.
 - После обновления сайта (либо подтверждения отсутствия различий) обязательно
   обнови встроенный снимок рейтинга сообщества: `build.cmd -Task ExportAddonRanking`,
   затем `node tools/update-addon-ranking.js` и `node tests/validate-ranking.js src`.
@@ -400,7 +411,7 @@ CurseForge/GitHub Pages.
   чтобы рейтинг соответствовал новым записям и категориям NPC. При ошибке сохрани
   прежний снимок и явно отметь незавершённый этап; не выдавай старый файл за новый.
 - После обновления рейтинга и успешных проверок выполни
-  `build.cmd -Task DeployAddon -Target ForeverBeta` по `BUILD.local.md`.
+  `build.cmd -Task DeployAddon -Target Forever` по `BUILD.local.md`.
   Используй локальный конфиг, сохрани поддерживаемые им отладочные файлы и сверь
   установленную копию с `src`, включая `BuiltinRanking.lua`. Сторонние аддоны
   не изменяй. В итоговом отчёте укажи дату встроенного снимка и число групп.

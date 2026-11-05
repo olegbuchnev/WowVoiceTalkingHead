@@ -36,7 +36,7 @@ try {
   }
   # No local voice libraries are present; deployed libraries are independent fixtures.
   $build = Join-Path $fixture 'build.ps1'
-  $addons = Join-Path $fixture 'game\_classic_beta_\Interface\AddOns'
+  $addons = Join-Path $fixture 'game\_forever_\Interface\AddOns'
   $voice = Join-Path $addons 'TalkingHeadRu'
   $legacy = Join-Path $addons 'WowVoiceTalkingHead'
   $sounds = Join-Path $addons 'WowVoiceSounds'
@@ -58,9 +58,9 @@ try {
   'unrelated' | Set-Content -LiteralPath (Join-Path $addons 'Unrelated\keep.txt')
   $soundHash = (Get-FileHash -LiteralPath (Join-Path $sounds '179a.ogg')).Hash
   $config = Join-Path $fixture 'targets.psd1'
-  "@{ ForeverBeta = '$($addons.Replace("'", "''"))' }" | Set-Content -LiteralPath $config
+  "@{ Forever = '$($addons.Replace("'", "''"))' }" | Set-Content -LiteralPath $config
 
-  & $build -SkipSourceCheck -Task DeployAddon -Target ForeverBeta -ConfigPath $config
+  & $build -SkipSourceCheck -Task DeployAddon -Target Forever -ConfigPath $config
   $sourcePrefix = (Join-Path $fixture 'src') + '\'
   foreach ($file in Get-ChildItem -LiteralPath (Join-Path $fixture 'src') -File -Recurse) {
     $relative = $file.FullName.Substring($sourcePrefix.Length)
@@ -101,11 +101,17 @@ try {
 
   $retail = Join-Path $fixture 'game\_retail_\Interface\AddOns'
   New-Item -ItemType Directory -Path $retail -Force | Out-Null
-  "@{ ForeverBeta = '$($retail.Replace("'", "''"))' }" | Set-Content -LiteralPath $config
+  "@{ Forever = '$($retail.Replace("'", "''"))' }" | Set-Content -LiteralPath $config
   Assert-Fails { & $build -SkipSourceCheck -Task Deploy -ConfigPath $config } 'Removed Deploy task was accepted.'
   Assert-Fails { & $build -SkipSourceCheck -Task DeployAddon -ConfigPath $config } 'Addon-only deploy accepted Retail path.'
   Assert-Fails { & $build -SkipSourceCheck -Task DeployAddon -Target Retail -ConfigPath $config } 'Retail target accepted.'
   Assert-True (@(Get-ChildItem -LiteralPath $retail -Force).Count -eq 0) 'Rejected deployment wrote files.'
+  $closedBeta = Join-Path $fixture 'game\_classic_beta_\Interface\AddOns'
+  New-Item -ItemType Directory -Path $closedBeta -Force | Out-Null
+  "@{ Forever = '$($closedBeta.Replace("'", "''"))' }" | Set-Content -LiteralPath $config
+  Assert-Fails { & $build -SkipSourceCheck -Task DeployAddon -ConfigPath $config } 'Deployment accepted the closed beta client.'
+  Assert-Fails { & $build -SkipSourceCheck -Task DeployAddon -Target ForeverBeta -ConfigPath $config } 'Removed beta target accepted.'
+  Assert-True (@(Get-ChildItem -LiteralPath $closedBeta -Force).Count -eq 0) 'Rejected beta deployment wrote files.'
   $tocPath = Join-Path $fixture 'src\TalkingHeadRu.toc'
   $original = [IO.File]::ReadAllText($tocPath)
   [IO.File]::AppendAllText($tocPath, "`n..\outside.lua`n")
@@ -183,7 +189,7 @@ try {
   'historical archive' | Set-Content -LiteralPath $fullZip
   $fullHash = (Get-FileHash -LiteralPath $fullZip).Hash
   # Deploy code with no audio sources; installed audio and its TOCs must not be written.
-  "@{ ForeverBeta = '$($addons.Replace("'", "''"))' }" | Set-Content -LiteralPath $config
+  "@{ Forever = '$($addons.Replace("'", "''"))' }" | Set-Content -LiteralPath $config
   $audioBefore = @{}
   foreach ($file in Get-ChildItem -LiteralPath $sounds, $catSounds -File -Recurse) {
     $audioBefore[$file.FullName] = @((Get-FileHash -LiteralPath $file.FullName).Hash, $file.LastWriteTimeUtc.Ticks)
@@ -191,7 +197,7 @@ try {
   'before addon-only deploy' | Set-Content -LiteralPath $oldCore
   'stale' | Set-Content -LiteralPath (Join-Path $voice 'obsolete.lua')
   $previousBackups = @(Get-ChildItem -LiteralPath (Join-Path $fixture 'backups') -Directory).FullName
-  & $build -SkipSourceCheck -Task DeployAddon -Target ForeverBeta -ConfigPath $config
+  & $build -SkipSourceCheck -Task DeployAddon -Target Forever -ConfigPath $config
   foreach ($file in Get-ChildItem -LiteralPath (Join-Path $fixture 'src') -File -Recurse) {
     $relative = $file.FullName.Substring($sourcePrefix.Length)
     Assert-True ((Get-FileHash -LiteralPath $file.FullName).Hash -eq
@@ -261,27 +267,27 @@ try {
   Assert-True ([IO.Directory]::GetCreationTimeUtc($release) -eq $folderCreated) 'Addon packaging recreated shared folder.'
   Write-Host 'PASS: addon-only build without audio sources, runtime hashes, no root README, validation, failed-build preservation and historical archive preservation.'
   # Exercise environment-based deployment only inside the temporary fixture.
-  $previousAddonsEnvironment = $env:WOWVOICE_FOREVER_BETA_ADDONS
+  $previousAddonsEnvironment = $env:WOWVOICE_FOREVER_ADDONS
   $previousQueueLabEnvironment = $env:WOWVOICE_QUEUE_LAB
   $fixtureConfig = Join-Path $fixture 'config'
   New-Item -ItemType Directory -Path $fixtureConfig -Force | Out-Null
   $fixtureEnvironment = Join-Path $fixtureConfig 'build.env.local.ps1'
   try {
     $env:WOWVOICE_QUEUE_LAB = $null
-    $env:WOWVOICE_FOREVER_BETA_ADDONS = $null
+    $env:WOWVOICE_FOREVER_ADDONS = $null
     Assert-Fails { & $build -SkipSourceCheck -Task DeployAddon } 'Deployment accepted missing environment configuration.'
-    $env:WOWVOICE_FOREVER_BETA_ADDONS = $retail
+    $env:WOWVOICE_FOREVER_ADDONS = $retail
     Assert-Fails { & $build -SkipSourceCheck -Task DeployAddon } 'Environment deployment accepted Retail path.'
-    $env:WOWVOICE_FOREVER_BETA_ADDONS = $addons
+    $env:WOWVOICE_FOREVER_ADDONS = $addons
     & $build -SkipSourceCheck -Task DeployAddon
     Assert-True ((Get-FileHash -LiteralPath $oldCore).Hash -eq
       (Get-FileHash -LiteralPath (Join-Path $fixture 'src\Core.lua')).Hash) 'Inherited environment deployment failed.'
 
-    $environmentLine = '$env:WOWVOICE_FOREVER_BETA_ADDONS = ' + "'" + $addons.Replace("'", "''") + "'"
+    $environmentLine = '$env:WOWVOICE_FOREVER_ADDONS = ' + "'" + $addons.Replace("'", "''") + "'"
     $environmentLine | Set-Content -LiteralPath $fixtureEnvironment -Encoding UTF8
-    $env:WOWVOICE_FOREVER_BETA_ADDONS = $retail
+    $env:WOWVOICE_FOREVER_ADDONS = $retail
     & $build -SkipSourceCheck -Task DeployAddon -LocalDebug
-    Assert-True ($env:WOWVOICE_FOREVER_BETA_ADDONS -eq $addons) 'Local file did not override inherited environment.'
+    Assert-True ($env:WOWVOICE_FOREVER_ADDONS -eq $addons) 'Local file did not override inherited environment.'
     Assert-True (Test-Path -LiteralPath (Join-Path $voice 'VoiceComparison.lua')) 'Environment deployment missed public voice catalogue.'
 
     # Local opt-in survives ordinary and repeated deployments without a flag.
@@ -309,11 +315,11 @@ try {
     "throw 'Local environment must not be loaded here.'" | Set-Content -LiteralPath $fixtureEnvironment
     & $build -SkipSourceCheck -Task Validate
     & $build -SkipSourceCheck -Task PackageAddon
-    "@{ ForeverBeta = '$($addons.Replace("'", "''"))' }" | Set-Content -LiteralPath $config
+    "@{ Forever = '$($addons.Replace("'", "''"))' }" | Set-Content -LiteralPath $config
     & $build -SkipSourceCheck -Task DeployAddon -ConfigPath $config
     Assert-True (@(Get-ChildItem -LiteralPath $retail -Force).Count -eq 0) 'Environment tests wrote to rejected destination.'
   } finally {
-    $env:WOWVOICE_FOREVER_BETA_ADDONS = $previousAddonsEnvironment
+    $env:WOWVOICE_FOREVER_ADDONS = $previousAddonsEnvironment
     $env:WOWVOICE_QUEUE_LAB = $previousQueueLabEnvironment
   }
   Write-Host 'PASS: inherited/local deployment, persistent QueueLab opt-in, explicit opt-out/config bypass, release exclusion and independent non-deploy tasks.'

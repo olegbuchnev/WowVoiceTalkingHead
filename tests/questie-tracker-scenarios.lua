@@ -50,6 +50,16 @@ local function row(id, mode, y)
     line.expandQuest = CreateFrame('Button', nil, line)
     line.expandQuest:SetPoint('TOPRIGHT', line, 'TOPLEFT', 36, 1)
     line.expandQuest:SetSize(18, 18)
+    if questieApiTestMode == '12.6' then
+        line.questFocus = CreateFrame('Button', nil, line)
+        line.questFocus:SetSize(21, 21)
+        line.questFocus:SetPoint('RIGHT', line, 'LEFT', -3, 0)
+        line.questFocus:Hide()
+        line.playButton = CreateFrame('Button', nil, line)
+        line.playButton:SetSize(23, 23)
+        line.playButton:SetPoint('RIGHT', line.expandQuest, 'LEFT', -3, 0)
+        line.playButton:Hide()
+    end
     function line:GetScript(script) return self.scripts[script] end
     line:SetScript('OnEnter', function() line.nativeHover=true end)
     line:SetScript('OnLeave', function() line.nativeHover=false end)
@@ -62,6 +72,10 @@ complete.expandQuest:Hide()
 local pool, tracker = {}, {}
 function pool.UpdateQuestTitleLines(callback)
     for _, line in ipairs(lines) do if line.mode == 'quest' then callback(line) end end
+end
+if questieApiTestMode == '12.6' then
+    pool.ForEachQuestTitleLine = pool.UpdateQuestTitleLines
+    pool.UpdateQuestTitleLines = nil
 end
 function pool.ResetLinesForChange()
     for _, line in ipairs(lines) do line.mode=nil end
@@ -277,6 +291,24 @@ assert(#allFrames==created)
 assert(hookCounts[tostring(tracker)..'.Update']==1)
 assert(hookCounts[tostring(tracker)..'.UpdateFormatting']==1)
 assert(hookCounts[tostring(pool)..'.ResetLinesForChange']==1)
+if questieApiTestMode == '12.6' then
+    first.questFocus:Show(); flush()
+    assert(play.visible)
+    before(play, first.questFocus)
+    first.questFocus:SetAlpha(0)
+    tracker:UpdateFormatting(); flush()
+    before(play, first.questFocus)
+    first.playButton:Show(); flush()
+    before(play, first.questFocus)
+    first.questFocus:Hide(); flush()
+    before(play, first.playButton)
+    first.playButton:Hide(); flush()
+    before(play, first.expandQuest)
+    play.scripts.OnClick(play)
+    assert(plays[#plays].file:find('179a.ogg', 1, true))
+    WV:Silence()
+    print('PASS: Questie 12.6 iterator, focus/voice controls, hover fading and visibility changes')
+end
 soundOK=false
 play.scripts.OnClick(play)
 assert(not play.visible, 'failed recordings hide Questie replay just like native replay')

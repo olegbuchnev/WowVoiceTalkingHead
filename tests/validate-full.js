@@ -21,6 +21,7 @@ for (const locale of ['enUS', 'enGB']) {
 for (const mode of ['old-login','old-late','current','newer','double-digit','unknown','missing','absent']) {
     scenarios.push({file:'catquest-version-warning-scenarios.lua',mode});
 }
+scenarios.push({file:'questie-tracker-scenarios.lua',questieApi:'12.6'});
 for (const entry of scenarios) {
     const scenario = typeof entry === 'string' ? entry : entry.file;
     if (process.argv[3] && !scenario.includes(process.argv[3])) continue;
@@ -54,6 +55,10 @@ for (const entry of scenarios) {
     if (entry.mode) {
         lua.lua_pushstring(L, to_luastring(entry.mode));
         lua.lua_setglobal(L, to_luastring('catquestWarningTestMode'));
+    }
+    if (entry.questieApi) {
+        lua.lua_pushstring(L, to_luastring(entry.questieApi));
+        lua.lua_setglobal(L, to_luastring('questieApiTestMode'));
     }
     run(path.join(__dirname,scenario));
     if (scenario === 'audio-sources-scenarios.lua') run(path.join(__dirname, 'catquest-update-scenarios.lua'));

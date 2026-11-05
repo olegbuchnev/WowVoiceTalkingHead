@@ -352,7 +352,7 @@ end
 
 -- Questie's module iterator is the only source of rows; do not inspect its
 -- private pool, parse titles, reuse VoiceOver's buttons or change native layout.
-local questiePool
+local questieTitleLines
 local questieScrollHooks = {}
 local questieItemHooks = setmetatable({}, { __mode = "k" })
 local questieRefreshPending
@@ -419,6 +419,13 @@ local function refreshQuestieLine(line)
         line:HookScript("OnShow", requestQuestieRefresh)
         line.expandQuest:HookScript("OnShow", requestQuestieRefresh)
         line.expandQuest:HookScript("OnHide", requestQuestieRefresh)
+        for _, key in ipairs({"questFocus", "playButton"}) do
+            local control = line[key]
+            if control then
+                control:HookScript("OnShow", requestQuestieRefresh)
+                control:HookScript("OnHide", requestQuestieRefresh)
+            end
+        end
         -- Preserve Questie's hover/fade behavior when the cursor is over play.
         for _, script in ipairs({"OnEnter", "OnLeave"}) do
             play:HookScript(script, function()
@@ -456,7 +463,16 @@ local function refreshQuestieLine(line)
     elseif line.expandQuest:IsShown() then
         anchor = line.expandQuest
     end
-    play:SetPoint("RIGHT", anchor, "TOPLEFT", -math.max(2, size * 3 / 14), -size / 2)
+    local gap = math.max(2, size * 3 / 14)
+    -- Questie 12.6 places focus and optional voice controls before the item/minus
+    -- column. Stay outside those controls, including when they fade on hover.
+    local leading = line.questFocus and line.questFocus:IsShown() and line.questFocus
+        or line.playButton and line.playButton:IsShown() and line.playButton
+    if leading then
+        play:SetPoint("RIGHT", leading, "LEFT", -gap, 0)
+    else
+        play:SetPoint("RIGHT", anchor, "TOPLEFT", -gap, -size / 2)
+    end
     if scroll then
         local top, bottom = scroll:GetTop(), scroll:GetBottom()
         local y = line.label:GetTop()
@@ -478,10 +494,14 @@ local function setupQuestie()
     if not (loader and type(loader.ImportModule) == "function") then return end
     local pool = loader:ImportModule("TrackerLinePool")
     local tracker = loader:ImportModule("QuestieTracker")
-    if not (type(pool) == "table" and type(pool.UpdateQuestTitleLines) == "function"
+    if type(pool) ~= "table" then return end
+    -- 12.6 renamed the iterator; older Questie releases expose the old name.
+    local titleLines = pool.ForEachQuestTitleLine
+    if type(titleLines) ~= "function" then titleLines = pool.UpdateQuestTitleLines end
+    if not (type(titleLines) == "function"
         and type(pool.ResetLinesForChange) == "function" and type(tracker) == "table"
         and type(tracker.Update) == "function" and type(tracker.UpdateFormatting) == "function") then return end
-    questiePool = pool
+    questieTitleLines = titleLines
     if not hooked[tracker] then
         hooked[tracker] = true
         hooksecurefunc(tracker, "Update", requestQuestieRefresh)
@@ -531,8 +551,8 @@ function WV:RefreshTrackerButtons()
             end
         end
     end
-    if enabled() and questiePool then
-        questiePool.UpdateQuestTitleLines(refreshQuestieLine)
+    if enabled() and questieTitleLines then
+        questieTitleLines(refreshQuestieLine)
     end
     for _, play in pairs(buttons) do
         if not play.active then play:Hide() end

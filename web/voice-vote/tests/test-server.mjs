@@ -26,7 +26,7 @@ export async function startTestServer({questIDs=demoIDs,adminPassword} = {}) {
       fs.writeFileSync(path.join(directory,'admin-password.txt'),adminPassword);
       env.VOICE_VOTE_ADMIN_PASSWORD_FILE=path.join(directory,'admin-password.txt');
     }
-    delete env.WOWVOICE_FOREVER_BETA_ADDONS;
+    delete env.WOWVOICE_FOREVER_ADDONS;
     // Simulate hosting: a standalone JAR, portable metadata and a writable DB.
     java=spawn('java',['--enable-native-access=ALL-UNNAMED','-jar','server.jar',
       '--server.port=0','--voice-vote.database=votes.sqlite','--voice-vote.catalogue=catalogue.json'],

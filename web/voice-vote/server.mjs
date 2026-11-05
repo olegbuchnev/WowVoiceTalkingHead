@@ -17,9 +17,9 @@ const json = name => JSON.parse(fs.readFileSync(path.join(repo, 'docs/internal',
 const digest = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
 export function addonsDirectory() {
   const config = path.join(repo, 'config/build.env.local.ps1');
-  const local = fs.existsSync(config) && /\$env:WOWVOICE_FOREVER_BETA_ADDONS\s*=\s*'([^']+)'/.exec(fs.readFileSync(config, 'utf8'))?.[1];
-  const directory = local || process.env.WOWVOICE_FOREVER_BETA_ADDONS;
-  if (!directory || !fs.existsSync(directory)) throw Error('Укажите папку AddOns в config/build.env.local.ps1 или WOWVOICE_FOREVER_BETA_ADDONS.');
+  const local = fs.existsSync(config) && /\$env:WOWVOICE_FOREVER_ADDONS\s*=\s*'([^']+)'/.exec(fs.readFileSync(config, 'utf8'))?.[1];
+  const directory = local || process.env.WOWVOICE_FOREVER_ADDONS;
+  if (!directory || !fs.existsSync(directory)) throw Error('Укажите папку AddOns в config/build.env.local.ps1 или WOWVOICE_FOREVER_ADDONS.');
   return directory;
 }
 

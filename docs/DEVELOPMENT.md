@@ -3,7 +3,7 @@
 Wayfarer integration, migration checklist and reproducible OGG timing tasks:
 [Wayfarer integration](internal/wayfarer-integration.md).
 
-TalkingHead Ru is a Forever Beta build based on WowVoice, with talking
+TalkingHead Ru is a Forever build based on WowVoice, with talking
 heads and quest playback controls. This repository keeps its development sources
 outside the live World of Warcraft installation. Runtime addon files live under
 `src/`; tests and build tools stay outside that directory and are never deployed.
@@ -17,7 +17,7 @@ TalkingHeadRu owns source selection, playback and the queue; Wayfarer's core
 is used to load its pack registry, not to play recordings. Shared recordings use
 the selection mode configured in options (community race/sex ranking on new installs
 and once on the first upgrade to the release introducing this default).
-This build targets **WoW Forever Beta, Interface 16001**.
+This build targets **WoW Forever, Interface 16001**.
 
 The optional `TalkingHeadRuDB.showVoiceSource` setting defaults to `false`.
 Its checkbox is in «Говорящая голова». When enabled, the head shows the actual
@@ -27,7 +27,7 @@ context for all sources, including WowVoice, without changing saved queue data.
 The label follows fallback and comparison playback, fades with the head and
 stays hidden in silent previews or when the source is unknown.
 
-Updated beta clients can return secret NPC GUIDs, names and model display IDs.
+Updated Forever clients can return secret NPC GUIDs, names and model display IDs.
 `WowVoice.PublicValue` drops restricted values before identity parsing, debug
 formatting or persistence. Portrait capture tries accessible npc/questnpc tokens,
 then uses the existing quest-giver metadata fallback for descriptions only.
@@ -220,10 +220,10 @@ Run from the repository root in Windows PowerShell or Command Prompt:
 .\build.cmd -Task Test
 ```
 
-### DeployAddon to Forever Beta
+### DeployAddon to Forever
 
 ```shell
-.\build.cmd -Task DeployAddon -Target ForeverBeta
+.\build.cmd -Task DeployAddon -Target Forever
 ```
 
 ### Build release package
@@ -1121,10 +1121,10 @@ cause an initial delay.
 
 `BUILD.local.md` is a tracked command guide without personal paths.
 Copy `config/build.env.example.ps1` to `config/build.env.local.ps1` (gitignored)
-and set the Forever Beta AddOns directory. The example uses a fictional path:
+and set the Forever AddOns directory. The example uses a fictional path:
 
 ```powershell
-$env:WOWVOICE_FOREVER_BETA_ADDONS = 'D:\ExampleWoW\_classic_beta_\Interface\AddOns'
+$env:WOWVOICE_FOREVER_ADDONS = 'D:\ExampleWoW\_forever_\Interface\AddOns'
 ```
 
 DeployAddon load this file automatically in the build process only.
@@ -1139,12 +1139,12 @@ Explicit `-QueueLab` or `-QueueLab:$false` overrides this preference.
 Explicit `-ConfigPath` deployment ignores the environment preference;
 release packages always exclude the harness.
 
-`ForeverBeta` is the only supported deployment target; PTR, Retail and All are
+`Forever` is the only supported deployment target; PTR, Retail and All are
 not supported. The old `config/deploy.targets.local.psd1` is no longer read
 automatically. Explicit `-ConfigPath` still accepts the PSD1 format shown in
 `config/deploy.targets.example.psd1` and bypasses the local environment file.
 The destination must exist and end in
-`_classic_beta_\Interface\AddOns`. Deployment rejects junctions and symlinks.
+`_forever_\Interface\AddOns`. Deployment rejects junctions and symlinks.
 
 ## Deployment and backups
 

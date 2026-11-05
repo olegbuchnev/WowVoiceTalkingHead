@@ -1,6 +1,6 @@
 # TalkingHead Ru
 
-Русская озвучка квестов для **WoW Forever Beta** с говорящей головой в стиле Retail.
+Русская озвучка квестов для **WoW Forever** с говорящей головой в стиле Retail.
 Во время воспроизведения на экране отображаются портрет персонажа и текст реплики.
 Описание задания можно повторно прослушать кнопкой ▶ в журнале или списке заданий.
 На английском клиенте кнопки плеера отображаются на английском, настройки — на русском.
@@ -74,7 +74,7 @@
 
 ### CatQuest
 
-Альтернативная озвучка классических заданий и дополнительные квесты Forever — 4 343 основных описания (Voices 0.7.1).
+Альтернативная озвучка классических заданий и дополнительные квесты Forever — 4 360 основных описаний (Voices 1.0.0).
 
 **Что установить:** [CatQuest](https://www.curseforge.com/wow/addons/catquest/files/all?page=1&pageSize=20&gameVersionTypeId=88568&showAlphaFiles=hide)
 и [CatQuest Voices](https://www.curseforge.com/wow/addons/catquest-voices/files/all?page=1&pageSize=20&gameVersionTypeId=88568&showAlphaFiles=hide).
@@ -108,7 +108,7 @@
 
 1. **[Скачайте аддон](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.4.2-forever/TalkingHeadRu-1.4.2-forever.zip)**.
    Закройте игру и скопируйте папку `TalkingHeadRu` из архива
-   в `_classic_beta_/Interface/AddOns/`.
+   в `_forever_/Interface/AddOns/`.
 2. **Установите одну или несколько библиотек для Forever:**
    [WowVoice](https://www.curseforge.com/wow/addons/wowvoice-classic/files/all?page=1&pageSize=20&gameVersionTypeId=88568&showAlphaFiles=hide)
    или [CatQuest](https://www.curseforge.com/wow/addons/catquest/files/all?page=1&pageSize=20&gameVersionTypeId=88568&showAlphaFiles=hide)
@@ -150,7 +150,7 @@ TalkingHead показывает ссылки на авторов загруже
 нажмите крестик на панели. Повторить описание можно кнопкой ▶ у задания.
 
 Подробнее о настройках, звуке и решении проблем — в [инструкции](USER_README.md).
-Сборка предназначена для **WoW Forever Beta**. Поддерживаются стандартный трекер
+Сборка предназначена для **WoW Forever**. Поддерживаются стандартный трекер
 (в том числе с оформлением EllesmereUI) и Questie Tracker. В собственных списках
 других аддонов кнопки могут отсутствовать.
 
@@ -169,6 +169,16 @@ TalkingHead показывает ссылки на авторов загруже
 Поддержать авторов и связаться с ними можно по ссылкам выше.
 
 ## Что нового
+
+<details name="releases">
+<summary><strong>Версия 1.4.3-forever</strong> · <time datetime="2026-11-05">5 ноября 2026</time></summary>
+
+- Обновлены данные для **CatQuest Voices 1.0.0**: тексты заданий, доступные записи и их длительности.
+- Обновлены сведения о персонажах для портретов и выбора озвучки.
+- Исправлены кнопки воспроизведения в списке заданий **Questie 12.6.0**, включая расположение рядом с новыми элементами управления.
+- Обновлён встроенный рейтинг озвучки по свежим голосам сообщества.
+
+</details>
 
 <details name="releases">
 <summary><strong>Версия 1.4.2-forever</strong> · <time datetime="2026-10-19">19 октября 2026</time></summary>
@@ -273,7 +283,7 @@ TalkingHead показывает ссылки на авторов загруже
 >
 > Перед установкой новой версии **полностью закройте игру**. Рекомендуется
 > вручную удалить старую папку аддона и его сохранения. Все пути ниже указаны
-> от папки `_classic_beta_`:
+> от папки `_forever_`:
 >
 > - `Interface/AddOns/WowVoiceTalkingHead/` — старая папка аддона.
 > - `WTF/Account/<аккаунт>/SavedVariables/WowVoiceTalkingHead.lua` — старые настройки.

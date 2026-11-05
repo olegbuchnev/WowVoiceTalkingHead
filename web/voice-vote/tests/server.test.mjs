@@ -21,7 +21,9 @@ test('explicit description narrator exports no receiving NPC or race/sex', async
   assert.equal(catalogue.quests.length,2);
   for(const quest of catalogue.quests) {
     assert.deepEqual(quest.npc,{id:0,displayID:0,race:null,sex:null,name:'Рассказчик'});
-    assert.equal(quest.variants.length,2,'Narration still participates in quest voting');
+    const sources=new Set(quest.variants.map(variant=>variant.source));
+    assert.equal(sources.size,quest.variants.length,'Each library contributes one variant');
+    assert(sources.size>=2 && sources.size<=3,'Narration still participates in quest voting');
   }
 });
 

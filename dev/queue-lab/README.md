@@ -9,7 +9,7 @@
 ## Установка
 
 ```powershell
-.\build.cmd -Task DeployAddon -Target ForeverBeta -QueueLab
+.\build.cmd -Task DeployAddon -Target Forever -QueueLab
 ```
 
 В игре: `/reload`, затем `/tt`. Алиасы: `/thead queuelab`, `/thead queuetest`.

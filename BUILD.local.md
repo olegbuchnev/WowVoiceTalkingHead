@@ -38,8 +38,8 @@ $classify-npcs Проверь категорию NPC 7765 из задания 28
 в `config/build.env.local.ps1` и замени демонстрационный путь на свой.
 Локальный файл исключён из Git; не перезаписывай его при повторной настройке.
 
-В нём задаётся `$env:WOWVOICE_FOREVER_BETA_ADDONS` — полный путь до
-`_classic_beta_\Interface\AddOns`. Эта папка должна уже существовать.
+В нём задаётся `$env:WOWVOICE_FOREVER_ADDONS` — полный путь до
+`_forever_\Interface\AddOns`. Эта папка должна уже существовать.
 `DeployAddon` автоматически загружает локальный файл, поэтому команды
 ниже менять не нужно. Переменные действуют только в процессе сборки,
 системные настройки Windows не меняются.
@@ -92,7 +92,7 @@ node tools/update-addon-ranking.js
 
 При стандартном обновлении библиотек сначала обновите данные сайта (либо
 подтвердите отсутствие различий), затем выполните `ExportAddonRanking`,
-`node tools/update-addon-ranking.js` и проверки до установки аддона на бету.
+`node tools/update-addon-ranking.js` и проверки до установки аддона в Forever.
 Проверьте дату снимка и совпадение установленного `BuiltinRanking.lua` с `src`.
 Этот этап описан в [update-libraries](.agents/skills/update-libraries/SKILL.md).
 
@@ -167,9 +167,9 @@ python -m unittest discover -s tests -p test_backup_site_database.py -v
 
 ## CheckSources — проверить обновление базы Forever Quest Pins
 
-Текущая миграция библиотек: [CatQuest и Voices 0.7.1](docs/internal/catquest-0.7.1-integration.md) (18.10.2026).
+Текущая миграция библиотек: [CatQuest и Voices 1.0.0](docs/internal/catquest-1.0.0-integration.md) (04.11.2026).
 Wayfarer: [1.0.0 / пакеты 3.2.0](docs/internal/wayfarer-3.2.0-integration.md).
-Скилл `update-libraries` после проверок обновляет TalkingHead Ru на бете и,
+Скилл `update-libraries` после проверок обновляет TalkingHead Ru в Forever и,
 при изменении данных, сайт голосования. Релиз и GitHub Pages публикуются отдельно.
 
 ```shell
@@ -450,10 +450,10 @@ Enter/пробел и переход между выпусками: предыд
 озвучек и без звуковых пакетов. Проверь также `/reload` с очередью: оригинальный
 игровой текст сохраняется, а язык для показа выбирается заново при проигрывании.
 
-## DeployAddon — обновить только аддон в локальном Forever Beta
+## DeployAddon — обновить только аддон в локальном Forever
 
 ```shell
-.\build.cmd -Task DeployAddon -Target ForeverBeta
+.\build.cmd -Task DeployAddon -Target Forever
 ```
 
 Обновляет `TalkingHeadRu` из `src/`, с резервной копией в `backups/`.
@@ -586,7 +586,7 @@ Enter предпочитает WowVoice, затем CatQuest. Прослушив
 ## QueueLab — стенд игровых диалогов только для беты
 
 ```shell
-.\build.cmd -Task DeployAddon -Target ForeverBeta -QueueLab
+.\build.cmd -Task DeployAddon -Target Forever -QueueLab
 ```
 
 После `/reload`: `/tt` (также `/thead queuelab`). Окно позволяет
@@ -902,7 +902,7 @@ Interface 16001. У звуков нет Dependencies и Group; Lua-файл со
 
 Перед переходом на неизменённый внешний пак нужно решить следующие вопросы:
 
-- Проверить загрузку в чистой Forever Beta: исходные TOC указывают Classic
+- Проверить загрузку в чистой Forever: исходные TOC указывают Classic
   `115xx`, а наш клиент — `16001`. Сейчас доступность звука требует загруженного
   `WowVoiceSounds`; совпадение файлов само по себе эту проверку не заменяет.
 - Выполнено: остановка использует собственный `TalkingHeadRu/Media/silence.ogg`

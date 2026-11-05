@@ -1,3 +1,3 @@
 @{
-  ForeverBeta = 'D:\ExampleWoW\_classic_beta_\Interface\AddOns'
+  Forever = 'D:\ExampleWoW\_forever_\Interface\AddOns'
 }

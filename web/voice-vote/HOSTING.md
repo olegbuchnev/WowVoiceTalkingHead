@@ -1,5 +1,40 @@
 # Timeweb Cloud deployment
 
+## CatQuest 1.0.0 (deployed 2026-11-04)
+
+Published 4,050 comparisons and 11,887 recordings: 10 added comparisons,
+72 changed texts and 106 new audio identities. Unchanged recordings retain
+their published paths; new OGG files were streamed directly from installed
+libraries. Existing comparison NPC identities are unchanged.
+
+API image: `talkinghead-vote-server:catquest-100-20261104`; web image unchanged.
+All 1,037 previous votes and 1,019 comparison rows were preserved. SQLite
+integrity, schema 4, mounts and both service health checks passed. Consistent
+SQLite/inbox/catalogue/model-manifest backup:
+`/srv/talkinghead/backups/catquest-100-20261104-20261104-121336`.
+
+All 382 verified portrait packs and existing model assets were reused.
+Full offline verification completed: 1,446 / 1,447 ready, with only the known
+missing camera for display 146706 / quest 97290. Public Firefox checks confirmed
+the exact catalogue, all audio variants and ready portraits for quests 7487,
+8053, 98904, 1116 and 97326. Audio preload/volume checks passed without production
+ballots. Packed M2/SKEL hashes, sizes, immutable caching and server-side
+`portraitPack: true` were verified.
+
+The host key was independently confirmed by the user through the provider
+console before updating local trust. No SSH verification was bypassed.
+The ranking export at `2026-11-04T12:14:28.621028247Z` contains 38 groups and
+was validated and installed with the addon in `_forever_`. All 46 runtime files
+match `src`; local QueueLab remains enabled. No addon release was created.
+
+Evidence: `artifacts/review/catquest-1.0.0/`,
+`artifacts/review/catquest-100-20261104-public.json`, and
+`artifacts/voice-vote-deploy/updates/catquest-100-20261104/`.
+Rollback: stop web/API, restore catalogue and model manifests from the backup,
+retag `talkinghead-vote-server:before-catquest-100-20261104` to the configured
+API image and restart. Preserve the live votes volume and all added audio;
+do not replace votes accepted since deployment with the backup database.
+
 ## WowVoice current library and NPC categories (deployed 2026-10-19)
 
 Published 4,040 comparisons and 11,867 recordings from the current external
