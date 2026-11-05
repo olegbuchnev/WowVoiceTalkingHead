@@ -175,7 +175,7 @@ function page(content, isGuide = false) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Русская озвучка квестов для WoW Forever Beta. Скачать TalkingHead Ru, установить аддон и настроить воспроизведение.">
+  <meta name="description" content="Русская озвучка квестов для WoW Forever. Скачать TalkingHead Ru, установить аддон и настроить воспроизведение.">
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#181a1b">
   <title>${isGuide ? 'Инструкция — ' : ''}${escape(title)}</title>
@@ -192,7 +192,7 @@ function page(content, isGuide = false) {
     <div class="release-banner-copy">
       <p class="release-label">Уже доступно</p>
       <h2 id="curseforge-release-title">TalkingHead Ru теперь на CurseForge</h2>
-      <p>Установка и обновления через приложение.<br>Версия игры — <strong>Forever Beta</strong>.</p>
+      <p>Установка и обновления через приложение.<br>Версия игры — <strong>Forever</strong>.</p>
     </div>
     <a class="button curseforge-button" href="https://www.curseforge.com/wow/addons/talkinghead-ru" data-goatcounter-click="curseforge-open" data-goatcounter-title="Переход на CurseForge" data-goatcounter-no-session="1"><span class="curseforge-button-label">Открыть на CurseForge</span><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="18" height="18"><path d="M6 18 18 6M6 6h12v12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/></svg></a>
   </aside>
@@ -207,7 +207,7 @@ function page(content, isGuide = false) {
   <div class="layout">
     <header class="sidebar">
       <a class="brand" href="index.html">TalkingHead Ru</a>
-      <p class="tagline">Русская озвучка квестов<br>для WoW Forever Beta</p>
+      <p class="tagline">Русская озвучка квестов<br>для WoW Forever</p>
       <div class="downloads" aria-label="Скачать аддон">
         <div class="download-card" role="group" aria-label="Скачать TalkingHead Ru">
           <a class="button primary" href="${escape(addonInfo.url || addon)}"><span>Скачать аддон <span class="artifact-size">${escape(addonInfo.size)}</span></span><span aria-hidden="true">↓</span></a>
@@ -261,7 +261,7 @@ function page(content, isGuide = false) {
 `;
 }
 const gallery = markdown.parse(screenshots.map(token => token.raw).join('\n\n'));
-const content = `<div class="intro"><p class="eyebrow">WoW Forever Beta</p><h1>Квесты с русской озвучкой</h1>${markdown.parse(intro)}</div>
+const content = `<div class="intro"><p class="eyebrow">WoW Forever</p><h1>Квесты с русской озвучкой</h1>${markdown.parse(intro)}</div>
   ${section('Три библиотеки озвучки', 'voice-choice', 'voice-feature')}
   <div class="screenshots">${gallery}</div>
   ${section('Установка', 'installation')}
