@@ -16,6 +16,7 @@ scenarios.push('wowvoice-version-label-scenarios.lua');
 scenarios.push('secret-speaker-scenarios.lua');
 scenarios.push('unified-speakers-scenarios.lua');
 scenarios.push('head-strata-scenarios.lua');
+scenarios.push('ellesmere-tracker-scenarios.lua');
 for (const locale of ['enUS', 'enGB']) {
     scenarios.push({file:'catquest-scenarios.lua',locale});
 }

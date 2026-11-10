@@ -1,8 +1,9 @@
--- Small replay controls in Blizzard's tracker (including EllesmereUI) and
--- Questie. Keep our state outside either tracker's pooled rows.
+-- Small replay controls in Blizzard, EllesmereUI Custom and Questie trackers.
+-- Keep our state outside the trackers' pooled rows.
 local WV = _G.WowVoice
 local L = WowVoiceLocale
 local buttons, hooked = {}, {}
+local ellesmereRows, ellesmereRegistrations = {}, {}
 local progress, pulses = {}, {}
 local REMINDER_DURATION = 10
 local REMINDER_MESSAGE_DURATION = 5
@@ -27,6 +28,20 @@ end
 
 local function visibleTrackerQuest(play)
     if not play.active or not play:IsVisible() or play:GetEffectiveAlpha() <= 0 then return false end
+    if play.ellesmereSlot then
+        local parent = play:GetParent()
+        while parent and parent ~= UIParent do
+            if parent.IsObjectType and parent:IsObjectType("ScrollFrame") then
+                local top, bottom = parent:GetTop(), parent:GetBottom()
+                local _, center = play:GetCenter()
+                if not (top and bottom and center) then return false end
+                local scale = play:GetEffectiveScale() / parent:GetEffectiveScale()
+                local half = play:GetHeight() / 2
+                if (center + half) * scale > top or (center - half) * scale < bottom then return false end
+            end
+            parent = parent:GetParent()
+        end
+    end
     -- Hidden/collapsed parents are covered by IsVisible. Also exclude buttons
     -- whose center is outside the screen, even if their frame is still shown.
     local x, y = play:GetCenter()
@@ -350,6 +365,54 @@ local function makeButton(block, readQuestID, parent)
     return play
 end
 
+-- EllesmereUI API v5 gives each addon a reserved slot beside each quest title.
+-- Slots inherit scrolling/visibility and are hidden when reused for other rows.
+local function refreshEllesmereRow(slot, id, title)
+    local play = buttons[slot]
+    if not (enabled() and slot:IsShown() and type(id) == "number" and id > 0
+        and WV:CanPresentQuest(id)) then
+        if play then play.active = false; play:Hide() end
+        return
+    end
+    if not play then
+        play = makeButton(slot, function()
+            local row = ellesmereRows[slot]
+            if slot:IsVisible() and row then return row.id end
+        end)
+        play.ellesmereSlot = slot
+        slot:HookScript("OnHide", function()
+            play.active = false
+            stopPulse(play)
+        end)
+        slot:HookScript("OnShow", function()
+            local row = ellesmereRows[slot]
+            if row then refreshEllesmereRow(slot, row.id, row.title) end
+        end)
+    end
+    local _, fontSize = title:GetFont()
+    local size = math.min(24, math.max(12, (fontSize or 14) + 4))
+    play.questID, play.active = id, true
+    play:SetSize(size, size)
+    play.Icon:SetSize(size, size)
+    play.ProgressGlow:SetSize(size * 1.4, size * 1.4)
+    play.ProgressAnts:SetSize(size * 1.4 * 0.85, size * 1.4 * 0.85)
+    play:ClearAllPoints()
+    play:SetPoint("TOPRIGHT", slot, "TOPRIGHT", -4, (size - (fontSize or 14)) / 2)
+    play:Show()
+    updatePulse(play)
+end
+
+local function setupEllesmere()
+    local api = _G.EllesmereUI
+    if not (type(api) == "table" and type(api.RegisterQuestTrackerRow) == "function"
+        and type(api.RefreshQuestTrackerRows) == "function") or ellesmereRegistrations[api] then return end
+    ellesmereRegistrations[api] = api.RegisterQuestTrackerRow("TalkingHeadRu", function(slot, id, title)
+        ellesmereRows[slot] = {id=id, title=title}
+        refreshEllesmereRow(slot, id, title)
+    end, 32)
+    if ellesmereRegistrations[api] then api.RefreshQuestTrackerRows() end
+end
+
 -- Questie's module iterator is the only source of rows; do not inspect its
 -- private pool, parse titles, reuse VoiceOver's buttons or change native layout.
 local questieTitleLines
@@ -554,6 +617,7 @@ function WV:RefreshTrackerButtons()
     if enabled() and questieTitleLines then
         questieTitleLines(refreshQuestieLine)
     end
+    for slot, row in pairs(ellesmereRows) do refreshEllesmereRow(slot, row.id, row.title) end
     for _, play in pairs(buttons) do
         if not play.active then play:Hide() end
     end
@@ -625,6 +689,7 @@ end
 
 local function setup()
     setupQuestie()
+    setupEllesmere()
     local tracker = _G.QuestObjectiveTracker
     if tracker and hooked[tracker] then return end
     if tracker and not hooked[tracker] and type(tracker.Update) == "function"

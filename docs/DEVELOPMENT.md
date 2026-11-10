@@ -539,6 +539,16 @@ titles. They replay the description using
 the current quest ID and leave the tracker layout unchanged. These controls are
 always available for voiced quests; there is no separate visibility preference.
 
+EllesmereUI's Forever Custom Quest Tracker uses its own rows instead of Blizzard
+blocks. Tracker.lua registers `TalkingHeadRu` once through API v5's
+`RegisterQuestTrackerRow` when the optional module becomes available. Each row
+gets a 32-pixel slot to the right of its title; our unprotected replay button
+inherits its scrolling, scale and visibility. The callback updates the quest ID
+on every render, keeps native title/actions untouched, and shares playback and
+reminder pulses with the other trackers. Hidden/recycled slots cannot replay old
+quests; reminder selection excludes clipped rows. Position and panel dimensions
+remain controlled by EllesmereUI's `/unlock` mode.
+
 Questie support is optional and contained in Tracker.lua. The adapter imports
 only TrackerLinePool and QuestieTracker through QuestieLoader. It enumerates
 title rows through UpdateQuestTitleLines and reads mode, Quest.Id, label and
