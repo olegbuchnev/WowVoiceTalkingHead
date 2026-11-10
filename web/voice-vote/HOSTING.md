@@ -1,5 +1,40 @@
 # Timeweb Cloud deployment
 
+## CatQuest Voices 1.2.0 and Quest Pins v4 (deployed 2026-11-10)
+
+Published 4,178 comparisons and 12,143 recordings. Added 128 comparisons,
+updated 45 comparison NPCs and 12 existing texts, and streamed 362 new audio
+identities directly from installed libraries. Unchanged recordings retain their
+exact published manifest entries. The addon also supports all 120 NPC-specific
+CatQuest files; the voting catalogue continues comparing base descriptions.
+
+API image: `talkinghead-vote-server:catquest-120-pins4-20261110`; web unchanged.
+All 1,335 previous votes and 1,233 comparison rows were preserved. SQLite
+integrity, schema 4, service health and volume mounts passed verification.
+Consistent SQLite/inbox/catalogue/model-manifest backup:
+`/srv/talkinghead/backups/catquest-120-pins4-20261110-20261110-071559`.
+
+Reused all 382 verified portrait packs; no additional model files were needed.
+The full offline pass completed with 1,431 / 1,432 portraits ready, retaining
+only the known missing camera for display 146706 / quest 97290. Public Firefox
+checks verified the exact catalogue, audio playback and ready portraits for
+quests 5, 8053, 7487, 1116 and 97326. Audio hashes were also checked for new
+quest 94004. Packed M2/SKEL hashes and immutable caching passed; no production
+test ballots were submitted. Audio preload tests and the API image build passed.
+
+The final ranking export at `2026-11-10T07:17:33.268392645Z` contains 38 groups.
+It was validated, bundled and deployed to Forever; all 46 runtime files match
+`src`, including `BuiltinRanking.lua`. Local QueueLab remains enabled.
+No addon release was created.
+
+Evidence: `artifacts/review/catquest-1.2.0/`,
+`artifacts/review/catquest-120-pins4-20261110-public.json`, and
+`artifacts/voice-vote-deploy/updates/catquest-120-pins4-20261110/`.
+Rollback: restore the backed-up catalogue/model manifests and retag
+`talkinghead-vote-server:before-catquest-120-pins4-20261110` to the configured
+API image, then restart services. Preserve the live votes volume and added audio;
+do not replace votes accepted after deployment with the backup database.
+
 ## CatQuest 1.0.0 (deployed 2026-11-04)
 
 Published 4,050 comparisons and 11,887 recordings: 10 added comparisons,

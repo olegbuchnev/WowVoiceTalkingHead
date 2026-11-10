@@ -41,7 +41,7 @@ function record(table) {
   const obj = Object.fromEntries(table.fields.map(f => [f.key.name, f.value]));
   if (obj.male) { record(obj.male); record(obj.female); return; }
   const file = obj.file.value, duration = obj.duration.value;
-  assert(/^[0-9]+(?:_t)?(?:_[mf])?\.ogg$/.test(file));
+  assert(/^[0-9]+(?:_t)?(?:_n[1-9]\d*)?(?:_[mf])?\.ogg$/.test(file));
   assert(!indexed.has(file), `Duplicate supplemental file: ${file}`);
   indexed.add(file);
   assert(duration > 0 && duration === expected.get(file)?.duration, `Bad duration: ${file}`);
@@ -52,6 +52,8 @@ for (const field of index.fields) {
   newQuests.add(id);
   sections[key.slice(-1)]++;
   record(field.value.fields.find(f => f.key.name === 'audio').value);
+  const npc = field.value.fields.find(f => f.key.name === 'npc');
+  for (const sub of npc?.value.fields || []) record(sub.value.fields.find(f => f.key.name === 'audio').value);
 }
 assert.strictEqual(newQuests.size, manifest.quests);
 assert.deepStrictEqual(sections, manifest.sections);

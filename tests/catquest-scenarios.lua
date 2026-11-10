@@ -228,3 +228,113 @@ event('PLAYER_LOGOUT')
 assert(block.testCatIcon.visible and created.testCatIcon.visible and campaign.testCatIcon.visible and after.extraIcon.visible)
 assert(book.visible and unrelated.visible and noQuest.visible)
 print('PASS: CatQuest normal/campaign tracker icons, new and recycled blocks, late hooks, unrelated buttons and restoration')
+
+-- CatQuest 1.0.7 uses the same private icons on Questie's pooled title rows.
+-- Exercise both readiness/hook orders and an initially unavailable module pool.
+for _, order in ipairs({'catquest-first', 'talkinghead-first'}) do
+    command('off')
+    local pending, ready, lines, icons = {}, {}, {}, {}
+    C_Timer = {After=function(delay, callback) assert(delay == 0); pending[#pending+1] = callback end}
+    local function flush()
+        local callbacks = pending; pending = {}
+        for _, callback in ipairs(callbacks) do callback() end
+    end
+    local function line(id, mode)
+        local row = surface()
+        row.mode, row.Quest, row.label = mode or 'quest', {Id=id}, {}
+        lines[#lines+1] = row
+        return row
+    end
+    local first, objective, zone = line(179), line(179, 'objective'), line(0, 'zone')
+    local hiddenLine, recipe = line(180), line(181)
+    hiddenLine:Hide(); recipe.Recipe = {}
+    local tracker = {UpdateFormatting=function() end}
+    local pool = {GetHighestIndex=function() return #lines end, GetLine=function(i) return lines[i] end}
+    QuestieLoader = {_modules={}}
+    Questie = {db={profile={trackerEnabled=true}}, API={RegisterOnReady=function(callback)
+        ready[#ready+1] = callback
+    end}}
+    command('on')
+    assert(#ready == 1, 'register once while optional Questie modules are not ready')
+    WV:UpdateCatQuestIntegration()
+    assert(#ready == 1)
+    QuestieLoader._modules = {QuestieTracker=tracker, TrackerLinePool=pool}
+    local function upstreamSync()
+        for _, icon in pairs(icons) do icon:Hide() end
+        if not Questie.db.profile.trackerEnabled then return end
+        for _, row in ipairs(lines) do
+            if row:IsShown() and row.mode == 'quest' and not row.Recipe then
+                local icon = icons[row] or trackerIcon(row, 'voicechat-icon-speaker', row.Quest.Id)
+                icons[row] = icon
+                icon.questId = row.Quest.Id
+                icon:Show()
+            end
+        end
+    end
+    local function upstreamReady()
+        hooksecurefunc(tracker, 'UpdateFormatting', upstreamSync)
+        upstreamSync()
+    end
+    if order == 'catquest-first' then upstreamReady(); ready[1]()
+    else ready[1](); upstreamReady() end
+    flush()
+    assert(icons[first] and not icons[first].visible, 'hide existing CatQuest Questie speaker')
+    assert(not icons[objective] and not icons[zone] and not icons[hiddenLine] and not icons[recipe])
+    local ourPlay = readButton(first, function() end)
+    local native = trackerIcon(first, 'other-atlas', first.Quest.Id)
+    local wrongQuest = trackerIcon(first, 'voicechat-icon-speaker', 9999)
+    local fresh = line(182)
+    tracker:UpdateFormatting(); flush()
+    assert(icons[fresh] and not icons[fresh].visible, 'new rows hidden regardless of hook order')
+    local afterCombat = line(185)
+    event('PLAYER_REGEN_ENABLED')
+    upstreamSync() -- CatQuest's handler runs after ours without UpdateFormatting.
+    flush()
+    assert(icons[afterCombat] and not icons[afterCombat].visible, 'combat-end creation is suppressed')
+    assert(ourPlay.visible and native.visible and wrongQuest.visible, 'preserve our play button and unrelated controls')
+    icons[first]:Show()
+    assert(not icons[first].visible, 'upstream Show cannot defeat suppression')
+    fresh:Hide()
+    tracker:UpdateFormatting(); flush()
+    command('off')
+    assert(icons[first].visible and not icons[fresh].visible, 'do not restore a freed/hidden Questie row')
+    tracker:UpdateFormatting(); flush()
+    assert(icons[first].visible, 'installed hooks stay passive while disabled')
+    command('on')
+    fresh:Show(); fresh.Quest.Id = 183
+    tracker:UpdateFormatting(); flush()
+    assert(not icons[fresh].visible and icons[fresh].questId == 183, 'recycled row receives the new quest')
+    first.mode = 'objective'
+    tracker:UpdateFormatting(); flush()
+    command('off')
+    assert(not icons[first].visible and icons[fresh].visible, 'do not restore an objective recycled from a quest title')
+    command('on')
+    Questie.db.profile.trackerEnabled = false
+    tracker:UpdateFormatting(); flush()
+    command('off')
+    assert(not icons[fresh].visible, 'disabled Questie tracker cannot regain stale icons')
+    Questie.db.profile.trackerEnabled = true
+    tracker:UpdateFormatting(); flush()
+    command('on')
+    local late = line(184)
+    tracker:UpdateFormatting()
+    command('off'); flush()
+    assert(icons[late].visible, 'pending suppression must not run after disabling TalkingHead Ru')
+    command('on')
+    event('PLAYER_LOGOUT')
+    assert(icons[fresh].visible and icons[late].visible, 'restore live Questie speakers on logout')
+    assert(ourPlay.visible and native.visible and wrongQuest.visible)
+end
+print('PASS: CatQuest Questie speakers, both readiness/hook orders, late/new/recycled rows, disabled tracker, unrelated controls and restoration')
+
+Questie, QuestieLoader = nil, nil
+QuestLogDetailFrame = surface()
+local classicJournal = readButton(QuestLogDetailFrame, CatQuest_ReadQuestLog)
+QuestLogDetailFrame.catQuestButton = classicJournal
+command('on')
+assert(not classicJournal.visible)
+QuestLogDetailFrame:Hide(); QuestLogDetailFrame:Show(); classicJournal:Show()
+assert(not classicJournal.visible, 'ordinary quest log reader stays hidden after reopening and upstream refresh')
+command('off')
+assert(classicJournal.visible, 'ordinary quest log reader is restored when disabled')
+print('PASS: CatQuest ordinary quest log detail button, reopen, refresh and restoration')

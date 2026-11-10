@@ -100,7 +100,7 @@ local function variantFor(gender)
     return type(UnitSex) == "function" and UnitSex("player") == 3 and "f" or "m"
 end
 
-function Sources.Resolve(id, section, sourceID)
+function Sources.Resolve(id, section, sourceID, npcID)
     if sourceID == "wayfarer" then return WowVoiceWayfarerSource and WowVoiceWayfarerSource.Resolve(id, section) end
     if type(id) ~= "number" or id <= 0 or id % 1 ~= 0
         or (section ~= "a" and section ~= "p" and section ~= "c") then return nil end
@@ -109,6 +109,13 @@ function Sources.Resolve(id, section, sourceID)
     if section == "p" then return nil end
     local entry = source.entries[id .. section]
     local live = liveRecord(source, id, section)
+    local npcSuffix = ""
+    if type(npcID) == "number" and npcID > 0 and npcID % 1 == 0
+        and live and type(live.npc) == "table" and type(live.npc[npcID]) == "table" then
+        live = live.npc[npcID]
+        entry = type(entry) == "table" and type(entry.npc) == "table" and entry.npc[npcID] or nil
+        npcSuffix = "_n" .. tostring(npcID)
+    end
     local recovered = not source.updated and type(entry) == "table" and entry.jsonOnly
         and source.quests[id] == nil
     if not recovered and (not live or not positiveNumber(live.d)) then return nil end
@@ -116,7 +123,7 @@ function Sources.Resolve(id, section, sourceID)
     local variant = recovered and (type(audio) == "table" and variantFor(audio.male ~= nil))
         or live and variantFor(live.g)
     if not variant then return nil end
-    local stem = tostring(id) .. (section == "c" and "_t" or "")
+    local stem = tostring(id) .. (section == "c" and "_t" or "") .. npcSuffix
     local file = stem .. (variant == "x" and "" or "_" .. variant) .. ".ogg"
     local selectedCues = live and type(live.c) == "table" and live.c[variant] or nil
     local verified = not source.updated and type(entry) == "table" and (recovered

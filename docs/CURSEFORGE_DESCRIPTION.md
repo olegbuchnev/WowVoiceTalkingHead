@@ -40,7 +40,7 @@ Disable automatic queue playback to let the current recording finish and start t
 ## Voice sources
 
 * **[WowVoice](https://www.curseforge.com/wow/addons/wowvoice-classic)** — classic and Forever quest voiceovers with **4,207 main quest descriptions** (WowVoice 1.1.0).
-* **[CatQuest](https://www.curseforge.com/wow/addons/catquest) + [CatQuest Voices](https://www.curseforge.com/wow/addons/catquest-voices)** — alternative voiceovers and additional Forever quests, with **4,360 main quest descriptions** (Voices 1.0.0).
+* **[CatQuest](https://www.curseforge.com/wow/addons/catquest) + [CatQuest Voices](https://www.curseforge.com/wow/addons/catquest-voices)** — alternative voiceovers and additional Forever quests, with **4,489 main quest descriptions** (Voices 1.2.0).
 * **[Wayfarer](https://www.curseforge.com/wow/addons/wayfarer-russian-voiceover)** — Alliance, Horde, and shared quest voiceovers, with **3,790 main quest descriptions** across three modules.
 
 These counts include only main quest descriptions, excluding progress lines, turn-ins, and additional gender variants. Some quests are available in multiple libraries.
@@ -124,7 +124,7 @@ On English clients, player controls use English; settings and the voice catalogu
 ## Источники озвучки
 
 * **[WowVoice](https://www.curseforge.com/wow/addons/wowvoice-classic)** — озвучка классических заданий и Forever: **4 207 основных описаний** (WowVoice 1.1.0).
-* **[CatQuest](https://www.curseforge.com/wow/addons/catquest) + [CatQuest Voices](https://www.curseforge.com/wow/addons/catquest-voices)** — альтернативная озвучка и дополнительные задания Forever: **4 360 основных описаний** (Voices 1.0.0).
+* **[CatQuest](https://www.curseforge.com/wow/addons/catquest) + [CatQuest Voices](https://www.curseforge.com/wow/addons/catquest-voices)** — альтернативная озвучка и дополнительные задания Forever: **4 489 основных описаний** (Voices 1.2.0).
 * **[Wayfarer](https://www.curseforge.com/wow/addons/wayfarer-russian-voiceover)** — озвучка заданий Альянса, Орды и общих заданий: **3 790 основных описаний** в трёх модулях.
 
 Указано количество только основных описаний заданий, без реплик выполнения, сдачи и дополнительных вариантов пола персонажа. Часть заданий озвучена в нескольких библиотеках.

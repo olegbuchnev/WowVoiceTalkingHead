@@ -13,9 +13,10 @@ function identity(pack, file) {
     match = /^([1-9]\d*)([apc])\.ogg$/.exec(file);
     if (match) return { questID: Number(match[1]), section: match[2], playerVariant: 'common' };
   } else if (pack === 'CatQuest_Voices') {
-    match = /^([1-9]\d*)(_t)?(?:_([mf]))?\.ogg$/.exec(file);
+    match = /^([1-9]\d*)(_t)?(?:_n([1-9]\d*))?(?:_([mf]))?\.ogg$/.exec(file);
     if (match) return { questID: Number(match[1]), section: match[2] ? 'c' : 'a',
-      playerVariant: match[3] === 'm' ? 'male' : match[3] === 'f' ? 'female' : 'common' };
+      ...(match[3] ? {npcID: Number(match[3])} : {}),
+      playerVariant: match[4] === 'm' ? 'male' : match[4] === 'f' ? 'female' : 'common' };
   } else if (/^Wayfarer_Voices_(Alliance|Horde|Shared|Narrator)$/.test(pack)) {
     match = /^q\/([1-9]\d*)-([apc])(?:-([mf]))?\.ogg$/.exec(file);
     if (match) return { questID: Number(match[1]), section: match[2],

@@ -591,7 +591,7 @@ local function create()
         if player and player.EditOverlay then WV:UpdateFrameEditBorder(player.EditOverlay) end
     end)
     player = CreateFrame("Frame", "WowVoiceQuestQueuePlayer", root)
-    player:SetFrameStrata("FULLSCREEN_DIALOG")
+    player:SetFrameStrata(WV:GetHeadStrata())
     player:SetFrameLevel(TalkingHeadRu:GetFrameLevel())
     player:SetClampedToScreen(true)
     -- Clamp to the tiles/edit outline, excluding the empty right margin.
@@ -599,7 +599,7 @@ local function create()
     player:SetMovable(true)
     local guide = CreateFrame("Frame", nil, root)
     player.AlignmentGuide = guide
-    guide:SetFrameStrata("FULLSCREEN_DIALOG")
+    guide:SetFrameStrata(WV:GetHeadStrata())
     guide:SetFrameLevel(player:GetFrameLevel() + 30)
     guide:EnableMouse(false)
     guide.Line = guide:CreateTexture(nil, "OVERLAY")
@@ -800,6 +800,13 @@ local function create()
             end
         end
     end)
+end
+
+function WV:SyncQuestQueueStrata()
+    if not player then return end
+    local strata = self:GetHeadStrata()
+    player:SetFrameStrata(strata)
+    player.AlignmentGuide:SetFrameStrata(strata)
 end
 
 function WV:RefreshQuestQueuePlayer(layoutMode)

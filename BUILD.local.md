@@ -167,7 +167,7 @@ python -m unittest discover -s tests -p test_backup_site_database.py -v
 
 ## CheckSources — проверить обновление базы Forever Quest Pins
 
-Текущая миграция библиотек: [CatQuest и Voices 1.0.0](docs/internal/catquest-1.0.0-integration.md) (04.11.2026).
+Текущая миграция библиотек: [CatQuest Voices 1.2.0 и Quest Pins v4](docs/internal/catquest-1.2.0-integration.md) (10.11.2026).
 Wayfarer: [1.0.0 / пакеты 3.2.0](docs/internal/wayfarer-3.2.0-integration.md).
 Скилл `update-libraries` после проверок обновляет TalkingHead Ru в Forever и,
 при изменении данных, сайт голосования. Релиз и GitHub Pages публикуются отдельно.
@@ -1070,7 +1070,7 @@ node tools/generate-speakers.js --check
 Приоритет по частоте поддержки источников:
 
 - Выдающие NPC: **CatQuest → Wayfarer → актуальные Pins → Classic**.
-- Принимающие NPC: **CatQuest → Wayfarer → Classic**.
+- Принимающие NPC: **CatQuest → Wayfarer → актуальные Pins → Classic**.
 - Облики: **CatQuest → Wayfarer → подтверждённые дополнения**, по точному ID NPC.
   Точечные дополнения с источником и датой проверки хранятся в
   `docs/internal/npc-appearance-supplements.json`; они заполняют только пробелы.

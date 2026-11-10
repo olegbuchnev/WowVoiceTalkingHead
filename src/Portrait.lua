@@ -55,6 +55,12 @@ end
 local SECTION = { a = L["Описание задания"], p = L["Выполнение задания"], c = L["Завершение задания"] }
 local FALLBACK_ICON = "Interface\\Icons\\INV_Misc_Note_01"
 local DEFAULT_WIDTH, DEFAULT_HEIGHT = 570, 155
+local headStrata = { BACKGROUND=true, LOW=true, MEDIUM=true, HIGH=true,
+    DIALOG=true, FULLSCREEN=true, FULLSCREEN_DIALOG=true, TOOLTIP=true }
+function WV:GetHeadStrata()
+    local value = TalkingHeadRuDB and TalkingHeadRuDB.headStrata
+    return headStrata[value] and value or "FULLSCREEN_DIALOG"
+end
 local sourceLabels = {
     wowvoice = {"WowVoice", 0.25, 0.7, 1},
     catquest = {"CatQuest", 1, 0.55, 0.2},
@@ -1031,8 +1037,7 @@ local function createHead()
     head = CreateFrame("Button", "TalkingHeadRu", anchor)
     head:SetPoint("CENTER", anchor, "CENTER")
     head:SetSize(DEFAULT_WIDTH, DEFAULT_HEIGHT)
-    -- Keep the entire panel above dialogue/tutorial banners, including after reload.
-    head:SetFrameStrata("FULLSCREEN_DIALOG")
+    head:SetFrameStrata(WV:GetHeadStrata())
     head:SetFrameLevel(200)
     head:EnableMouse(false)
     head:RegisterForDrag("LeftButton")
@@ -1323,6 +1328,16 @@ function WV:StopTalkingHead()
     end
 end
 
+function WV:SetHeadStrata(value)
+    if not headStrata[value] or not TalkingHeadRuDB then return false end
+    TalkingHeadRuDB.headStrata = value
+    if head then head:SetFrameStrata(value) end
+    if scaleSnapshot then scaleSnapshot:SetFrameStrata(value) end
+    if self.SyncQuestQueueStrata then self:SyncQuestQueueStrata() end
+    if self.RefreshHeadOptions then self:RefreshHeadOptions() end
+    return true
+end
+
 function WV:GetHeadSettings()
     createHead()
     local x, y = centerPosition()
@@ -1398,7 +1413,7 @@ local function restoreSnapshotSource()
     head:SetParent(anchor)
     head:ClearAllPoints()
     head:SetPoint("CENTER", anchor, "CENTER")
-    head:SetFrameStrata("FULLSCREEN_DIALOG")
+    head:SetFrameStrata(WV:GetHeadStrata())
     head:SetFrameLevel(200)
     scalePreview.reparented = nil
 end
@@ -1592,7 +1607,7 @@ local function captureScaleSnapshot()
         scaleCapture = frame
         scaleCapture:SetMaxSnapshots(1)
         scaleSnapshot = CreateFrame("Frame", "WowVoiceHeadScaleSnapshot", anchor)
-        scaleSnapshot:SetFrameStrata("FULLSCREEN_DIALOG")
+        scaleSnapshot:SetFrameStrata(WV:GetHeadStrata())
         scaleSnapshot:SetFrameLevel(200)
         scaleSnapshot:SetScript("OnUpdate", updateHead)
         scaleSnapshot:EnableMouse(false)

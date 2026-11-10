@@ -11,6 +11,23 @@ end
 local sex = 2
 UnitSex = function() return sex end
 local prefix = 'Interface\\AddOns\\CatQuest_Voices\\Sounds\\q\\'
+-- NPC variants must follow the captured speaker, including turn-in and player sex.
+do
+    local old = CatQuestVoicePack.quests[999996]
+    CatQuestVoicePack.quests[999996] = {d=10, npc={[123]={d=3}}, t={d=8,npc={[456]={d=4,g=1}}}}
+    assert(S.Resolve(999996,'a','catquest',123).path == prefix..'999996_n123.ogg')
+    assert(S.Resolve(999996,'a','catquest',789).path == prefix..'999996.ogg')
+    assert(S.Resolve(999996,'a','catquest').path == prefix..'999996.ogg')
+    assert(S.Resolve(999996,'c','catquest',456).path == prefix..'999996_t_n456_m.ogg')
+    sex=3
+    assert(S.Resolve(999996,'c','catquest',456).path == prefix..'999996_t_n456_f.ogg')
+    sex=2
+    assert(WV:SoundPath(999996,'a',{speaker={npcID=123}}) == prefix..'999996_n123.ogg')
+    assert(WV:SoundPath(999996,'a',{speaker={npcID=123,narrator=true}}) == prefix..'999996.ogg')
+    CatQuestVoicePack.quests[999996].npc[123].d=0
+    assert(S.Resolve(999996,'a','catquest',123)==nil)
+    CatQuestVoicePack.quests[999996]=old
+end
 -- This scenario exercises CatQuest-only fixtures. New WowVoice releases also
 -- cover these quests, so explicitly keep other-source audio out of the fixture.
 for _, id in ipairs({99162, 98430, 99080}) do

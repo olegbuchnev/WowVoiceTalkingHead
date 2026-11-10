@@ -113,6 +113,27 @@ function collect(addons, options = {}) {
     }
     retainedCatQuestTexts = retainCatQuestTexts(cat, pack, json, sources.catquest, versions.catquest,
       catquestTextHistory, options.catquestFiles);
+    // NPC-specific subtitles belong to their own recording, never the generic
+    // quest transcript. Preserve them by filename/hash for future pack updates.
+    for (const [id, quest] of Object.entries(pack)) {
+      for (const [section, entry] of [['a',quest],['c',quest.t]]) {
+        for (const [npcID, sub] of Object.entries(entry?.npc || {})) {
+          for (const variant of sub.g ? ['m','f'] : ['x']) {
+            const text = cueText(sub.c?.[variant]);
+            if (!text) continue;
+            const file = id + (section === 'c' ? '_t' : '') + '_n' + npcID
+              + (variant === 'x' ? '' : '_' + variant) + '.ogg';
+            const location = path.join(cat,'Sounds/q',file);
+            const sha256 = options.catquestFiles?.get(file)?.sha256
+              || (fs.existsSync(location) ? crypto.createHash('sha256').update(fs.readFileSync(location)).digest('hex') : null);
+            if (sha256) {
+              catquestTextHistory.files[file] ||= {};
+              catquestTextHistory.files[file][sha256] = {text,sourceVersion:versions.catquest};
+            }
+          }
+        }
+      }
+    }
   }
   const packs = [];
   for (const name of fs.readdirSync(addons).filter(name => /^Wayfarer_Voices_/.test(name)).sort()) {

@@ -55,6 +55,13 @@ function audit(catDirectory, voicesDirectory) {
       names.forEach(name => files.add(name));
       expectedAudio[id + section] = { indexDuration: entry.d, gender: !!entry.g,
         voice: entry.v || '', jsonOnly: recovered.has(id), files: names };
+      for (const [npcID, sub] of Object.entries(entry.npc || {})) {
+        const npcStem = stem + '_n' + npcID;
+        const names = sub.g ? [npcStem + '_m.ogg', npcStem + '_f.ogg'] : [npcStem + '.ogg'];
+        names.forEach(name => files.add(name));
+        expectedAudio[id + section + ':' + npcID] = {indexDuration:sub.d, gender:!!sub.g,
+          voice:sub.v || '', files:names};
+      }
     }
   }
   const texts = read('src/QuestTexts.lua'), audio = read('src/CatQuestAudio.lua');
@@ -77,6 +84,10 @@ function audit(catDirectory, voicesDirectory) {
   for (const [key, entry] of Object.entries(audio.entries)) {
     actualAudio[key] = { indexDuration: entry.indexDuration, gender: entry.gender, voice: entry.voice,
       jsonOnly: entry.jsonOnly, files: entry.audio.male ? [entry.audio.male.file, entry.audio.female.file] : [entry.audio.file] };
+    for (const [npcID, sub] of Object.entries(entry.npc || {})) {
+      actualAudio[key + ':' + npcID] = {indexDuration:sub.indexDuration, gender:sub.gender, voice:sub.voice,
+        files:sub.audio.male ? [sub.audio.male.file, sub.audio.female.file] : [sub.audio.file]};
+    }
   }
   compare('Complete CatQuest audio sections', expectedAudio, actualAudio);
   const manifest = JSON.parse(fs.readFileSync(path.join(root, 'docs/internal/forever-audio-manifest.json'), 'utf8'));
@@ -107,7 +118,8 @@ function audit(catDirectory, voicesDirectory) {
     check(entry && crypto.createHash('sha256').update(buffer).digest('hex') === entry.sha256, 'External audio hash: ' + file);
   }
   for (const [key, entry] of Object.entries(audio.entries)) {
-    for (const recording of entry.audio.male ? [entry.audio.male, entry.audio.female] : [entry.audio]) {
+    for (const sub of [entry, ...Object.values(entry.npc || {})])
+    for (const recording of sub.audio.male ? [sub.audio.male, sub.audio.female] : [sub.audio]) {
       check(recording.duration === duration(fs.readFileSync(path.join(voicesDirectory, 'Sounds/q', recording.file))), 'External duration: ' + key);
     }
   }

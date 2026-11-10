@@ -4,7 +4,7 @@
 ## IconTexture: Interface\AddOns\TalkingHeadRu\Media\VoiceChat-Active.tga
 ## Notes: Говорящая голова для заданий с подключаемой озвучкой WowVoice, CatQuest и Wayfarer.
 ## Author: wowvoice
-## Version: 1.4.3-forever
+## Version: 1.4.4-forever
 ## X-Vote-Invite: disabled
 ## SavedVariables: TalkingHeadRuDB
 ## SavedVariablesPerCharacter: TalkingHeadRuQueueDB

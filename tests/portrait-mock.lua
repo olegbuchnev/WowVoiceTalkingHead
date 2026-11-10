@@ -117,6 +117,8 @@ function CreateFrame(kind,name,parent,template)
     function f:SetParent(value) self.parent=value end
     function f:GetFrameLevel() return self.frameLevel or 1 end
     function f:SetFrameLevel(v) self.frameLevel=v end
+    function f:SetFrameStrata(v) self.frameStrata=v end
+    function f:GetFrameStrata() return self.frameStrata or (self.parent and self.parent:GetFrameStrata()) or 'MEDIUM' end
     function f:SetNormalTexture(v) self.normalTexture=v end
     function f:SetCheckedTexture(v) self.checkedTexture=v end
     function f:SetPushedTexture(v) self.pushedTexture=v end

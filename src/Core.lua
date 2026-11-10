@@ -68,6 +68,7 @@ local catQuestCustomizable = {loreAuto=true, loreMark=true, world=true}
 local catQuestButtonsActive, catQuestRefreshPending
 local catQuestButtonVisibility, catQuestButtonHooks, catQuestParentHooks = {}, {}, {}
 local catQuestTrackerHooks, catQuestTrackerButtons = {}, {}
+local catQuestQuestieButtons, catQuestQuestieReadyHooks = {}, {}
 local function suppressCatQuestButton(button, tracker)
     if catQuestButtonVisibility[button] == nil then
         catQuestButtonVisibility[button] = button:IsShown()
@@ -83,19 +84,71 @@ local function suppressCatQuestButton(button, tracker)
     end
     button:Hide()
 end
-local function hideCatQuestTrackerButtons(block)
+local function hideCatQuestTrackerButtons(block, questID, questie)
     if not catQuestButtonsActive or not (block and block.GetChildren) then return end
+    questID = questID or block.id
     for _, button in ipairs({block:GetChildren()}) do
         -- CatQuest's tracker extension keeps its icons/handler private. Match
         -- its quest ID + exposed texture on direct quest-block children only.
         local texture = rawget(button, "texture")
-        if type(rawget(button, "questId")) == "number" and button.questId == block.id
+        if type(rawget(button, "questId")) == "number" and button.questId == questID
             and texture and texture.GetAtlas and texture:GetAtlas() == "voicechat-icon-speaker"
             and button.GetScript and type(button:GetScript("OnClick")) == "function" then
             catQuestTrackerButtons[button] = block
+            if questie then catQuestQuestieButtons[button] = block end
             suppressCatQuestButton(button, true)
         end
     end
+end
+local function catQuestQuestieLineID(line)
+    local questie = _G.Questie
+    local profile = type(questie) == "table" and questie.db and questie.db.profile
+    if profile and profile.trackerEnabled and line and line.IsShown and line:IsShown()
+        and line.mode == "quest" and not line.Recipe and line.label
+        and type(line.Quest) == "table" and type(line.Quest.Id) == "number" then
+        return line.Quest.Id
+    end
+end
+local function updateCatQuestQuestie()
+    local questie = _G.Questie
+    local api = type(questie) == "table" and questie.API
+    if type(api) == "table" and type(api.RegisterOnReady) == "function"
+        and not catQuestQuestieReadyHooks[api] then
+        catQuestQuestieReadyHooks[api] = true
+        api.RegisterOnReady(function()
+            if catQuestButtonsActive then updateCatQuestQuestie() end
+        end)
+    end
+    -- CatQuest 1.0.7 uses these same optional modules for its private icons.
+    local loader = _G.QuestieLoader
+    local modules = type(loader) == "table" and rawget(loader, "_modules")
+    local tracker = type(modules) == "table" and modules.QuestieTracker
+    local pool = type(modules) == "table" and modules.TrackerLinePool
+    if not (type(tracker) == "table" and type(tracker.UpdateFormatting) == "function"
+        and type(pool) == "table" and type(pool.GetHighestIndex) == "function"
+        and type(pool.GetLine) == "function") then return end
+    local function scan()
+        if not catQuestButtonsActive then return end
+        for index = 1, pool.GetHighestIndex() or 0 do
+            local line = pool.GetLine(index)
+            local id = catQuestQuestieLineID(line)
+            if id then hideCatQuestTrackerButtons(line, id, true) end
+        end
+    end
+    local pending
+    local function refresh()
+        scan()
+        -- Both readiness callbacks and layout hooks can run in either order.
+        if catQuestButtonsActive and not pending and C_Timer and C_Timer.After then
+            pending = true
+            C_Timer.After(0, function() pending = nil; scan() end)
+        end
+    end
+    if not catQuestTrackerHooks[tracker] and hooksecurefunc then
+        catQuestTrackerHooks[tracker] = true
+        hooksecurefunc(tracker, "UpdateFormatting", refresh)
+    end
+    refresh()
 end
 local function updateCatQuestTrackers()
     for _, name in ipairs({"QuestObjectiveTracker", "CampaignQuestObjectiveTracker"}) do
@@ -117,15 +170,19 @@ local function updateCatQuestTrackers()
                     end
                 end)
             end
-            if tracker.EnumerateActiveBlocks then tracker:EnumerateActiveBlocks(hideCatQuestTrackerButtons) end
+            if tracker.EnumerateActiveBlocks then
+                tracker:EnumerateActiveBlocks(function(block) hideCatQuestTrackerButtons(block) end)
+            end
         end
     end
+    updateCatQuestQuestie()
 end
 local function updateCatQuestButtons(active)
     catQuestButtonsActive = active == true
     if not active then
         for button, shown in pairs(catQuestButtonVisibility) do
-            if shown then button:Show() end
+            local line = catQuestQuestieButtons[button]
+            if shown and (not line or catQuestQuestieLineID(line) == button.questId) then button:Show() end
         end
         catQuestButtonVisibility = {}
         return
@@ -623,7 +680,9 @@ function WV:SoundPath(questId, section, context)
             local path, duration, version, sourceID, verified = self:ClassicSoundPath(questId, section)
             if path then return path, duration, version, sourceID, verified end
         else
-            local extra = WowVoiceAudioSources.Resolve(questId, section, id)
+            local speaker = context and context.speaker
+            local extra = WowVoiceAudioSources.Resolve(questId, section, id,
+                speaker and not speaker.narrator and speaker.npcID or nil)
             if extra then return extra.path, extra.duration, extra.sourceVersion, extra.sourceID, extra.verified end
         end
     end
@@ -924,9 +983,13 @@ f:RegisterEvent("QUEST_DETAIL")
 f:RegisterEvent("QUEST_PROGRESS")
 f:RegisterEvent("QUEST_COMPLETE")
 f:RegisterEvent("PLAYER_LOGOUT")
+f:RegisterEvent("PLAYER_REGEN_ENABLED")
 
 f:SetScript("OnEvent", function(self, event, arg1)
-    if event == "ADDON_LOADED" then
+    if event == "PLAYER_REGEN_ENABLED" then
+        -- CatQuest creates deferred Questie icons in its own combat-end handler.
+        if catQuestButtonsActive then scheduleCatQuestIntegration() end
+    elseif event == "ADDON_LOADED" then
         if arg1 ~= ADDON then
             if arg1 == "CatQuest_Voices" or arg1 == SOUND_ADDON
                 or (type(arg1) == "string" and arg1:match("^Wayfarer")) then

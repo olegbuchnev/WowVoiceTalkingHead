@@ -233,6 +233,11 @@ assert.equal(db.givers[10],false,'Ambiguous Pins starter must not turn into an N
 assert.equal(db.givers[11],false,'Multiple current Pins starters must not turn into one NPC');
 assert.equal(db.givers[12].npcID,120,'Wayfarer wins over Pins');
 assert.equal(db.finishers[12].npcID,121,'Wayfarer supplies a distinct receiver');
+const pinsFinishers = merge({...inputs,pins:{...inputs.pins,finishers:{1:800,12:801,999:802,998:false}}});
+assert.equal(pinsFinishers.database.finishers[1].npcID,20,'CatQuest receiver wins over Pins');
+assert.equal(pinsFinishers.database.finishers[12].npcID,121,'Wayfarer receiver wins over Pins');
+assert.equal(pinsFinishers.database.finishers[999].npcID,802,'Pins supplies its own receiver');
+assert.equal(pinsFinishers.database.finishers[998],false,'Pins object/ambiguous receiver is not an NPC');
 assert.equal(db.npcs[70].displayID,700,'Wayfarer fills a missing CatQuest model');
 assert.equal(db.npcs[30].displayID,333,'CatQuest model wins over Wayfarer');
 assert(result.appearanceConflicts.some(c=>c.npcID===30 && c.selected==='catquest'));

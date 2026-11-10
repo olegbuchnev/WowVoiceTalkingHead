@@ -669,6 +669,12 @@ Loading clears their obsolete saved preferences while preserving panel position,
 custom dimensions, scale and playback options. The options page provides a
 silent player preview for dragging, horizontal centering and a position reset.
 
+The named layer slider below panel scale stores `headStrata` and selects one of
+the eight frame strata from BACKGROUND through TOOLTIP. Missing/invalid saved
+values retain FULLSCREEN_DIALOG. The queue player and its alignment guide use
+the same setting, including when created later. Changes apply immediately and
+do not restart playback; scale snapshots and reparenting preserve the layer.
+
 Retail follows Blizzard's talking-head composition: a soft translucent background,
 a gold portrait frame, the speaker's name above the text on the right, and a close
 button that stops playback. Original TalkingHeads artwork is bundled in
@@ -1029,7 +1035,7 @@ per-role provenance, protected exclusions and conflicts in
 frequency, not cross-project version numbers or the age of one particular import:
 
 - Givers: **CatQuest > Wayfarer > current Quest Pins > Classic**.
-- Finishers: **CatQuest > Wayfarer > Classic**; the Pins inputs contain only starters.
+- Finishers: **CatQuest > Wayfarer > current Quest Pins > Classic**. Pins v4 supplies NPC turn-ins separately from object IDs.
 - Appearances: **CatQuest > Wayfarer > verified supplements**, joined by exact NPC ID.
 - Names: prefer Russian; within the same language preference,
   **CatQuest > Wayfarer > Classic > verified supplements**.
@@ -1060,7 +1066,9 @@ Inputs:
   Fillion NPC 253285 uses display 137707, confirmed on its own Wowhead page,
   independently of the existing mapping for NPC 253284.
 - Current [Forever Quest Pins](https://github.com/TylerAkins/forever-quest-markers)
-  imports All The Things and fills gaps after CatQuest and Wayfarer. Multiple
+  imports QuestieDB-Forever contract 4 and fills gaps after CatQuest and Wayfarer.
+  `qg/qgs` come from NPC starters; `turnIns` come from NPC finishers.
+  `turnInObjects` use a separate ID namespace and never become NPCs. Multiple
   NPC starters remain explicit exclusions. The retired Wowhead snapshot and
   its importer were removed: stale exclusions no longer override maintained
   sources. Quest 940 now resolves to Arynia Cloudsbreak (NPC 3519).
@@ -1369,6 +1377,15 @@ Voices 0.6.1 migration is documented in [the audit report](internal/catquest-0.6
 Its QuestTracker.lua uses private icon click handlers. Our separate tracker
 integration suppresses its icons on normal and campaign blocks, including
 newly created and recycled blocks, and restores them when our addon is disabled.
+CatQuest 1.0.7 also adds these icons to Questie title rows. Core.lua reads the
+same optional `QuestieLoader._modules` tracker/pool API as CatQuest, waits for
+`Questie.API.RegisterOnReady`, and scans direct row children after formatting
+and combat-end callbacks. Matching requires the current quest ID, speaker atlas
+and a click handler. Deferred scans cover either hook order; restoration excludes
+hidden/recycled rows and a disabled Questie tracker. Ordinary quest-log buttons
+are still identified by `CatQuest_ReadQuestLog` on both modern and Classic
+detail frames, including late creation and reopening. Native controls and our
+replay controls are preserved.
 
 Integration uses initialized settings and public hooks without modifying library
 files. Late ADDON_LOADED callbacks and PLAYER_LOGIN synchronize the takeover;

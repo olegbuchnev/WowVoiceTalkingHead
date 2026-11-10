@@ -13,7 +13,7 @@ const read = file => JSON.parse(fs.readFileSync(path.join(root, file), 'utf8'));
 const POLICY = {
   basis:'maintenance-frequency',
   givers:['catquest','wayfarer','pins','classic'],
-  finishers:['catquest','wayfarer','classic'],
+  finishers:['catquest','wayfarer','pins','classic'],
   names:{preferRussian:true, sources:['catquest','wayfarer','classic','verified-supplement']},
   appearances:['catquest','wayfarer','verified-supplement'],
   raceClassification:'verified-appearance-before-library-voice-label',
@@ -75,7 +75,8 @@ function merge({ classic, pins, cat, catAudio = {entries:{}}, wayfarer = {givers
   for (const source of POLICY.givers) for (const [id, entry] of sorted(giverSources[source])) {
     if (entry !== null) set('givers', id, entry, source);
   }
-  const finisherSources = {catquest:npcMap(cat.tables.QuestFinisher), wayfarer:npcMap(wayfarer.finishers), classic:classicFinishers};
+  const finisherSources = {catquest:npcMap(cat.tables.QuestFinisher), wayfarer:npcMap(wayfarer.finishers),
+    pins:npcMap(pins.finishers || {}), classic:classicFinishers};
   for (const source of POLICY.finishers) for (const [id, entry] of sorted(finisherSources[source])) {
     if (entry !== null) set('finishers', id, entry, source);
   }
@@ -262,7 +263,9 @@ function generate(check = false) {
   const inputs = {classic:dataTable(path.join(root,files.classic)), pins:read(files.pins), cat:read(files.cat), wayfarer:read(files.wayfarer), supplements:read(files.supplements),raceClassifications:read(files.raceClassifications),speakerOverrides:read(files.speakerOverrides),catAudio:dataTable(path.join(root,files.catAudio))};
   const result = merge(inputs);
   const report = {schemaVersion:1, policy:POLICY, sources:{
-    pins:{commit:inputs.pins.commit, attCommit:inputs.pins.attCommit},
+    pins:{commit:inputs.pins.commit, attCommit:inputs.pins.attCommit,
+      databaseSource:inputs.pins.databaseSource, contractVersion:inputs.pins.contractVersion,
+      artifactCommit:inputs.pins.artifactCommit, artifactSHA256:inputs.pins.artifactSHA256, policyCommit:inputs.pins.policyCommit},
     catquest:{version:inputs.cat.sourceVersion,voicesVersion:inputs.catAudio.sourceVersion}, wayfarer:{packs:inputs.wayfarer.packs}},
     inputHashes:Object.fromEntries(Object.entries(files).map(([key,file])=>[key,
       sha256(fs.readFileSync(path.join(root,file),'utf8').replace(/\r\n/g,'\n'))])),

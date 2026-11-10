@@ -92,6 +92,18 @@ try {
   importPack(source,root);
   const {dataTable} = require('../tools/import-forever-audio');
   assert.equal(dataTable(textFile).entries['888a'].common,'Wayfarer text');
+  // NPC variants have independent filenames, measurements and history identities.
+  const indexPath = path.join(source, 'Index.lua');
+  fs.writeFileSync(indexPath, fs.readFileSync(indexPath, 'utf8').replace('[490]={d=35,',
+    '[490]={d=35,npc={[123]={d=1,v="orc-male",c={x={{0,"NPC-specific text"}}}}},'));
+  fs.copyFileSync(path.join(source,'Sounds/q/490.ogg'),path.join(source,'Sounds/q/490_n123.ogg'));
+  const withNPC = importPack(source,root);
+  assert(withNPC.files.some(f => f.file === '490_n123.ogg'));
+  assert.equal(dataTable(output).entries['490a'].npc[123].audio.file,'490_n123.ogg');
+  const npcHistory = JSON.parse(fs.readFileSync(path.join(root,'docs/internal/catquest-text-history.json')));
+  assert.equal(Object.values(npcHistory.files['490_n123.ogg'])[0].text,'NPC-specific text');
+  assert.notEqual(dataTable(textFile).entries['490a'].common,'NPC-specific text');
+  assert.equal(require('../tools/audio-recording-history').identity('CatQuest_Voices','490_t_n123_f.ogg').npcID,123);
   assert.equal(dataTable(textFile).entries['179a'].common,'Описание Classic');
   assert(!fs.existsSync(path.join(root, 'catvoices')), 'Importer must never generate a CatVoices pack');
   console.log('PASS: audio import, Lua priority, turn-in-only JSON recovery, Classic overlaps, stream validation and older packs');

@@ -52,11 +52,17 @@ for id,quest in pairs(CatQuestVoicePack.quests) do
 end
 for key in pairs(candidates) do
  local id,section=key:match('^(%d+)([ac])$')
+ local quest=CatQuestVoicePack.quests[tonumber(id)]
+ local entry=quest and (section=='c' and quest.t or quest)
+ local speakers={0}
+ for npcID in pairs(entry and entry.npc or {}) do speakers[#speakers+1]=npcID end
+ for _,npcID in ipairs(speakers) do
  for _,playerSex in ipairs({2,3}) do
-  sex=playerSex;local recording=WowVoiceAudioSources.Resolve(tonumber(id),section)
+  sex=playerSex;local recording=WowVoiceAudioSources.Resolve(tonumber(id),section,'catquest',npcID)
   if recording then
    checked[#checked+1]={key=key,sex=sex,file=recording.path:match('([^\\\\]+)$'),duration=recording.duration,verified=recording.verified}
   else blocked[#blocked+1]=key..':'..sex end
+ end
  end
 end`, 'parsed-external-index');
 const result = {indexedVersion: '', installedVersion, effectiveVersion: version,

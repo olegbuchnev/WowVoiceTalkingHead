@@ -131,8 +131,17 @@ function importPack(source, root = path.resolve(__dirname, '..')) {
       const record = entry.g
         ? `{ male = ${audio(stem + '_m.ogg')}, female = ${audio(stem + '_f.ogg')} }`
         : audio(stem + '.ogg');
+      const npc = Object.entries(entry.npc || {}).map(([npcID, sub]) => {
+        if (!/^[1-9]\d*$/.test(npcID) || !Number.isFinite(sub.d) || sub.d <= 0
+            || ![undefined, false, 0, true, 1].includes(sub.g)) throw Error(`Invalid NPC recording: ${id}/${npcID}`);
+        const npcStem = stem + '_n' + npcID;
+        const recording = sub.g ? `{ male = ${audio(npcStem + '_m.ogg')}, female = ${audio(npcStem + '_f.ogg')} }`
+          : audio(npcStem + '.ogg');
+        return `[${npcID}] = { indexDuration = ${sub.d}, gender = ${!!sub.g}, voice = ${JSON.stringify(sub.v || '')}, audio = ${recording} }`;
+      });
       external.push(`    ["${id}${section}"] = { indexDuration = ${entry.d}, gender = ${!!entry.g},`
-        + ` voice = ${JSON.stringify(entry.v || '')}, jsonOnly = ${recoveredTurnIns.includes(id)}, audio = ${record} },`);
+        + ` voice = ${JSON.stringify(entry.v || '')}, jsonOnly = ${recoveredTurnIns.includes(id)}, audio = ${record}`
+        + (npc.length ? `, npc = { ${npc.join(', ')} }` : '') + ' },');
       sections[section]++;
     }
   }

@@ -15,6 +15,7 @@ scenarios.push('catquest-update-lab-scenarios.lua');
 scenarios.push('wowvoice-version-label-scenarios.lua');
 scenarios.push('secret-speaker-scenarios.lua');
 scenarios.push('unified-speakers-scenarios.lua');
+scenarios.push('head-strata-scenarios.lua');
 for (const locale of ['enUS', 'enGB']) {
     scenarios.push({file:'catquest-scenarios.lua',locale});
 }
@@ -42,7 +43,7 @@ for (const entry of scenarios) {
         const status = lauxlib.luaL_dostring(L, to_luastring(`function GetLocale() return '${entry.locale}' end`));
         if (status !== lua.LUA_OK) throw Error(to_jsstring(lua.lua_tostring(L,-1)));
     }
-    if (scenario === 'retail-head-scenarios.lua') run(path.join(__dirname, 'queue-lab-mock.lua'));
+    if (scenario === 'retail-head-scenarios.lua' || scenario === 'head-strata-scenarios.lua') run(path.join(__dirname, 'queue-lab-mock.lua'));
     const toc=fs.readFileSync(path.join(root,'TalkingHeadRu.toc'),'utf8');
     for (const file of toc.split(/\r?\n/).filter(s=>s.endsWith('.lua'))) run(path.join(root,file));
     run(path.join(__dirname, "catquest-pack-mock.lua"));
