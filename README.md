@@ -6,7 +6,7 @@
 На английском клиенте кнопки плеера отображаются на английском, настройки — на русском.
 Говорящая голова использует шрифты заданий Blizzard, включая их кириллические варианты.
 
-**[Скачать аддон](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.4.4-forever/TalkingHeadRu-1.4.4-forever.zip)** ·
+**[Скачать аддон](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.4.3-forever/TalkingHeadRu-1.4.3-forever.zip)** ·
 [Инструкция](USER_README.md) ·
 [Сообщить об ошибке](https://github.com/olegbuchnev/WowVoiceTalkingHead/issues)
 
@@ -106,7 +106,7 @@
 
 ## Установка
 
-1. **[Скачайте аддон](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.4.4-forever/TalkingHeadRu-1.4.4-forever.zip)**.
+1. **[Скачайте аддон](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.4.3-forever/TalkingHeadRu-1.4.3-forever.zip)**.
    Закройте игру и скопируйте папку `TalkingHeadRu` из архива
    в `_forever_/Interface/AddOns/`.
 2. **Установите одну или несколько библиотек для Forever:**
@@ -169,18 +169,6 @@ TalkingHead показывает ссылки на авторов загруже
 Поддержать авторов и связаться с ними можно по ссылкам выше.
 
 ## Что нового
-
-<details name="releases">
-<summary><strong>Версия 1.4.4-forever</strong> · <time datetime="2026-11-10">10 ноября 2026</time></summary>
-
-- Обновлена поддержка **CatQuest 1.0.7 и CatQuest Voices 1.2.0**: новые записи, тексты заданий и точные длительности озвучки.
-- Добавлен выбор записи CatQuest для конкретного NPC, если задание выдают или принимают разные персонажи.
-- Добавлена поддержка нового формата **Forever Quest Pins — QuestieDB-Forever v4**, включая сведения о выдаче и сдаче заданий.
-- Значки озвучки CatQuest в трекере Questie скрываются при включённом TalkingHead Ru. Проверено скрытие кнопки CatQuest в обычном журнале заданий.
-- В настройках говорящей головы добавлен ползунок **«Слой головы и плеера»** с названиями слоёв. Плеер использует тот же слой; выбор сохраняется после перезапуска.
-- Обновлён встроенный рейтинг озвучки по свежим голосам сообщества.
-
-</details>
 
 <details name="releases">
 <summary><strong>Версия 1.4.3-forever</strong> · <time datetime="2026-11-05">5 ноября 2026</time></summary>
