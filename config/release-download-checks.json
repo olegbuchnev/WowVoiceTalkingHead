@@ -60,6 +60,12 @@
       "release": "v1.4.3-forever",
       "asset": "TalkingHeadRu-1.4.3-forever.zip",
       "count": 1
+    },
+    {
+      "assetId": 730678230,
+      "release": "v1.4.4-forever",
+      "asset": "TalkingHeadRu-1.4.4-forever.zip",
+      "count": 1
     }
   ]
 }
