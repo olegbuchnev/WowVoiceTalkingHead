@@ -12,6 +12,8 @@ try {
   const sample=fs.readFileSync(path.join(__dirname,'../src/Media/silence.ogg'));
   for(const file of ['5-a-m.ogg','5-a-f.ogg','6-c.ogg']) fs.writeFileSync(path.join(dir,'q',file),sample);
   assert.equal(readPack(Buffer.from(index)).q[5].a.v,'Голос');
+  assert.deepEqual(readPack(Buffer.from(index.replace('Wayfarer.RegisterPack', 'WayfarerRU.RegisterPack'))), readPack(Buffer.from(index)));
+  assert.throws(() => readPack(Buffer.from(index.replace('Wayfarer.RegisterPack', 'Unrelated.RegisterPack'))), /Expected one/);
   const narrator='Wayfarer_Voices_Narrator', narratorDir=path.join(root,'input',narrator);
   fs.mkdirSync(narratorDir,{recursive:true});
   fs.writeFileSync(path.join(narratorDir,narrator+'.toc'),'## Version: 3.2.0\n');

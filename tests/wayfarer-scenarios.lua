@@ -2,7 +2,7 @@ event('ADDON_LOADED')
 local S, W, C = WowVoiceAudioSources, WowVoiceWayfarerSource, WowVoiceComparison
 local count = 0
 for _ in pairs(W.QuestIDs(true, true)) do count = count + 1 end
-assert(count == 3790 and not W.Status() and not W.Resolve(5, 'a'))
+assert(count == 4004 and not W.Status() and not W.Resolve(5, 'a'))
 assert(C.Known(5, 'wayfarer') and not C.SourceAvailable('wayfarer'))
 local name = 'Wayfarer_Voices_Alliance'
 local pack = {name=name, format=1, version='3.1.0', model='v4', q={
@@ -15,6 +15,7 @@ local loaded = {WowVoiceSounds=true, CatQuest_Voices=true, Wayfarer=true, [name]
 local version, sex = '3.1.0', 2
 C_AddOns.IsAddOnLoaded = function(addon) return loaded[addon] == true end
 C_AddOns.GetAddOnMetadata = function(addon, field)
+    if addon == 'WayfarerRU' then return nil end
     if field == 'Version' then return addon == name and version or WowVoiceCatQuestAudio.sourceVersion end
 end
 UnitSex = function() return sex end
@@ -78,5 +79,16 @@ assert(not registered.QUEST_DETAIL and not registered.QUEST_PROGRESS and not reg
 assert(registered.GOSSIP_SHOW and Wayfarer.db.enabled)
 command('off'); assert(registered.QUEST_DETAIL and registered.QUEST_COMPLETE)
 command('on'); assert(not registered.QUEST_DETAIL)
+
+-- A separately loaded Radio module must be guarded without CatQuest present.
+CatQuestDB = nil
+local radioStarts = 0
+local radioStart = function() radioStarts = radioStarts + 1 end
+Wayfarer.Radio = {Start=radioStart}
+event('ADDON_LOADED', 'Wayfarer_Radio')
+assert(Wayfarer.Radio:Start('book', {auto=true,taxi=true}) == false and radioStarts == 0)
+Wayfarer.Radio:Start('radio'); assert(radioStarts == 1)
+command('off'); assert(Wayfarer.Radio.Start == radioStart)
+command('on'); assert(Wayfarer.Radio:Start('radio', {auto=true}) == false)
 event('PLAYER_LOGOUT'); assert(registered.QUEST_DETAIL and registered.QUEST_COMPLETE)
 print('PASS: Wayfarer exact/estimated timing, genders, stages, offline/live catalog, preview, fallback, settings and reversible quest takeover')

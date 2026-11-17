@@ -164,9 +164,9 @@ try {
   }
   Add-Type -AssemblyName System.IO.Compression.FileSystem
   $archive = [IO.Compression.ZipFile]::OpenRead($archives[0].FullName)
-  Assert-NoDeveloperCommands $archive
   $sha = [Security.Cryptography.SHA256]::Create()
   try {
+    Assert-NoDeveloperCommands $archive
     $entries = @($archive.Entries | Where-Object { $_.Name })
     Assert-True ($entries.Count -eq $expected.Count) 'Unexpected ZIP entry count.'
     foreach ($entry in $entries) {

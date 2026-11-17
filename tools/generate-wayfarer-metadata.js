@@ -9,7 +9,7 @@ const hash = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
 function readPack(bytes) {
   const ast = lua.parse(bytes.toString('latin1'), {encodingMode:'pseudo-latin1'});
   const calls = ast.body.filter(n => n.type === 'CallStatement' && n.expression.base.type === 'MemberExpression'
-    && n.expression.base.base.name === 'Wayfarer' && n.expression.base.identifier.name === 'RegisterPack');
+    && ['Wayfarer', 'WayfarerRU'].includes(n.expression.base.base.name) && n.expression.base.identifier.name === 'RegisterPack');
   if (calls.length !== 1) throw Error('Expected one Wayfarer.RegisterPack data table');
   function decode(n) {
     if (n.type === 'TableConstructorExpression') {

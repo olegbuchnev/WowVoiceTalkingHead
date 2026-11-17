@@ -1,21 +1,19 @@
-## 1.4.4-forever
+## 1.4.7-forever
 
 ### Изменения
 
-- Обновлены данные TalkingHead Ru для совместимости с **CatQuest 1.0.7 и CatQuest Voices 1.2.0**.
-- Добавлена поддержка нового формата **Forever Quest Pins — QuestieDB-Forever v4**, включая сведения о выдаче и сдаче заданий.
-- Значки озвучки CatQuest в трекере Questie скрываются при включённом TalkingHead Ru.
-- Добавлены кнопки воспроизведения в новый **Custom Quest Tracker EllesmereUI** — справа от названий заданий.
-- В настройках говорящей головы добавлен ползунок **«Слой головы и плеера»** с названиями слоёв. Плеер использует тот же слой; выбор сохраняется после перезапуска.
+- Обновлена совместимость с CatQuest / Voices 2.0.0 и WayfarerRU 1.2.1.
+- Исправлено скрытие кнопок прослушивания CatQuest в трекере EllesmereUI. Собственные кнопки воспроизведения остаются доступны.
+- При включённом аддоне скрываются метки игроков CatQuest на карте мира и миникарте. При отключении прежние настройки восстанавливаются.
+- Обновлены тексты заданий, длительности записей, сведения о NPC и данные Forever Quest Pins.
 - Обновлён встроенный рейтинг озвучки по свежим голосам сообщества.
 
 ---
 
 ### Changes
 
-- Updated TalkingHead Ru data for compatibility with **CatQuest 1.0.7 and CatQuest Voices 1.2.0**.
-- Added support for the new **Forever Quest Pins format — QuestieDB-Forever v4**, including quest giver and turn-in information.
-- CatQuest voice icons in the Questie tracker are hidden while TalkingHead Ru is enabled.
-- Added playback buttons to the new **EllesmereUI Custom Quest Tracker**, to the right of quest titles.
-- Added the **«Слой головы и плеера»** (head and player layer) slider with named layers to the talking head settings. The player uses the same layer, and the selection is saved across restarts.
-- Updated the bundled voice ranking with the latest community votes.
+- Updated compatibility with CatQuest / Voices 2.0.0 and WayfarerRU 1.2.1.
+- Fixed suppression of CatQuest playback buttons in the EllesmereUI quest tracker. The built-in replay buttons remain available.
+- CatQuest player markers on the world map and minimap are hidden while the addon is enabled. Previous settings are restored when it is disabled.
+- Updated quest texts, recording durations, NPC information and Forever Quest Pins data.
+- Refreshed the built-in voice ranking with recent community votes.

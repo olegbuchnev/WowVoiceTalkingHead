@@ -8,7 +8,13 @@ local history, quests = {}, {}
 CatQuestDB = {autoDetail=true, autoProgress=false, autoComplete=true,
     readAfterAccept=true, autoBooks=true, lore=true, head=true, subtitles=true,
     loreAuto=true, loreMark='toast', codexToasts=true, storyCard=true, world=true,
-    autoGreeting=true, autoGossip=false, history=history, quests=quests}
+    autoGreeting=true, autoGossip=false, history=history, quests=quests,
+    pawMapShow=true, pawMapMini=true}
+local mapVisible, miniVisible = true, true
+CatQuestCore = {PawMapSettings=function()
+    mapVisible = CatQuestDB.pawMapShow ~= false
+    miniVisible = CatQuestDB.pawMapMini == true
+end}
 event('PLAYER_LOGIN')
 assert(WV:IsCatQuestAutoplaySuppressed())
 assert(not CatQuestDB.autoDetail and not CatQuestDB.autoProgress and not CatQuestDB.autoComplete)
@@ -18,6 +24,7 @@ assert(not CatQuestDB.autoGreeting and not CatQuestDB.autoGossip)
 assert(not CatQuestDB.loreAuto and CatQuestDB.loreMark == 'hidden' and not CatQuestDB.codexToasts and not CatQuestDB.storyCard)
 assert(not CatQuestDB.world, 'CatQuest 0.7.0 world speech must not autoplay by default')
 assert(CatQuestDB.history == history and CatQuestDB.quests == quests)
+assert(not mapVisible and not miniVisible, 'hide already visible CatQuest map pins')
 event('PLAYER_LOGIN') -- repeated synchronization must not replace the snapshot
 command('diag')
 assert(has('приостановлен'))
@@ -26,14 +33,17 @@ assert(CatQuestDB.autoDetail and not CatQuestDB.autoProgress and CatQuestDB.auto
 assert(CatQuestDB.autoBooks and CatQuestDB.autoGreeting and CatQuestDB.loreAuto and CatQuestDB.loreMark == 'toast')
 assert(CatQuestDB.codexToasts and CatQuestDB.storyCard)
 assert(CatQuestDB.world, 'restore world speech when TalkingHead Ru is disabled')
+assert(mapVisible and miniVisible, 'restore map pins immediately on disable')
 assert(not WV:IsCatQuestAutoplaySuppressed())
 command('on')
 assert(not CatQuestDB.autoDetail and not CatQuestDB.autoComplete)
 CatQuestDB.world = true
 WV:UpdateCatQuestIntegration()
-assert(CatQuestDB.world and WV:IsLibraryPreferenceCustomized('CATQUEST_', 'world'),
-    'explicitly enabling world speech remains under user control')
+assert(not CatQuestDB.world,
+    'CatQuest remains silent even after an explicit world speech setting change')
 event('PLAYER_LOGOUT')
+assert(CatQuestDB.pawMapShow and CatQuestDB.pawMapMini,
+    'save original map preferences for login without TalkingHead Ru')
 assert(CatQuestDB.autoDetail and not CatQuestDB.autoProgress and CatQuestDB.autoComplete,
     'save original settings so CatQuest works when WowVoice is disabled next login')
 
@@ -48,19 +58,26 @@ assert(deferred and not WV:IsCatQuestAutoplaySuppressed())
 CatQuestDB.autoDetail, CatQuestDB.autoProgress, CatQuestDB.autoComplete = true, true, false
 CatQuestDB.autoBooks, CatQuestDB.lore = false, false
 deferred()
+assert(CatQuestDB.pawMapShow == false and CatQuestDB.pawMapMini == nil,
+    'suppress implicit world-map default without enabling the minimap')
 assert(not CatQuestDB.autoDetail and not CatQuestDB.autoProgress and not CatQuestDB.autoComplete)
 assert(not CatQuestDB.autoBooks and not CatQuestDB.lore, 'preserve books/lore opt-outs')
 CatQuestDB.autoComplete = true -- explicit change through CatQuest's settings
 command('off')
+assert(CatQuestDB.pawMapShow == nil and CatQuestDB.pawMapMini == nil,
+    'restore absent map preferences exactly')
 assert(CatQuestDB.autoDetail and CatQuestDB.autoProgress and CatQuestDB.autoComplete)
 
 -- Replacing a database must restore the old reference and capture the new one.
 command('on')
 local old = CatQuestDB
-CatQuestDB = {autoDetail=false, autoProgress=false, autoComplete=true}
+CatQuestDB = {autoDetail=false, autoProgress=false, autoComplete=true, pawMapShow=false, pawMapMini=false}
 WV:UpdateCatQuestIntegration()
 assert(old.autoDetail and old.autoProgress and old.autoComplete)
 event('PLAYER_LOGOUT')
+assert(CatQuestDB.pawMapShow == false and CatQuestDB.pawMapMini == false,
+    'preserve user map opt-outs')
+CatQuestCore = nil
 assert(not CatQuestDB.autoDetail and not CatQuestDB.autoProgress and CatQuestDB.autoComplete)
 print('PASS: optional CatQuest autoplay integration, books/lore, late load, toggles and saved preferences')
 
@@ -338,3 +355,52 @@ assert(not classicJournal.visible, 'ordinary quest log reader stays hidden after
 command('off')
 assert(classicJournal.visible, 'ordinary quest log reader is restored when disabled')
 print('PASS: CatQuest ordinary quest log detail button, reopen, refresh and restoration')
+
+-- EUI providers own sibling slots, and CatQuest can run before or after ours.
+for _, upstreamFirst in ipairs({true, false}) do
+    local pending = {}
+    C_Timer = {After=function(_, callback) pending[#pending+1] = callback end}
+    local function flush()
+        local callbacks = pending; pending = {}
+        for _, callback in ipairs(callbacks) do callback() end
+    end
+    CatQuestDB = {autoDetail=true}
+    local row, own, upstream = surface(), surface(), surface()
+    own:SetParent(row); upstream:SetParent(row)
+    row.children = {own, upstream}
+    local icon, id = nil, 179
+    local function catquestRow()
+        icon = icon or trackerIcon(upstream, 'voicechat-icon-speaker', id)
+        icon.questId = id; icon:Show()
+    end
+    local function render()
+        own:Show(); upstream:Show()
+        if upstreamFirst then catquestRow() end
+        WV:SuppressCatQuestEllesmereRow(own, id)
+        if not upstreamFirst then catquestRow() end
+        flush()
+    end
+    command('on'); render()
+    assert(icon and not icon.visible, 'suppress either EUI provider order')
+    local unrelated = trackerIcon(upstream, 'other-atlas', id)
+    local wrongQuest = trackerIcon(upstream, 'voicechat-icon-speaker', 99999)
+    local play = readButton(own, function() end)
+    render()
+    assert(unrelated.visible and wrongQuest.visible and play.visible)
+    icon:Show(); assert(not icon.visible)
+    command('off'); assert(icon.visible, 'restore live EUI icon')
+    command('on'); id=192; render()
+    assert(icon.questId == 192 and not icon.visible, 'recycled EUI quest')
+    own:Hide(); upstream:Hide()
+    command('off'); assert(not icon.visible, 'freed/objective slot stays hidden')
+    command('on'); render()
+    row:Hide(); command('off')
+    assert(not icon.visible, 'hidden parent cannot regain an icon')
+    row:Show(); render(); assert(icon.visible, 'inactive callbacks remain passive')
+    command('on')
+    WV:SuppressCatQuestEllesmereRow(own, id)
+    command('off'); flush(); assert(icon.visible, 'pending scan respects disable')
+    command('on'); render(); event('PLAYER_LOGOUT')
+    assert(icon.visible and play.visible, 'logout restores CatQuest, preserves own control')
+end
+print('PASS: CatQuest EUI sibling slots, both callback orders, recycle, visibility, deferred scans and restoration')

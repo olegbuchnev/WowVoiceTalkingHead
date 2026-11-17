@@ -368,6 +368,7 @@ end
 -- EllesmereUI API v5 gives each addon a reserved slot beside each quest title.
 -- Slots inherit scrolling/visibility and are hidden when reused for other rows.
 local function refreshEllesmereRow(slot, id, title)
+    if WV.SuppressCatQuestEllesmereRow then WV:SuppressCatQuestEllesmereRow(slot, id) end
     local play = buttons[slot]
     if not (enabled() and slot:IsShown() and type(id) == "number" and id > 0
         and WV:CanPresentQuest(id)) then

@@ -167,8 +167,9 @@ python -m unittest discover -s tests -p test_backup_site_database.py -v
 
 ## CheckSources — проверить обновление базы Forever Quest Pins
 
-Текущая миграция библиотек: [CatQuest Voices 1.2.0 и Quest Pins v4](docs/internal/catquest-1.2.0-integration.md) (10.11.2026).
-Wayfarer: [1.0.0 / пакеты 3.2.0](docs/internal/wayfarer-3.2.0-integration.md).
+Текущее обновление: [CatQuest 1.1.0 / Voices 1.3.0 и WayfarerRU 1.1.1](docs/internal/libraries-2026-11-12.md) (12.11.2026).
+Предыдущая миграция библиотек: [CatQuest Voices 1.2.0 и Quest Pins v4](docs/internal/catquest-1.2.0-integration.md) (10.11.2026).
+Wayfarer: [WayfarerRU 1.1.0 / пакеты 3.3.0](docs/internal/wayfarer-3.3.0-integration.md).
 Скилл `update-libraries` после проверок обновляет TalkingHead Ru в Forever и,
 при изменении данных, сайт голосования. Релиз и GitHub Pages публикуются отдельно.
 

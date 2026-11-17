@@ -4,6 +4,17 @@ WowVoiceWayfarerSource = W
 -- Core API release audited for this adapter; pack releases/timings are generated
 -- separately in WayfarerAudio.lua. Updating one does not certify the other.
 local AUDITED_CORE_VERSION = "1.0.0"
+function W.Namespace()
+    if type(_G.WayfarerRU) == "table" then return _G.WayfarerRU end
+    if WowVoiceAudioSources.Metadata("WayfarerRU", "Version") then return nil end
+    local legacy = _G.Wayfarer
+    if type(legacy) == "table" and type(legacy.Packs) == "table" then return legacy end
+    return nil
+end
+function W.CoreAddon()
+    if WowVoiceAudioSources.Metadata("WayfarerRU", "Version") then return "WayfarerRU" end
+    return "Wayfarer"
+end
 local requiredPacks = {"Wayfarer_Voices_Alliance", "Wayfarer_Voices_Horde", "Wayfarer_Voices_Shared"}
 local function positive(value)
     return type(value) == "number" and value > 0 and value < math.huge
@@ -27,7 +38,8 @@ local function olderVersion(installed, audited)
 end
 function W.VersionChanges()
     local S, changes = WowVoiceAudioSources, {}
-    if not S.Loaded("Wayfarer") then return changes end
+    local coreAddon = W.CoreAddon()
+    if not S.Loaded(coreAddon) then return changes end
     local function check(addon, audited)
         if not S.Loaded(addon) then return end
         local installed = S.Metadata(addon, "Version")
@@ -36,12 +48,13 @@ function W.VersionChanges()
         changes[#changes + 1] = {addon=addon, installed=installed, audited=audited,
             outdated=olderVersion(installed, audited)}
     end
-    check("Wayfarer", AUDITED_CORE_VERSION)
+    check(coreAddon, coreAddon == "WayfarerRU" and "1.2.1" or AUDITED_CORE_VERSION)
     local indexed, names, known = snapshot(), {}, {}
     for name, pack in pairs(indexed) do
         if type(pack.entries) == "table" and next(pack.entries) then known[name] = true end
     end
-    local registry = type(_G.Wayfarer) == "table" and Wayfarer.Packs
+    local ns = W.Namespace()
+    local registry = type(ns) == "table" and ns.Packs
     local registered = type(registry) == "table" and type(registry.list) == "table" and registry.list or {}
     for _, pack in ipairs(registered) do
         if type(pack) == "table" and type(pack.name) == "string"
@@ -54,8 +67,8 @@ function W.VersionChanges()
     return changes
 end
 function W.Status()
-    local S, ns = WowVoiceAudioSources, _G.Wayfarer
-    if not S.Loaded("Wayfarer") or type(ns) ~= "table" or type(ns.Packs) ~= "table"
+    local S, ns = WowVoiceAudioSources, W.Namespace()
+    if not S.Loaded(W.CoreAddon()) or type(ns) ~= "table" or type(ns.Packs) ~= "table"
         or type(ns.Packs.list) ~= "table" then return nil end
     local packs = {}
     for _, pack in ipairs(ns.Packs.list) do

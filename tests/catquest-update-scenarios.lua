@@ -12,7 +12,7 @@ WV:OpenOptions()
 local panel = frames.WowVoiceOptionsPanel
 assert(WV:SetSharedQuestVoice('catquest'))
 local snapshot = WowVoiceCatQuestAudio.sourceVersion
-assert(snapshot == '1.2.0' and not S.Status().updated and not panel.AudioSourceWarning:IsShown())
+assert(snapshot == '2.0.0' and not S.Status().updated and not panel.AudioSourceWarning:IsShown())
 assert(TalkingHeadRuQuestTexts.sourceVersion == snapshot and TalkingHeadRuSpeakers.schemaVersion == 1)
 -- Audited recordings retained in 1.2.0: independently measured recordings and live metadata.
 -- These live fields come from the external index, independently of the snapshot.
@@ -56,7 +56,7 @@ end
 sex = 2
 print('PASS: real 1.2.0 quest variants and replaced audio use freshly measured durations and imported texts')
 version = '99.0.0'; WV:RefreshAudioSources()
-assert(snapshot == '1.2.0' and S.Status().updated and S.Status().version == '99.0.0')
+assert(snapshot == '2.0.0' and S.Status().updated and S.Status().version == '99.0.0')
 assert(WV:GetSharedQuestVoice() == 'catquest' and panel.VoicePriorityRows[1].sourceID == 'catquest' and panel.VoicePriorityRows[1].available)
 -- Changed durations must use the live index, independently for each section.
 local original = quests[179]

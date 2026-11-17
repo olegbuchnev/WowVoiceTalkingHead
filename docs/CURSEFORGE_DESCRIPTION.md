@@ -40,8 +40,8 @@ Disable automatic queue playback to let the current recording finish and start t
 ## Voice sources
 
 * **[WowVoice](https://www.curseforge.com/wow/addons/wowvoice-classic)** — classic and Forever quest voiceovers with **4,207 main quest descriptions** (WowVoice 1.1.0).
-* **[CatQuest](https://www.curseforge.com/wow/addons/catquest) + [CatQuest Voices](https://www.curseforge.com/wow/addons/catquest-voices)** — alternative voiceovers and additional Forever quests, with **4,489 main quest descriptions** (Voices 1.2.0).
-* **[Wayfarer](https://www.curseforge.com/wow/addons/wayfarer-russian-voiceover)** — Alliance, Horde, and shared quest voiceovers, with **3,790 main quest descriptions** across three modules.
+* **[CatQuest](https://www.curseforge.com/wow/addons/catquest) + [CatQuest Voices](https://www.curseforge.com/wow/addons/catquest-voices)** — alternative voiceovers and additional Forever quests, with **4,911 main quest descriptions** (Voices 2.0.0).
+* **[Wayfarer](https://www.curseforge.com/wow/addons/wayfarer-russian-voiceover)** — Alliance, Horde, and shared quest voiceovers, with **4,004 main quest descriptions** across three modules (Alliance/Horde 3.4.0, Shared 3.3.0; WayfarerRU 1.2.0).
 
 These counts include only main quest descriptions, excluding progress lines, turn-ins, and additional gender variants. Some quests are available in multiple libraries.
 
@@ -57,7 +57,7 @@ Use community rankings by race and sex, set personal group orders, or choose one
 
 ## Compatibility
 
-While TalkingHead Ru is enabled, CatQuest and Wayfarer are used as voice libraries: automatic playback, quest playback buttons and automatic notifications are suppressed. Manual book reading and location lore remain available. If you enable location lore, its indicator or CatQuest world voices again in the library's settings, TalkingHead Ru remembers that choice and stops overriding it, including after a restart.
+While TalkingHead Ru is enabled, CatQuest playback is fully suppressed, including books, location lore, world voices and the dungeon narrator. Its news window is hidden. CatQuest recordings remain available through TalkingHead Ru. Original CatQuest functions and settings are restored when TalkingHead Ru is disabled. Wayfarer automatic playback remains suppressed; its manual lore and explicit lore preferences remain available.
 
 Disabling TalkingHead Ru restores only the settings it still controls, preserving your explicit lore preferences. The startup message includes links only for loaded voice libraries.
 
@@ -124,8 +124,8 @@ On English clients, player controls use English; settings and the voice catalogu
 ## Источники озвучки
 
 * **[WowVoice](https://www.curseforge.com/wow/addons/wowvoice-classic)** — озвучка классических заданий и Forever: **4 207 основных описаний** (WowVoice 1.1.0).
-* **[CatQuest](https://www.curseforge.com/wow/addons/catquest) + [CatQuest Voices](https://www.curseforge.com/wow/addons/catquest-voices)** — альтернативная озвучка и дополнительные задания Forever: **4 489 основных описаний** (Voices 1.2.0).
-* **[Wayfarer](https://www.curseforge.com/wow/addons/wayfarer-russian-voiceover)** — озвучка заданий Альянса, Орды и общих заданий: **3 790 основных описаний** в трёх модулях.
+* **[CatQuest](https://www.curseforge.com/wow/addons/catquest) + [CatQuest Voices](https://www.curseforge.com/wow/addons/catquest-voices)** — альтернативная озвучка и дополнительные задания Forever: **4 910 основных описаний** (Voices 2.0.0).
+* **[Wayfarer](https://www.curseforge.com/wow/addons/wayfarer-russian-voiceover)** — озвучка заданий Альянса, Орды и общих заданий: **4 004 основных описания** в трёх модулях.
 
 Указано количество только основных описаний заданий, без реплик выполнения, сдачи и дополнительных вариантов пола персонажа. Часть заданий озвучена в нескольких библиотеках.
 
@@ -141,7 +141,7 @@ On English clients, player controls use English; settings and the voice catalogu
 
 ## Совместимость
 
-Пока TalkingHead Ru включён, CatQuest и Wayfarer используются как библиотеки: автозапуск, квестовые кнопки и автоматические уведомления подавляются. Ручное чтение книг и лора мест остаётся доступным. Если снова включить лор мест, его значок или голоса мира CatQuest в настройках библиотеки, TalkingHead Ru запомнит этот выбор и больше не будет менять эту настройку, в том числе после перезапуска.
+Пока TalkingHead Ru включён, собственное воспроизведение CatQuest подавляется целиком, включая книги, лор, голоса мира и мастера подземелий. Окно новостей скрывается. Записи CatQuest доступны через TalkingHead Ru. При отключении TalkingHead Ru исходные функции и настройки CatQuest восстанавливаются. Автозапуск Wayfarer по-прежнему подавляется; ручной лор и явно выбранные настройки лора Wayfarer остаются доступны.
 
 При отключении TalkingHead Ru восстанавливаются только настройки, которыми он ещё управляет; ваш явный выбор лора сохраняется. Стартовое сообщение содержит ссылки только на загруженные библиотеки озвучки.
 

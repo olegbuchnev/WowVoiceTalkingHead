@@ -32,10 +32,13 @@ try {
       checks+=2;
     }
     const data=Object.fromEntries(['name','version','format','model','q'].map(k=>[k,pack[k]]));
+    const coreName = index.toString('utf8').includes('WayfarerRU.RegisterPack') ? 'WayfarerRU' : 'Wayfarer';
     run(`local pack=${literal(data)}
-      Wayfarer={Packs={list={pack}}}
-      C_AddOns={IsAddOnLoaded=function() return true,true end,
-        GetAddOnMetadata=function() return pack.version end}
+      Wayfarer=nil; WayfarerRU=nil
+      ${coreName}={Packs={list={pack}}}
+      C_AddOns={IsAddOnLoaded=function(name) return name==${literal(coreName)} or name==pack.name end,
+        GetAddOnMetadata=function(name) if name==pack.name then return pack.version
+          elseif name==${literal(coreName)} then return ${literal(coreName === 'WayfarerRU' ? '1.2.0' : '1.0.0')} end end}
       for id,quest in pairs(pack.q) do for section,entry in pairs(quest) do
         for _,sex in ipairs({2,3}) do
           UnitSex=function() return sex end

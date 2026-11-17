@@ -66,6 +66,24 @@ from release archives.
 
 ## Layout
 
+### Library update popups (2026-11-13)
+
+While TalkingHead Ru is active, CatQuest's ShowNews, NewsCheck, ShowWelcome
+and ShowWelcomeOnce remain suppressed. NewsMarkSeen is also guarded before
+hiding an existing news window: both the first-run callback and the news
+frame's OnHide otherwise consume unread module updates. Existing newsSeen
+entries and welcomeSeen are preserved. This does not undo CatQuest's own
+startup bookkeeping (firstRun/seenVersion); unread windows remain available
+through its restored news/welcome entry points on a standalone login.
+
+WayfarerRU's QuestZones:Offer and Zones:OfferKnown are guarded before they
+write qzAsked/knownAsked or schedule combat retries. Previously answered
+prompts and explored-place history remain untouched. Wrappers are installed
+early, reapplied for late/replaced modules and restored on disable/logout
+without overwriting third-party replacements. External addon files are never
+edited. Regressions: validate-library-popup-history.js and
+validate-wayfarer-tracker-offer.js, alongside existing integration tests.
+
 Developer slash handlers live in `dev/queue-lab/Commands.lua`, injected only
 by local `DeployAddon -QueueLab`. All references below to `/thead`
 `remindertest`, `test`, `stoptest`, `diag`, `perf`, `debug` and `source` require
@@ -1397,6 +1415,19 @@ are still identified by `CatQuest_ReadQuestLog` on both modern and Classic
 detail frames, including late creation and reopening. Native controls and our
 replay controls are preserved.
 
+CatQuest 2.0 also uses EllesmereUI's public quest-row API. Our existing row
+callback scans sibling provider slots for CatQuest's quest ID, speaker atlas
+and click handler, including a deferred scan when CatQuest runs after us.
+OnShow suppression prevents later redraws from restoring the icon. Slot hiding
+invalidates the visibility snapshot; disabling TalkingHead Ru or logging out
+restores only current visible rows. Own replay controls and native row actions
+are preserved. No upstream registrations or files are replaced.
+
+Voices 2.0 appends `CatQuestVoicePack.packs.voices` after the quest assignment.
+The shared data-only parser selects the exact `CatQuestVoicePack.quests` table
+instead of mistaking the trailing contract for quest data. This also covers
+text imports, compatibility audits and the voting catalogue's source reader.
+
 Integration uses initialized settings and public hooks without modifying library
 files. Late ADDON_LOADED callbacks and PLAYER_LOGIN synchronize the takeover;
 `/thead diag` reports quest autoplay suppression. Tests cover release, database
@@ -1544,3 +1575,29 @@ A separate CurseForge link explains optional CatQuest Voices installation; the
 supported version is read from CatQuestAudio.lua at the downloadable addon tag.
 Historical lite archives remain identifiable in download statistics. No release
 archive or public website is published by routine deployment.
+
+### CatQuest map sharing display (2026-11-16)
+
+While enabled, TalkingHead Ru temporarily forces `pawMapShow` and `pawMapMini`
+off alongside `pawShare` and `pawShow`. `PawMapSettings` refreshes existing map
+pins when applying or restoring the preferences. Disable and PLAYER_LOGOUT
+restore previous values, including absent values and explicit opt-outs; this
+does not reset CatQuest to factory defaults. Incoming CatQuest messages may
+still be received by its own event handler, but its map pins remain hidden.
+CatQuest integration scenarios cover enabled maps, implicit defaults, repeated
+updates, disable/logout, and preserved opt-outs in ruRU/enUS/enGB.
+
+### CatQuest 1.1.1 playback policy (2026-11-12)
+
+The user requested complete suppression of CatQuest playback, superseding the
+previous manual book/lore/world exceptions for CatQuest. Wayfarer preferences
+are unchanged. `LibraryIntegration.lua` reversibly guards CatQuest's playback,
+queue, bridge, world queue, diagnostic playback and news/welcome entry points.
+Private slash-command playback and CatQuest_Toggle are guarded separately.
+Shared game audio functions and CatQuestVoicePack data remain untouched, so
+TalkingHead Ru can still play CatQuest recordings. Active CatQuest playback
+is stopped on takeover. Guards are installed before login and refreshed for
+late loading; disabling TalkingHead Ru or logout restores only owned hooks.
+`dungeonMaster` is implicitly enabled when absent upstream: force it off while
+active and restore nil on release. News-seen and playback-history data are not
+marked as consumed by the blocked news/player entry points.

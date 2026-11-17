@@ -12,7 +12,7 @@ function WV:IsLibraryPreferenceCustomized(id, key)
     local all = TalkingHeadRuDB and TalkingHeadRuDB.libraryPreferences
     return all and all[id] and all[id][key] ~= nil or false
 end
-function WV:UpdateLibraryPreferences(id, db, desired, active, refresh, customizable)
+function WV:UpdateLibraryPreferences(id, db, desired, active, refresh, customizable, implicitDefaults)
     local state = overrides[id]
     if state and (not active or state.db ~= db) then
         overrides[id] = nil
@@ -29,7 +29,7 @@ function WV:UpdateLibraryPreferences(id, db, desired, active, refresh, customiza
     local saved = userPreferences(id)
     local changed = false
     for key, forced in pairs(desired) do
-        if type(db[key]) == type(forced) then
+        if type(db[key]) == type(forced) or (db[key] == nil and implicitDefaults and implicitDefaults[key]) then
             local editable = customizable and customizable[key]
             -- A direct edit after our first application also relinquishes ownership.
             if editable and state.observed[key] ~= nil and db[key] ~= state.observed[key] then
@@ -100,3 +100,80 @@ function WV:UpdateCatQuestNotifications(active)
     chat.AddMessage = wrapper
 end
 WV:UpdateCatQuestNotifications(not TalkingHeadRuDB or TalkingHeadRuDB.enabled ~= false)
+
+-- CatQuest is a data provider while our player is enabled. Guard entry points
+-- before they enqueue, alter history, duck game audio, or start file/TTS/bridge
+-- playback. Never wrap the game's shared audio APIs: our CatQuest source uses
+-- those same recording paths directly.
+local catQuestPlayback, catQuestGuards = nil, {}
+local function releaseCatQuestGuards()
+    for _, guard in ipairs(catQuestGuards) do
+        if guard.owner[guard.key] == guard.wrapper then guard.owner[guard.key] = guard.original end
+    end
+    catQuestGuards = {}
+    catQuestPlayback = nil
+end
+local function guardCatQuest(owner, key, replacement)
+    if type(owner) ~= "table" or type(owner[key]) ~= "function" then return end
+    for _, guard in ipairs(catQuestGuards) do
+        if guard.owner == owner and guard.key == key and owner[key] == guard.wrapper then return end
+    end
+    local original = owner[key]
+    local guard = {owner=owner, key=key, original=original}
+    guard.wrapper = function(...)
+        if not catQuestPlayback then return original(...) end
+        return replacement(...)
+    end
+    catQuestGuards[#catQuestGuards + 1] = guard
+    owner[key] = guard.wrapper
+end
+local function silent() return false end
+local catQuestPlaybackCommands = {test=true, tts=true, bridge=true, pack=true}
+function WV:UpdateCatQuestPlayback(active)
+    local core = _G.CatQuestCore
+    if catQuestPlayback and (not active or catQuestPlayback ~= core) then releaseCatQuestGuards() end
+    if not active or type(core) ~= "table" then return end
+    if catQuestPlayback ~= core then
+        -- Stop an already running/paused session once, not on every refresh.
+        local state = core.state
+        if type(state) == "table" and (state.playing or state.pending or state.paused
+            or type(core.queue) == "table" and #core.queue > 0) then
+            if type(core.ClearQueue) == "function" then core.ClearQueue()
+            elseif type(core.Stop) == "function" then core.Stop() end
+        end
+        -- Preferences are captured by UpdateLibraryPreferences before this call.
+        if type(core.WorldSlash) == "function" and type(_G.CatQuestDB) == "table" then
+            local previous = CatQuestDB.world
+            core.WorldSlash("world test stop")
+            core.WorldSlash("world off")
+            CatQuestDB.world = previous
+        end
+        if type(core.Unduck) == "function" then core.Unduck() end
+        catQuestPlayback = core
+    end
+    for _, key in ipairs({"Speak", "Enqueue", "PlayNext", "Resume", "PlayQueued",
+        "BridgeSpeak", "SelfTest", "ShowNews", "NewsCheck", "NewsMarkSeen", "ShowWelcome",
+        "ShowWelcomeOnce", "NoVoiceHint", "DungeonCommand", "LoreCommand"}) do guardCatQuest(core, key, silent) end
+    guardCatQuest(core, "WorldSlash", function(cmd)
+        return type(cmd) == "string" and cmd:match("^world") ~= nil
+    end)
+    guardCatQuest(core.WorldQueue, "Take", silent)
+    guardCatQuest(_G, "CatQuest_Toggle", silent)
+    -- These commands call private local playback functions, bypassing ns.Speak.
+    if type(SlashCmdList) == "table" and type(SlashCmdList.CATQUEST) == "function" then
+        local original = SlashCmdList.CATQUEST
+        guardCatQuest(SlashCmdList, "CATQUEST", function(msg)
+            local cmd = type(msg) == "string" and msg:match("^%s*(%S+)") or ""
+            cmd = cmd:lower()
+            if catQuestPlaybackCommands[cmd] then return false end
+            return original(msg)
+        end)
+    end
+    -- NewsMarkSeen is guarded before Hide: the news frame's OnHide would
+    -- otherwise consume unread updates even though our player hid the window.
+    for _, name in ipairs({"CatQuestNewsFrame", "CatQuestWelcome", "CatQuestBar"}) do
+        local frame = _G[name]
+        if frame and type(frame.Hide) == "function" then frame:Hide() end
+    end
+end
+WV:UpdateCatQuestPlayback(not TalkingHeadRuDB or TalkingHeadRuDB.enabled ~= false)

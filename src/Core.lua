@@ -62,13 +62,15 @@ WV.PlaybackTime = GetTimePreciseSec or GetTime
 local catQuestOverride
 local catQuestPreferences = {autoDetail=false, autoProgress=false, autoComplete=false,
     autoBooks=false, autoGreeting=false, autoGossip=false, loreAuto=false,
-    loreMark="hidden", codexToasts=false, storyCard=false, world=false}
--- Lore preferences remain under user control after an explicit settings edit.
-local catQuestCustomizable = {loreAuto=true, loreMark=true, world=true}
+    loreMark="hidden", codexToasts=false, storyCard=false, world=false,
+    dungeonMaster=false, newsPopup=false, pawShow=false, pawShare=false,
+    pawMapShow=false, pawMapMini=false}
 local catQuestButtonsActive, catQuestRefreshPending
 local catQuestButtonVisibility, catQuestButtonHooks, catQuestParentHooks = {}, {}, {}
 local catQuestTrackerHooks, catQuestTrackerButtons = {}, {}
 local catQuestQuestieButtons, catQuestQuestieReadyHooks = {}, {}
+local catQuestEllesmereRows, catQuestEllesmereButtons = {}, {}
+local catQuestEllesmerePending = {}
 local function suppressCatQuestButton(button, tracker)
     if catQuestButtonVisibility[button] == nil then
         catQuestButtonVisibility[button] = button:IsShown()
@@ -84,7 +86,7 @@ local function suppressCatQuestButton(button, tracker)
     end
     button:Hide()
 end
-local function hideCatQuestTrackerButtons(block, questID, questie)
+local function hideCatQuestTrackerButtons(block, questID, questie, ellesmereSlot)
     if not catQuestButtonsActive or not (block and block.GetChildren) then return end
     questID = questID or block.id
     for _, button in ipairs({block:GetChildren()}) do
@@ -96,8 +98,42 @@ local function hideCatQuestTrackerButtons(block, questID, questie)
             and button.GetScript and type(button:GetScript("OnClick")) == "function" then
             catQuestTrackerButtons[button] = block
             if questie then catQuestQuestieButtons[button] = block end
+            if ellesmereSlot then catQuestEllesmereButtons[button] = ellesmereSlot end
             suppressCatQuestButton(button, true)
         end
+    end
+end
+local function scanCatQuestEllesmereRow(slot)
+    local id = catQuestEllesmereRows[slot]
+    local row = slot.GetParent and slot:GetParent()
+    if not (catQuestButtonsActive and id and slot:IsVisible() and row and row.GetChildren) then return end
+    -- EUI gives each provider a sibling slot. Only inspect direct children of
+    -- these slots, with CatQuest's exact quest ID, atlas and click signature.
+    for _, sibling in ipairs({row:GetChildren()}) do
+        hideCatQuestTrackerButtons(sibling, id, false, slot)
+    end
+end
+function WV:SuppressCatQuestEllesmereRow(slot, id)
+    if catQuestEllesmereRows[slot] == nil then
+        if not catQuestParentHooks[slot] then
+            catQuestParentHooks[slot] = true
+            slot:HookScript("OnHide", function()
+                catQuestEllesmereRows[slot] = nil
+                for button, owner in pairs(catQuestEllesmereButtons) do
+                    if owner == slot then catQuestButtonVisibility[button] = nil end
+                end
+            end)
+        end
+    end
+    catQuestEllesmereRows[slot] = type(id) == "number" and id or nil
+    scanCatQuestEllesmereRow(slot)
+    -- CatQuest's provider may run after ours, including after combat ends.
+    if catQuestButtonsActive and not catQuestEllesmerePending[slot] and C_Timer and C_Timer.After then
+        catQuestEllesmerePending[slot] = true
+        C_Timer.After(0, function()
+            catQuestEllesmerePending[slot] = nil
+            scanCatQuestEllesmereRow(slot)
+        end)
     end
 end
 local function catQuestQuestieLineID(line)
@@ -176,13 +212,16 @@ local function updateCatQuestTrackers()
         end
     end
     updateCatQuestQuestie()
+    for slot in pairs(catQuestEllesmereRows) do scanCatQuestEllesmereRow(slot) end
 end
 local function updateCatQuestButtons(active)
     catQuestButtonsActive = active == true
     if not active then
         for button, shown in pairs(catQuestButtonVisibility) do
             local line = catQuestQuestieButtons[button]
-            if shown and (not line or catQuestQuestieLineID(line) == button.questId) then button:Show() end
+            local slot = catQuestEllesmereButtons[button]
+            if shown and (not line or catQuestQuestieLineID(line) == button.questId)
+                and (not slot or (slot:IsVisible() and catQuestEllesmereRows[slot] == button.questId)) then button:Show() end
         end
         catQuestButtonVisibility = {}
         return
@@ -225,7 +264,9 @@ function WV:UpdateCatQuestIntegration(release)
     local core = _G.CatQuestCore
     self:UpdateLibraryPreferences("CATQUEST_", db, catQuestPreferences, active, function()
         if type(core) == "table" and type(core.LoreRelayout) == "function" then core.LoreRelayout() end
-    end, catQuestCustomizable)
+        if type(core) == "table" and type(core.PawMapSettings) == "function" then core.PawMapSettings() end
+    end, nil, {dungeonMaster=true, pawShow=true, pawShare=true, pawMapShow=true})
+    if self.UpdateCatQuestPlayback then self:UpdateCatQuestPlayback(not release and TalkingHeadRuDB and TalkingHeadRuDB.enabled == true) end
     catQuestOverride = active and (type(db.autoDetail) == "boolean" or type(db.autoComplete) == "boolean") or nil
 end
 
@@ -994,10 +1035,13 @@ f:SetScript("OnEvent", function(self, event, arg1)
             if arg1 == "CatQuest_Voices" or arg1 == SOUND_ADDON
                 or (type(arg1) == "string" and arg1:match("^Wayfarer")) then
                 WV:RefreshAudioSources()
+                if type(arg1) == "string" and arg1:match("^Wayfarer") and WV.UpdateWayfarerIntegration then
+                    WV:UpdateWayfarerIntegration()
+                end
             end
             -- CatQuest and the quest journal can load in either order. Defer
             -- until CatQuest's handler has initialized settings/created buttons.
-            if arg1 == "CatQuest" or arg1 == "Wayfarer" or type(_G.CatQuestDB) == "table" then
+            if arg1 == "CatQuest" or arg1 == "Wayfarer" or arg1 == "WayfarerRU" or type(_G.CatQuestDB) == "table" then
                 scheduleCatQuestIntegration()
             end
             return
@@ -1059,7 +1103,9 @@ f:SetScript("OnEvent", function(self, event, arg1)
         WV:UpdateCatQuestIntegration()
         local links = {}
         for _, source in ipairs(voiceCredits) do
-            if WowVoiceAudioSources.Loaded(source.addon) then
+            local addon = source.addon == "Wayfarer" and WowVoiceWayfarerSource
+                and WowVoiceWayfarerSource.CoreAddon() or source.addon
+            if WowVoiceAudioSources.Loaded(addon) then
                 links[#links + 1] = source.name .. " — " .. source.url
             end
         end

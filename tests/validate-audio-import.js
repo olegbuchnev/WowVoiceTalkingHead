@@ -92,6 +92,15 @@ try {
   importPack(source,root);
   const {dataTable} = require('../tools/import-forever-audio');
   assert.equal(dataTable(textFile).entries['888a'].common,'Wayfarer text');
+  // Voices 2.0 adds a contract and voice registry after the quest assignment.
+  // Neither trailing tables nor executable statements are quest data.
+  fs.appendFileSync(path.join(source, 'Index.lua'), '\nCatQuestVoicePack.packs = CatQuestVoicePack.packs or {}\n'
+    + 'CatQuestVoicePack.packs.voices = {format=2,minCore=20000}\n'
+    + 'OtherPack.quests = {[999]={d=5}}\nerror("must never execute")\n');
+  const v2 = importPack(source, root);
+  assert.deepEqual(v2.files, older.files);
+  assert.deepEqual(v2.sections, older.sections);
+  assert.equal(dataTable(textFile).entries['179a'].common, 'Описание Classic');
   // NPC variants have independent filenames, measurements and history identities.
   const indexPath = path.join(source, 'Index.lua');
   fs.writeFileSync(indexPath, fs.readFileSync(indexPath, 'utf8').replace('[490]={d=35,',

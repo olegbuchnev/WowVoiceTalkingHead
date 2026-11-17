@@ -17,7 +17,7 @@ assert(order() == before)
 local name = 'Wayfarer_Voices_Shared'
 local loaded = {WowVoiceSounds=true,CatQuest_Voices=true,Wayfarer=true,[name]=true}
 C_AddOns.IsAddOnLoaded = function(id) return loaded[id] == true end
-C_AddOns.GetAddOnMetadata = function() return 'new-version' end
+C_AddOns.GetAddOnMetadata = function(name) if name ~= 'WayfarerRU' then return 'new-version' end end
 CatQuestVoicePack = {quests={[99997]={d=4}, [179]={d=4}}}
 Wayfarer = {Packs={list={{name=name,format=1,q={
     [99997]={a={d=5},p={d=2},c={d=3}}, [179]={a={d=5}},

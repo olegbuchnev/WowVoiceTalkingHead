@@ -285,7 +285,7 @@ local function refreshVersions()
         if change.outdated then
             details[#details + 1] = "Обновите " .. change.addon .. " до версии " .. change.audited .. "."
         else updateAddon = true end
-        if change.addon ~= "Wayfarer" then audioChanged = true end
+        if change.addon ~= "Wayfarer" and change.addon ~= "WayfarerRU" then audioChanged = true end
     end
     if audioChanged then
         details[#details + 1] = "Для непроверенных записей используются длительности из индекса библиотеки."
@@ -310,7 +310,8 @@ local function refreshVersions()
                 if #changes > 0 then text:SetTextColor(1, 0.82, 0.25)
                 else text:SetTextColor(0.7, 0.7, 0.7) end
             end
-            local installed = field(addon, "Version")
+            local installed = field(addon == "Wayfarer" and WowVoiceWayfarerSource
+                and WowVoiceWayfarerSource.CoreAddon() or addon, "Version")
             version = installed
             if addon == "WowVoiceSounds" then
                 -- Metadata remains readable while the upstream addon is disabled.

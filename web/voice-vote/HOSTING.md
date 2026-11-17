@@ -1,5 +1,125 @@
 # Timeweb Cloud deployment
 
+## CatQuest / Voices 2.0.0 (deployed 2026-11-17)
+
+Published 537 changed recording identities and three text corrections; retained
+4,190 comparisons and 12,361 recordings. NPC cards and model files are unchanged.
+The API speaker registry was rebuilt; the web image is unchanged. Audio was
+streamed directly from installed libraries; existing identities keep their paths.
+
+All 1,474 votes and 1,358 previous comparison rows were preserved. SQLite
+integrity, schema and health checks passed. Backup:
+`/srv/talkinghead/backups/libraries-20261117-20261117-190507`.
+Full offline validation: 1,436/1,437 portraits ready, only the known quest 97290
+camera fallback. All 382 optimized models passed. Public Firefox checks confirmed
+catalogue equality, audio playback/hashes, five portraits and optimized model
+hashes without submitting production test ballots.
+
+Final addon ranking: `2026-11-17T19:06:13.976433279Z`, 38 groups; installed and
+byte-verified in Forever with the EllesmereUI CatQuest speaker suppression fix.
+See [update report](../../docs/internal/libraries-2026-11-17.md).
+Evidence: `artifacts/voice-vote-deploy/updates/libraries-20261117/`.
+Rollback: restore backed-up catalogues/model manifests and retag
+`talkinghead-vote-server:before-libraries-20261117` to the configured API image,
+then restart services while preserving live votes and added audio.
+
+## CatQuest 1.2.4 / Voices 1.4.0 (deployed 2026-11-16)
+
+Published 4,190 comparisons and 12,361 audio identities. Nine new revisions
+were streamed directly from installed libraries; unchanged identities retain
+their paths. Ten formerly unknown NPC cards now have speakers. The API was
+rebuilt with the current speaker registry; web image and model assets are unchanged.
+
+Full offline validation: 1,436/1,437 portraits ready, only the known quest 97290
+camera fallback. All 382 optimized models passed verification. Addon tests,
+audio preload checks and API build/tests passed. All 1,465 votes and 1,349
+comparison rows were preserved. Backup:
+`/srv/talkinghead/backups/libraries-20261116-20261116-103007`.
+Public Firefox checks confirmed catalogue equality, audio hashes/playback,
+five ready portraits and optimized model hashes, without production test votes.
+
+Final addon ranking: `2026-11-16T10:30:47.694595100Z`, 38 groups; installed and
+byte-verified in Forever. See [import report](../../docs/internal/libraries-2026-11-16.md).
+Evidence: `artifacts/voice-vote-deploy/updates/libraries-20261116/`.
+Rollback: restore the backed-up catalogue/model manifests and retag
+`talkinghead-vote-server:before-libraries-20261116` to the configured API image,
+then restart services. Preserve live votes and added audio.
+
+## WayfarerRU 1.2.0 / Alliance and Horde 3.4.0 (deployed 2026-11-13)
+
+Published 4,190 comparisons and 12,361 recording identities, with 2,421 new
+recordings streamed directly from installed libraries. Unchanged identities
+retain their published paths. Updated Quest Pins changes ten NPC cards;
+ambiguous starters retain the protected unknown speaker. The API speaker
+registry was rebuilt; web image and model files are unchanged.
+
+Full offline verification completed: 1,433/1,434 ready, retaining only the
+known quest 97290 camera fallback. All 382 existing portrait packs were reused.
+Addon tests, audio preload checks, API build and public catalogue/audio/portrait
+checks passed without production test votes. All 1,422 votes and 1,309 previous
+comparison records were preserved. Backup:
+`/srv/talkinghead/backups/wayfarer-20261113-20261113-064656`.
+
+Final addon ranking: `2026-11-13T06:48:00.422313140Z`, 38 groups, installed and
+byte-verified in Forever together with reversible tracker-offer suppression.
+See [import report](../../docs/internal/wayfarer-2026-11-13.md).
+Evidence: `artifacts/voice-vote-deploy/updates/wayfarer-20261113/`.
+Rollback: restore backed-up catalogue/model manifests and retag
+`talkinghead-vote-server:before-wayfarer-20261113` to the configured API image,
+then restart services. Preserve live votes and all added audio.
+
+
+## CatQuest Voices 1.3.0 / WayfarerRU 1.1.1 (deployed 2026-11-12)
+
+Updated the CatQuest version in all 4,190 comparisons and the API speaker
+registry after importing CatQuest 1.1.0 and Quest Pins df9964be5af8. All 12,361
+audio identities, existing texts/NPC cards and model assets are unchanged.
+The complete offline audit passed 1,435/1,436 portraits with only the documented
+quest 97290 camera fallback. No audio or model transfer was needed; 382 existing
+portrait packs remain verified. Audio-preload tests, API build/tests and public
+catalogue/audio/portrait checks passed without production test votes.
+
+Preserved 1,402 votes and 1,290 comparison records. Backup:
+`/srv/talkinghead/backups/libraries-20261112-20261112-080750`.
+Final addon ranking: `2026-11-12T08:08:52.019568808Z`, 38 groups, installed into
+Forever and byte-verified. Evidence:
+`artifacts/voice-vote-deploy/updates/libraries-20261112/`.
+See [import and classification report](../../docs/internal/libraries-2026-11-12.md).
+Rollback must retain live votes accepted after this backup.
+
+
+## WayfarerRU 1.1.0 / voice packs 3.3.0 (deployed 2026-11-11)
+
+Published 4,190 comparisons and 12,361 recordings: 12 added comparisons,
+seven updated NPC cards and 3,977 new audio identities streamed directly
+from installed libraries. Unchanged identities retain their published paths.
+All 1,367 previous votes and 1,255 comparison rows were preserved.
+SQLite integrity, schema 4, service health and volume mounts passed.
+
+API image: `talkinghead-vote-server:wayfarer-330-20261111`; web unchanged.
+Consistent database, pending queue, catalogue and model-manifest backup:
+`/srv/talkinghead/backups/wayfarer-330-20261111-20261111-023216`.
+Transferred 17 additional model dependencies and reused 382 verified packs.
+The full offline pass completed with 1,435/1,436 portraits ready; only the
+known camera-less display 146706 / quest 97290 retains its scroll fallback.
+Public Firefox checks verified exact catalogue equality, audio hashes/playback
+and portraits for quests 95772, 95737, 98069, 98155 and 1116. Audio for new quest
+79482 and packed M2/SKEL hashes/immutable caching also passed. No production
+ballots were submitted by these checks.
+
+Final addon ranking: `2026-11-11T02:33:16.075247569Z`, 38 groups. It was
+validated and deployed to Forever. All 46 non-TOC source files match byte for
+byte; the three TOCs differ only by the four configured QueueLab entries.
+No addon release or GitHub Pages publication was performed.
+
+Evidence: `artifacts/review/wayfarer-3.3.0/`,
+`artifacts/review/wayfarer-330-20261111-public.json` and
+`artifacts/voice-vote-deploy/updates/wayfarer-330-20261111/`.
+Rollback: restore the backed-up catalogue/model manifests and retag
+`talkinghead-vote-server:before-wayfarer-330-20261111` to the configured API
+image, then restart services. Preserve live votes and all added audio; do not
+replace votes accepted after deployment with the backup database.
+
 ## CatQuest Voices 1.2.0 and Quest Pins v4 (deployed 2026-11-10)
 
 Published 4,178 comparisons and 12,143 recordings. Added 128 comparisons,

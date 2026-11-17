@@ -7,9 +7,17 @@ const lua = require('luaparse');
 
 function dataTable(file, tableName) {
   const ast = lua.parse(fs.readFileSync(file, 'latin1'), { encodingMode: 'pseudo-latin1' });
-  const assignment = ast.body.filter(node => node.type === 'AssignmentStatement'
+  const assignments = ast.body.filter(node => node.type === 'AssignmentStatement'
     && (!tableName || (node.variables[0]?.identifier?.name || node.variables[0]?.name) === tableName)
-    && node.init[0]?.type === 'TableConstructorExpression').at(-1);
+    && node.init[0]?.type === 'TableConstructorExpression');
+  // Voices 2.0 appends pack-contract metadata after its quest table. Select
+  // the exact quest assignment, never the last unrelated table in that file.
+  const assignment = (!tableName && assignments.findLast(node => {
+    const target = node.variables[0];
+    return target?.type === 'MemberExpression' && target.indexer === '.'
+      && target.base?.type === 'Identifier' && target.base.name === 'CatQuestVoicePack'
+      && target.identifier?.name === 'quests';
+  })) || assignments.at(-1);
   if (!assignment) throw new Error(`Missing data table: ${file}`);
   function decode(node) {
     if (node.type === 'TableConstructorExpression') {

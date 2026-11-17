@@ -3,7 +3,7 @@ local WV, W, C = WowVoice, WowVoiceWayfarerSource, WowVoiceComparison
 local names = {'Wayfarer_Voices_Alliance', 'Wayfarer_Voices_Horde', 'Wayfarer_Voices_Shared'}
 local loaded = {Wayfarer=true}
 C_AddOns.IsAddOnLoaded = function(name) return loaded[name] == true end
-C_AddOns.GetAddOnMetadata = function() return '3.1.0' end
+C_AddOns.GetAddOnMetadata = function(name) if name ~= 'WayfarerRU' then return '3.1.0' end end
 Wayfarer = {Packs={list={}}}
 WowVoiceWayfarerAudio = {schemaVersion=1,packs={}}
 for index, name in ipairs(names) do
