@@ -74,7 +74,7 @@
 
 ### CatQuest
 
-Альтернативная озвучка классических заданий и дополнительные квесты Forever — 4 910 основных описаний (Voices 1.3.0).
+Альтернативная озвучка классических заданий и дополнительные квесты Forever — 5 065 основных описаний (Voices 2.1.0).
 
 **Что установить:** [CatQuest](https://www.curseforge.com/wow/addons/catquest/files/all?page=1&pageSize=20&gameVersionTypeId=88568&showAlphaFiles=hide)
 и [CatQuest Voices](https://www.curseforge.com/wow/addons/catquest-voices/files/all?page=1&pageSize=20&gameVersionTypeId=88568&showAlphaFiles=hide).
@@ -169,6 +169,15 @@ TalkingHead показывает ссылки на авторов загруже
 Поддержать авторов и связаться с ними можно по ссылкам выше.
 
 ## Что нового
+
+<details name="releases">
+<summary><strong>Версия 1.4.8-forever</strong> · <time datetime="2026-11-23">23 ноября 2026</time></summary>
+
+- Обновлены данные для CatQuest 2.0.4 и CatQuest Voices 2.1.0: тексты заданий, длительности записей и сведения о NPC.
+- Обновлена база Forever Quest Pins для определения собеседников при выдаче и сдаче заданий.
+- Обновлён встроенный рейтинг озвучки по свежим голосам сообщества.
+
+</details>
 
 <details name="releases">
 <summary><strong>Версия 1.4.7-forever</strong> · <time datetime="2026-11-17">17 ноября 2026</time></summary>
