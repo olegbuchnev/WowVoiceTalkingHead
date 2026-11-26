@@ -6,7 +6,7 @@
 На английском клиенте кнопки плеера отображаются на английском, настройки — на русском.
 Говорящая голова использует шрифты заданий Blizzard, включая их кириллические варианты.
 
-**[Скачать аддон](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.4.8-forever/TalkingHeadRu-1.4.8-forever.zip)** ·
+**[Скачать аддон](https://github.com/olegbuchnev/WowVoiceTalkingHead/releases/download/v1.4.9-forever/TalkingHeadRu-1.4.9-forever.zip)** ·
 [Инструкция](USER_README.md) ·
 [Сообщить об ошибке](https://github.com/olegbuchnev/WowVoiceTalkingHead/issues)
 
