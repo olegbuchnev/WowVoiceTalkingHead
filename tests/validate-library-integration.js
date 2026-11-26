@@ -27,6 +27,7 @@ run(`
 const integration = fs.readFileSync(path.join(source,'LibraryIntegration.lua'),'utf8');
 run(integration);
 run(`
+  assert(DEFAULT_CHAT_FRAME.AddMessage==originalChat, 'loading integration must preserve the native chat handler')
   function update(active)
     WowVoice:UpdateLibraryPreferences('CATQUEST_',db,
       {loreAuto=false,loreMark='hidden',autoBooks=false},active,nil,{loreAuto=true,loreMark=true})
@@ -50,10 +51,19 @@ run(`
   update(false)
   DEFAULT_CHAT_FRAME:AddMessage('|cffffffffCatQuest:|r hello')
   DEFAULT_CHAT_FRAME:AddMessage('Player: CatQuest: quoted')
-  assert(chatCalls==1)
-  WowVoice:UpdateCatQuestNotifications(false)
+  assert(chatCalls==2)
+  WowVoice:UpdateCatQuestPlayback(false)
   DEFAULT_CHAT_FRAME:AddMessage('CatQuest: hello')
-  assert(chatCalls==2 and DEFAULT_CHAT_FRAME.AddMessage==originalChat)
+  assert(chatCalls==3 and DEFAULT_CHAT_FRAME.AddMessage==originalChat)
+  WowVoice:UpdateCatQuestPlayback(true)
+  assert(DEFAULT_CHAT_FRAME.AddMessage==originalChat, 'takeover must preserve the native chat handler')
+  -- An opaque payload stands in for restricted battleground chat data.
+  local payload=setmetatable({}, {__tostring=function() error('opaque chat payload inspected') end})
+  local replacement=function(self, text, ...) assert(text==payload); return ... end
+  DEFAULT_CHAT_FRAME={AddMessage=replacement}
+  WowVoice:UpdateCatQuestPlayback(true)
+  assert(DEFAULT_CHAT_FRAME.AddMessage==replacement, 'replacement chat frame must remain untouched')
+  assert(DEFAULT_CHAT_FRAME:AddMessage(payload, 42)==42)
   -- Simulate a reload with only saved databases surviving.
   WowVoice = {}
 `);
@@ -86,4 +96,4 @@ run(`
   assert(db.loreAuto and db.autoBooks)
 `);
 lua.lua_close(L);
-console.log('PASS: reversible library preferences, explicit lore choices, reloads, replacement and chat filtering');
+console.log('PASS: reversible library preferences, explicit lore choices, reloads, replacement and native chat preservation');

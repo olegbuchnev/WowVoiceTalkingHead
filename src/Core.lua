@@ -259,7 +259,6 @@ function WV:UpdateCatQuestIntegration(release)
     local db = _G.CatQuestDB
     local active = not release and TalkingHeadRuDB and TalkingHeadRuDB.enabled
         and type(db) == "table"
-    if self.UpdateCatQuestNotifications then self:UpdateCatQuestNotifications(not release and TalkingHeadRuDB and TalkingHeadRuDB.enabled == true) end
     updateCatQuestButtons(active == true)
     local core = _G.CatQuestCore
     self:UpdateLibraryPreferences("CATQUEST_", db, catQuestPreferences, active, function()

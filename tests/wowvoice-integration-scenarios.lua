@@ -7,9 +7,7 @@ assert(#messages == #test.retainedMessages + (removeStartup and 0 or #test.start
 for i, text in ipairs(test.retainedMessages) do
     assert(messages[i] == text, 'preserve unrelated chat, warnings and our credits in order')
 end
-WowVoice:UpdateCatQuestNotifications(false)
-assert(DEFAULT_CHAT_FRAME.AddMessage == test.addMessage, 'release the temporary CatQuest chat filter')
-WowVoice:UpdateCatQuestNotifications(true)
+assert(DEFAULT_CHAT_FRAME.AddMessage == test.addMessage, 'takeover preserves the native chat handler')
 if upstreamTestMode == 'early-login' then
     assert(test.disableCalls == 0 and test.stops == 1, 'detach handlers even before the player is ready')
     test.playerReady = true

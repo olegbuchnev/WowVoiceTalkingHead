@@ -76,30 +76,10 @@ function WV:UpdateLibraryPreferences(id, db, desired, active, refresh, customiza
     if changed and refresh then refresh() end
 end
 
--- CatQuest's private Print closes over DEFAULT_CHAT_FRAME:AddMessage. Limit
--- filtering to its prefix; other chat messages and global print are untouched.
-local chatGuard, chatActive
-function WV:UpdateCatQuestNotifications(active)
-    chatActive = active == true
-    local chat = DEFAULT_CHAT_FRAME
-    if chatGuard and (not chatActive or chatGuard.chat ~= chat) then
-        if chatGuard.chat.AddMessage == chatGuard.wrapper then
-            chatGuard.chat.AddMessage = chatGuard.original
-        end
-        chatGuard = nil
-    end
-    if not chatActive or not chat or type(chat.AddMessage) ~= "function" then return end
-    if chatGuard and chat.AddMessage == chatGuard.wrapper then return end
-    local original = chat.AddMessage
-    local function wrapper(self, text, ...)
-        if chatActive and type(text) == "string" and not (issecretvalue and issecretvalue(text))
-            and text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):match("^CatQuest:") then return end
-        return original(self, text, ...)
-    end
-    chatGuard = {chat=chat, original=original, wrapper=wrapper}
-    chat.AddMessage = wrapper
-end
-WV:UpdateCatQuestNotifications(not TalkingHeadRuDB or TalkingHeadRuDB.enabled ~= false)
+-- Do not replace chat-frame methods to silence CatQuest's private Print.
+-- Forwarding even an uninspected secret message through our Lua wrapper runs
+-- the native chat handler in addon-tainted execution. Suppress library entry
+-- points below instead; private informational chat notices may remain visible.
 
 -- CatQuest is a data provider while our player is enabled. Guard entry points
 -- before they enqueue, alter history, duck game audio, or start file/TTS/bridge

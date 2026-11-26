@@ -1,15 +1,13 @@
-## 1.4.8-forever
+## 1.4.9-forever
 
 ### Изменения
 
-- Обновлены данные для CatQuest 2.0.4 и CatQuest Voices 2.1.0: тексты заданий, длительности записей и сведения о NPC.
-- Обновлена база Forever Quest Pins для определения собеседников при выдаче и сдаче заданий.
+- Исправлена ошибка обработки чата, которая могла вызывать многократное повторение сообщений на полях боя.
 - Обновлён встроенный рейтинг озвучки по свежим голосам сообщества.
 
 ---
 
 ### Changes
 
-- Updated data for CatQuest 2.0.4 and CatQuest Voices 2.1.0: quest texts, recording durations and NPC information.
-- Updated the Forever Quest Pins database used to identify speakers when accepting and completing quests.
+- Fixed a chat handling error that could cause messages to repeat many times in battlegrounds.
 - Refreshed the built-in voice ranking with recent community votes.

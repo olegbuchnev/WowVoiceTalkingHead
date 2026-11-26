@@ -171,6 +171,14 @@ TalkingHead показывает ссылки на авторов загруже
 ## Что нового
 
 <details name="releases">
+<summary><strong>Версия 1.4.9-forever</strong> · <time datetime="2026-11-26">26 ноября 2026</time></summary>
+
+- Исправлена ошибка обработки чата, которая могла вызывать многократное повторение сообщений на полях боя.
+- Обновлён встроенный рейтинг озвучки по свежим голосам сообщества.
+
+</details>
+
+<details name="releases">
 <summary><strong>Версия 1.4.8-forever</strong> · <time datetime="2026-11-23">23 ноября 2026</time></summary>
 
 - Обновлены данные для CatQuest 2.0.4 и CatQuest Voices 2.1.0: тексты заданий, длительности записей и сведения о NPC.
